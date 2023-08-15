@@ -302,7 +302,7 @@ describe("Validators", () => {
     expect(error).to.throw;
   });
 
-  it("should throw on CAIP2 namespace not including that CAIP2 in accouns", () => {
+  it("should throw on CAIP-2 namespace not including that CAIP-2 in accouns", () => {
     const required = {
       eip155: {
         chains: ["eip155:1", "eip155:2"],
@@ -366,8 +366,11 @@ describe("buildApprovedNamespaces (validators)", () => {
     const chains = ["eip155:1", "eip155:2", "eip155:3"];
     const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
     const events = ["chainChanged"];
-    const accounts = ["eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092"];
-
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:3:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
     const approvedNamespaces = buildApprovedNamespaces({
       proposal: {
         ...TEST_PROPOSAL,
@@ -389,7 +392,7 @@ describe("buildApprovedNamespaces (validators)", () => {
         chains: ["eip155:1"],
         methods: ["personal_sign", "eth_sendTransaction"],
         events,
-        accounts,
+        accounts: [accounts[0]],
       },
     };
     expect(approvedNamespaces).to.deep.equal(expected);
@@ -416,6 +419,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     const accounts = [
       "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
       "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:3:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
@@ -439,7 +443,7 @@ describe("buildApprovedNamespaces (validators)", () => {
         chains: ["eip155:1", "eip155:2"],
         methods: ["personal_sign", "eth_sendTransaction"],
         events,
-        accounts,
+        accounts: [accounts[0], accounts[1]],
       },
     };
     expect(approvedNamespaces).to.deep.eq(expected);
@@ -465,6 +469,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     const accounts = [
       "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
       "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:3:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
@@ -488,7 +493,7 @@ describe("buildApprovedNamespaces (validators)", () => {
         chains: ["eip155:1", "eip155:2"],
         methods: ["personal_sign", "eth_sendTransaction"],
         events,
-        accounts,
+        accounts: [accounts[0], accounts[1]],
       },
     };
     expect(approvedNamespaces).to.deep.eq(expected);
@@ -751,6 +756,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     const accounts = [
       "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
       "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:4:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
@@ -774,7 +780,7 @@ describe("buildApprovedNamespaces (validators)", () => {
         chains: ["eip155:1", "eip155:2"],
         methods: ["personal_sign", "eth_sendTransaction", "eth_signTransaction"],
         events,
-        accounts,
+        accounts: [accounts[0], accounts[1]],
       },
     };
     expect(approvedNamespaces).to.deep.eq(expected);
@@ -809,6 +815,7 @@ describe("buildApprovedNamespaces (validators)", () => {
     const accounts = [
       "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
       "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:4:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
@@ -832,7 +839,7 @@ describe("buildApprovedNamespaces (validators)", () => {
         chains: ["eip155:1", "eip155:2"],
         methods: ["personal_sign", "eth_sendTransaction", "eth_signTransaction"],
         events,
-        accounts,
+        accounts: [accounts[0], accounts[1]],
       },
     };
     expect(approvedNamespaces).to.deep.eq(expected);
@@ -861,13 +868,13 @@ describe("buildApprovedNamespaces (validators)", () => {
       },
     };
 
-    const chains = ["eip155:1", "eip155:2", "eip155:4"];
+    const chains = ["eip155:1", "eip155:2", "eip155:11"];
     const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
     const events = ["chainChanged", "accountsChanged"];
     const accounts = [
       "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
       "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
-      "eip155:4:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:11:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
     ];
 
     const approvedNamespaces = buildApprovedNamespaces({
@@ -1021,6 +1028,44 @@ describe("buildApprovedNamespaces (validators)", () => {
       },
     };
     expect(approvedNamespaces).to.deep.eq(expected);
+  });
+  it("should build namespaces (config 13 - required & optional empty)", () => {
+    const required = {};
+    const optional = {};
+
+    const chains = ["eip155:1", "eip155:2", "eip155:3"];
+    const methods = ["personal_sign", "eth_sendTransaction", "eth_signTransaction"];
+    const events = ["chainChanged"];
+    const accounts = [
+      "eip155:1:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:2:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+      "eip155:3:0x57f48fAFeC1d76B27e3f29b8d277b6218CDE6092",
+    ];
+
+    const approvedNamespaces = buildApprovedNamespaces({
+      proposal: {
+        ...TEST_PROPOSAL,
+        requiredNamespaces: required,
+        optionalNamespaces: optional,
+      },
+      supportedNamespaces: {
+        eip155: {
+          chains,
+          methods,
+          events,
+          accounts,
+        },
+      },
+    });
+    const expected = {
+      eip155: {
+        chains,
+        methods,
+        events,
+        accounts,
+      },
+    };
+    expect(approvedNamespaces).to.deep.equal(expected);
   });
 
   it.fails(

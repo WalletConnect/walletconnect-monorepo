@@ -3,7 +3,7 @@ import { IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, isReactNative } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
-import { VERIFY_CONTEXT, VERIFY_SERVER } from "../constants";
+import { VERIFY_CONTEXT, VERIFY_FALLBACK_SERVER, VERIFY_SERVER } from "../constants";
 
 export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
@@ -12,6 +12,11 @@ export class Verify extends IVerify {
   private initialized = false;
   private abortController: AbortController;
   private isDevEnv;
+  // the queue is only used during the loading phase of the iframe to ensure all attestations are posted
+  private queue: string[] = [];
+  // flag to disable verify when the iframe fails to load on main & fallback urls.
+  // this means Verify API is not enabled for the current projectId and there's no point in trying to initialize it again.
+  private verifyDisabled = false;
 
   constructor(public projectId: string, public logger: Logger) {
     super(projectId, logger);
@@ -22,76 +27,140 @@ export class Verify extends IVerify {
   }
 
   public init: IVerify["init"] = async (params) => {
+    if (this.verifyDisabled) return;
+
     // ignore on non browser environments
     if (isReactNative() || !isBrowser()) return;
 
-    this.verifyUrl = params?.verifyUrl || VERIFY_SERVER;
-    await this.createIframe();
+    const verifyUrl = params?.verifyUrl || VERIFY_SERVER;
+    // if init is called again with a different url, remove the iframe and start over
+    if (this.verifyUrl !== verifyUrl) {
+      this.removeIframe();
+    }
+    this.verifyUrl = verifyUrl;
+
+    try {
+      await this.createIframe();
+    } catch (error) {
+      this.logger.warn(`Verify iframe failed to load: ${this.verifyUrl}`);
+      this.logger.warn(error);
+    }
+
+    if (this.initialized) return;
+
+    this.removeIframe();
+    this.verifyUrl = VERIFY_FALLBACK_SERVER;
+
+    try {
+      await this.createIframe();
+    } catch (error) {
+      this.logger.error(`Verify iframe failed to load: ${this.verifyUrl}`);
+      this.logger.error(error);
+      // if the fallback url fails to load as well, disable verify
+      this.verifyDisabled = true;
+    }
   };
 
   public register: IVerify["register"] = async (params) => {
     if (!this.initialized) {
+      this.addToQueue(params.attestationId);
       await this.init();
+    } else {
+      this.sendPost(params.attestationId);
     }
-
-    if (!this.iframe) return;
-    try {
-      this.iframe.contentWindow?.postMessage(params.attestationId, this.verifyUrl);
-      this.logger.info(`postMessage sent: ${params.attestationId} ${this.verifyUrl}`);
-    } catch (e) {} // fail silently to avoid logging `Failed to execute 'postMessage' on 'DOMWindow': The target origin provided...` while the iframe is still loading
   };
 
   public resolve: IVerify["resolve"] = async (params) => {
     if (this.isDevEnv) return "";
-
-    this.logger.info(`resolving attestation: ${params.attestationId}`);
-    // set artificial timeout to prevent hanging
-    const timeout = this.startAbortTimer(FIVE_SECONDS);
-    const result = await fetch(`${this.verifyUrl}/attestation/${params.attestationId}`, {
-      signal: this.abortController.signal,
-    });
-    clearTimeout(timeout);
-    return result.status === 200 ? (await result.json())?.origin : "";
+    const mainUrl = params?.verifyUrl || VERIFY_SERVER;
+    let result = "";
+    try {
+      result = await this.fetchAttestation(params.attestationId, mainUrl);
+    } catch (error) {
+      this.logger.warn(
+        `failed to resolve attestation: ${params.attestationId} from url: ${mainUrl}`,
+      );
+      this.logger.warn(error);
+      result = await this.fetchAttestation(params.attestationId, VERIFY_FALLBACK_SERVER);
+    }
+    return result;
   };
 
   get context(): string {
     return getLoggerContext(this.logger);
   }
 
-  private createIframe = async () => {
-    try {
-      await Promise.race([
-        new Promise<void>((resolve, reject) => {
-          const exists = document.getElementById(VERIFY_CONTEXT);
-          if (exists) {
-            return resolve();
-          }
+  private fetchAttestation = async (attestationId: string, url: string) => {
+    this.logger.info(`resolving attestation: ${attestationId} from url: ${url}`);
+    // set artificial timeout to prevent hanging
+    const timeout = this.startAbortTimer(ONE_SECOND * 2);
+    const result = await fetch(`${url}/attestation/${attestationId}`, {
+      signal: this.abortController.signal,
+    });
+    clearTimeout(timeout);
+    return result.status === 200 ? (await result.json())?.origin : "";
+  };
 
-          const iframe = document.createElement("iframe");
-          iframe.setAttribute("id", VERIFY_CONTEXT);
-          iframe.setAttribute("src", `${this.verifyUrl}/${this.projectId}`);
-          iframe.style.display = "none";
-          iframe.addEventListener("load", () => {
-            this.initialized = true;
-            resolve();
-          });
-          iframe.addEventListener("error", (error) => {
-            reject(error);
-          });
-          document.body.append(iframe);
-          this.iframe = iframe;
-        }),
-        new Promise((_reject) => {
-          setTimeout(() => _reject("iframe load timeout"), toMiliseconds(ONE_SECOND / 2));
-        }),
-      ]);
-    } catch (error) {
-      this.logger.error(`Verify iframe failed to load: ${this.verifyUrl}`);
-      this.logger.error(error);
-    }
+  private addToQueue = (attestationId: string) => {
+    this.queue.push(attestationId);
+  };
+
+  private processQueue = () => {
+    if (this.queue.length === 0) return;
+    this.queue.forEach((attestationId) => this.sendPost(attestationId));
+    this.queue = [];
+  };
+
+  private sendPost = (attestationId: string) => {
+    try {
+      if (!this.iframe) return;
+      this.iframe.contentWindow?.postMessage(attestationId, "*"); // setting targetOrigin to "*" fixes the `Failed to execute 'postMessage' on 'DOMWindow': The target origin provided...` while the iframe is still loading
+      this.logger.info(`postMessage sent: ${attestationId} ${this.verifyUrl}`);
+    } catch (e) {}
+  };
+
+  private createIframe = async () => {
+    let iframeOnLoadResolve: () => void;
+    const onMessage = (event: MessageEvent) => {
+      if (event.data === "verify_ready") {
+        this.initialized = true;
+        this.processQueue();
+        window.removeEventListener("message", onMessage);
+        iframeOnLoadResolve();
+      }
+    };
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        const exists = document.getElementById(VERIFY_CONTEXT);
+        if (exists) return resolve();
+
+        window.addEventListener("message", onMessage);
+        const iframe = document.createElement("iframe");
+        iframe.id = VERIFY_CONTEXT;
+        iframe.src = `${this.verifyUrl}/${this.projectId}`;
+        iframe.style.display = "none";
+        document.body.append(iframe);
+        this.iframe = iframe;
+        iframeOnLoadResolve = resolve;
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => {
+          window.removeEventListener("message", onMessage);
+          reject("verify iframe load timeout");
+        }, toMiliseconds(FIVE_SECONDS)),
+      ),
+    ]);
   };
 
   private startAbortTimer(timer: number) {
+    this.abortController = new AbortController();
     return setTimeout(() => this.abortController.abort(), toMiliseconds(timer));
   }
+
+  private removeIframe = () => {
+    if (!this.iframe) return;
+    this.iframe.remove();
+    this.iframe = undefined;
+    this.initialized = false;
+  };
 }
