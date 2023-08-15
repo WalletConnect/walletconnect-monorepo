@@ -11,7 +11,6 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-
 import { getGlobal, getRpcUrl } from "../utils";
 
 class NearProvider implements IProvider {
@@ -95,7 +94,6 @@ class NearProvider implements IProvider {
     return http;
   }
 
-  // TODO: IS JSON RPC NEEDED TO BE UPDATED?  WHAT IS NEAR CHAIN ID
   private getHttpProvider(): JsonRpcProvider {
     const chain = `${this.name}:${this.chainId}`;
     const http = this.httpProviders[chain];

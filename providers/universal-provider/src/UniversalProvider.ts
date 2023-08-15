@@ -49,8 +49,6 @@ export class UniversalProvider implements IUniversalProvider {
   private disableProviderPing = false;
 
   static async init(opts: UniversalProviderOpts) {
-    console.log('%cPROVIDER LINKED', 'color:gold;font-size:12px;');
-    
     const provider = new UniversalProvider(opts);
     await provider.initialize();
     return provider;
@@ -75,8 +73,7 @@ export class UniversalProvider implements IUniversalProvider {
       throw new Error("Please call connect() before request()");
     }
 
-    return await this.getProvider(namespace).request({
-      
+    return await this.getProvider(namespace).request({      
       request: {
         ...args,
       },
