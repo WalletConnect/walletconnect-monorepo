@@ -15,7 +15,7 @@ import {
 import { getGlobal, getRpcUrl } from "../utils";
 
 class NearProvider implements IProvider {
-  public name = "polkadot";
+  public name = "near";
   public client: Client;
   public httpProviders: RpcProvidersMap;
   public events: EventEmitter;
@@ -95,6 +95,7 @@ class NearProvider implements IProvider {
     return http;
   }
 
+  // TODO: IS JSON RPC NEEDED TO BE UPDATED?  WHAT IS NEAR CHAIN ID
   private getHttpProvider(): JsonRpcProvider {
     const chain = `${this.name}:${this.chainId}`;
     const http = this.httpProviders[chain];
