@@ -14,6 +14,7 @@ import {
   isJsonRpcRequest,
   isJsonRpcResponse,
   isJsonRpcResult,
+  JsonRpcRequest,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import {
@@ -73,7 +74,7 @@ import {
   SESSION_REQUEST_EXPIRY_BOUNDARIES,
   METHODS_TO_VERIFY,
   WALLETCONNECT_DEEPLINK_CHOICE,
-  REQUEST_QUEUE_STATES,
+  ENGINE_QUEUE_STATES,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -82,13 +83,29 @@ export class Engine extends IEngine {
   private events: IEngineEvents = new EventEmmiter();
   private initialized = false;
   private ignoredPayloadTypes = [TYPE_1];
-  private requestQueue: {
-    state: string;
-    requests: PendingRequestTypes.Struct[];
-  } = {
-    state: REQUEST_QUEUE_STATES.idle,
-    requests: [],
+
+  /**
+   * Queue responsible for processing incoming requests such as session_update, session_event, session_ping etc
+   * It's needed when the client receives multiple requests at once from the mailbox immediately after initialization and to avoid attempting to process them all at the same time
+   */
+  private requestQueue: EngineTypes.EngineQueue<EngineTypes.EventCallback<JsonRpcRequest>> = {
+    state: ENGINE_QUEUE_STATES.idle,
+    queue: [],
   };
+
+  /**
+   * Queue responsible for processing incoming session_request
+   * The queue emits the next request only after the previous one has been responded to
+   */
+  private sessionRequestQueue: EngineTypes.EngineQueue<PendingRequestTypes.Struct> = {
+    state: ENGINE_QUEUE_STATES.idle,
+    queue: [],
+  };
+
+  /**
+   * these requests must be processed in strict order to avoid inconsistent state between peers
+   */
+  private requestsProcessedInStrictOrder = ["wc_sessionUpdate", "wc_sessionEvent"];
 
   private requestQueueDelay = ONE_SECOND;
 
@@ -105,8 +122,8 @@ export class Engine extends IEngine {
       this.initialized = true;
 
       setTimeout(() => {
-        this.requestQueue.requests = this.getPendingSessionRequests();
-        this.processRequestQueue();
+        this.sessionRequestQueue.queue = this.getPendingSessionRequests();
+        this.processSessionRequestQueue();
       }, toMiliseconds(this.requestQueueDelay));
     }
   };
@@ -485,10 +502,10 @@ export class Engine extends IEngine {
       this.client.pendingRequest.delete(id, reason),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
-    this.requestQueue.requests = this.requestQueue.requests.filter((r) => r.id !== id);
+    this.sessionRequestQueue.queue = this.sessionRequestQueue.queue.filter((r) => r.id !== id);
     // set the requestQueue state to idle if expirer has deleted a request as trying to respond to it would result in an exception
     if (expirerHasDeleted) {
-      this.requestQueue.state = REQUEST_QUEUE_STATES.idle;
+      this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
     }
   };
 
@@ -628,10 +645,54 @@ export class Engine extends IEngine {
     );
   }
 
-  private onRelayEventRequest: EnginePrivate["onRelayEventRequest"] = (event) => {
+  private onRelayEventRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
+    this.requestQueue.queue.push(event);
+    if (this.requestQueue.state === ENGINE_QUEUE_STATES.active) {
+      this.client.logger.info(`Request queue already active, skipping...`);
+      return;
+    }
+    this.client.logger.info(
+      `Request queue starting with ${this.requestQueue.queue.length} requests`,
+    );
+    // holds the last request id for each method
+    // so we can discard requests out of sync
+    const lastRequestMapping = {};
+    while (this.requestQueue.queue.length > 0) {
+      this.requestQueue.state = ENGINE_QUEUE_STATES.active;
+      const request = this.requestQueue.queue.shift();
+      if (!request) {
+        continue;
+      }
+      const method = request.payload.method;
+
+      // if the queue already processed a request with the same method in this cycle, check the timestamp from the IDs
+      // we want to process only the latest request for each method
+      // client <-> client rpc ID is timestamp + 3 random digits
+      if (
+        this.requestsProcessedInStrictOrder.includes(method) &&
+        lastRequestMapping[method] &&
+        parseInt(request.payload.id.toString().slice(0, -3)) <=
+          parseInt(lastRequestMapping[method].toString().slice(0, -3))
+      ) {
+        this.client.logger.info(`Discarding out of sync request - ${request.payload.id}`);
+        continue;
+      }
+
+      lastRequestMapping[method] = request.payload.id;
+      try {
+        this.processRequestsQueue(request);
+        // small delay to allow for any async tasks to complete
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      } catch (error) {
+        this.client.logger.warn(error);
+      }
+    }
+    this.requestQueue.state = ENGINE_QUEUE_STATES.idle;
+  };
+
+  private processRequestsQueue: EnginePrivate["onRelayEventRequest"] = (event) => {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
-
     switch (reqMethod) {
       case "wc_sessionPropose":
         return this.onSessionProposeRequest(topic, payload);
@@ -912,8 +973,8 @@ export class Engine extends IEngine {
     try {
       this.isValidRequest({ topic, ...params });
       await this.setPendingSessionRequest({ id, topic, params });
-      this.addRequestToQueue({ id, topic, params });
-      await this.processRequestQueue();
+      this.addSessionRequestToSessionRequestQueue({ id, topic, params });
+      await this.processSessionRequestQueue();
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
@@ -946,26 +1007,26 @@ export class Engine extends IEngine {
     }
   };
 
-  private addRequestToQueue = (request: PendingRequestTypes.Struct) => {
-    this.requestQueue.requests.push(request);
+  private addSessionRequestToSessionRequestQueue = (request: PendingRequestTypes.Struct) => {
+    this.sessionRequestQueue.queue.push(request);
   };
 
   private cleanupAfterResponse = (params: EngineTypes.RespondParams) => {
     this.deletePendingSessionRequest(params.response.id, { message: "fulfilled", code: 0 });
     // intentionally delay the emitting of the next pending request a bit
     setTimeout(() => {
-      this.requestQueue.state = REQUEST_QUEUE_STATES.idle;
-      this.processRequestQueue();
+      this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
+      this.processSessionRequestQueue();
     }, toMiliseconds(this.requestQueueDelay));
   };
 
-  private processRequestQueue = async () => {
-    if (this.requestQueue.state === REQUEST_QUEUE_STATES.active) {
+  private processSessionRequestQueue = async () => {
+    if (this.sessionRequestQueue.state === ENGINE_QUEUE_STATES.active) {
       this.client.logger.info("session request queue is already active.");
       return;
     }
     // Select the first/oldest request in the array to ensure last-in-first-out (LIFO)
-    const request = this.requestQueue.requests[0];
+    const request = this.sessionRequestQueue.queue[0];
     if (!request) {
       this.client.logger.info("session request queue is empty.");
       return;
@@ -978,7 +1039,7 @@ export class Engine extends IEngine {
       );
       const session = this.client.session.get(topic);
       const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
-      this.requestQueue.state = REQUEST_QUEUE_STATES.active;
+      this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.active;
       this.client.events.emit("session_request", { id, topic, params, verifyContext });
     } catch (error) {
       this.client.logger.error(error);
