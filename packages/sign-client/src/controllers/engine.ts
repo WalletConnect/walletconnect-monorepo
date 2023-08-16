@@ -64,6 +64,7 @@ import {
   parseExpirerTarget,
   TYPE_1,
   handleDeeplinkRedirect,
+  parseUri,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -215,7 +216,48 @@ export class Engine extends IEngine {
 
   public pair: IEngine["pair"] = async (params) => {
     await this.isInitialized();
-    return await this.client.core.pairing.pair(params);
+    const { topic } = parseUri(params.uri);
+    if (!this.client.core.pairing.pairings.keys.includes(topic)) {
+      return await this.client.core.pairing.pair(params);
+    }
+    return await new Promise((resolve, reject) => {
+      const proposals = this.client.proposal.getAll();
+      const proposal = proposals.find((p) => p.pairingTopic === topic);
+      if (!proposal) {
+        return reject(
+          new Error(
+            `No proposal found for topic: ${topic}. Please try again with new connection URI.`,
+          ),
+        );
+      }
+      setTimeout(async () => {
+        console.log(
+          "session_proposal",
+          formatJsonRpcRequest("wc_sessionPropose", proposal, proposal.id),
+        );
+        const hash = hashMessage(
+          JSON.stringify(
+            formatJsonRpcRequest(
+              "wc_sessionPropose",
+              {
+                requiredNamespaces: proposal.requiredNamespaces,
+                optionalNamespaces: proposal.optionalNamespaces,
+                relays: proposal.relays,
+                proposer: proposal.proposer,
+              },
+              proposal.id,
+            ),
+          ),
+        );
+        const verifyContext = await this.getVerifyContext(hash, proposal.proposer.metadata);
+        this.client.events.emit("session_proposal", {
+          id: proposal.id,
+          params: proposal,
+          verifyContext,
+        });
+      });
+      resolve(this.client.core.pairing.pairings.get(topic));
+    });
   };
 
   public approve: IEngine["approve"] = async (params) => {
@@ -753,6 +795,7 @@ export class Engine extends IEngine {
     payload,
   ) => {
     const { params, id } = payload;
+    console.log("onSessionProposeRequest", { payload });
     try {
       this.isValidConnect({ ...payload.params });
       const expiry = calcExpiry(FIVE_MINUTES);
