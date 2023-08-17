@@ -358,7 +358,7 @@ export class UniversalProvider implements IUniversalProvider {
         // chainIds might differ between the request & payload - request is always in CAIP2 format, while payload might be string, number, CAIP2 or hex
         // take priority of the payload chainId
         const chainIdToProcess =
-          convertChainIdToNumber(requestChainId) !== payloadChainId
+          convertChainIdToNumber(requestChainId) !== convertChainIdToNumber(payloadChainId)
             ? `${namespace}:${convertChainIdToNumber(payloadChainId)}`
             : requestChainId;
         this.onChainChanged(chainIdToProcess);
