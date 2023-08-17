@@ -1,7 +1,7 @@
 import SignClient from "@walletconnect/sign-client";
 import { SignClientTypes, ProposalTypes } from "@walletconnect/types";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
-import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
+import { KeyValueStorageOptions, IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 import { IEvents } from "@walletconnect/events";
 
 import { IProvider } from "./providers";
@@ -13,6 +13,7 @@ export interface UniversalProviderOpts {
   client?: SignClient;
   relayUrl?: string;
   storageOptions?: KeyValueStorageOptions;
+  storage?: IKeyValueStorage;
   name?: string;
   disableProviderPing?: boolean;
 }
