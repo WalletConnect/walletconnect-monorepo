@@ -1,13 +1,5 @@
 import { ICore } from "@walletconnect/types";
 
-// export type coreStorageData = {
-//   storage?: IKeyValueStorage;
-//   histroy?: Map<number, JsonRpcRecord>;
-//   expirer?: ExpirerTypes.Expiration[];
-//   keychain?: Map<string, string>;
-//   pairing?: IStore<string, PairingTypes.Struct>;
-// };
-
 export type coreStorageData = {
   storage?: any;
   histroy?: any;
