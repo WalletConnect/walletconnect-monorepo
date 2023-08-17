@@ -128,6 +128,11 @@ export declare namespace EngineTypes {
   }
 
   type RpcOptsMap = Record<JsonRpcTypes.WcMethod, RpcOpts>;
+
+  type EngineQueue<T> = {
+    state: "IDLE" | "ACTIVE";
+    queue: T[];
+  };
 }
 
 export abstract class IEngineEvents extends EventEmitter {

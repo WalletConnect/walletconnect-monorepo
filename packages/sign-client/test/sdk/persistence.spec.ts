@@ -9,6 +9,7 @@ import {
   throttle,
   TEST_REQUEST_PARAMS,
   TEST_SIGN_CLIENT_OPTIONS_B,
+  TEST_SIGN_CLIENT_OPTIONS_A,
 } from "../shared";
 
 const generateClientDbName = (prefix: string) =>
@@ -194,6 +195,119 @@ describe("Sign Client Persistence", () => {
           await deleteClients(clients);
         });
       });
+    });
+  });
+  describe("mailbox", () => {
+    /**
+     * this test simulates case where a dapp is offline while the wallet performs normal operations such as adding new accounts & emitting events
+     * the dapp should receive all requests when it comes back online and process them in the expected order
+     */
+    it("should process incoming mailbox messages after restart", async () => {
+      const chains = ["eip155:1"];
+      const accounts = ["0x0000000", "0x1111111", "0x2222222"];
+      const requiredNamespaces = {
+        eip155: {
+          chains,
+          methods: ["eth_sendTransaction"],
+          events: ["chainChanged", "accountsChanged"],
+        },
+      };
+
+      const approvedNamespaces = {
+        eip155: {
+          ...requiredNamespaces.eip155,
+          accounts: [`${chains[0]}:${accounts[0]}`],
+        },
+      };
+
+      const db_a = generateClientDbName("client_b");
+      const clients = await initTwoClients({
+        storageOptions: { database: db_a },
+      });
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients, {
+        requiredNamespaces,
+        namespaces: approvedNamespaces,
+      });
+
+      // delete client B
+      await deleteClients({ A: clients.A, B: undefined });
+
+      await throttle(500);
+      clients.B.update({
+        topic,
+        namespaces: {
+          eip155: {
+            ...approvedNamespaces.eip155,
+            accounts: approvedNamespaces.eip155.accounts.concat([`${chains[0]}:${accounts[1]}`]),
+          },
+        },
+      });
+
+      await throttle(500);
+
+      const lastWalletSessionNamespacesValue = {
+        eip155: {
+          ...approvedNamespaces.eip155,
+          accounts: approvedNamespaces.eip155.accounts.concat([
+            `${chains[0]}:${accounts[1]}`,
+            `${chains[0]}:${accounts[2]}`,
+          ]),
+        },
+      };
+
+      clients.B.update({
+        topic,
+        namespaces: lastWalletSessionNamespacesValue,
+      });
+      const lastAccountsChangedValue = [`${chains[0]}:${accounts[1]}`];
+
+      clients.B.emit({
+        topic,
+        event: {
+          name: "accountsChanged",
+          data: [`${chains[0]}:${accounts[1]}`],
+        },
+        chainId: "eip155:1",
+      });
+      await throttle(500);
+      clients.B.emit({
+        topic,
+        event: {
+          name: "accountsChanged",
+          data: [`${chains[0]}:${accounts[2]}`],
+        },
+        chainId: "eip155:1",
+      });
+      await throttle(500);
+      clients.B.emit({
+        topic,
+        event: {
+          name: "accountsChanged",
+          data: lastAccountsChangedValue,
+        },
+        chainId: "eip155:1",
+      });
+
+      await throttle(500);
+      // restart the client
+      clients.A = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS_A,
+        storageOptions: { database: db_a },
+      });
+      let lastAccountEvent: any;
+      clients.A.on("session_event", (event) => {
+        lastAccountEvent = event.params.event.data;
+      });
+      await throttle(10_000);
+      const session = clients.A.session.get(topic);
+      expect(session).toBeDefined();
+
+      expect(session.namespaces).toEqual(lastWalletSessionNamespacesValue);
+      expect(lastAccountEvent).toEqual(lastAccountsChangedValue);
+
+      await deleteClients(clients);
     });
   });
 });
