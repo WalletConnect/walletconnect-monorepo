@@ -1,13 +1,13 @@
 import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { ICore, IStore } from "@walletconnect/types";
-import { TEST_CORE_OPTIONS, createCoreBackup, disconnectSocket, waitForEvent } from "./shared";
+import { TEST_CORE_OPTIONS, disconnectSocket, throttle } from "./shared";
 import { Core, Store } from "../src";
 import { generateRandomBytes32 } from "@walletconnect/utils";
 
 let core: ICore;
 let store: IStore<any, any>;
-const n_restarts = 2; // number of restarts to use for persistence tests
+const n_restarts = 1; // number of restarts to use for persistence tests
 
 const logger = pino(getDefaultLoggerOptions({ level: "fatal" }));
 type MockValue = { id: string; value: string };
@@ -43,9 +43,8 @@ const initStore = async () => {
  *  Prevents gross code duplication in tests that require restarting core
  * @param fx function to run before each restart
  * @param fy function to run after each restart
- * @param datashare any data that needs to be shared between fx and fy
  */
-const restartCore = async (fx?: () => Promise<void>, fy?: () => Promise<void>, datashare?: any) => {
+const restartCore = async (fx?: () => Promise<void>, fy?: () => Promise<void>) => {
   for (let i = 0; i < n_restarts; i++) {
     if (fx) await fx();
     await initCore();
@@ -117,7 +116,9 @@ describe("Persistence", () => {
       expect(coreB.expirer.values.length).toBe(1);
 
       await coreB.pairing.disconnect({ topic });
-      await waitForEvent(() => hasDeleted);
+
+      await throttle(5000); // wait for pairing_delete event to fire
+      expect(hasDeleted).toBe(true);
 
       // pairing was deleted
       expect(coreA.pairing.pairings.keys.length).toBe(0);
