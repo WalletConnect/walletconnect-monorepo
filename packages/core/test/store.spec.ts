@@ -1,15 +1,8 @@
-import { expect, describe, it, beforeEach, afterEach } from "vitest";
+import { expect, describe, it, beforeEach } from "vitest";
 import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
-import {
-  Core,
-  CORE_STORAGE_PREFIX,
-  RELAYER_PROVIDER_EVENTS,
-  Store,
-  STORE_STORAGE_VERSION,
-} from "../src";
+import { Core, CORE_STORAGE_PREFIX, Store, STORE_STORAGE_VERSION } from "../src";
 import { TEST_CORE_OPTIONS } from "./shared";
 import { ICore, IStore, SessionTypes } from "@walletconnect/types";
-import { generateRandomBytes32 } from "@walletconnect/utils";
 
 const MOCK_STORE_NAME = "mock-entity";
 
