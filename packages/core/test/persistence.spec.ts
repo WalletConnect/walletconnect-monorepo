@@ -1,73 +1,27 @@
 import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
-import { ICore, IStore } from "@walletconnect/types";
-import { TEST_CORE_OPTIONS, disconnectSocket, throttle } from "./shared";
+import { ICore, IStore, CoreTypes } from "@walletconnect/types";
+import {
+  DEFAULT_DB_NAME,
+  MockValue,
+  TEST_CORE_OPTIONS,
+  disconnectSocket,
+  initCore,
+  initStore,
+  restartCore,
+  searchRecords,
+  storeTestValues,
+  throttle,
+} from "./shared";
 import { Core, Store } from "../src";
 import { generateRandomBytes32 } from "@walletconnect/utils";
 
-let core: ICore;
-let store: IStore<any, any>;
-const n_restarts = 1; // number of restarts to use for persistence tests
-
-const logger = pino(getDefaultLoggerOptions({ level: "fatal" }));
-type MockValue = { id: string; value: string };
-const MOCK_STORE_NAME = "persistent-store";
-const storeTestValues = [
-  { id: "1", value: "foo" },
-  { id: "2", value: "bar" },
-  { id: "3", value: "baz" },
-];
-
-const initCore = async (dbName = "persistent-test") => {
-  const coreOptions = {
-    ...TEST_CORE_OPTIONS,
-    storageOptions: { database: `tmp/${dbName}.db` },
-  };
-  core = new Core(coreOptions);
-  await core.start();
-};
-
-const initStore = async () => {
-  store = new Store<string, MockValue>(
-    core,
-    logger,
-    MOCK_STORE_NAME,
-    undefined,
-    (val) => val.value,
-  );
-  await store.init();
-  storeTestValues.forEach((val) => store.set(val.id, val));
-};
-
-/**
- *  Prevents gross code duplication in tests that require restarting core
- * @param fx function to run before each restart
- * @param fy function to run after each restart
- */
-const restartCore = async (fx?: () => Promise<void>, fy?: () => Promise<void>) => {
-  for (let i = 0; i < n_restarts; i++) {
-    if (fx) await fx();
-    await initCore();
-    if (fy) await fy();
-  }
-};
-
-/**
- * Search for a topic in a list of records
- * @param records
- * @param topic
- * @returns true if topic is found, false otherwise
- */
-const searchRecords = (records: any, topic: string) => {
-  for (const [_, record] of records.entries()) {
-    if (record.topic === topic) return true;
-  }
-  return false;
-};
-
 describe("Persistence", () => {
+  let core: ICore;
+  let store: IStore<string, MockValue>;
+
   beforeEach(async () => {
-    await initCore();
+    core = await initCore();
   });
 
   afterEach(async () => {
@@ -75,7 +29,7 @@ describe("Persistence", () => {
   });
 
   it("should persist store values across restarts", async () => {
-    await initStore();
+    store = await initStore(core);
     await restartCore();
     expect(store.getAll()).to.toMatchObject(storeTestValues);
   });
@@ -86,11 +40,8 @@ describe("Persistence", () => {
     const coreB = new Core(TEST_CORE_OPTIONS);
     await coreB.start();
 
-    // --- fx routine ---
-    const fx = undefined; // no fx needed
-
-    // --- fy routine ---
-    const fy = async () => {
+    // --- after restart routine ---
+    const afterRestart = async () => {
       const { uri, topic } = await coreA.pairing.create();
       let hasDeleted = false;
       coreA.pairing.events.on("pairing_delete", () => {
@@ -138,7 +89,7 @@ describe("Persistence", () => {
     };
 
     // start routine
-    await restartCore(fx, fy);
+    await restartCore(undefined, afterRestart);
 
     // final check of pairings
     expect(coreA.pairing.getPairings()).to.deep.equal(coreB.pairing.getPairings());
@@ -149,15 +100,15 @@ describe("Persistence", () => {
     const subscriber = core.relayer.subscriber;
     const datashare = { topic: generateRandomBytes32() };
 
-    // --- fx routine ---
-    const fx = async () => {
+    // --- before core restarts routine ---
+    const beforeRestart = async () => {
       const topic = generateRandomBytes32();
       await subscriber.subscribe(topic);
       datashare.topic = topic;
     };
 
-    // --- fy routine ---
-    const fy = async () => {
+    // --- after core restarts routine ---
+    const afterRestart = async () => {
       // check that the session, topic were restored
       expect(subscriber.subscriptions.size).to.equal(1);
       expect(subscriber.topics).to.contain(datashare.topic);
@@ -170,6 +121,6 @@ describe("Persistence", () => {
     };
 
     // start routine
-    await restartCore(fx, fy);
+    await restartCore(beforeRestart, afterRestart);
   });
 });

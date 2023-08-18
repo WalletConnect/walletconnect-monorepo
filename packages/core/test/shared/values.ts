@@ -16,3 +16,16 @@ export const TEST_CORE_OPTIONS: CoreTypes.Options = {
     database: ":memory:",
   },
 };
+
+// default db name for persistent storage tests
+export const DEFAULT_DB_NAME = "tmp/persistent-test.db";
+
+// default store name for persistent storage tests
+export const MOCK_STORE_NAME = "persistent-store";
+
+// default test values for persistent storage tests
+export const storeTestValues = [
+  { id: "1", value: "foo" },
+  { id: "2", value: "bar" },
+  { id: "3", value: "baz" },
+];
