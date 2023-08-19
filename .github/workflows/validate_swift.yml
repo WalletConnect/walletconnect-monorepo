@@ -17,7 +17,7 @@ jobs:
       group: apple-silicon
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: WalletConnect/WalletConnectSwiftV2
 
