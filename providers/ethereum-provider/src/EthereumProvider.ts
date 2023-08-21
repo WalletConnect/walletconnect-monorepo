@@ -316,8 +316,10 @@ export class EthereumProvider implements IEthereumProvider {
         },
       );
       if (!session) return;
-      this.setChainIds(this.rpc.chains);
+
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
+      // if no required chains are set, use the approved accounts to fetch chainIds
+      this.setChainIds(this.rpc.chains.length ? this.rpc.chains : accounts);
       this.setAccounts(accounts);
       this.events.emit("connect", { chainId: toHexChainId(this.chainId) });
     } catch (error) {
