@@ -55,6 +55,8 @@ export const initStore = async (core: ICore) => {
  * Prevents gross code duplication in tests that require restarting core
  * @param beforeRestart function to run before each restart
  * @param afterRestart function to run after each restart
+ * @param n_restarts number of times to restart core
+ * @param customOpts custom core options
  */
 export const restartCore = async (
   beforeRestart?: () => Promise<void>,
@@ -80,4 +82,15 @@ export const searchRecords = (records: any, topic: string) => {
     if (record.topic === topic) return true;
   }
   return false;
+};
+
+export const waitForEvent = async (checkForEvent: (...args: any[]) => boolean) => {
+  await new Promise((resolve) => {
+    const intervalId = setInterval(() => {
+      if (checkForEvent()) {
+        clearInterval(intervalId);
+        resolve({});
+      }
+    }, 100);
+  });
 };

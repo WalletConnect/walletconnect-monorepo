@@ -1,8 +1,6 @@
 import { expect, describe, it, beforeEach, afterEach } from "vitest";
-import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
-import { ICore, IStore, CoreTypes } from "@walletconnect/types";
+import { ICore, IStore } from "@walletconnect/types";
 import {
-  DEFAULT_DB_NAME,
   MockStoreValue,
   TEST_CORE_OPTIONS,
   disconnectSocket,
@@ -11,9 +9,9 @@ import {
   restartCore,
   searchRecords,
   storeTestValues,
-  throttle,
+  waitForEvent,
 } from "./shared";
-import { Core, Store } from "../src";
+import { Core } from "../src";
 import { generateRandomBytes32 } from "@walletconnect/utils";
 
 describe("Persistence", () => {
@@ -68,8 +66,7 @@ describe("Persistence", () => {
 
       await coreB.pairing.disconnect({ topic });
 
-      await throttle(5000); // wait for pairing_delete event to fire
-      expect(hasDeleted).toBe(true);
+      await waitForEvent(() => hasDeleted);
 
       // pairing was deleted
       expect(coreA.pairing.pairings.keys.length).toBe(0);
