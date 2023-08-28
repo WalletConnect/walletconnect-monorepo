@@ -6,11 +6,11 @@ import { ICore, IStore, SessionTypes } from "@walletconnect/types";
 
 const MOCK_STORE_NAME = "mock-entity";
 
-// TODO: Test persistence behavior
 describe("Store", () => {
   const logger = pino(getDefaultLoggerOptions({ level: "fatal" }));
 
   let core: ICore;
+  type MockValue = { id: string; value: string };
   let store: IStore<any, any>;
 
   beforeEach(async () => {
@@ -27,7 +27,6 @@ describe("Store", () => {
   });
 
   describe("init", () => {
-    type MockValue = { id: string; value: string };
     const ids = ["1", "2", "3", "foo"];
     const STORAGE_KEY = CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME;
 
@@ -160,44 +159,6 @@ describe("Store", () => {
       const filtered = store.getAll({ active: true });
       expect(filtered.length).to.equal(1);
       expect(filtered[0].active).to.equal(true);
-    });
-  });
-  describe("persistence", () => {
-    type MockValue = { id: string; value: string };
-    it("repopulate values with getKey correctly after restart", async () => {
-      const coreOptions = {
-        ...TEST_CORE_OPTIONS,
-        storageOptions: { database: "tmp/store-persistence.db" },
-      };
-      const core = new Core(coreOptions);
-      const store = new Store<string, MockValue>(
-        core,
-        logger,
-        MOCK_STORE_NAME,
-        undefined,
-        (val) => val.value,
-      );
-      await store.init();
-      const values = [
-        { id: "1", value: "foo" },
-        { id: "2", value: "bar" },
-        { id: "3", value: "baz" },
-      ];
-      values.forEach((val) => store.set(val.id, val));
-
-      expect(store.getAll()).to.toMatchObject(values);
-
-      const coreAfter = new Core(coreOptions);
-
-      const storeAfter = new Store<string, MockValue>(
-        coreAfter,
-        logger,
-        MOCK_STORE_NAME,
-        undefined,
-        (val) => val.value,
-      );
-      await storeAfter.init();
-      expect(storeAfter.getAll()).to.toMatchObject(values);
     });
   });
 });

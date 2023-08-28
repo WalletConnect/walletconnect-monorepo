@@ -23,7 +23,7 @@
     "build:types": "tsc",
     "build:source": "rollup --config rollup.config.js",
     "build": "npm run build:pre; npm run build:source; npm run build:types",
-    "test:pre": "rm -rf ./test/test.db",
+    "test:pre": "rm -rf ./test/*.db",
     "test:run": "vitest run --dir test",
     "test": "npm run test:pre; npm run test:run",
     "test:ignoreUnhandled": "npm run test:pre; npm run test:run -- --dangerouslyIgnoreUnhandledErrors",

@@ -1,19 +1,8 @@
 import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { ICore } from "@walletconnect/types";
 import { Core, CORE_PROTOCOL, CORE_VERSION } from "../src";
-import { TEST_CORE_OPTIONS, disconnectSocket } from "./shared";
+import { TEST_CORE_OPTIONS, disconnectSocket, waitForEvent } from "./shared";
 import { generateRandomBytes32 } from "@walletconnect/utils";
-
-const waitForEvent = async (checkForEvent: (...args: any[]) => boolean) => {
-  await new Promise((resolve) => {
-    const intervalId = setInterval(() => {
-      if (checkForEvent()) {
-        clearInterval(intervalId);
-        resolve({});
-      }
-    }, 100);
-  });
-};
 
 const createCoreClients: () => Promise<{ coreA: ICore; coreB: ICore }> = async () => {
   const coreA = new Core(TEST_CORE_OPTIONS);
