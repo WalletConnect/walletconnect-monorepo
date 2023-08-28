@@ -3,7 +3,7 @@ import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { ICore, IStore, CoreTypes } from "@walletconnect/types";
 import {
   DEFAULT_DB_NAME,
-  MockValue,
+  MockStoreValue,
   TEST_CORE_OPTIONS,
   disconnectSocket,
   initCore,
@@ -18,7 +18,7 @@ import { generateRandomBytes32 } from "@walletconnect/utils";
 
 describe("Persistence", () => {
   let core: ICore;
-  let store: IStore<string, MockValue>;
+  let store: IStore<string, MockStoreValue>;
 
   beforeEach(async () => {
     core = await initCore();
@@ -34,9 +34,9 @@ describe("Persistence", () => {
     expect(store.getAll()).to.toMatchObject(storeTestValues);
   });
 
-  it("should persist store values of PAIRS across restarts", async () => {
+  it("should persist store values of PAIRINGS across restarts", async () => {
     // --- setup ---
-    const coreA = core; // allias for clarity
+    const coreA = core; // alias for clarity
     const coreB = new Core(TEST_CORE_OPTIONS);
     await coreB.start();
 

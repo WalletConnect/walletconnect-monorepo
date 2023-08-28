@@ -3,15 +3,7 @@ import { CoreTypes, ICore } from "@walletconnect/types";
 import { DEFAULT_DB_NAME, MOCK_STORE_NAME, TEST_CORE_OPTIONS, storeTestValues } from "./values";
 import { Core, Store } from "../../src";
 
-export type coreStorageData = {
-  storage?: any;
-  histroy?: any;
-  expirer?: any;
-  keychain?: any;
-  pairing?: any;
-  session?: any;
-};
-export type MockValue = { id: string; value: string };
+export type MockStoreValue = { id: string; value: string };
 
 export async function throttle(timeout: number) {
   return await new Promise<void>((resolve) =>
@@ -20,21 +12,6 @@ export async function throttle(timeout: number) {
     }, timeout),
   );
 }
-
-/**
- * Stores any available storage data from the core
- * @param core
- * @returns
- */
-export const createCoreBackup = async (core: ICore): Promise<coreStorageData> => {
-  const data: coreStorageData = {
-    histroy: core.history.records ? core.history.records : undefined,
-    expirer: core.expirer.values ? core.expirer.values : undefined,
-    keychain: core.crypto.keychain.keychain ? core.crypto.keychain.keychain : undefined,
-    pairing: core.pairing.pairings ? core.pairing.pairings.getAll() : undefined,
-  };
-  return data;
-};
 
 /**
  * Initializes a core instance with default options
@@ -62,7 +39,7 @@ export const initCore = async (
 export const initStore = async (core: ICore) => {
   const logger = pino(getDefaultLoggerOptions({ level: "fatal" }));
 
-  const store = new Store<string, MockValue>(
+  const store = new Store<string, MockStoreValue>(
     core,
     logger,
     MOCK_STORE_NAME,
