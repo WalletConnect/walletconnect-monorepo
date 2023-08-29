@@ -11,7 +11,7 @@ import {
   _bytecode,
 } from "ethereum-test-network/lib/utils/ERC20Token__factory";
 import { WalletClient } from "./shared";
-import EthereumProvider, { OPTIONAL_METHODS } from "../src";
+import EthereumProvider, { OPTIONAL_EVENTS, OPTIONAL_METHODS } from "../src";
 import {
   CHAIN_ID,
   PORT,
@@ -445,6 +445,8 @@ describe("EthereumProvider", function () {
         new Promise<void>((resolve) => {
           walletClient.on("session_proposal", async (proposal) => {
             expect(proposal.params.optionalNamespaces.eip155.methods).to.eql(OPTIONAL_METHODS);
+            expect(proposal.params.optionalNamespaces.eip155.events).to.eql(OPTIONAL_EVENTS);
+
             await walletClient.approve({
               id: proposal.id,
               namespaces: {
