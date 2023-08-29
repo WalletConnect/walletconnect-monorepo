@@ -19,4 +19,10 @@ export const OPTIONAL_METHODS = [
   "wallet_scanQRCode",
 ];
 export const REQUIRED_EVENTS = ["chainChanged", "accountsChanged"];
-export const OPTIONAL_EVENTS = ["message", "disconnect", "connect"];
+export const OPTIONAL_EVENTS = [
+  "chainChanged",
+  "accountsChanged",
+  "message",
+  "disconnect",
+  "connect",
+];
