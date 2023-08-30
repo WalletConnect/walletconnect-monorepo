@@ -111,8 +111,6 @@ class SolanaProvider implements IProvider {
     chainId: string,
     rpcUrl?: string | undefined,
   ): JsonRpcProvider | undefined {
-    console.log("createHttpProvider", chainId, rpcUrl);
-
     const rpc = rpcUrl || getRpcUrl(chainId, this.namespace, this.client.core.projectId);
     if (!rpc) {
       throw new Error(`No RPC url provided for chainId: ${chainId}`);
