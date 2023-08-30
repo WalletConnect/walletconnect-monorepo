@@ -47,15 +47,10 @@ class MultiversXProvider implements IProvider {
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
     // http provider exists so just set the chainId
     if (!this.httpProviders[chainId]) {
-      const rpc =
-        rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace, this.client.core.projectId);
-      if (!rpc) {
-        throw new Error(`No RPC url provided for chainId: ${chainId}`);
-      }
-      this.setHttpProvider(chainId, rpc);
+      this.setHttpProvider(chainId, rpcUrl);
     }
     this.chainId = chainId;
-    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${this.chainId}`);
+    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${chainId}`);
   }
 
   public getDefaultChain(): string {
@@ -116,7 +111,9 @@ class MultiversXProvider implements IProvider {
     rpcUrl?: string | undefined,
   ): JsonRpcProvider | undefined {
     const rpc = rpcUrl || getRpcUrl(chainId, this.namespace, this.client.core.projectId);
-    if (typeof rpc === "undefined") return undefined;
+    if (!rpc) {
+      throw new Error(`No RPC url provided for chainId: ${chainId}`);
+    }
     const http = new JsonRpcProvider(new HttpConnection(rpc, getGlobal("disableProviderPing")));
     return http;
   }
