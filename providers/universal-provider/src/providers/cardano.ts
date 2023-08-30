@@ -11,7 +11,7 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getGlobal } from "../utils";
+import { getChainId, getGlobal } from "../utils";
 
 class CardanoProvider implements IProvider {
   public name = "cip34";
@@ -86,7 +86,8 @@ class CardanoProvider implements IProvider {
     const http = {};
     this.namespace.chains.forEach((chain) => {
       const rpcURL = this.getCardanoRPCUrl(chain);
-      http[chain] = this.createHttpProvider(chain, rpcURL);
+      const parsedChain = getChainId(chain);
+      http[parsedChain] = this.createHttpProvider(parsedChain, rpcURL);
     });
     return http;
   }

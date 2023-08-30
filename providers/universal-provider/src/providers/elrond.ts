@@ -11,7 +11,7 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getGlobal, getRpcUrl } from "../utils";
+import { getChainId, getGlobal, getRpcUrl } from "../utils";
 
 // Old wallet connect provider for Elrond
 class ElrondProvider implements IProvider {
@@ -86,7 +86,8 @@ class ElrondProvider implements IProvider {
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      http[chain] = this.createHttpProvider(chain, this.namespace.rpcMap?.[chain]);
+      const parsedChainId = getChainId(chain);
+      http[parsedChainId] = this.createHttpProvider(parsedChainId, this.namespace.rpcMap?.[chain]);
     });
     return http;
   }

@@ -12,7 +12,7 @@ import {
   SubProviderOpts,
 } from "../types";
 
-import { getGlobal, getRpcUrl } from "../utils";
+import { getChainId, getGlobal, getRpcUrl } from "../utils";
 
 class PolkadotProvider implements IProvider {
   public name = "polkadot";
@@ -85,7 +85,8 @@ class PolkadotProvider implements IProvider {
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      http[chain] = this.createHttpProvider(chain, this.namespace.rpcMap?.[chain]);
+      const parsedChainId = getChainId(chain);
+      http[parsedChainId] = this.createHttpProvider(parsedChainId, this.namespace.rpcMap?.[chain]);
     });
     return http;
   }

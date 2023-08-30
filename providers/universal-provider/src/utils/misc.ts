@@ -18,8 +18,8 @@ export function getRpcUrl(chainId: string, rpc: Namespace, projectId?: string): 
   );
 }
 
-export function getChainId(chain: string): number {
-  return chain.includes("eip155") ? Number(chain.split(":")[1]) : Number(chain);
+export function getChainId(chain: string): string {
+  return chain.includes(":") ? chain.split(":")[1] : chain;
 }
 
 export function validateChainApproval(chain: string, chains: string[]): void {
