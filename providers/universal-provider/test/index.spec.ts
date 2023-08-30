@@ -8,7 +8,13 @@ import {
   _abi,
   _bytecode,
 } from "ethereum-test-network/lib/utils/ERC20Token__factory";
-import { deleteProviders, disconnectSocket, testConnectMethod, WalletClient } from "./shared";
+import {
+  deleteProviders,
+  disconnectSocket,
+  testConnectMethod,
+  throttle,
+  WalletClient,
+} from "./shared";
 import UniversalProvider from "../src";
 import {
   CHAIN_ID,
@@ -72,7 +78,7 @@ describe("UniversalProvider", function () {
       }),
     ]);
     expect(walletClient.client?.session.values.length).to.eql(0);
-
+    await throttle(1_000);
     await provider.client.core.relayer.transportClose();
     await walletClient.client?.core.relayer.transportClose();
   });
