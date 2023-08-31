@@ -172,7 +172,9 @@ export function buildNamespaces(params: NamespacesParams): {
         required.methods.concat(optionalMethods?.length ? optionalMethods : OPTIONAL_METHODS),
       ),
     ],
-    events: [...new Set(required.events.concat(optionalEvents || OPTIONAL_EVENTS))],
+    events: [
+      ...new Set(required.events.concat(optionalEvents?.length ? optionalEvents : OPTIONAL_EVENTS)),
+    ],
     rpcMap,
   };
 

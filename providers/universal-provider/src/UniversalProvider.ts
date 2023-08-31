@@ -3,6 +3,7 @@ import { SessionTypes } from "@walletconnect/types";
 import { getSdkError, isValidArray, parseNamespaceKey } from "@walletconnect/utils";
 import { getDefaultLoggerOptions, Logger, pino } from "@walletconnect/logger";
 import {
+  convertChainIdToNumber,
   getAccountsFromSession,
   getChainsFromApprovedSession,
   mergeRequiredOptionalNamespaces,
@@ -351,7 +352,16 @@ export class UniversalProvider implements IUniversalProvider {
         if (accounts && isValidArray(accounts))
           this.events.emit("accountsChanged", accounts.map(parseCaip10Account));
       } else if (event.name === "chainChanged") {
-        this.onChainChanged(params.chainId);
+        const requestChainId = params.chainId;
+        const payloadChainId = params.event.data as number;
+        const namespace = parseNamespaceKey(requestChainId);
+        // chainIds might differ between the request & payload - request is always in CAIP2 format, while payload might be string, number, CAIP2 or hex
+        // take priority of the payload chainId
+        const chainIdToProcess =
+          convertChainIdToNumber(requestChainId) !== convertChainIdToNumber(payloadChainId)
+            ? `${namespace}:${convertChainIdToNumber(payloadChainId)}`
+            : requestChainId;
+        this.onChainChanged(chainIdToProcess);
       } else {
         this.events.emit(event.name, event.data);
       }
