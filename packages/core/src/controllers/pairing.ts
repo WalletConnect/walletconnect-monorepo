@@ -44,6 +44,7 @@ import {
   PAIRING_RPC_OPTS,
   RELAYER_EVENTS,
   EXPIRER_EVENTS,
+  PAIRING_EVENTS,
 } from "../constants";
 import { Store } from "../controllers/store";
 
@@ -112,11 +113,12 @@ export class Pairing implements IPairing {
     const { topic, symKey, relay } = parseUri(params.uri);
 
     if (this.pairings.keys.includes(topic)) {
-      throw new Error(`Pairing already exists: ${topic}`);
-    }
-
-    if (this.core.crypto.hasKeys(topic)) {
-      throw new Error(`Keychain already exists: ${topic}`);
+      const existingPairing = this.pairings.get(topic);
+      if (existingPairing.active) {
+        throw new Error(
+          `Pairing already exists: ${topic}. Please try again with new connection URI.`,
+        );
+      }
     }
 
     const expiry = calcExpiry(FIVE_MINUTES);
@@ -129,7 +131,7 @@ export class Pairing implements IPairing {
     if (params.activatePairing) {
       await this.activate({ topic });
     }
-
+    this.events.emit(PAIRING_EVENTS.create, pairing);
     return pairing;
   };
 
@@ -298,7 +300,7 @@ export class Pairing implements IPairing {
     try {
       this.isValidPing({ topic });
       await this.sendResult<"wc_pairingPing">(id, topic, true);
-      this.events.emit("pairing_ping", { id, topic });
+      this.events.emit(PAIRING_EVENTS.ping, { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.logger.error(err);
@@ -326,7 +328,7 @@ export class Pairing implements IPairing {
     try {
       this.isValidDisconnect({ topic });
       await this.deletePairing(topic);
-      this.events.emit("pairing_delete", { id, topic });
+      this.events.emit(PAIRING_EVENTS.delete, { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.logger.error(err);
@@ -362,12 +364,10 @@ export class Pairing implements IPairing {
   private registerExpirerEvents() {
     this.core.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
       const { topic } = parseExpirerTarget(event.target);
-      if (topic) {
-        if (this.pairings.keys.includes(topic)) {
-          await this.deletePairing(topic, true);
-          this.events.emit("pairing_expire", { topic });
-        }
-      }
+      if (!topic) return;
+      if (!this.pairings.keys.includes(topic)) return;
+      await this.deletePairing(topic, true);
+      this.events.emit(PAIRING_EVENTS.expire, { topic });
     });
   }
 
