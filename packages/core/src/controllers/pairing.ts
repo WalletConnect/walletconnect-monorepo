@@ -111,9 +111,9 @@ export class Pairing implements IPairing {
     this.isInitialized();
     this.isValidPair(params);
     const { topic, symKey, relay } = parseUri(params.uri);
-
+    let existingPairing;
     if (this.pairings.keys.includes(topic)) {
-      const existingPairing = this.pairings.get(topic);
+      existingPairing = this.pairings.get(topic);
       if (existingPairing.active) {
         throw new Error(
           `Pairing already exists: ${topic}. Please try again with new connection URI.`,
@@ -121,16 +121,21 @@ export class Pairing implements IPairing {
       }
     }
 
+    // avoid overwriting keychain pairing already exists
+    if (!this.core.crypto.keychain.has(topic)) {
+      await this.core.crypto.setSymKey(symKey, topic);
+      await this.core.relayer.subscribe(topic, { relay });
+    }
+
     const expiry = calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false };
     await this.pairings.set(topic, pairing);
-    await this.core.crypto.setSymKey(symKey, topic);
-    await this.core.relayer.subscribe(topic, { relay });
     this.core.expirer.set(topic, expiry);
 
     if (params.activatePairing) {
       await this.activate({ topic });
     }
+
     this.events.emit(PAIRING_EVENTS.create, pairing);
     return pairing;
   };
