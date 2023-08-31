@@ -3,6 +3,7 @@ import {
   isCaipNamespace,
   isValidObject,
   mergeArrays,
+  parseChainId,
   parseNamespaceKey,
 } from "@walletconnect/utils";
 import { RPC_URL } from "../constants";
@@ -10,20 +11,15 @@ import { Namespace, NamespaceConfig } from "../types";
 import { merge } from "lodash";
 
 export function getRpcUrl(chainId: string, rpc: Namespace, projectId?: string): string | undefined {
-  let rpcUrl: string | undefined;
-  const parsedChainId = getChainId(chainId);
-  if (rpc.rpcMap) {
-    rpcUrl = rpc.rpcMap[parsedChainId];
-  }
-
-  if (!rpcUrl) {
-    rpcUrl = `${RPC_URL}?chainId=eip155:${parsedChainId}&projectId=${projectId}`;
-  }
-  return rpcUrl;
+  const chain = parseChainId(chainId);
+  return (
+    rpc.rpcMap?.[chain.reference] ||
+    `${RPC_URL}?chainId=${chain.namespace}:${chain.reference}&projectId=${projectId}`
+  );
 }
 
-export function getChainId(chain: string): number {
-  return chain.includes("eip155") ? Number(chain.split(":")[1]) : Number(chain);
+export function getChainId(chain: string): string {
+  return chain.includes(":") ? chain.split(":")[1] : chain;
 }
 
 export function validateChainApproval(chain: string, chains: string[]): void {
