@@ -116,7 +116,7 @@ export class Pairing implements IPairing {
       existingPairing = this.pairings.get(topic);
       if (existingPairing.active) {
         throw new Error(
-          `Pairing already exists: ${topic}. Please try again with new connection URI.`,
+          `Pairing already exists: ${topic}. Please try again with a new connection URI.`,
         );
       }
     }
