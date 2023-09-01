@@ -51,3 +51,10 @@ export const PAIRING_RPC_OPTS: Record<
     },
   },
 };
+
+export const PAIRING_EVENTS = {
+  create: "pairing_create",
+  expire: "pairing_expire",
+  delete: "pairing_delete",
+  ping: "pairing_ping",
+};

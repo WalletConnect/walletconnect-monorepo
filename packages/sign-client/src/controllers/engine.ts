@@ -1,5 +1,6 @@
 import {
   EXPIRER_EVENTS,
+  PAIRING_EVENTS,
   RELAYER_DEFAULT_PROTOCOL,
   RELAYER_EVENTS,
   VERIFY_SERVER,
@@ -30,6 +31,7 @@ import {
   ProposalTypes,
   RelayerTypes,
   SessionTypes,
+  PairingTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -114,6 +116,7 @@ export class Engine extends IEngine {
       await this.cleanup();
       this.registerRelayerEvents();
       this.registerExpirerEvents();
+      this.registerPairingEvents();
       this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       this.initialized = true;
 
@@ -1076,6 +1079,38 @@ export class Engine extends IEngine {
       }
     });
   }
+
+  // ---------- Pairing Events ---------------------------------------- //
+  private registerPairingEvents() {
+    this.client.core.pairing.events.on(PAIRING_EVENTS.create, (pairing: PairingTypes.Struct) =>
+      this.onPairingCreated(pairing),
+    );
+  }
+
+  /**
+   * when a pairing is created, we check if there is a pending proposal for it.
+   * if there is, we send it to onSessionProposeRequest to be processed as if it was received from the relay.
+   * It allows QR/URI to be scanned multiple times without having to create new pairing.
+   */
+  private onPairingCreated = (pairing: PairingTypes.Struct) => {
+    if (pairing.active) return;
+    const proposals = this.client.proposal.getAll();
+    const proposal = proposals.find((p) => p.pairingTopic === pairing.topic);
+    if (!proposal) return;
+    this.onSessionProposeRequest(
+      pairing.topic,
+      formatJsonRpcRequest(
+        "wc_sessionPropose",
+        {
+          requiredNamespaces: proposal.requiredNamespaces,
+          optionalNamespaces: proposal.optionalNamespaces,
+          relays: proposal.relays,
+          proposer: proposal.proposer,
+        },
+        proposal.id,
+      ),
+    );
+  };
 
   // ---------- Validation Helpers ------------------------------------ //
   private isValidPairingTopic(topic: any) {

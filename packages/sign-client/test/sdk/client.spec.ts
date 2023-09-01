@@ -5,7 +5,7 @@ import {
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
-import { getSdkError } from "@walletconnect/utils";
+import { getSdkError, parseUri } from "@walletconnect/utils";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 
@@ -23,6 +23,7 @@ import {
   TEST_REQUIRED_NAMESPACES_V2,
   TEST_NAMESPACES_V2,
   initTwoPairedClients,
+  TEST_CONNECT_PARAMS,
 } from "../shared";
 
 describe("Sign Client Integration", () => {
@@ -117,6 +118,55 @@ describe("Sign Client Integration", () => {
       expect(sessionAfter.pairingTopic).to.eq(pairingAfter.topic);
       expect(clients.A.pairing.getAll().length).to.eq(1);
       await deleteClients(clients);
+    });
+    it("should emit session_proposal on every pair attempt with same URI as long as the proposal has not yet been approved or rejected", async () => {
+      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+      const wallet = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "wallet" });
+      const { uri, approval } = await dapp.connect(TEST_CONNECT_PARAMS);
+      if (!uri) throw new Error("URI is undefined");
+      expect(uri).to.exist;
+      const parsedUri = parseUri(uri);
+
+      // 1. attempt to pair
+      // 2. receive the session_proposal event
+      // 3. avoid approving or rejecting the proposal - simulates accidental closing of the app/modal etc
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          wallet.once("session_proposal", (params) => {
+            expect(params).to.exist;
+            expect(params.params.pairingTopic).to.eq(parsedUri.topic);
+            resolve();
+          });
+        }),
+        wallet.pair({ uri }),
+      ]);
+      // 4. attempt to pair again with the same URI
+      // 5. receive the session_proposal event again
+      // 6. approve the proposal
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          wallet.once("session_proposal", async (params) => {
+            expect(params).to.exist;
+            expect(params.params.pairingTopic).to.eq(parsedUri.topic);
+            await wallet.approve({ id: params.id, namespaces: TEST_NAMESPACES });
+            resolve();
+          });
+        }),
+        new Promise<void>(async (resolve) => {
+          const session = await approval();
+          expect(session).to.exist;
+          expect(session.topic).to.exist;
+          expect(session.pairingTopic).to.eq(parsedUri.topic);
+          resolve();
+        }),
+        wallet.pair({ uri }),
+      ]);
+
+      // 7. attempt to pair again with the same URI
+      // 8. should receive an error the pairing already exists
+      await expect(wallet.pair({ uri })).rejects.toThrowError();
+
+      await deleteClients({ A: dapp, B: wallet });
     });
   });
 
