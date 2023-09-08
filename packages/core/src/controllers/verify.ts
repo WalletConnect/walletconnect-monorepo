@@ -54,8 +54,8 @@ export class Verify extends IVerify {
     try {
       await this.createIframe();
     } catch (error) {
-      this.logger.error(`Verify iframe failed to load: ${this.verifyUrl}`);
-      this.logger.error(error);
+      this.logger.warn(`Verify iframe failed to load: ${this.verifyUrl}`);
+      this.logger.warn(error);
       // if the fallback url fails to load as well, disable verify
       this.verifyDisabled = true;
     }
