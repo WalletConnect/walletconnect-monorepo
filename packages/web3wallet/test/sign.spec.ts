@@ -55,6 +55,7 @@ describe("Sign Integration", () => {
         wallet.on("session_proposal", async (sessionProposal) => {
           const { id, params, verifyContext } = sessionProposal;
           expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+          expect(verifyContext.verified.isScam).to.eq(undefined);
           session = await wallet.approveSession({
             id,
             namespaces: TEST_NAMESPACES,
