@@ -73,7 +73,7 @@ export class Verify extends IVerify {
   public resolve: IVerify["resolve"] = async (params) => {
     if (this.isDevEnv) return "";
     const mainUrl = params?.verifyUrl || VERIFY_SERVER;
-    let result = "";
+    let result;
     try {
       result = await this.fetchAttestation(params.attestationId, mainUrl);
     } catch (error) {
@@ -98,7 +98,7 @@ export class Verify extends IVerify {
       signal: this.abortController.signal,
     });
     clearTimeout(timeout);
-    return result.status === 200 ? (await result.json())?.origin : "";
+    return result.status === 200 ? await result.json() : undefined;
   };
 
   private addToQueue = (attestationId: string) => {
