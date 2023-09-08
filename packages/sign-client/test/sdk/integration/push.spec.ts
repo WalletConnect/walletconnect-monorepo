@@ -38,6 +38,8 @@ describe("Push", () => {
 
     // Validate webhook was called
     const res = await axios.get(url);
+    expect(res.data.payload.payload.topic).to.eql(sessionA.topic);
+    expect(res.data.payload.payload.flags).to.eql(2);
     expect(res.status).to.eql(200);
   });
   afterEach(async () => {

@@ -1,5 +1,6 @@
 import {
   EXPIRER_EVENTS,
+  PAIRING_EVENTS,
   RELAYER_DEFAULT_PROTOCOL,
   RELAYER_EVENTS,
   VERIFY_SERVER,
@@ -30,6 +31,7 @@ import {
   ProposalTypes,
   RelayerTypes,
   SessionTypes,
+  PairingTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -64,6 +66,7 @@ import {
   parseExpirerTarget,
   TYPE_1,
   handleDeeplinkRedirect,
+  MemoryStore,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -102,11 +105,6 @@ export class Engine extends IEngine {
     queue: [],
   };
 
-  /**
-   * these requests must be processed in strict order to avoid inconsistent state between peers
-   */
-  private requestsProcessedInStrictOrder = ["wc_sessionUpdate", "wc_sessionEvent"];
-
   private requestQueueDelay = ONE_SECOND;
 
   constructor(client: IEngine["client"]) {
@@ -118,6 +116,7 @@ export class Engine extends IEngine {
       await this.cleanup();
       this.registerRelayerEvents();
       this.registerExpirerEvents();
+      this.registerPairingEvents();
       this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       this.initialized = true;
 
@@ -647,40 +646,26 @@ export class Engine extends IEngine {
 
   private onRelayEventRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
     this.requestQueue.queue.push(event);
+    await this.processRequestsQueue();
+  };
+
+  private processRequestsQueue = async () => {
     if (this.requestQueue.state === ENGINE_QUEUE_STATES.active) {
       this.client.logger.info(`Request queue already active, skipping...`);
       return;
     }
+
     this.client.logger.info(
       `Request queue starting with ${this.requestQueue.queue.length} requests`,
     );
-    // holds the last request id for each method
-    // so we can discard requests out of sync
-    const lastRequestMapping = {};
+
     while (this.requestQueue.queue.length > 0) {
       this.requestQueue.state = ENGINE_QUEUE_STATES.active;
       const request = this.requestQueue.queue.shift();
-      if (!request) {
-        continue;
-      }
-      const method = request.payload.method;
+      if (!request) continue;
 
-      // if the queue already processed a request with the same method in this cycle, check the timestamp from the IDs
-      // we want to process only the latest request for each method
-      // client <-> client rpc ID is timestamp + 3 random digits
-      if (
-        this.requestsProcessedInStrictOrder.includes(method) &&
-        lastRequestMapping[method] &&
-        parseInt(request.payload.id.toString().slice(0, -3)) <=
-          parseInt(lastRequestMapping[method].toString().slice(0, -3))
-      ) {
-        this.client.logger.info(`Discarding out of sync request - ${request.payload.id}`);
-        continue;
-      }
-
-      lastRequestMapping[method] = request.payload.id;
       try {
-        this.processRequestsQueue(request);
+        this.processRequest(request);
         // small delay to allow for any async tasks to complete
         await new Promise((resolve) => setTimeout(resolve, 300));
       } catch (error) {
@@ -690,7 +675,7 @@ export class Engine extends IEngine {
     this.requestQueue.state = ENGINE_QUEUE_STATES.idle;
   };
 
-  private processRequestsQueue: EnginePrivate["onRelayEventRequest"] = (event) => {
+  private processRequest: EnginePrivate["onRelayEventRequest"] = (event) => {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
     switch (reqMethod) {
@@ -877,14 +862,30 @@ export class Engine extends IEngine {
   ) => {
     const { params, id } = payload;
     try {
+      const memoryKey = `${topic}_session_update`;
+      // compare the current request id with the last processed session update
+      // we want to update only if the request is newer than the last processed one
+      const lastSessionUpdateId = MemoryStore.get<number>(memoryKey);
+      if (lastSessionUpdateId && this.isRequestOutOfSync(lastSessionUpdateId, id)) {
+        this.client.logger.info(`Discarding out of sync request - ${id}`);
+        return;
+      }
+
       this.isValidUpdate({ topic, ...params });
       await this.client.session.update(topic, { namespaces: params.namespaces });
       await this.sendResult<"wc_sessionUpdate">({ id, topic, result: true });
       this.client.events.emit("session_update", { id, topic, params });
+      MemoryStore.set(memoryKey, id);
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
     }
+  };
+
+  // compares the timestamp of the last processed request with the current request
+  // client <-> client rpc ID is timestamp + 3 random digits
+  private isRequestOutOfSync = (lastId: number, currentId: number) => {
+    return parseInt(currentId.toString().slice(0, -3)) <= parseInt(lastId.toString().slice(0, -3));
   };
 
   private onSessionUpdateResponse: EnginePrivate["onSessionUpdateResponse"] = (_topic, payload) => {
@@ -999,8 +1000,20 @@ export class Engine extends IEngine {
   ) => {
     const { id, params } = payload;
     try {
+      // similar to session update, we want to discard out of sync requests
+      // additionally we have to check the event type as well e.g. chainChanged/accountsChanged
+      const memoryKey = `${topic}_session_event_${params.event.name}`;
+      // compare the current request id with the last processed session update
+      // we want to update only if the request is newer than the last processed one
+      const lastSessionUpdateId = MemoryStore.get<number>(memoryKey);
+      if (lastSessionUpdateId && this.isRequestOutOfSync(lastSessionUpdateId, id)) {
+        this.client.logger.info(`Discarding out of sync request - ${id}`);
+        return;
+      }
+
       this.isValidEmit({ topic, ...params });
       this.client.events.emit("session_event", { id, topic, params });
+      MemoryStore.set(memoryKey, id);
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
@@ -1066,6 +1079,38 @@ export class Engine extends IEngine {
       }
     });
   }
+
+  // ---------- Pairing Events ---------------------------------------- //
+  private registerPairingEvents() {
+    this.client.core.pairing.events.on(PAIRING_EVENTS.create, (pairing: PairingTypes.Struct) =>
+      this.onPairingCreated(pairing),
+    );
+  }
+
+  /**
+   * when a pairing is created, we check if there is a pending proposal for it.
+   * if there is, we send it to onSessionProposeRequest to be processed as if it was received from the relay.
+   * It allows QR/URI to be scanned multiple times without having to create new pairing.
+   */
+  private onPairingCreated = (pairing: PairingTypes.Struct) => {
+    if (pairing.active) return;
+    const proposals = this.client.proposal.getAll();
+    const proposal = proposals.find((p) => p.pairingTopic === pairing.topic);
+    if (!proposal) return;
+    this.onSessionProposeRequest(
+      pairing.topic,
+      formatJsonRpcRequest(
+        "wc_sessionPropose",
+        {
+          requiredNamespaces: proposal.requiredNamespaces,
+          optionalNamespaces: proposal.optionalNamespaces,
+          relays: proposal.relays,
+          proposer: proposal.proposer,
+        },
+        proposal.id,
+      ),
+    );
+  };
 
   // ---------- Validation Helpers ------------------------------------ //
   private isValidPairingTopic(topic: any) {

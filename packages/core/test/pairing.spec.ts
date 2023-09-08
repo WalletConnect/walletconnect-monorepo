@@ -1,19 +1,8 @@
 import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { ICore } from "@walletconnect/types";
 import { Core, CORE_PROTOCOL, CORE_VERSION } from "../src";
-import { TEST_CORE_OPTIONS, disconnectSocket } from "./shared";
+import { TEST_CORE_OPTIONS, disconnectSocket, waitForEvent } from "./shared";
 import { generateRandomBytes32 } from "@walletconnect/utils";
-
-const waitForEvent = async (checkForEvent: (...args: any[]) => boolean) => {
-  await new Promise((resolve) => {
-    const intervalId = setInterval(() => {
-      if (checkForEvent()) {
-        clearInterval(intervalId);
-        resolve({});
-      }
-    }, 100);
-  });
-};
 
 const createCoreClients: () => Promise<{ coreA: ICore; coreB: ICore }> = async () => {
   const coreA = new Core(TEST_CORE_OPTIONS);
@@ -75,19 +64,20 @@ describe("Pairing", () => {
 
     it("throws when pairing is attempted on topic that already exists", async () => {
       const { topic, uri } = await coreA.pairing.create();
+      coreA.pairing.pairings.get(topic).active = true;
       await expect(coreA.pairing.pair({ uri })).rejects.toThrowError(
         `Pairing already exists: ${topic}`,
       );
     });
 
-    it("throws when keychain already exists", async () => {
-      const maliciousTopic = generateRandomBytes32();
+    it("should not override existing keychain values", async () => {
+      const keychainTopic = generateRandomBytes32();
+      const keychainValue = generateRandomBytes32();
       let { topic, uri } = await coreA.pairing.create();
-      coreA.crypto.keychain.set(maliciousTopic, maliciousTopic);
-      uri = uri.replace(topic, maliciousTopic);
-      await expect(coreA.pairing.pair({ uri })).rejects.toThrowError(
-        `Keychain already exists: ${maliciousTopic}`,
-      );
+      coreA.crypto.keychain.set(keychainTopic, keychainValue);
+      uri = uri.replace(topic, keychainTopic);
+      await coreA.pairing.pair({ uri });
+      expect(coreA.crypto.keychain.get(keychainTopic)).toBe(keychainValue);
     });
   });
 
