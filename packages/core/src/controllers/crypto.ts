@@ -106,7 +106,8 @@ export class Crypto implements ICrypto {
   public encode: ICrypto["encode"] = async (topic, payload, opts) => {
     this.isInitialized();
     const params = validateEncoding(opts);
-    const message = safeJsonStringify(payload);
+    const protectedPayload = { topic, ...payload };
+    const message = safeJsonStringify(protectedPayload);
     if (isTypeOneEnvelope(params)) {
       const selfPublicKey = params.senderPublicKey;
       const peerPublicKey = params.receiverPublicKey;
@@ -130,6 +131,9 @@ export class Crypto implements ICrypto {
       const symKey = this.getSymKey(topic);
       const message = decrypt({ symKey, encoded });
       const payload = safeJsonParse(message);
+      if (typeof payload.topic !== "undefined" && payload.topic !== topic) {
+        throw new Error("Mismatched topic decoded from message");
+      }
       return payload;
     } catch (error) {
       this.logger.error(
