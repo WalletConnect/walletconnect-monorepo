@@ -42,8 +42,8 @@ export class Verify extends IVerify {
     try {
       await this.createIframe();
     } catch (error) {
-      this.logger.warn(`Verify iframe failed to load: ${this.verifyUrl}`);
-      this.logger.warn(error);
+      this.logger.info(`Verify iframe failed to load: ${this.verifyUrl}`);
+      this.logger.info(error);
     }
 
     if (this.initialized) return;
@@ -54,8 +54,8 @@ export class Verify extends IVerify {
     try {
       await this.createIframe();
     } catch (error) {
-      this.logger.warn(`Verify iframe failed to load: ${this.verifyUrl}`);
-      this.logger.warn(error);
+      this.logger.info(`Verify iframe failed to load: ${this.verifyUrl}`);
+      this.logger.info(error);
       // if the fallback url fails to load as well, disable verify
       this.verifyDisabled = true;
     }
@@ -77,10 +77,10 @@ export class Verify extends IVerify {
     try {
       result = await this.fetchAttestation(params.attestationId, mainUrl);
     } catch (error) {
-      this.logger.warn(
+      this.logger.info(
         `failed to resolve attestation: ${params.attestationId} from url: ${mainUrl}`,
       );
-      this.logger.warn(error);
+      this.logger.info(error);
       result = await this.fetchAttestation(params.attestationId, VERIFY_FALLBACK_SERVER);
     }
     return result;

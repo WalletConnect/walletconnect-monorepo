@@ -1457,7 +1457,7 @@ export class Engine extends IEngine {
           result.origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
       }
     } catch (e) {
-      this.client.logger.error(e);
+      this.client.logger.info(e);
     }
 
     this.client.logger.info(`Verify context: ${JSON.stringify(context)}`);
