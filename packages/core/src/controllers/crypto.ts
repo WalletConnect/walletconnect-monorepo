@@ -131,7 +131,7 @@ export class Crypto implements ICrypto {
       const symKey = this.getSymKey(topic);
       const message = decrypt({ symKey, encoded });
       const payload = safeJsonParse(message);
-      if (typeof payload.topic !== "undefined" && payload.topic !== topic) {
+      if (typeof payload.topic !== "undefined") {
         if (payload.topic !== topic) {
           throw new Error("Mismatched topic decoded from message");
         }
