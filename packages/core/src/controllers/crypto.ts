@@ -106,13 +106,13 @@ export class Crypto implements ICrypto {
   public encode: ICrypto["encode"] = async (topic, payload, opts) => {
     this.isInitialized();
     const params = validateEncoding(opts);
-    const protectedPayload = { topic, ...payload };
-    const message = safeJsonStringify(protectedPayload);
     if (isTypeOneEnvelope(params)) {
       const selfPublicKey = params.senderPublicKey;
       const peerPublicKey = params.receiverPublicKey;
       topic = await this.generateSharedKey(selfPublicKey, peerPublicKey);
     }
+    const protectedPayload = { topic, ...payload };
+    const message = safeJsonStringify(protectedPayload);
     const symKey = this.getSymKey(topic);
     const { type, senderPublicKey } = params;
     const result = encrypt({ type, symKey, message, senderPublicKey });
