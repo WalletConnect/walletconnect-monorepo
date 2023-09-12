@@ -76,7 +76,7 @@ export class UniversalProvider implements IUniversalProvider {
       throw new Error("Please call connect() before request()");
     }
 
-    return await this.getProvider(namespace).request({      
+    return await this.getProvider(namespace).request({
       request: {
         ...args,
       },
