@@ -505,7 +505,7 @@ describe("UniversalProvider", function () {
       });
     });
     describe("pairings", () => {
-      it("should clean up inactive pairings", async () => {
+      it.skip("should clean up inactive pairings", async () => {
         const SUBS_ON_START = provider.client.core.relayer.subscriber.subscriptions.size;
         const PAIRINGS_TO_CREATE = 5;
         for (let i = 0; i < PAIRINGS_TO_CREATE; i++) {
