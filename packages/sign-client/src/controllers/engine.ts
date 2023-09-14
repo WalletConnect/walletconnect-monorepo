@@ -524,11 +524,12 @@ export class Engine extends IEngine {
     pendingRequest: PendingRequestTypes.Struct,
   ) => {
     const expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl;
-    const { id, topic, params } = pendingRequest;
+    const { id, topic, params, verifyContext } = pendingRequest;
     await this.client.pendingRequest.set(id, {
       id,
       topic,
       params,
+      verifyContext,
     });
     if (expiry) this.client.core.expirer.set(id, calcExpiry(expiry));
   };
@@ -973,9 +974,15 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidRequest({ topic, ...params });
-      await this.setPendingSessionRequest({ id, topic, params });
-      this.addSessionRequestToSessionRequestQueue({ id, topic, params });
-      await this.processSessionRequestQueue();
+      const hash = hashMessage(
+        JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
+      );
+      const session = this.client.session.get(topic);
+      const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
+      const request = { id, topic, params, verifyContext };
+      await this.setPendingSessionRequest(request);
+      this.addSessionRequestToSessionRequestQueue(request);
+      this.processSessionRequestQueue();
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
@@ -1033,7 +1040,7 @@ export class Engine extends IEngine {
     }, toMiliseconds(this.requestQueueDelay));
   };
 
-  private processSessionRequestQueue = async () => {
+  private processSessionRequestQueue = () => {
     if (this.sessionRequestQueue.state === ENGINE_QUEUE_STATES.active) {
       this.client.logger.info("session request queue is already active.");
       return;
@@ -1046,14 +1053,8 @@ export class Engine extends IEngine {
     }
 
     try {
-      const { id, topic, params } = request;
-      const hash = hashMessage(
-        JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
-      );
-      const session = this.client.session.get(topic);
-      const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.active;
-      this.client.events.emit("session_request", { id, topic, params, verifyContext });
+      this.client.events.emit("session_request", request);
     } catch (error) {
       this.client.logger.error(error);
     }
@@ -1446,13 +1447,15 @@ export class Engine extends IEngine {
     };
 
     try {
-      const origin = await this.client.core.verify.resolve({
+      const result = await this.client.core.verify.resolve({
         attestationId: hash,
         verifyUrl: metadata.verifyUrl,
       });
-      if (origin) {
-        context.verified.origin = origin;
-        context.verified.validation = origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
+      if (result) {
+        context.verified.origin = result.origin;
+        context.verified.isScam = result.isScam;
+        context.verified.validation =
+          result.origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
       }
     } catch (e) {
       this.client.logger.info(e);
