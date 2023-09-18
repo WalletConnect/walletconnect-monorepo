@@ -58,7 +58,7 @@ export function subscribeToNetworkChange(callbackHandler: (connected: boolean) =
 }
 
 export function subscribeToBrowserNetworkChange(callbackHandler: (connected: boolean) => void) {
-  if (isBrowser()) {
+  if (!isReactNative() && isBrowser()) {
     window.addEventListener("online", () => callbackHandler(true));
     window.addEventListener("offline", () => callbackHandler(false));
   }
