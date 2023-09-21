@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/types",
   "description": "Typings for WalletConnect Protocol",
-  "version": "2.10.1",
+  "version": "2.10.1-665f0a23",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
