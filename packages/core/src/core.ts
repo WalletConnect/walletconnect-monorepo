@@ -28,6 +28,7 @@ export class Core extends ICore {
   public readonly name: ICore["name"] = CORE_CONTEXT;
   public readonly relayUrl: ICore["relayUrl"];
   public readonly projectId: ICore["projectId"];
+  public readonly customStoragePrefix: ICore["customStoragePrefix"];
   public events: ICore["events"] = new EventEmitter();
   public logger: ICore["logger"];
   public heartbeat: ICore["heartbeat"];
@@ -55,6 +56,7 @@ export class Core extends ICore {
 
     this.projectId = opts?.projectId;
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
+    this.customStoragePrefix = opts?.customStoragePrefix || "";
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger

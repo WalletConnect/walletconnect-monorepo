@@ -66,8 +66,10 @@ export class Subscriber extends ISubscriber {
     return getLoggerContext(this.logger);
   }
 
-  get storageKey(): string {
-    return this.storagePrefix + this.version + "//" + this.name;
+  get storageKey() {
+    return (
+      this.storagePrefix + this.version + this.relayer.core.customStoragePrefix + "//" + this.name
+    );
   }
 
   get length() {
