@@ -345,7 +345,10 @@ export class Engine extends IEngine {
     await this.isValidRequest(params);
     const { chainId, request, topic, expiry } = params;
     const id = payloadId();
-    const { done, resolve, reject } = createDelayedPromise<T>(expiry);
+    const { done, resolve, reject } = createDelayedPromise<T>(
+      expiry,
+      "Request expired. Please try again.",
+    );
     this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
       if (error) reject(error);
       else resolve(result);
