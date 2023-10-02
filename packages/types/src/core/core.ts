@@ -12,7 +12,7 @@ import { Logger } from "@walletconnect/logger";
 import { IVerify } from "./verify";
 export declare namespace CoreTypes {
   interface Options {
-    projectId?: string;
+    projectId: string;
     name?: string;
     relayUrl?: string;
     logger?: string | Logger;
@@ -41,7 +41,7 @@ export abstract class ICore extends IEvents {
   public abstract readonly name: string;
   public abstract readonly context: string;
   public abstract readonly relayUrl?: string;
-  public abstract readonly projectId?: string;
+  public abstract readonly projectId: string;
 
   public abstract logger: Logger;
   public abstract heartbeat: IHeartBeat;
