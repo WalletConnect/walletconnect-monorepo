@@ -145,13 +145,18 @@ export class Relayer extends IRelayer {
 
     if (id) return id;
 
+    let resolvePromise: () => void;
+    const onSubCreated = (subscription: SubscriberTypes.Active) => {
+      if (subscription.topic === topic) {
+        this.subscriber.off(SUBSCRIBER_EVENTS.created, onSubCreated);
+        resolvePromise();
+      }
+    };
+
     await Promise.all([
       new Promise<void>((resolve) => {
-        this.subscriber.once(SUBSCRIBER_EVENTS.created, (subscription: SubscriberTypes.Active) => {
-          if (subscription.topic === topic) {
-            resolve();
-          }
-        });
+        resolvePromise = resolve;
+        this.subscriber.on(SUBSCRIBER_EVENTS.created, onSubCreated);
       }),
       new Promise<void>(async (resolve) => {
         id = await this.subscriber.subscribe(topic, opts);
