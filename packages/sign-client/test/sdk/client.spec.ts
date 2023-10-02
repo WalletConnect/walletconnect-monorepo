@@ -374,7 +374,25 @@ describe("Sign Client Integration", () => {
   });
 
   describe("extend", () => {
-    it("updates session expiry state", async () => {
+    it("updates session expiry state initiated by client A", async () => {
+      const {
+        clients,
+        sessionA: { topic },
+      } = await initTwoPairedClients({}, {}, { logger: "error" });
+      const prevExpiry = clients.A.session.get(topic).expiry;
+      vi.useFakeTimers();
+      // Fast-forward system time by 60 seconds after expiry was first set.
+      vi.setSystemTime(Date.now() + 60_000);
+      const { acknowledged } = await clients.A.extend({
+        topic,
+      });
+      await acknowledged();
+      const updatedExpiry = clients.A.session.get(topic).expiry;
+      expect(updatedExpiry).to.be.greaterThan(prevExpiry);
+      vi.useRealTimers();
+      await deleteClients(clients);
+    });
+    it("updates session expiry state initiated by client B", async () => {
       const {
         clients,
         sessionA: { topic },
