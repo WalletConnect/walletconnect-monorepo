@@ -1340,7 +1340,6 @@ export class Engine extends IEngine {
     }
     const { topic } = params;
     await this.isValidSessionTopic(topic);
-    // TODO(ilja) - check if wallet
   };
 
   private isValidRequest: EnginePrivate["isValidRequest"] = async (params) => {
