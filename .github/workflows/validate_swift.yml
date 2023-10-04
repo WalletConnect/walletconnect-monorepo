@@ -1,0 +1,30 @@
+name: X-Platfrom tests with Swift
+
+on:
+  workflow_dispatch:
+    inputs:
+      jsClientApiHost:
+        description: 'url of an api where js client under test is instantiated'
+        required: true
+        default: 'test-automation-api.walletconnect.com'
+        type: string
+
+jobs:
+  x-platform_tests:
+    permissions:
+      contents: write
+    runs-on:
+      group: apple-silicon
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: WalletConnect/WalletConnectSwiftV2
+
+      - name: Run X-Platfrom tests with Swift
+        uses: ./.github/actions/run_tests_without_building
+        with:
+          type: 'x-platform-protocol-tests'
+          relay-endpoint: ${{ 'relay.walletconnect.com' }}
+          project-id: ${{ secrets.SWIFT_PROJECT_ID }}
+          js-client-api-host: ${{ github.event.inputs.jsClientApiHost }}

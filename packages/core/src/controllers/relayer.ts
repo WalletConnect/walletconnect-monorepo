@@ -145,13 +145,18 @@ export class Relayer extends IRelayer {
 
     if (id) return id;
 
+    let resolvePromise: () => void;
+    const onSubCreated = (subscription: SubscriberTypes.Active) => {
+      if (subscription.topic === topic) {
+        this.subscriber.off(SUBSCRIBER_EVENTS.created, onSubCreated);
+        resolvePromise();
+      }
+    };
+
     await Promise.all([
       new Promise<void>((resolve) => {
-        this.subscriber.once(SUBSCRIBER_EVENTS.created, (subscription: SubscriberTypes.Active) => {
-          if (subscription.topic === topic) {
-            resolve();
-          }
-        });
+        resolvePromise = resolve;
+        this.subscriber.on(SUBSCRIBER_EVENTS.created, onSubCreated);
       }),
       new Promise<void>(async (resolve) => {
         id = await this.subscriber.subscribe(topic, opts);
@@ -373,6 +378,11 @@ export class Relayer extends IRelayer {
   private onProviderErrorHandler = (error: Error) => {
     this.logger.error(error);
     this.events.emit(RELAYER_EVENTS.error, error);
+
+    // close the transport when a fatal error is received as there's no way to recover from it
+    // usual cases are missing/invalid projectId, expired jwt token, invalid origin etc
+    this.logger.info("Fatal socket error received, closing transport");
+    this.transportClose();
   };
 
   private registerProviderListeners = () => {

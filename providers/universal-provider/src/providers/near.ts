@@ -11,10 +11,10 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getChainId, getGlobal, getRpcUrl } from "../utils";
+import { getGlobal, getRpcUrl } from "../utils";
 
-class MultiversXProvider implements IProvider {
-  public name = "multiversx";
+class NearProvider implements IProvider {
+  public name = "near";
   public client: Client;
   public httpProviders: RpcProvidersMap;
   public events: EventEmitter;
@@ -37,6 +37,17 @@ class MultiversXProvider implements IProvider {
     return this.getAccounts();
   }
 
+  public getDefaultChain(): string {
+    if (this.chainId) return this.chainId;
+    if (this.namespace.defaultChain) return this.namespace.defaultChain;
+
+    const chainId = this.namespace.chains[0];
+
+    if (!chainId) throw new Error(`ChainId not found`);
+
+    return chainId.split(":")[1];
+  }
+
   public request<T = unknown>(args: RequestParams): Promise<T> {
     if (this.namespace.methods.includes(args.request.method)) {
       return this.client.request(args as EngineTypes.RequestParams);
@@ -45,25 +56,20 @@ class MultiversXProvider implements IProvider {
   }
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
+    this.chainId = chainId;
     // http provider exists so just set the chainId
     if (!this.httpProviders[chainId]) {
-      this.setHttpProvider(chainId, rpcUrl);
+      const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
+      if (!rpc) {
+        throw new Error(`No RPC url provided for chainId: ${chainId}`);
+      }
+      this.setHttpProvider(chainId, rpc);
     }
-    this.chainId = chainId;
-    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${chainId}`);
+
+    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${this.chainId}`);
   }
 
-  public getDefaultChain(): string {
-    if (this.chainId) return this.chainId;
-    if (this.namespace.defaultChain) return this.namespace.defaultChain;
-
-    const chainId = this.namespace.chains[0];
-    if (!chainId) throw new Error(`ChainId not found`);
-
-    return chainId.split(":")[1];
-  }
-
-  // --------- PRIVATE --------- //
+  // ---------------- PRIVATE ---------------- //
 
   private getAccounts(): string[] {
     const accounts = this.namespace.accounts;
@@ -71,22 +77,19 @@ class MultiversXProvider implements IProvider {
       return [];
     }
 
-    return [
-      ...new Set(
-        accounts
-          // get the accounts from the active chain
-          .filter((account) => account.split(":")[1] === this.chainId.toString())
-          // remove namespace & chainId from the string
-          .map((account) => account.split(":")[2]),
-      ),
-    ];
+    return (
+      accounts
+        // get the accounts from the active chain
+        .filter((account) => account.split(":")[1] === this.chainId.toString())
+        // remove namespace & chainId from the string
+        .map((account) => account.split(":")[2]) || []
+    );
   }
 
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      const parsedChainId = getChainId(chain);
-      http[parsedChainId] = this.createHttpProvider(parsedChainId, this.namespace.rpcMap?.[chain]);
+      http[chain] = this.createHttpProvider(chain, this.namespace.rpcMap?.[chain]);
     });
     return http;
   }
@@ -111,13 +114,11 @@ class MultiversXProvider implements IProvider {
     chainId: string,
     rpcUrl?: string | undefined,
   ): JsonRpcProvider | undefined {
-    const rpc = rpcUrl || getRpcUrl(chainId, this.namespace, this.client.core.projectId);
-    if (!rpc) {
-      throw new Error(`No RPC url provided for chainId: ${chainId}`);
-    }
+    const rpc = rpcUrl || getRpcUrl(chainId, this.namespace);
+    if (typeof rpc === "undefined") return undefined;
     const http = new JsonRpcProvider(new HttpConnection(rpc, getGlobal("disableProviderPing")));
     return http;
   }
 }
 
-export default MultiversXProvider;
+export default NearProvider;

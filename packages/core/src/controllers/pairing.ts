@@ -44,6 +44,7 @@ import {
   PAIRING_RPC_OPTS,
   RELAYER_EVENTS,
   EXPIRER_EVENTS,
+  PAIRING_EVENTS,
 } from "../constants";
 import { Store } from "../controllers/store";
 
@@ -110,26 +111,32 @@ export class Pairing implements IPairing {
     this.isInitialized();
     this.isValidPair(params);
     const { topic, symKey, relay } = parseUri(params.uri);
-
+    let existingPairing;
     if (this.pairings.keys.includes(topic)) {
-      throw new Error(`Pairing already exists: ${topic}`);
+      existingPairing = this.pairings.get(topic);
+      if (existingPairing.active) {
+        throw new Error(
+          `Pairing already exists: ${topic}. Please try again with a new connection URI.`,
+        );
+      }
     }
 
-    if (this.core.crypto.hasKeys(topic)) {
-      throw new Error(`Keychain already exists: ${topic}`);
+    // avoid overwriting keychain pairing already exists
+    if (!this.core.crypto.keychain.has(topic)) {
+      await this.core.crypto.setSymKey(symKey, topic);
+      await this.core.relayer.subscribe(topic, { relay });
     }
 
     const expiry = calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false };
     await this.pairings.set(topic, pairing);
-    await this.core.crypto.setSymKey(symKey, topic);
-    await this.core.relayer.subscribe(topic, { relay });
     this.core.expirer.set(topic, expiry);
 
     if (params.activatePairing) {
       await this.activate({ topic });
     }
 
+    this.events.emit(PAIRING_EVENTS.create, pairing);
     return pairing;
   };
 
@@ -298,7 +305,7 @@ export class Pairing implements IPairing {
     try {
       this.isValidPing({ topic });
       await this.sendResult<"wc_pairingPing">(id, topic, true);
-      this.events.emit("pairing_ping", { id, topic });
+      this.events.emit(PAIRING_EVENTS.ping, { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.logger.error(err);
@@ -326,7 +333,7 @@ export class Pairing implements IPairing {
     try {
       this.isValidDisconnect({ topic });
       await this.deletePairing(topic);
-      this.events.emit("pairing_delete", { id, topic });
+      this.events.emit(PAIRING_EVENTS.delete, { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.logger.error(err);
@@ -362,12 +369,10 @@ export class Pairing implements IPairing {
   private registerExpirerEvents() {
     this.core.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
       const { topic } = parseExpirerTarget(event.target);
-      if (topic) {
-        if (this.pairings.keys.includes(topic)) {
-          await this.deletePairing(topic, true);
-          this.events.emit("pairing_expire", { topic });
-        }
-      }
+      if (!topic) return;
+      if (!this.pairings.keys.includes(topic)) return;
+      await this.deletePairing(topic, true);
+      this.events.emit(PAIRING_EVENTS.expire, { topic });
     });
   }
 
