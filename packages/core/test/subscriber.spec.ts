@@ -43,7 +43,7 @@ describe("Subscriber", () => {
         CORE_STORAGE_PREFIX + MESSAGES_STORAGE_VERSION + "//" + SUBSCRIBER_CONTEXT,
       );
     });
-    it("provides the expected custom `storageKey` format", async () => {
+    it("provides the expected custom `storageKey` format", () => {
       const core = new Core({ ...TEST_CORE_OPTIONS, customStoragePrefix: "test" });
       const subscriber = new Subscriber(core.relayer, logger);
       expect(subscriber.storageKey).to.equal(
