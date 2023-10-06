@@ -43,7 +43,7 @@ export abstract class ICore extends IEvents {
   public abstract readonly context: string;
   public abstract readonly relayUrl?: string;
   public abstract readonly projectId?: string;
-  public abstract readonly customStoragePrefix?: string;
+  public abstract readonly customStoragePrefix: string;
 
   public abstract logger: Logger;
   public abstract heartbeat: IHeartBeat;
