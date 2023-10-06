@@ -25,10 +25,19 @@ describe("Messages", () => {
     await messageTracker.init();
   });
 
-  it("provides the expected `storageKey` format", () => {
-    expect(messageTracker.storageKey).to.equal(
-      CORE_STORAGE_PREFIX + MESSAGES_STORAGE_VERSION + "//" + MESSAGES_CONTEXT,
-    );
+  describe("storageKey", () => {
+    it("provides the expected default `storageKey` format", () => {
+      expect(messageTracker.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + MESSAGES_STORAGE_VERSION + "//" + MESSAGES_CONTEXT,
+      );
+    });
+    it("provides the expected custom `storageKey` format", () => {
+      const core = new Core({ ...TEST_CORE_OPTIONS, customStoragePrefix: "test" });
+      const messageTracker = new MessageTracker(logger, core);
+      expect(messageTracker.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + MESSAGES_STORAGE_VERSION + ":test" + "//" + MESSAGES_CONTEXT,
+      );
+    });
   });
 
   describe("set", () => {
