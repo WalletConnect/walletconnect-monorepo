@@ -36,11 +36,20 @@ describe("Subscriber", () => {
     await disconnectSocket(core.relayer);
   });
 
-  it("provides the expected `storageKey` format", () => {
-    const subscriber = new Subscriber(relayer, logger);
-    expect(subscriber.storageKey).to.equal(
-      CORE_STORAGE_PREFIX + MESSAGES_STORAGE_VERSION + "//" + SUBSCRIBER_CONTEXT,
-    );
+  describe("storageKey", () => {
+    it("provides the expected default `storageKey` format", () => {
+      const subscriber = new Subscriber(relayer, logger);
+      expect(subscriber.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + MESSAGES_STORAGE_VERSION + "//" + SUBSCRIBER_CONTEXT,
+      );
+    });
+    it("provides the expected custom `storageKey` format", () => {
+      const core = new Core({ ...TEST_CORE_OPTIONS, customStoragePrefix: "test" });
+      const subscriber = new Subscriber(core.relayer, logger);
+      expect(subscriber.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + MESSAGES_STORAGE_VERSION + ":test" + "//" + SUBSCRIBER_CONTEXT,
+      );
+    });
   });
 
   describe("init", () => {

@@ -41,8 +41,8 @@ export class MessageTracker extends IMessageTracker {
     return getLoggerContext(this.logger);
   }
 
-  get storageKey(): string {
-    return this.storagePrefix + this.version + "//" + this.name;
+  get storageKey() {
+    return this.storagePrefix + this.version + this.core.customStoragePrefix + "//" + this.name;
   }
 
   public set: IMessageTracker["set"] = async (topic, message) => {

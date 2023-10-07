@@ -19,11 +19,20 @@ describe("Store", () => {
     await store.init();
   });
 
-  it("provides the expected `storageKey` format", () => {
-    const store = new Store(core, logger, MOCK_STORE_NAME);
-    expect(store.storageKey).to.equal(
-      CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME,
-    );
+  describe("storageKey", () => {
+    it("provides the expected default `storageKey` format", () => {
+      const store = new Store(core, logger, MOCK_STORE_NAME);
+      expect(store.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME,
+      );
+    });
+    it("provides the expected custom `storageKey` format", () => {
+      const core = new Core({ ...TEST_CORE_OPTIONS, customStoragePrefix: "test" });
+      const store = new Store(core, logger, MOCK_STORE_NAME);
+      expect(store.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + ":test" + "//" + MOCK_STORE_NAME,
+      );
+    });
   });
 
   describe("init", () => {
