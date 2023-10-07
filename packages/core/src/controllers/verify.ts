@@ -26,13 +26,13 @@ export class Verify extends IVerify {
     this.isDevEnv = isNode() && process.env.IS_VITEST;
   }
 
-  public init: IVerify["init"] = async (params) => {
+  public init: IVerify["init"] = async () => {
     if (this.verifyDisabled) return;
 
     // ignore on non browser environments
     if (isReactNative() || !isBrowser()) return;
 
-    const verifyUrl = params?.verifyUrl || VERIFY_SERVER;
+    const verifyUrl = VERIFY_SERVER;
     // if init is called again with a different url, remove the iframe and start over
     if (this.verifyUrl !== verifyUrl) {
       this.removeIframe();
