@@ -3,7 +3,12 @@ import { IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, isReactNative } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
-import { VERIFY_CONTEXT, VERIFY_FALLBACK_SERVER, VERIFY_SERVER } from "../constants";
+import {
+  TRUSTED_VERIFY_URLS,
+  VERIFY_CONTEXT,
+  VERIFY_FALLBACK_SERVER,
+  VERIFY_SERVER,
+} from "../constants";
 
 export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
@@ -72,7 +77,15 @@ export class Verify extends IVerify {
 
   public resolve: IVerify["resolve"] = async (params) => {
     if (this.isDevEnv) return "";
-    const mainUrl = params?.verifyUrl || VERIFY_SERVER;
+
+    let mainUrl = params?.verifyUrl || VERIFY_SERVER;
+    if (!TRUSTED_VERIFY_URLS.includes(mainUrl)) {
+      this.logger.info(
+        `verify url: ${mainUrl}, not included in trusted list, assigning default: ${VERIFY_SERVER}`,
+      );
+      mainUrl = VERIFY_SERVER;
+    }
+
     let result;
     try {
       result = await this.fetchAttestation(params.attestationId, mainUrl);
