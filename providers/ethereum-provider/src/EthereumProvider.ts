@@ -6,9 +6,9 @@ import {
   IEthereumProviderEvents,
   ProviderAccounts,
   RequestArguments,
+  QrModalOptions,
 } from "./types";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
-import type { WalletConnectModalConfig, WalletConnectModal } from "@walletconnect/modal";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
 import {
   STORAGE_KEY,
@@ -18,20 +18,6 @@ import {
   OPTIONAL_METHODS,
   OPTIONAL_EVENTS,
 } from "./constants";
-
-export type QrModalOptions = Pick<
-  WalletConnectModalConfig,
-  | "themeMode"
-  | "themeVariables"
-  | "desktopWallets"
-  | "enableExplorer"
-  | "explorerRecommendedWalletIds"
-  | "explorerExcludedWalletIds"
-  | "mobileWallets"
-  | "privacyPolicyUrl"
-  | "termsOfServiceUrl"
-  | "walletImages"
->;
 
 export type RpcMethod =
   | "personal_sign"
@@ -232,7 +218,7 @@ export class EthereumProvider implements IEthereumProvider {
   public accounts: string[] = [];
   public signer: InstanceType<typeof UniversalProvider>;
   public chainId = 1;
-  public modal?: WalletConnectModal;
+  public modal?: any;
 
   protected rpc: EthereumRpcConfig;
   protected readonly STORAGE_KEY = STORAGE_KEY;
@@ -287,7 +273,7 @@ export class EthereumProvider implements IEthereumProvider {
       const session = await new Promise<SessionTypes.Struct | undefined>(
         async (resolve, reject) => {
           if (this.rpc.showQrModal) {
-            this.modal?.subscribeModal((state) => {
+            this.modal?.subscribeModal((state: { open: boolean }) => {
               // the modal was closed so reject the promise
               if (!state.open && !this.signer.session) {
                 this.signer.abortPairingAttempt();
