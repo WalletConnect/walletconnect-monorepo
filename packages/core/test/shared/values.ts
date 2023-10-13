@@ -18,7 +18,7 @@ export const TEST_CORE_OPTIONS: CoreTypes.Options = {
 };
 
 // default db name for persistent storage tests
-export const DEFAULT_DB_NAME = "tmp/persistent-test.db";
+export const DEFAULT_DB_NAME = "test/tmp/persistent-test.db";
 
 // default store name for persistent storage tests
 export const MOCK_STORE_NAME = "persistent-store";
