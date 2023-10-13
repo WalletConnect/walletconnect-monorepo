@@ -75,7 +75,6 @@ export class UniversalProvider implements IUniversalProvider {
     if (!this.session) {
       throw new Error("Please call connect() before request()");
     }
-
     return await this.getProvider(namespace).request({
       request: {
         ...args,
@@ -163,7 +162,6 @@ export class UniversalProvider implements IUniversalProvider {
       if (pairingAttempts >= this.maxPairingAttempts) {
         throw new Error("Max auto pairing attempts reached");
       }
-
       const { uri, approval } = await this.client.connect({
         pairingTopic,
         requiredNamespaces: this.namespaces,
@@ -177,12 +175,12 @@ export class UniversalProvider implements IUniversalProvider {
       }
 
       await approval()
-        .then((session) => {
+        .then(async (session) => {
           this.session = session;
           // assign namespaces from session if not already defined
-          if (!this.namespaces) {
+          if (!this.namespaces || !Object.keys(this.namespaces).length) {
             this.namespaces = populateNamespacesChains(session.namespaces) as NamespaceConfig;
-            this.persist("namespaces", this.namespaces);
+            await this.persist("namespaces", this.namespaces);
           }
         })
         .catch((error) => {
@@ -415,15 +413,13 @@ export class UniversalProvider implements IUniversalProvider {
   private setNamespaces(params: ConnectParams): void {
     const { namespaces, optionalNamespaces, sessionProperties } = params;
 
-    if (namespaces && Object.keys(namespaces).length) {
-      this.namespaces = namespaces;
-    }
-    if (optionalNamespaces && Object.keys(optionalNamespaces).length) {
-      this.optionalNamespaces = optionalNamespaces;
-    }
-    this.sessionProperties = sessionProperties;
+    this.namespaces = namespaces;
     this.persist("namespaces", namespaces);
+
+    this.optionalNamespaces = optionalNamespaces;
     this.persist("optionalNamespaces", optionalNamespaces);
+
+    this.sessionProperties = sessionProperties;
   }
 
   private validateChain(chain?: string): [string, string] {
@@ -487,8 +483,8 @@ export class UniversalProvider implements IUniversalProvider {
     await this.cleanupPendingPairings({ deletePairings: true });
   }
 
-  private persist(key: string, data: unknown) {
-    this.client.core.storage.setItem(`${STORAGE}/${key}`, data);
+  private async persist(key: string, data: unknown) {
+    await this.client.core.storage.setItem(`${STORAGE}/${key}`, data);
   }
 
   private async getFromStore(key: string) {
