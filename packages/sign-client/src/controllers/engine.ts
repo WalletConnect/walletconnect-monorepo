@@ -483,7 +483,7 @@ export class Engine extends IEngine {
     if (!expirerHasDeleted) this.client.core.expirer.del(topic);
     // remove any deeplinks from storage after the session is deleted
     // to avoid navigating to incorrect deeplink later on
-    this.client.core.storage
+    await this.client.core.storage
       .removeItem(WALLETCONNECT_DEEPLINK_CHOICE)
       .catch((e) => this.client.logger.warn(e));
   };
