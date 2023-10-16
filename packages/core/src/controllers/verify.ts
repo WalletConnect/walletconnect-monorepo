@@ -3,7 +3,12 @@ import { IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, isReactNative } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
-import { VERIFY_CONTEXT, VERIFY_FALLBACK_SERVER, VERIFY_SERVER } from "../constants";
+import {
+  TRUSTED_VERIFY_URLS,
+  VERIFY_CONTEXT,
+  VERIFY_FALLBACK_SERVER,
+  VERIFY_SERVER,
+} from "../constants";
 
 export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
@@ -26,13 +31,13 @@ export class Verify extends IVerify {
     this.isDevEnv = isNode() && process.env.IS_VITEST;
   }
 
-  public init: IVerify["init"] = async () => {
+  public init: IVerify["init"] = async (params) => {
     if (this.verifyDisabled) return;
 
     // ignore on non browser environments
     if (isReactNative() || !isBrowser()) return;
 
-    const verifyUrl = VERIFY_SERVER;
+    const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
     // if init is called again with a different url, remove the iframe and start over
     if (this.verifyUrl !== verifyUrl) {
       this.removeIframe();
@@ -72,13 +77,14 @@ export class Verify extends IVerify {
 
   public resolve: IVerify["resolve"] = async (params) => {
     if (this.isDevEnv) return "";
-    const mainUrl = params?.verifyUrl || VERIFY_SERVER;
+
+    const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
     let result;
     try {
-      result = await this.fetchAttestation(params.attestationId, mainUrl);
+      result = await this.fetchAttestation(params.attestationId, verifyUrl);
     } catch (error) {
       this.logger.info(
-        `failed to resolve attestation: ${params.attestationId} from url: ${mainUrl}`,
+        `failed to resolve attestation: ${params.attestationId} from url: ${verifyUrl}`,
       );
       this.logger.info(error);
       result = await this.fetchAttestation(params.attestationId, VERIFY_FALLBACK_SERVER);
@@ -162,5 +168,16 @@ export class Verify extends IVerify {
     this.iframe.remove();
     this.iframe = undefined;
     this.initialized = false;
+  };
+
+  private getVerifyUrl = (verifyUrl?: string) => {
+    let url = verifyUrl || VERIFY_SERVER;
+    if (!TRUSTED_VERIFY_URLS.includes(url)) {
+      this.logger.info(
+        `verify url: ${url}, not included in trusted list, assigning default: ${VERIFY_SERVER}`,
+      );
+      url = VERIFY_SERVER;
+    }
+    return url;
   };
 }
