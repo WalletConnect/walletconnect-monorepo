@@ -44,7 +44,7 @@ describe("EthereumProvider", function () {
       chains: [1],
       methods: TEST_ETHEREUM_METHODS_REQUIRED,
       optionalMethods: TEST_ETHEREUM_METHODS_OPTIONAL,
-      showQrModal: true,
+      showQrModal: false,
       qrModalOptions: {
         themeMode: "dark",
         themeVariables: {
