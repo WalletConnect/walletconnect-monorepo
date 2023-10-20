@@ -17,6 +17,10 @@ export function parseRelayParams(params: any, delimiter = "-"): RelayerTypes.Pro
 }
 
 export function parseUri(str: string): EngineTypes.UriParameters {
+  // remove android schema prefix
+  str = str.includes("wc://") ? str.replace("wc://", "") : str;
+  // remove ios schema prefix
+  str = str.includes("wc:") ? str.replace("wc:", "") : str;
   const pathStart: number = str.indexOf(":");
   const pathEnd: number | undefined = str.indexOf("?") !== -1 ? str.indexOf("?") : undefined;
   const protocol: string = str.substring(0, pathStart);
