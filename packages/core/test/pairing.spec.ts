@@ -5,7 +5,11 @@ import { TEST_CORE_OPTIONS, disconnectSocket, waitForEvent } from "./shared";
 import { generateRandomBytes32 } from "@walletconnect/utils";
 
 const createCoreClients: () => Promise<{ coreA: ICore; coreB: ICore }> = async () => {
+  // @ts-ignore
+  global.__walletconnect_core__ = undefined;
   const coreA = new Core(TEST_CORE_OPTIONS);
+  // @ts-ignore
+  global.__walletconnect_core__ = undefined;
   const coreB = new Core(TEST_CORE_OPTIONS);
   await coreA.start();
   await coreB.start();

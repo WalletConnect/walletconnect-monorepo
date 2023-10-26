@@ -19,6 +19,8 @@ describe("Messages", () => {
   let topic: string;
 
   beforeEach(async () => {
+    // @ts-ignore
+    global.__walletconnect_core__ = undefined;
     const core = new Core(TEST_CORE_OPTIONS);
     messageTracker = new MessageTracker(logger, core);
     topic = generateRandomBytes32();

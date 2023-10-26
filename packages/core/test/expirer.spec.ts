@@ -19,6 +19,8 @@ describe("Expirer", () => {
 
   describe("storageKey", () => {
     it("provides the expected default `storageKey` format", () => {
+      // @ts-ignore
+      global.__walletconnect_core__ = undefined;
       const core = new Core(TEST_CORE_OPTIONS);
       const expirer = new Expirer(core, logger);
       expect(expirer.storageKey).to.equal(
@@ -26,6 +28,8 @@ describe("Expirer", () => {
       );
     });
     it("provides the expected custom `storageKey` format", () => {
+      // @ts-ignore
+      global.__walletconnect_core__ = undefined;
       const core = new Core({ ...TEST_CORE_OPTIONS, customStoragePrefix: "test" });
       const expirer = new Expirer(core, logger);
       expect(expirer.storageKey).to.equal(
@@ -35,6 +39,8 @@ describe("Expirer", () => {
   });
 
   it("should expire payload", async () => {
+    // @ts-ignore
+    global.__walletconnect_core__ = undefined;
     const core = new Core(TEST_CORE_OPTIONS);
     await core.start();
     // confirm the expirer is empty

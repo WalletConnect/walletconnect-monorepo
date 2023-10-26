@@ -14,6 +14,8 @@ describe("Store", () => {
   let store: IStore<any, any>;
 
   beforeEach(async () => {
+    // @ts-ignore
+    global.__walletconnect_core__ = undefined;
     core = new Core(TEST_CORE_OPTIONS);
     store = new Store(core, logger, MOCK_STORE_NAME);
     await store.init();

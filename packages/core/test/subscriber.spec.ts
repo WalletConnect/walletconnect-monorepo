@@ -23,6 +23,8 @@ describe("Subscriber", () => {
   let core: ICore;
 
   beforeEach(async () => {
+    // @ts-ignore
+    global.__walletconnect_core__ = undefined;
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
 
