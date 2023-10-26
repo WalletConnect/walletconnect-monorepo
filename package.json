@@ -42,7 +42,8 @@
     "npm-publish:rc": "lerna exec --no-private -- npm publish --access public --tag rc",
     "npm-publish:latest": "lerna exec --no-private -- npm publish --access public --tag latest",
     "npm-publish:next": "lerna exec --no-private -- npm publish --access public --tag next",
-    "npm-publish:canary": "lerna exec --no-private -- npm publish --access public --tag canary"
+    "npm-publish:canary": "lerna exec --no-private -- npm publish --access public --tag canary",
+    "npm-publish:experimental": "lerna exec --no-private -- npm publish --access public --tag experimental"
   },
   "repository": {
     "type": "git",
