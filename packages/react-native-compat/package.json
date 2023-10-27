@@ -7,7 +7,22 @@
   "license": "Apache-2.0",
   "main": "index.js",
   "files": [
-    "dist"
+    "dist",
+    "android",
+    "ios",
+    "modules",
+    "cpp",
+    "*.podspec",
+    "!ios/build",
+    "!android/build",
+    "!android/gradle",
+    "!android/gradlew",
+    "!android/gradlew.bat",
+    "!android/local.properties",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__",
+    "!**/.*"
   ],
   "keywords": [
     "wallet",
@@ -28,6 +43,17 @@
   "peerDependencies": {
     "@react-native-async-storage/async-storage": "*",
     "@react-native-community/netinfo": "*",
-    "react-native-get-random-values": "*"
+    "react-native-get-random-values": "*",
+    "expo-application": "*"
+  },
+  "peerDependenciesMeta": {
+    "expo-application": {
+      "optional": true
+    }
+  },
+  "codegenConfig": {
+    "name": "RNRNWalletConnectModuleSpec",
+    "type": "modules",
+    "jsSrcsDir": "."
   }
 }

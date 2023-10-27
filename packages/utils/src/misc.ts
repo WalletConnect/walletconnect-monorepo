@@ -58,6 +58,14 @@ export function getEnvironment(): string {
   return ENV_MAP.unknown;
 }
 
+export function getBundleId(): string | undefined {
+  if (isReactNative() && typeof global !== "undefined" && (global as any)?.Application) {
+    const bundleId = (global as any).Application.getConstants().applicationId;
+    return bundleId;
+  }
+  return undefined;
+}
+
 // -- query -----------------------------------------------//
 
 export function appendToQueryString(queryString: string, newQueryParams: any): string {
@@ -136,10 +144,11 @@ export function formatRelayRpcUrl({
   auth,
   projectId,
   useOnCloseEvent,
+  bundleId,
 }: RelayerTypes.RpcUrlParams) {
   const splitUrl = relayUrl.split("?");
   const ua = formatUA(protocol, version, sdkVersion);
-  const params = { auth, ua, projectId, useOnCloseEvent: useOnCloseEvent || undefined };
+  const params = { auth, ua, projectId, useOnCloseEvent: useOnCloseEvent || undefined, bundleId };
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
 }

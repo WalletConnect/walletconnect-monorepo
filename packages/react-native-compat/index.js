@@ -1,3 +1,5 @@
+import { isAppInstalled, getApplicationModule } from "./module";
+
 // Polyfill TextEncode / TextDecode
 import "fast-text-encoding";
 
@@ -35,6 +37,17 @@ if (typeof global?.NetInfo === "undefined") {
     global.NetInfo = require("@react-native-community/netinfo");
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error("react-native-compat: react-native.NetInfo is not available", e);
+    console.error("react-native-compat: @react-native-community/netinfo is not available");
   }
 }
+
+if (typeof global?.Application === "undefined") {
+  try {
+    global.Application = getApplicationModule();
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("react-native-compat: react-native.Application is not available");
+  }
+}
+
+export { isAppInstalled };
