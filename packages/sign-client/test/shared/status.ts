@@ -24,12 +24,16 @@ export const publishToStatusPage = (latencyMs: number) => {
       res.on("end", function () {
         const response = responseParts.join("");
         if (res.statusCode! >= 500) {
-          console.log(`Call to Statuspage failed with status code ${res.statusCode} and response ${response}`);
+          console.log(
+            `Call to Statuspage failed with status code ${res.statusCode} and response ${response}`,
+          );
           return resolve(false);
         }
         if (res.statusCode! >= 300) {
           return reject(
-            new Error(`Call to Statuspage failed with status code ${res.statusCode} and response ${response}`),
+            new Error(
+              `Call to Statuspage failed with status code ${res.statusCode} and response ${response}`,
+            ),
           );
         }
         return resolve(true);
