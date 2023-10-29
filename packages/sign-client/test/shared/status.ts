@@ -17,15 +17,23 @@ export const publishToStatusPage = (latencyMs: number) => {
   return new Promise((resolve, reject) => {
     const request = https.request(url, options, function (res) {
       if (res.statusMessage === "Unauthorized") {
-        return reject(new Error("Unauthorized"));
+        return reject(new Error("Statuspage Call Unauthorized"));
       }
       res.setEncoding("utf8");
       const responseParts: string[] = [];
       res.on("end", function () {
         const response = responseParts.join("");
+        if (res.statusCode! >= 500) {
+          console.log(
+            `Call to Statuspage failed with status code ${res.statusCode} and response ${response}`,
+          );
+          return resolve(false);
+        }
         if (res.statusCode! >= 300) {
           return reject(
-            new Error(`Call failed with status code ${res.statusCode} and response ${response}`),
+            new Error(
+              `Call to Statuspage failed with status code ${res.statusCode} and response ${response}`,
+            ),
           );
         }
         return resolve(true);
