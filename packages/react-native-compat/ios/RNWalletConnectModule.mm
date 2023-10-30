@@ -1,5 +1,3 @@
-// Based on react-native-device-info
-
 #import "RNWalletConnectModule.h"
 
 @implementation RNWalletConnectModule

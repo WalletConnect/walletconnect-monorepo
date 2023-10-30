@@ -1,4 +1,4 @@
-import { NativeModules, Platform, Linking } from "react-native";
+import { NativeModules } from "react-native";
 
 const LINKING_ERROR =
   `The package to get the RNWalletConnectModule doesn't seem to be linked. Make sure: \n\n` +
@@ -33,28 +33,7 @@ function getRNModule(): any | undefined {
   }
 }
 
-function isAppInstalledIos(bundleId?: string): Promise<boolean> {
-  try {
-    let formattedBundleId = bundleId;
-    if (!bundleId?.endsWith("://")) {
-      formattedBundleId = `${bundleId}://`;
-    }
-    return formattedBundleId ? Linking.canOpenURL(formattedBundleId) : Promise.resolve(false);
-  } catch (error) {
-    return Promise.resolve(false);
-  }
-}
-
-function isAppInstalledAndroid(packageName?: string): Promise<boolean> {
-  try {
-    return packageName ? getRNModule()?.isAppInstalled(packageName) : Promise.resolve(false);
-  } catch (error) {
-    return Promise.resolve(false);
-  }
-}
-
 // Public
-
 export function getApplicationModule(): any | undefined {
   try {
     return getRNModule();
@@ -65,18 +44,4 @@ export function getApplicationModule(): any | undefined {
       throw new Error(LINKING_ERROR);
     }
   }
-}
-
-export function isAppInstalled(iosScheme?: string, androidPackageName?: string): Promise<boolean> {
-  try {
-    return Platform.select({
-      ios: isAppInstalledIos(iosScheme),
-      android: isAppInstalledAndroid(androidPackageName),
-      default: Promise.resolve(false),
-    });
-  } catch (error) {
-    Promise.resolve(false);
-  }
-
-  return Promise.resolve(false);
 }

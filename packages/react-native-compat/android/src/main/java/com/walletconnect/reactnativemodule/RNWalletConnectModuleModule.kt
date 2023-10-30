@@ -1,5 +1,3 @@
-// Part of the code is based on react-native-device-info
-
 package com.walletconnect.reactnativemodule
 
 import com.facebook.react.bridge.ReactApplicationContext

@@ -59,11 +59,18 @@ export function getEnvironment(): string {
 }
 
 export function getBundleId(): string | undefined {
-  if (isReactNative() && typeof global !== "undefined" && (global as any)?.Application) {
-    const bundleId = (global as any).Application.getConstants().applicationId;
-    return bundleId;
+  try {
+    if (isReactNative() && typeof global !== "undefined" && (global as any)?.Application) {
+      if (typeof (global as any).Application?.getConstants === "function") {
+        return (global as any).Application?.getConstants().applicationId;
+      } else if (typeof (global as any).Application?.applicationId === "string") {
+        return (global as any).Application?.applicationId;
+      }
+    }
+    return undefined;
+  } catch {
+    return undefined;
   }
-  return undefined;
 }
 
 // -- query -----------------------------------------------//
