@@ -46,8 +46,8 @@ if (typeof global?.Application === "undefined") {
     const module = getApplicationModule();
     if (typeof module.getConstants === "function") {
       global.Application = {
-        ...module,
         ...module.getConstants(),
+        isAppInstalled: module.isAppInstalled,
       };
     } else {
       global.Application = module;
