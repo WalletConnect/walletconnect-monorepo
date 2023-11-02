@@ -1,4 +1,4 @@
-import { isAppInstalled, getApplicationModule } from "./module";
+import { getApplicationModule } from "./module";
 
 // Polyfill TextEncode / TextDecode
 import "fast-text-encoding";
@@ -43,11 +43,17 @@ if (typeof global?.NetInfo === "undefined") {
 
 if (typeof global?.Application === "undefined") {
   try {
-    global.Application = getApplicationModule();
+    const module = getApplicationModule();
+    if (typeof module.getConstants === "function") {
+      global.Application = {
+        ...module,
+        ...module.getConstants(),
+      };
+    } else {
+      global.Application = module;
+    }
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error("react-native-compat: react-native.Application is not available");
+    console.error("react-native-compat: Application module is not available");
   }
 }
-
-export { isAppInstalled };

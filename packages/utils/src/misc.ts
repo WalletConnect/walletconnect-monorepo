@@ -60,12 +60,12 @@ export function getEnvironment(): string {
 
 export function getBundleId(): string | undefined {
   try {
-    if (isReactNative() && typeof global !== "undefined" && (global as any)?.Application) {
-      if (typeof (global as any).Application?.getConstants === "function") {
-        return (global as any).Application?.getConstants().applicationId;
-      } else if (typeof (global as any).Application?.applicationId === "string") {
-        return (global as any).Application?.applicationId;
-      }
+    if (
+      isReactNative() &&
+      typeof global !== "undefined" &&
+      typeof (global as any)?.Application !== "undefined"
+    ) {
+      return (global as any).Application?.applicationId;
     }
     return undefined;
   } catch {
