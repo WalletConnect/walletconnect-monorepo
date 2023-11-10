@@ -155,7 +155,13 @@ export function formatRelayRpcUrl({
 }: RelayerTypes.RpcUrlParams) {
   const splitUrl = relayUrl.split("?");
   const ua = formatUA(protocol, version, sdkVersion);
-  const params = { auth, ua, projectId, useOnCloseEvent: useOnCloseEvent || undefined, origin: bundleId || undefined };
+  const params = {
+    auth,
+    ua,
+    projectId,
+    useOnCloseEvent: useOnCloseEvent || undefined,
+    origin: bundleId || undefined,
+  };
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
 }
