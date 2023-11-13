@@ -35,6 +35,7 @@ import {
   getInternalError,
   isOnline,
   subscribeToNetworkChange,
+  getBundleId,
 } from "@walletconnect/utils";
 
 import {
@@ -71,6 +72,7 @@ export class Relayer extends IRelayer {
   private connectionAttemptInProgress = false;
   private relayUrl: string;
   private projectId: string | undefined;
+  private bundleId: string | undefined;
   private connectionStatusPollingInterval = 20;
   private staleConnectionErrors = ["socket hang up", "socket stalled"];
   private hasExperiencedNetworkDisruption = false;
@@ -88,6 +90,7 @@ export class Relayer extends IRelayer {
 
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
     this.projectId = opts.projectId;
+    this.bundleId = getBundleId();
 
     // re-assigned during init()
     this.provider = {} as IJsonRpcProvider;
@@ -145,13 +148,18 @@ export class Relayer extends IRelayer {
 
     if (id) return id;
 
+    let resolvePromise: () => void;
+    const onSubCreated = (subscription: SubscriberTypes.Active) => {
+      if (subscription.topic === topic) {
+        this.subscriber.off(SUBSCRIBER_EVENTS.created, onSubCreated);
+        resolvePromise();
+      }
+    };
+
     await Promise.all([
       new Promise<void>((resolve) => {
-        this.subscriber.once(SUBSCRIBER_EVENTS.created, (subscription: SubscriberTypes.Active) => {
-          if (subscription.topic === topic) {
-            resolve();
-          }
-        });
+        resolvePromise = resolve;
+        this.subscriber.on(SUBSCRIBER_EVENTS.created, onSubCreated);
       }),
       new Promise<void>(async (resolve) => {
         id = await this.subscriber.subscribe(topic, opts);
@@ -282,6 +290,7 @@ export class Relayer extends IRelayer {
       this.unregisterProviderListeners();
     }
     const auth = await this.core.crypto.signJWT(this.relayUrl);
+
     this.provider = new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
@@ -292,6 +301,7 @@ export class Relayer extends IRelayer {
           projectId: this.projectId,
           auth,
           useOnCloseEvent: true,
+          bundleId: this.bundleId,
         }),
       ),
     );

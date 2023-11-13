@@ -3,7 +3,12 @@ import { IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, isReactNative } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
-import { VERIFY_CONTEXT, VERIFY_FALLBACK_SERVER, VERIFY_SERVER } from "../constants";
+import {
+  TRUSTED_VERIFY_URLS,
+  VERIFY_CONTEXT,
+  VERIFY_FALLBACK_SERVER,
+  VERIFY_SERVER,
+} from "../constants";
 
 export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
@@ -32,7 +37,7 @@ export class Verify extends IVerify {
     // ignore on non browser environments
     if (isReactNative() || !isBrowser()) return;
 
-    const verifyUrl = params?.verifyUrl || VERIFY_SERVER;
+    const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
     // if init is called again with a different url, remove the iframe and start over
     if (this.verifyUrl !== verifyUrl) {
       this.removeIframe();
@@ -42,8 +47,8 @@ export class Verify extends IVerify {
     try {
       await this.createIframe();
     } catch (error) {
-      this.logger.warn(`Verify iframe failed to load: ${this.verifyUrl}`);
-      this.logger.warn(error);
+      this.logger.info(`Verify iframe failed to load: ${this.verifyUrl}`);
+      this.logger.info(error);
     }
 
     if (this.initialized) return;
@@ -54,8 +59,8 @@ export class Verify extends IVerify {
     try {
       await this.createIframe();
     } catch (error) {
-      this.logger.error(`Verify iframe failed to load: ${this.verifyUrl}`);
-      this.logger.error(error);
+      this.logger.info(`Verify iframe failed to load: ${this.verifyUrl}`);
+      this.logger.info(error);
       // if the fallback url fails to load as well, disable verify
       this.verifyDisabled = true;
     }
@@ -72,15 +77,16 @@ export class Verify extends IVerify {
 
   public resolve: IVerify["resolve"] = async (params) => {
     if (this.isDevEnv) return "";
-    const mainUrl = params?.verifyUrl || VERIFY_SERVER;
-    let result = "";
+
+    const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
+    let result;
     try {
-      result = await this.fetchAttestation(params.attestationId, mainUrl);
+      result = await this.fetchAttestation(params.attestationId, verifyUrl);
     } catch (error) {
-      this.logger.warn(
-        `failed to resolve attestation: ${params.attestationId} from url: ${mainUrl}`,
+      this.logger.info(
+        `failed to resolve attestation: ${params.attestationId} from url: ${verifyUrl}`,
       );
-      this.logger.warn(error);
+      this.logger.info(error);
       result = await this.fetchAttestation(params.attestationId, VERIFY_FALLBACK_SERVER);
     }
     return result;
@@ -98,7 +104,7 @@ export class Verify extends IVerify {
       signal: this.abortController.signal,
     });
     clearTimeout(timeout);
-    return result.status === 200 ? (await result.json())?.origin : "";
+    return result.status === 200 ? await result.json() : undefined;
   };
 
   private addToQueue = (attestationId: string) => {
@@ -162,5 +168,16 @@ export class Verify extends IVerify {
     this.iframe.remove();
     this.iframe = undefined;
     this.initialized = false;
+  };
+
+  private getVerifyUrl = (verifyUrl?: string) => {
+    let url = verifyUrl || VERIFY_SERVER;
+    if (!TRUSTED_VERIFY_URLS.includes(url)) {
+      this.logger.info(
+        `verify url: ${url}, not included in trusted list, assigning default: ${VERIFY_SERVER}`,
+      );
+      url = VERIFY_SERVER;
+    }
+    return url;
   };
 }
