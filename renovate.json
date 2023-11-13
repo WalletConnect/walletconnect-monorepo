@@ -19,5 +19,6 @@
       "matchPackagePatterns": ["@walletconnect/*"],
       "schedule": ["at any time"]
     }
-  ]
+  ],
+  "ignorePaths": ["**/android/**", "**/ios/**"]
 }
