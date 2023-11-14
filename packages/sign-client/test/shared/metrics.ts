@@ -9,9 +9,7 @@ export const uploadCanaryResultsToCloudWatch = async (
   testDurationMs: number,
   otherLatencies: object[],
 ) => {
-  const cloudwatch = new CloudWatch({
-    region: "eu-central-1",
-  });
+  const cloudwatch = new CloudWatch({ region: "eu-central-1" });
   const ts = new Date();
   const metrics = [
     {
@@ -114,9 +112,7 @@ export const uploadLoadTestConnectionDataToCloudWatch = async (
   averagePairingTimeMs: number,
   averageHandshakeTimeMs: number,
 ) => {
-  const cloudwatch = new CloudWatch({
-    region: "eu-central-1",
-  });
+  const cloudwatch = new CloudWatch({ region: "eu-central-1" });
   const ts = new Date();
 
   const params: PutMetricDataCommandInput = {
