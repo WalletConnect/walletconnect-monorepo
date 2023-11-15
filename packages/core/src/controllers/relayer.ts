@@ -35,6 +35,7 @@ import {
   getInternalError,
   isOnline,
   subscribeToNetworkChange,
+  getBundleId,
 } from "@walletconnect/utils";
 
 import {
@@ -71,6 +72,7 @@ export class Relayer extends IRelayer {
   private connectionAttemptInProgress = false;
   private relayUrl: string;
   private projectId: string | undefined;
+  private bundleId: string | undefined;
   private connectionStatusPollingInterval = 20;
   private staleConnectionErrors = ["socket hang up", "socket stalled"];
   private hasExperiencedNetworkDisruption = false;
@@ -88,6 +90,7 @@ export class Relayer extends IRelayer {
 
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
     this.projectId = opts.projectId;
+    this.bundleId = getBundleId();
 
     // re-assigned during init()
     this.provider = {} as IJsonRpcProvider;
@@ -287,6 +290,7 @@ export class Relayer extends IRelayer {
       this.unregisterProviderListeners();
     }
     const auth = await this.core.crypto.signJWT(this.relayUrl);
+
     this.provider = new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
@@ -297,6 +301,7 @@ export class Relayer extends IRelayer {
           projectId: this.projectId,
           auth,
           useOnCloseEvent: true,
+          bundleId: this.bundleId,
         }),
       ),
     );
