@@ -406,6 +406,7 @@ export async function getDeepLink(store: IKeyValueStorage, key: string) {
     if (!isBrowser()) return;
     return localStorage.getItem(key) as string;
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error(err);
   }
 }
