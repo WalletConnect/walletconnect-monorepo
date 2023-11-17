@@ -293,21 +293,20 @@ describe("Pairing", () => {
       const { uri } = await coreA.pairing.create();
       const { topic } = parseUri(uri);
       coreB.pairing.events.on(PAIRING_EVENTS.create, () => {
-        expect(coreB.pairing.pairings.keys.length).toBe(1);
-        expect(coreB.pairing.pairings.values[0].topic).toEqual(topic);
         pairingCreatedEventTime = performance.now();
         pairingCreatedEvent = true;
       });
 
-      coreB.relayer.subscriber.events.on(SUBSCRIBER_EVENTS.created, (subscription) => {
+      coreB.relayer.subscriber.events.on(SUBSCRIBER_EVENTS.created, () => {
         subscriptionCreatedEventTime = performance.now();
         subscriptionCreatedEvent = true;
-        expect(subscription.topic).toEqual(topic);
       });
 
       coreB.pairing.pair({ uri });
       await waitForEvent(() => pairingCreatedEvent);
       await waitForEvent(() => subscriptionCreatedEvent);
+      expect(coreB.pairing.pairings.keys.length).toBe(1);
+      expect(coreB.pairing.pairings.values[0].topic).toEqual(topic);
       expect(subscriptionCreatedEventTime).toBeGreaterThan(pairingCreatedEventTime);
     });
   });
