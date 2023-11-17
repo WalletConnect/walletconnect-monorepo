@@ -9,6 +9,7 @@ import {
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
+import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 import * as qs from "query-string";
 
 // -- constants -----------------------------------------//
@@ -391,6 +392,20 @@ export async function handleDeeplinkRedirect({
     }
   } catch (err) {
     // Silent error, just log in console
+    // eslint-disable-next-line no-console
+    console.error(err);
+  }
+}
+
+export async function getDeepLink(store: IKeyValueStorage, key: string) {
+  try {
+    const deepLink = await store.getItem(key);
+    if (deepLink) return deepLink;
+
+    // check localStorage as fallback
+    if (!isBrowser()) return;
+    return localStorage.getItem(key) as string;
+  } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);
   }

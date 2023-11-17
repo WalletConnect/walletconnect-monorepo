@@ -67,6 +67,7 @@ import {
   TYPE_1,
   handleDeeplinkRedirect,
   MemoryStore,
+  getDeepLink,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -367,7 +368,10 @@ export class Engine extends IEngine {
         resolve();
       }),
       new Promise<void>(async (resolve) => {
-        const wcDeepLink = await this.client.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE);
+        const wcDeepLink = await getDeepLink(
+          this.client.core.storage,
+          WALLETCONNECT_DEEPLINK_CHOICE,
+        );
         handleDeeplinkRedirect({ id, topic, wcDeepLink });
         resolve();
       }),
@@ -1110,6 +1114,7 @@ export class Engine extends IEngine {
           optionalNamespaces: proposal.optionalNamespaces,
           relays: proposal.relays,
           proposer: proposal.proposer,
+          sessionProperties: proposal.sessionProperties,
         },
         proposal.id,
       ),
