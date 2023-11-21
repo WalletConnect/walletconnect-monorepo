@@ -1114,6 +1114,7 @@ export class Engine extends IEngine {
           optionalNamespaces: proposal.optionalNamespaces,
           relays: proposal.relays,
           proposer: proposal.proposer,
+          sessionProperties: proposal.sessionProperties,
         },
         proposal.id,
       ),
