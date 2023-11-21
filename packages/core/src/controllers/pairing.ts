@@ -388,6 +388,15 @@ export class Pairing implements IPairing {
       const { message } = getInternalError("MISSING_OR_INVALID", `pair() uri: ${params.uri}`);
       throw new Error(message);
     }
+    const uri = parseUri(params.uri);
+    if (!uri?.relay?.protocol) {
+      const { message } = getInternalError("MISSING_OR_INVALID", `pair() uri#relay-protocol`);
+      throw new Error(message);
+    }
+    if (!uri?.symKey) {
+      const { message } = getInternalError("MISSING_OR_INVALID", `pair() uri#symKey`);
+      throw new Error(message);
+    }
   };
 
   private isValidPing = async (params: { topic: string }) => {

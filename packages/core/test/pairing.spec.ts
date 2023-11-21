@@ -205,6 +205,23 @@ describe("Pairing", () => {
           "Missing or invalid. pair() uri: undefined",
         );
       });
+      it("throws when uri missing relay protocol is provided", async () => {
+        // Using v1 pairing URI as it is unsupported
+        const v1PairingUri =
+          "wc:e9d6ef98-6b65-490b-8726-a21e1afb181d@1?bridge=https%3A%2F%2Fwalletconnect.com&key=73f096cb97aaee97b3d9871ced35fdce1668e652db3d39423ea6cd22e14528bf";
+        await expect(
+          coreA.pairing.pair({
+            uri: v1PairingUri,
+          }),
+        ).rejects.toThrowError("Missing or invalid. pair() uri#relay-protocol");
+      });
+      it("throws when uri missing relay protocol is provided", async () => {
+        await expect(
+          coreA.pairing.pair({
+            uri: "wc:e9d6ef98-6b65-490b-8726-a21e1afb181d@1?bridge=https%3A%2F%2Fwalletconnect.com&relay-protocol=irn",
+          }),
+        ).rejects.toThrowError("Missing or invalid. pair() uri#symKey");
+      });
     });
 
     describe("ping", () => {
