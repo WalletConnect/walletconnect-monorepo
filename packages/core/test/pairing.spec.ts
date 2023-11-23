@@ -1,8 +1,8 @@
 import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { ICore } from "@walletconnect/types";
-import { Core, CORE_PROTOCOL, CORE_VERSION } from "../src";
+import { Core, CORE_PROTOCOL, CORE_VERSION, PAIRING_EVENTS, SUBSCRIBER_EVENTS } from "../src";
 import { TEST_CORE_OPTIONS, disconnectSocket, waitForEvent } from "./shared";
-import { generateRandomBytes32 } from "@walletconnect/utils";
+import { generateRandomBytes32, parseUri } from "@walletconnect/utils";
 
 const createCoreClients: () => Promise<{ coreA: ICore; coreB: ICore }> = async () => {
   const coreA = new Core(TEST_CORE_OPTIONS);
@@ -205,6 +205,23 @@ describe("Pairing", () => {
           "Missing or invalid. pair() uri: undefined",
         );
       });
+      it("throws when uri missing relay protocol is provided", async () => {
+        // Using v1 pairing URI as it is unsupported
+        const v1PairingUri =
+          "wc:e9d6ef98-6b65-490b-8726-a21e1afb181d@1?bridge=https%3A%2F%2Fwalletconnect.com&key=73f096cb97aaee97b3d9871ced35fdce1668e652db3d39423ea6cd22e14528bf";
+        await expect(
+          coreA.pairing.pair({
+            uri: v1PairingUri,
+          }),
+        ).rejects.toThrowError("Missing or invalid. pair() uri#relay-protocol");
+      });
+      it("throws when uri missing relay protocol is provided", async () => {
+        await expect(
+          coreA.pairing.pair({
+            uri: "wc:e9d6ef98-6b65-490b-8726-a21e1afb181d@1?bridge=https%3A%2F%2Fwalletconnect.com&relay-protocol=irn",
+          }),
+        ).rejects.toThrowError("Missing or invalid. pair() uri#symKey");
+      });
     });
 
     describe("ping", () => {
@@ -275,6 +292,39 @@ describe("Pairing", () => {
           "No matching key. pairing topic doesn't exist: none",
         );
       });
+    });
+  });
+  describe("events", () => {
+    it("should emit 'pairing_create' event", async () => {
+      let pairingCreatedEvent = false;
+      coreB.pairing.events.on(PAIRING_EVENTS.create, () => (pairingCreatedEvent = true));
+      const { uri } = await coreA.pairing.create();
+      coreB.pairing.pair({ uri });
+      await waitForEvent(() => pairingCreatedEvent);
+    });
+    it("should store pairing before subscribing to its topic", async () => {
+      let pairingCreatedEvent = false;
+      let pairingCreatedEventTime = 0;
+      let subscriptionCreatedEvent = false;
+      let subscriptionCreatedEventTime = 0;
+      const { uri } = await coreA.pairing.create();
+      const { topic } = parseUri(uri);
+      coreB.pairing.events.on(PAIRING_EVENTS.create, () => {
+        pairingCreatedEventTime = performance.now();
+        pairingCreatedEvent = true;
+      });
+
+      coreB.relayer.subscriber.events.on(SUBSCRIBER_EVENTS.created, () => {
+        subscriptionCreatedEventTime = performance.now();
+        subscriptionCreatedEvent = true;
+      });
+
+      coreB.pairing.pair({ uri });
+      await waitForEvent(() => pairingCreatedEvent);
+      await waitForEvent(() => subscriptionCreatedEvent);
+      expect(coreB.pairing.pairings.keys.length).toBe(1);
+      expect(coreB.pairing.pairings.values[0].topic).toEqual(topic);
+      expect(subscriptionCreatedEventTime).toBeGreaterThan(pairingCreatedEventTime);
     });
   });
 });
