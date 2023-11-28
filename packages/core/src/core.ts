@@ -10,7 +10,7 @@ import {
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
-import { Crypto, Relayer, Pairing, JsonRpcHistory, Expirer, Verify } from "./controllers";
+import { Crypto, Relayer, Pairing, JsonRpcHistory, Expirer, Verify, Echo } from "./controllers";
 import {
   CORE_CONTEXT,
   CORE_DEFAULT,
@@ -39,6 +39,7 @@ export class Core extends ICore {
   public expirer: ICore["expirer"];
   public pairing: ICore["pairing"];
   public verify: ICore["verify"];
+  public echo: ICore["echo"];
 
   private initialized = false;
 
@@ -77,6 +78,7 @@ export class Core extends ICore {
     });
     this.pairing = new Pairing(this, this.logger);
     this.verify = new Verify(this.projectId || "", this.logger);
+    this.echo = new Echo(this.projectId || "", this.logger);
   }
 
   get context() {
