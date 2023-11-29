@@ -98,6 +98,11 @@ export class Engine extends IWeb3WalletEngine {
     return this.authClient.formatMessage(params, iss);
   };
 
+  // Push //
+  public registerDeviceToken: IWeb3WalletEngine["registerDeviceToken"] = (params) => {
+    return this.client.core.echo.registerDeviceToken(params);
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private onSessionRequest = (event: Web3WalletTypes.SessionRequest) => {

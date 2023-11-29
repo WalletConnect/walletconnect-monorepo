@@ -83,4 +83,12 @@ export abstract class IWeb3WalletEngine {
 
   // format payload to message string
   public abstract formatMessage(payload: AuthEngineTypes.CacaoRequestPayload, iss: string): string;
+
+  // ---------- Push ------------------------------------------------- //
+  public abstract registerDeviceToken(params: {
+    clientId: string;
+    token: string;
+    notificationType: "fcm" | "apns" | "apns-sandbox" | "noop";
+    enableAlwaysDecrypted?: boolean;
+  }): Promise<void>;
 }
