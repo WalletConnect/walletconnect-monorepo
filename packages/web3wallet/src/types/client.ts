@@ -3,7 +3,7 @@ import { ICore, CoreTypes, ProposalTypes, Verify } from "@walletconnect/types";
 import { AuthClientTypes } from "@walletconnect/auth-client";
 import { IWeb3WalletEngine } from "./engine";
 import { Logger } from "@walletconnect/logger";
-import { JsonRpcPayload, JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
 export declare namespace Web3WalletTypes {
   type Event = "session_proposal" | "session_request" | "session_delete" | "auth_request";
