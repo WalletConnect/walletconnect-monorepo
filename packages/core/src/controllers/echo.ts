@@ -10,7 +10,7 @@ export class Echo extends IEcho {
   }
 
   public registerDeviceToken: IEcho["registerDeviceToken"] = async (params) => {
-    const { clientId, token, notificationType, enableAlwaysDecrypted = false } = params;
+    const { clientId, token, notificationType, enableEncrypted = false } = params;
 
     const echoUrl = `${ECHO_URL}/${this.projectId}/clients`;
 
@@ -23,7 +23,7 @@ export class Echo extends IEcho {
         client_id: clientId,
         type: notificationType,
         token,
-        always_raw: enableAlwaysDecrypted,
+        always_raw: enableEncrypted,
       }),
     });
   };
