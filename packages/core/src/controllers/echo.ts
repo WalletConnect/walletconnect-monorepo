@@ -1,15 +1,15 @@
 import { generateChildLogger, Logger } from "@walletconnect/logger";
-import { IEcho } from "@walletconnect/types";
+import { IEchoClient } from "@walletconnect/types";
 import { ECHO_CONTEXT, ECHO_URL } from "../constants";
 
-export class Echo extends IEcho {
+export class EchoClient extends IEchoClient {
   public readonly context = ECHO_CONTEXT;
   constructor(public projectId: string, public logger: Logger) {
     super(projectId, logger);
     this.logger = generateChildLogger(logger, this.context);
   }
 
-  public registerDeviceToken: IEcho["registerDeviceToken"] = async (params) => {
+  public registerDeviceToken: IEchoClient["registerDeviceToken"] = async (params) => {
     const { clientId, token, notificationType, enableEncrypted = false } = params;
 
     const echoUrl = `${ECHO_URL}/${this.projectId}/clients`;

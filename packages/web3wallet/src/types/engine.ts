@@ -5,7 +5,7 @@ import {
   PendingRequestTypes,
   ProposalTypes,
   SessionTypes,
-  EchoTypes,
+  EchoClientTypes,
 } from "@walletconnect/types";
 import { IWeb3Wallet } from "./client";
 
@@ -86,5 +86,7 @@ export abstract class IWeb3WalletEngine {
   public abstract formatMessage(payload: AuthEngineTypes.CacaoRequestPayload, iss: string): string;
 
   // ---------- Push ------------------------------------------------- //
-  public abstract registerDeviceToken(params: EchoTypes.RegisterDeviceTokenParams): Promise<void>;
+  public abstract registerDeviceToken(
+    params: EchoClientTypes.RegisterDeviceTokenParams,
+  ): Promise<void>;
 }

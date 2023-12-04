@@ -10,7 +10,7 @@ import { IExpirer } from "./expirer";
 import { IPairing } from "./pairing";
 import { Logger } from "@walletconnect/logger";
 import { IVerify } from "./verify";
-import { IEcho } from "./echo";
+import { IEchoClient } from "./echo";
 export declare namespace CoreTypes {
   interface Options {
     projectId?: string;
@@ -55,7 +55,7 @@ export abstract class ICore extends IEvents {
   public abstract expirer: IExpirer;
   public abstract pairing: IPairing;
   public abstract verify: IVerify;
-  public abstract echo: IEcho;
+  public abstract echoClient: IEchoClient;
 
   constructor(public opts?: CoreTypes.Options) {
     super();
