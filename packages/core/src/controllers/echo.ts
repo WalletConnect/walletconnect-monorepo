@@ -1,6 +1,7 @@
 import { generateChildLogger, Logger } from "@walletconnect/logger";
 import { IEchoClient } from "@walletconnect/types";
 import { ECHO_CONTEXT, ECHO_URL } from "../constants";
+import "isomorphic-unfetch";
 
 export class EchoClient extends IEchoClient {
   public readonly context = ECHO_CONTEXT;
