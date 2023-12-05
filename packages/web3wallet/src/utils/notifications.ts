@@ -4,21 +4,31 @@ import { SessionStore } from "@walletconnect/sign-client";
 
 export const Notifications: Web3WalletTypes.INotifications = {
   decryptMessage: async (params) => {
-    const core = new Core({
-      storageOptions: params.storageOptions,
-      storage: params.storage,
-    });
-    await core.crypto.init();
-    return core.crypto.decode(params.topic, params.encryptedMessage);
+    const instance = {
+      core: new Core({
+        storageOptions: params.storageOptions,
+        storage: params.storage,
+      }),
+    } as any;
+    await instance.core.crypto.init();
+    const decoded = instance.core.crypto.decode(params.topic, params.encryptedMessage);
+    instance.core = null;
+    return decoded;
   },
   getMetadata: async (params) => {
-    const core = new Core({
-      storageOptions: params.storageOptions,
-      storage: params.storage,
-    });
-    const sessionStore = new SessionStore(core, core.logger);
-    await sessionStore.init();
-    const session = sessionStore.get(params.topic);
-    return session?.peer.metadata;
+    const instances = {
+      core: new Core({
+        storageOptions: params.storageOptions,
+        storage: params.storage,
+      }),
+      sessionStore: null,
+    } as any;
+    instances.sessionStore = new SessionStore(instances.core, instances.core.logger);
+    await instances.sessionStore.init();
+    const session = instances.sessionStore.get(params.topic);
+    const metadata = session?.peer.metadata;
+    instances.core = null;
+    instances.sessionStore = null;
+    return metadata;
   },
 };
