@@ -518,9 +518,7 @@ export class EthereumProvider implements IEthereumProvider {
       if (WalletConnectModalClass) {
         try {
           this.modal = new WalletConnectModalClass({
-            walletConnectVersion: 2,
             projectId: this.rpc.projectId,
-            standaloneChains: this.rpc.chains,
             ...this.rpc.qrModalOptions,
           });
         } catch (e) {
