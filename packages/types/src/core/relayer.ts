@@ -12,13 +12,15 @@ export declare namespace RelayerTypes {
     protocol: string;
     data?: string;
   }
-
   export interface PublishOptions {
     relay?: ProtocolOptions;
     ttl?: number;
     prompt?: boolean;
     tag?: number;
     id?: number;
+    internal?: {
+      throwOnFailedPublish?: boolean;
+    };
   }
 
   export interface SubscribeOptions {
@@ -51,6 +53,7 @@ export declare namespace RelayerTypes {
     sdkVersion: string;
     projectId?: string;
     useOnCloseEvent?: boolean;
+    bundleId?: string;
   }
 }
 
@@ -114,4 +117,5 @@ export abstract class IRelayer extends IEvents {
   public abstract transportClose(): Promise<void>;
   public abstract transportOpen(relayUrl?: string): Promise<void>;
   public abstract restartTransport(relayUrl?: string): Promise<void>;
+  public abstract confirmOnlineStateOrThrow(): Promise<void>;
 }

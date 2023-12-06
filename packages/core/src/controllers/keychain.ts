@@ -32,7 +32,7 @@ export class KeyChain implements IKeyChain {
   }
 
   get storageKey() {
-    return this.storagePrefix + this.version + "//" + this.name;
+    return this.storagePrefix + this.version + this.core.customStoragePrefix + "//" + this.name;
   }
 
   public has: IKeyChain["has"] = (tag) => {

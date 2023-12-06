@@ -70,7 +70,7 @@ await web3wallet.disconnectSession({
 5. Responding to Sign Session Requests
 
 ```javascript
-web3wallet.on("session_request", (event) => {
+web3wallet.on("session_request", async (event) => {
   const { id, method, params } = event.request;
   await web3wallet.respondSessionRequest({ id, result: response });
 });

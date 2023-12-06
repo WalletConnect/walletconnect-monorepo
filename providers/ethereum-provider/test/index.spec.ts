@@ -11,7 +11,7 @@ import {
   _bytecode,
 } from "ethereum-test-network/lib/utils/ERC20Token__factory";
 import { WalletClient } from "./shared";
-import EthereumProvider from "../src";
+import EthereumProvider, { OPTIONAL_EVENTS, OPTIONAL_METHODS } from "../src";
 import {
   CHAIN_ID,
   PORT,
@@ -24,6 +24,7 @@ import {
   TEST_ETHEREUM_METHODS_OPTIONAL,
 } from "./shared/constants";
 import { EthereumProviderOptions } from "../src/EthereumProvider";
+import { parseChainId } from "@walletconnect/utils";
 
 describe("EthereumProvider", function () {
   let testNetwork: TestNetwork;
@@ -43,7 +44,7 @@ describe("EthereumProvider", function () {
       chains: [1],
       methods: TEST_ETHEREUM_METHODS_REQUIRED,
       optionalMethods: TEST_ETHEREUM_METHODS_OPTIONAL,
-      showQrModal: true,
+      showQrModal: false,
       qrModalOptions: {
         themeMode: "dark",
         themeVariables: {
@@ -443,6 +444,9 @@ describe("EthereumProvider", function () {
       await Promise.all([
         new Promise<void>((resolve) => {
           walletClient.on("session_proposal", async (proposal) => {
+            expect(proposal.params.optionalNamespaces.eip155.methods).to.eql(OPTIONAL_METHODS);
+            expect(proposal.params.optionalNamespaces.eip155.events).to.eql(OPTIONAL_EVENTS);
+
             await walletClient.approve({
               id: proposal.id,
               namespaces: {
@@ -479,7 +483,6 @@ describe("EthereumProvider", function () {
       expect(Object.keys(httpProviders).map((chain) => parseInt(chain))).to.eql(
         initOptions.optionalChains,
       );
-
       await provider.signer.client.core.relayer.transportClose();
       await walletClient.core.relayer.transportClose();
     });
@@ -534,6 +537,72 @@ describe("EthereumProvider", function () {
           showQrModal: false,
         }),
       ).rejects.toThrowError("No chains specified in either `chains` or `optionalChains`");
+    });
+    it("should connect when none of the optional chains are approved", async () => {
+      const initOptions: EthereumProviderOptions = {
+        projectId: process.env.TEST_PROJECT_ID || "",
+        optionalChains: [CHAIN_ID],
+        showQrModal: false,
+      };
+      const provider = await EthereumProvider.init(initOptions);
+      const walletClient = await SignClient.init({
+        projectId: initOptions.projectId,
+      });
+      const chainToApprove = "eip155:137";
+
+      expect(parseInt(parseChainId(chainToApprove).reference)).to.not.eql(CHAIN_ID);
+
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          walletClient.on("session_proposal", async (proposal) => {
+            await walletClient.approve({
+              id: proposal.id,
+              namespaces: {
+                eip155: {
+                  chains: [chainToApprove],
+                  accounts: [`${chainToApprove}:${walletAddress}`],
+                  methods: proposal.params.optionalNamespaces.eip155.methods,
+                  events: proposal.params.optionalNamespaces.eip155.events,
+                },
+              },
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          provider.on("display_uri", (uri) => {
+            walletClient.pair({ uri });
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          provider.on("accountsChanged", (accounts) => {
+            expect(accounts[0]).to.include(walletAddress);
+            expect(accounts.length).to.eql(1);
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          provider.on("chainChanged", (chain) => {
+            expect(parseInt(chain, 16)).to.eql(parseInt(parseChainId(chainToApprove).reference));
+            resolve();
+          });
+        }),
+        provider.connect(),
+      ]);
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      expect(accounts[0]).to.include(walletAddress);
+      expect(accounts.length).to.eql(1);
+
+      const httpProviders = provider.signer.rpcProviders.eip155.httpProviders;
+      expect(httpProviders).to.exist;
+      expect(httpProviders).to.be.an("object");
+      expect(Object.keys(httpProviders).length).to.eql(1);
+      expect(Object.keys(httpProviders).map((chain) => parseInt(chain))).to.eql([
+        parseInt(parseChainId(chainToApprove).reference),
+      ]);
+      await provider.signer.client.core.relayer.transportClose();
+      await walletClient.core.relayer.transportClose();
     });
   });
 });

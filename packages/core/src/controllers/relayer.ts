@@ -29,7 +29,14 @@ import {
   RelayerTypes,
   SubscriberTypes,
 } from "@walletconnect/types";
-import { createExpiringPromise, formatRelayRpcUrl, getInternalError } from "@walletconnect/utils";
+import {
+  createExpiringPromise,
+  formatRelayRpcUrl,
+  getInternalError,
+  isOnline,
+  subscribeToNetworkChange,
+  getBundleId,
+} from "@walletconnect/utils";
 
 import {
   RELAYER_SDK_VERSION,
@@ -62,11 +69,13 @@ export class Relayer extends IRelayer {
   public transportExplicitlyClosed = false;
 
   private initialized = false;
-  private reconnecting = false;
+  private connectionAttemptInProgress = false;
   private relayUrl: string;
   private projectId: string | undefined;
+  private bundleId: string | undefined;
   private connectionStatusPollingInterval = 20;
   private staleConnectionErrors = ["socket hang up", "socket stalled"];
+  private hasExperiencedNetworkDisruption = false;
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -81,6 +90,7 @@ export class Relayer extends IRelayer {
 
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
     this.projectId = opts.projectId;
+    this.bundleId = getBundleId();
 
     // re-assigned during init()
     this.provider = {} as IJsonRpcProvider;
@@ -88,6 +98,7 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
+    this.registerEventListeners();
     await this.createProvider();
     await Promise.all([this.messages.init(), this.subscriber.init()]);
     try {
@@ -98,7 +109,6 @@ export class Relayer extends IRelayer {
       );
       await this.restartTransport(RELAYER_FAILOVER_RELAY_URL);
     }
-    this.registerEventListeners();
     this.initialized = true;
     setTimeout(async () => {
       if (this.subscriber.topics.length === 0) {
@@ -138,13 +148,18 @@ export class Relayer extends IRelayer {
 
     if (id) return id;
 
+    let resolvePromise: () => void;
+    const onSubCreated = (subscription: SubscriberTypes.Active) => {
+      if (subscription.topic === topic) {
+        this.subscriber.off(SUBSCRIBER_EVENTS.created, onSubCreated);
+        resolvePromise();
+      }
+    };
+
     await Promise.all([
       new Promise<void>((resolve) => {
-        this.subscriber.once(SUBSCRIBER_EVENTS.created, (subscription: SubscriberTypes.Active) => {
-          if (subscription.topic === topic) {
-            resolve();
-          }
-        });
+        resolvePromise = resolve;
+        this.subscriber.on(SUBSCRIBER_EVENTS.created, onSubCreated);
       }),
       new Promise<void>(async (resolve) => {
         id = await this.subscriber.subscribe(topic, opts);
@@ -190,45 +205,52 @@ export class Relayer extends IRelayer {
 
   public async transportClose() {
     this.transportExplicitlyClosed = true;
-    if (this.connected) {
+    /**
+     * if there was a network disruption like restart of network driver, the socket is most likely stalled and we can't rely on it
+     * as in this case provider.disconnect() is not reliable, since it might resolve after a long time or not emit disconnect event at all.
+     */
+    if (this.hasExperiencedNetworkDisruption && this.connected) {
+      await createExpiringPromise(this.provider.disconnect(), 1000, "provider.disconnect()").catch(
+        () => this.onProviderDisconnect(),
+      );
+    } else if (this.connected) {
       await this.provider.disconnect();
-      this.events.emit(RELAYER_EVENTS.transport_closed);
     }
   }
 
   public async transportOpen(relayUrl?: string) {
     this.transportExplicitlyClosed = false;
-    if (this.reconnecting) return;
-    this.relayUrl = relayUrl || this.relayUrl;
-    this.reconnecting = true;
+    await this.confirmOnlineStateOrThrow();
+    if (this.connectionAttemptInProgress) return;
+
+    if (relayUrl && relayUrl !== this.relayUrl) {
+      this.relayUrl = relayUrl;
+      await this.transportClose();
+      await this.createProvider();
+    }
+    this.connectionAttemptInProgress = true;
     try {
       await Promise.all([
         new Promise<void>((resolve) => {
-          if (!this.initialized) resolve();
+          if (!this.initialized) return resolve();
           // wait for the subscriber to finish resubscribing to its topics
           this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
             resolve();
           });
         }),
-        await Promise.race([
-          new Promise<void>(async (resolve, reject) => {
+        new Promise<void>(async (resolve, reject) => {
+          try {
             await createExpiringPromise(
               this.provider.connect(),
               10_000,
               `Socket stalled when trying to connect to ${this.relayUrl}`,
-            )
-              .catch((e) => reject(e))
-              .then(() => resolve())
-              .finally(() =>
-                this.removeListener(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen),
-              );
-          }),
-          new Promise<void>((_res) =>
-            // rejects pending promise if transport is closed before connection is established
-            // useful when .connect() gets stuck resolving
-            this.once(RELAYER_EVENTS.transport_closed, this.rejectTransportOpen),
-          ),
-        ]),
+            );
+          } catch (e) {
+            reject(e);
+            return;
+          }
+          resolve();
+        }),
       ]);
     } catch (e: unknown | Error) {
       this.logger.error(e);
@@ -236,27 +258,25 @@ export class Relayer extends IRelayer {
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
-      this.events.emit(RELAYER_EVENTS.transport_closed);
+      this.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
     } finally {
-      this.reconnecting = false;
+      this.connectionAttemptInProgress = false;
+      this.hasExperiencedNetworkDisruption = false;
     }
   }
 
   public async restartTransport(relayUrl?: string) {
-    if (this.transportExplicitlyClosed || this.reconnecting) return;
+    await this.confirmOnlineStateOrThrow();
+    if (this.connectionAttemptInProgress) return;
     this.relayUrl = relayUrl || this.relayUrl;
-    if (this.connected) {
-      await Promise.all([
-        new Promise<void>((resolve) => {
-          this.provider.once(RELAYER_PROVIDER_EVENTS.disconnect, () => {
-            resolve();
-          });
-        }),
-        this.transportClose(),
-      ]);
-    }
+    await this.transportClose();
     await this.createProvider();
     await this.transportOpen();
+  }
+
+  public async confirmOnlineStateOrThrow() {
+    if (await isOnline()) return;
+    throw new Error("No internet connection detected. Please restart your network and try again.");
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -265,12 +285,12 @@ export class Relayer extends IRelayer {
     return this.staleConnectionErrors.some((error) => message.includes(error));
   }
 
-  private rejectTransportOpen() {
-    throw new Error("Attempt to connect to relay via `transportOpen` has stalled. Retrying...");
-  }
-
   private async createProvider() {
+    if (this.provider.connection) {
+      this.unregisterProviderListeners();
+    }
     const auth = await this.core.crypto.signJWT(this.relayUrl);
+
     this.provider = new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
@@ -281,6 +301,7 @@ export class Relayer extends IRelayer {
           projectId: this.projectId,
           auth,
           useOnCloseEvent: true,
+          bundleId: this.bundleId,
         }),
       ),
     );
@@ -346,25 +367,64 @@ export class Relayer extends IRelayer {
     await this.provider.connection.send(response);
   }
 
-  private registerProviderListeners() {
-    this.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload: JsonRpcPayload) =>
-      this.onProviderPayload(payload),
-    );
-    this.provider.on(RELAYER_PROVIDER_EVENTS.connect, () => {
-      this.events.emit(RELAYER_EVENTS.connect);
-    });
-    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
-      this.onProviderDisconnect();
-    });
-    this.provider.on(RELAYER_PROVIDER_EVENTS.error, (err: unknown) => {
-      this.logger.error(err);
-      this.events.emit(RELAYER_EVENTS.error, err);
-    });
+  // ---------- Events Handlers ----------------------------------------------- //
+  private onPayloadHandler = (payload: JsonRpcPayload) => {
+    this.onProviderPayload(payload);
+  };
+
+  private onConnectHandler = () => {
+    this.events.emit(RELAYER_EVENTS.connect);
+  };
+
+  private onDisconnectHandler = () => {
+    this.onProviderDisconnect();
+  };
+
+  private onProviderErrorHandler = (error: Error) => {
+    this.logger.error(error);
+    this.events.emit(RELAYER_EVENTS.error, error);
+
+    // close the transport when a fatal error is received as there's no way to recover from it
+    // usual cases are missing/invalid projectId, expired jwt token, invalid origin etc
+    this.logger.info("Fatal socket error received, closing transport");
+    this.transportClose();
+  };
+
+  private registerProviderListeners = () => {
+    this.provider.on(RELAYER_PROVIDER_EVENTS.payload, this.onPayloadHandler);
+    this.provider.on(RELAYER_PROVIDER_EVENTS.connect, this.onConnectHandler);
+    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, this.onDisconnectHandler);
+    this.provider.on(RELAYER_PROVIDER_EVENTS.error, this.onProviderErrorHandler);
+  };
+
+  private unregisterProviderListeners() {
+    this.provider.off(RELAYER_PROVIDER_EVENTS.payload, this.onPayloadHandler);
+    this.provider.off(RELAYER_PROVIDER_EVENTS.connect, this.onConnectHandler);
+    this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, this.onDisconnectHandler);
+    this.provider.off(RELAYER_PROVIDER_EVENTS.error, this.onProviderErrorHandler);
   }
 
-  private registerEventListeners() {
-    this.events.on(RELAYER_EVENTS.connection_stalled, async () => {
-      await this.restartTransport();
+  private async registerEventListeners() {
+    this.events.on(RELAYER_EVENTS.connection_stalled, () => {
+      this.restartTransport().catch((error) => this.logger.error(error));
+    });
+
+    let lastConnectedState = await isOnline();
+    subscribeToNetworkChange(async (connected: boolean) => {
+      if (!this.initialized) return;
+
+      // sometimes the network change event is triggered multiple times so avoid reacting to the same value
+      if (lastConnectedState === connected) return;
+
+      lastConnectedState = connected;
+
+      if (connected) {
+        await this.restartTransport().catch((error) => this.logger.error(error));
+      } else {
+        // when the device network is restarted, the socket might stay in false `connected` state
+        this.hasExperiencedNetworkDisruption = true;
+        await this.transportClose().catch((error) => this.logger.error(error));
+      }
     });
   }
 
@@ -378,9 +438,10 @@ export class Relayer extends IRelayer {
       return;
     }
 
+    this.logger.info("attemptToReconnect called. Connecting...");
     // Attempt reconnection after one second.
     setTimeout(async () => {
-      await this.restartTransport();
+      await this.restartTransport().catch((error) => this.logger.error(error));
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 
@@ -392,8 +453,9 @@ export class Relayer extends IRelayer {
   }
 
   private async toEstablishConnection() {
+    await this.confirmOnlineStateOrThrow();
     if (this.connected) return;
-    if (this.connecting) {
+    if (this.connectionAttemptInProgress) {
       return await new Promise<void>((resolve) => {
         const interval = setInterval(() => {
           if (this.connected) {

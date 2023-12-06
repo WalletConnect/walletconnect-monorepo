@@ -57,19 +57,12 @@ class Eip155Provider implements IProvider {
   }
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
-    const parsedChain = getChainId(chainId);
     // http provider exists so just set the chainId
-    if (!this.httpProviders[parsedChain]) {
-      const rpc =
-        rpcUrl ||
-        getRpcUrl(`${this.name}:${parsedChain}`, this.namespace, this.client.core.projectId);
-      if (!rpc) {
-        throw new Error(`No RPC url provided for chainId: ${parsedChain}`);
-      }
-      this.setHttpProvider(parsedChain, rpc);
+    if (!this.httpProviders[chainId]) {
+      this.setHttpProvider(parseInt(chainId), rpcUrl);
     }
-    this.chainId = parsedChain;
-    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${parsedChain}`);
+    this.chainId = parseInt(chainId);
+    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${chainId}`);
   }
 
   public requestAccounts(): string[] {
@@ -94,7 +87,9 @@ class Eip155Provider implements IProvider {
   ): JsonRpcProvider | undefined {
     const rpc =
       rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace, this.client.core.projectId);
-    if (typeof rpc === "undefined") return undefined;
+    if (!rpc) {
+      throw new Error(`No RPC url provided for chainId: ${chainId}`);
+    }
     const http = new JsonRpcProvider(new HttpConnection(rpc, getGlobal("disableProviderPing")));
     return http;
   }
@@ -109,7 +104,7 @@ class Eip155Provider implements IProvider {
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      const parsedChain = getChainId(chain);
+      const parsedChain = parseInt(getChainId(chain));
       http[parsedChain] = this.createHttpProvider(parsedChain, this.namespace.rpcMap?.[chain]);
     });
     return http;

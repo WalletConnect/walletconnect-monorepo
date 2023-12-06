@@ -57,9 +57,7 @@ export class Subscriber extends ISubscriber {
   public init: ISubscriber["init"] = async () => {
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
-      await this.restart();
       this.registerEventListeners();
-      this.onEnable();
       this.clientId = await this.relayer.core.crypto.getClientId();
     }
   };
@@ -68,8 +66,10 @@ export class Subscriber extends ISubscriber {
     return getLoggerContext(this.logger);
   }
 
-  get storageKey(): string {
-    return this.storagePrefix + this.version + "//" + this.name;
+  get storageKey() {
+    return (
+      this.storagePrefix + this.version + this.relayer.core.customStoragePrefix + "//" + this.name
+    );
   }
 
   get length() {
@@ -398,7 +398,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private async checkPending() {
-    if (this.relayer.transportExplicitlyClosed) {
+    if (!this.initialized || this.relayer.transportExplicitlyClosed) {
       return;
     }
     const pendingSubscriptions: SubscriberTypes.Params[] = [];

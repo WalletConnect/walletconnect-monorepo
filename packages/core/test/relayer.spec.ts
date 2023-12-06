@@ -14,7 +14,7 @@ import {
   SUBSCRIBER_EVENTS,
 } from "../src";
 import { disconnectSocket, TEST_CORE_OPTIONS, throttle } from "./shared";
-import { ICore, IRelayer } from "@walletconnect/types";
+import { ICore, IRelayer, ISubscriber } from "@walletconnect/types";
 import Sinon from "sinon";
 import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { generateRandomBytes32, hashMessage } from "@walletconnect/utils";
@@ -145,6 +145,22 @@ describe("Relayer", () => {
       // @ts-expect-error
       expect(spy.calledOnceWith("abc123")).to.be.true;
       expect(id).to.eq("mock-id");
+    });
+
+    it("should subscribe multiple topics", async () => {
+      const spy = Sinon.spy(() => "mock-id");
+      relayer.subscriber.subscribe = spy;
+      const subscriber = relayer.subscriber as ISubscriber;
+      // record the number of listeners before subscribing
+      const startNumListeners = subscriber.events.listenerCount(SUBSCRIBER_EVENTS.created);
+      const topicsToSubscribe = Array.from(Array(5).keys()).map(() => generateRandomBytes32());
+      const subscribePromises = topicsToSubscribe.map((topic) => relayer.subscribe(topic));
+      const onSubscriptionCreatedPromises = topicsToSubscribe.map((topic) =>
+        relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic }),
+      );
+      await Promise.all([...subscribePromises, ...onSubscriptionCreatedPromises]);
+      // expect the number of listeners to be the same as before subscribing to confirm proper cleanup
+      expect(subscriber.events.listenerCount(SUBSCRIBER_EVENTS.created)).to.eq(startNumListeners);
     });
 
     it("should be able to resubscribe on topic that already exists", async () => {
