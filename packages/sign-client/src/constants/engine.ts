@@ -101,6 +101,18 @@ export const ENGINE_RPC_OPTS: EngineTypes.RpcOptsMap = {
       tag: 1115,
     },
   },
+  wc_sessionAuthenticate: {
+    req: {
+      ttl: FIVE_MINUTES,
+      prompt: false,
+      tag: 1116,
+    },
+    res: {
+      ttl: FIVE_MINUTES,
+      prompt: false,
+      tag: 1117,
+    },
+  },
 };
 
 export const SESSION_REQUEST_EXPIRY_BOUNDARIES = {

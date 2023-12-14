@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
   EXPIRER_EVENTS,
   PAIRING_EVENTS,
@@ -32,6 +33,7 @@ import {
   RelayerTypes,
   SessionTypes,
   PairingTypes,
+  AuthTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -68,6 +70,13 @@ import {
   handleDeeplinkRedirect,
   MemoryStore,
   getDeepLink,
+  hashKey,
+  getDidAddress,
+  formatMessage,
+  verifySignature,
+  formatRecapFromNamespaces,
+  getMethodsFromRecap,
+  buildNamespacesFromAuth,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -79,6 +88,7 @@ import {
   METHODS_TO_VERIFY,
   WALLETCONNECT_DEEPLINK_CHOICE,
   ENGINE_QUEUE_STATES,
+  AUTH_PUBLIC_KEY_NAME,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -86,7 +96,6 @@ export class Engine extends IEngine {
 
   private events: IEngineEvents = new EventEmmiter();
   private initialized = false;
-  private ignoredPayloadTypes = [TYPE_1];
 
   /**
    * Queue responsible for processing incoming requests such as session_update, session_event, session_ping etc
@@ -302,7 +311,11 @@ export class Engine extends IEngine {
     const { id, reason } = params;
     const { pairingTopic } = this.client.proposal.get(id);
     if (pairingTopic) {
-      await this.sendError(id, pairingTopic, reason);
+      await this.sendError({
+        id,
+        topic: pairingTopic,
+        error: reason,
+      });
       await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
     }
   };
@@ -345,6 +358,7 @@ export class Engine extends IEngine {
     await this.isInitialized();
     await this.isValidRequest(params);
     const { chainId, request, topic, expiry } = params;
+    console.log("request", request);
     const id = payloadId();
     const { done, resolve, reject } = createDelayedPromise<T>(
       expiry,
@@ -387,7 +401,7 @@ export class Engine extends IEngine {
     if (isJsonRpcResult(response)) {
       await this.sendResult({ id, topic, result: response.result, throwOnFailedPublish: true });
     } else if (isJsonRpcError(response)) {
-      await this.sendError(id, topic, response.error);
+      await this.sendError({ id, topic, error: response.error });
     }
     this.cleanupAfterResponse(params);
   };
@@ -442,6 +456,337 @@ export class Engine extends IEngine {
   public getPendingSessionRequests: IEngine["getPendingSessionRequests"] = () => {
     this.isInitialized();
     return this.client.pendingRequest.getAll();
+  };
+
+  // ---------- Auth ------------------------------------------------ //
+
+  public sessionAuthenticate: IEngine["sessionAuthenticate"] = async (params) => {
+    this.isInitialized();
+
+    // if (!isValidRequest(params)) {
+    //   throw new Error("Invalid request");
+    // }
+
+    const {
+      chains,
+      statement,
+      aud,
+      domain,
+      nonce,
+      type,
+      exp,
+      nbf,
+      methods = [],
+      resources = [],
+    } = params;
+
+    const { topic: pairingTopic, uri } = await this.client.core.pairing.create();
+
+    this.client.logger.info({
+      message: "Generated new pairing",
+      pairing: { topic: pairingTopic, uri },
+    });
+
+    const publicKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(publicKey);
+
+    await this.client.auth.authKeys.set(AUTH_PUBLIC_KEY_NAME, { responseTopic, publicKey });
+    await this.client.auth.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic });
+
+    // Subscribe to auth_response topic
+    await this.client.core.relayer.subscribe(responseTopic);
+    console.log("subscribed to response topic", responseTopic);
+
+    this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
+    console.log("sending request to new pairing topic: ", pairingTopic);
+
+    //TODO: ----- reject multi namespaces ----- //
+    const namespace = chains[0].split(":")[0];
+    console.log("namespace", namespace);
+
+    // ----- build recaps ----- //
+    const namespaces = {};
+
+    chains.forEach((chain) => {
+      namespaces[chain] = {
+        methods,
+      };
+    });
+
+    const recap = formatRecapFromNamespaces(namespace, "request", methods);
+    resources.push(recap);
+
+    const request = {
+      authPayload: {
+        type: type ?? "caip122",
+        chains,
+        statement,
+        aud,
+        domain,
+        version: "1",
+        nonce,
+        iat: new Date().toISOString(),
+        exp,
+        nbf,
+        resources,
+      },
+      requester: { publicKey, metadata: this.client.metadata },
+    };
+
+    const id = await this.sendRequest({
+      topic: pairingTopic,
+      method: "wc_sessionAuthenticate",
+      params: request,
+      expiry: params.expiry,
+    });
+
+    await this.client.auth.requests.set(id, {
+      authPayload: request.authPayload,
+      requester: request.requester,
+      id,
+      pairingTopic,
+      verifyContext: {} as any,
+    });
+
+    let resolvePromise: (value: unknown) => void;
+    let rejectPromise: (value: unknown) => void;
+    const response = new Promise((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    });
+
+    this.events.once(engineEvent("session_request", id), async (payload: any) => {
+      if (payload.error) {
+        return rejectPromise(payload.error.message);
+      }
+      const accounts: string[] = [];
+      const {
+        cacaos,
+        responder,
+      }: {
+        cacaos: AuthTypes.SessionAuthenticateResponseParams["cacaos"];
+        responder: AuthTypes.SessionAuthenticateResponseParams["responder"];
+      } = payload.result as any;
+
+      cacaos.forEach(async (cacao) => {
+        const { s: signature, p: payload } = cacao;
+        const pendingRequest = this.client.auth.requests.get(id);
+        if (!pendingRequest) {
+          throw new Error(`Could not find pending auth request with id ${id}`);
+        }
+        console.log("pendingRequest");
+        const reconstructed = this.formatAuthMessage({
+          request: pendingRequest.authPayload as any,
+          iss: payload.iss,
+        });
+        console.log("reconstructed", reconstructed);
+        const walletAddress = getDidAddress(payload.iss);
+        const valid = await verifySignature(walletAddress!, reconstructed, signature);
+
+        console.log("valid", valid ? "✅" : "🛑", valid);
+        accounts.push(payload.iss);
+      });
+
+      console.log("dapp - getting shared key", {
+        selfPublicKey: publicKey,
+        peer: responder.publicKey,
+      });
+      const sessionTopic = await this.client.core.crypto.generateSharedKey(
+        publicKey,
+        responder.publicKey,
+      );
+      console.log("sessionTopic", sessionTopic);
+
+      //TODO: create session object
+      const session: SessionTypes.Struct = {
+        topic: sessionTopic,
+        acknowledged: true,
+        self: {
+          publicKey,
+          metadata: this.client.metadata,
+        },
+        peer: responder,
+        controller: responder.publicKey,
+        expiry: calcExpiry(SESSION_EXPIRY),
+        requiredNamespaces: {},
+        optionalNamespaces: {},
+        relay: { protocol: "irn" },
+        pairingTopic: "",
+        namespaces: buildNamespacesFromAuth(methods, accounts),
+      };
+
+      await this.client.core.relayer.subscribe(sessionTopic);
+      await this.client.session.set(sessionTopic, session);
+
+      const sessionObject = this.client.session.get(sessionTopic);
+
+      console.log("dapp sessionObject", sessionObject);
+      resolvePromise(payload as any);
+    });
+
+    return { uri, response } as any;
+  };
+
+  public approveSessionAuthenticate: IEngine["approveSessionAuthenticate"] = async (
+    sessionAuthenticateResponseParams,
+  ) => {
+    this.isInitialized();
+
+    const { id, auths } = sessionAuthenticateResponseParams;
+
+    const pendingRequest = this.getPendingRequest(id);
+
+    if (!pendingRequest) {
+      throw new Error(`Could not find pending auth request with id ${id}`);
+    }
+
+    const receiverPublicKey = pendingRequest.requester.publicKey;
+    const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(receiverPublicKey);
+
+    const encodeOpts = {
+      type: TYPE_1,
+      receiverPublicKey,
+      senderPublicKey,
+    };
+
+    console.log("sending response", {
+      responseTopic,
+      receiverPublicKey,
+      id,
+    });
+
+    let allValid = true;
+    const accounts: string[] = [];
+    const methods = [];
+
+    if (
+      pendingRequest?.authPayload.resources?.map((resource: string) =>
+        resource.includes("urn:recap:"),
+      )
+    ) {
+      const recap = pendingRequest?.authPayload.resources?.find((resource: string) =>
+        resource.includes("urn:recap:"),
+      );
+      console.log("recap", recap);
+      const recapMethods = getMethodsFromRecap(recap!);
+      methods.push(...recapMethods);
+    }
+
+    await new Promise<void>(async (resolve) => {
+      auths.forEach(async (cacao) => {
+        const { s: signature, p: payload } = cacao;
+        console.log("pendingRequest", payload);
+        const reconstructed = this.formatAuthMessage({
+          request: pendingRequest.authPayload as any,
+          iss: payload.iss,
+        });
+        console.log("reconstructed", reconstructed);
+        const walletAddress = getDidAddress(payload.iss);
+        console.log("walletAddress", payload.iss);
+        try {
+          const valid = await verifySignature(walletAddress!, reconstructed, signature);
+          if (!valid) allValid = false;
+          console.log("wallet - valid", valid ? "✅" : "🛑", valid);
+        } catch (error) {
+          console.log("error", error);
+          allValid = false;
+        }
+        accounts.push(payload.iss);
+      });
+      resolve();
+    });
+
+    if (!allValid) {
+      console.log("invalid signature");
+      const invalidErr = getSdkError("SESSION_SETTLEMENT_FAILED", "Invalid signature");
+
+      console.log("sending error");
+      await this.sendError({
+        id,
+        topic: responseTopic,
+        error: invalidErr,
+        encodeOpts,
+      });
+
+      console.log("throwing error");
+      throw new Error(invalidErr.message);
+    }
+
+    console.log("wallet - getting shared key", senderPublicKey, receiverPublicKey);
+    const sessionTopic = await this.client.core.crypto.generateSharedKey(
+      senderPublicKey,
+      receiverPublicKey,
+    );
+
+    console.log("wallet - keys", {
+      selfPublicKey: senderPublicKey,
+      peer: receiverPublicKey,
+    });
+
+    console.log("wallet - sessionTopic", sessionTopic);
+
+    console.log("wallet - creating session object", {
+      accounts,
+      methods,
+    });
+
+    //TODO: create session object
+    const session: SessionTypes.Struct = {
+      topic: sessionTopic,
+      acknowledged: true,
+      self: {
+        publicKey: senderPublicKey,
+        metadata: this.client.metadata,
+      },
+      peer: {
+        publicKey: receiverPublicKey,
+        metadata: pendingRequest.requester.metadata,
+      },
+      controller: receiverPublicKey,
+      expiry: calcExpiry(SESSION_EXPIRY),
+      requiredNamespaces: {},
+      optionalNamespaces: {},
+      relay: { protocol: "irn" },
+      pairingTopic: "",
+      namespaces: buildNamespacesFromAuth(methods, accounts),
+    };
+
+    console.log("wallet - subscribing to sessionTopic");
+    await this.client.core.relayer.subscribe(sessionTopic);
+    console.log("wallet - setting session");
+    await this.client.session.set(sessionTopic, session);
+
+    const sessionObject = this.client.session.get(sessionTopic);
+    console.log("wallet sessionObject", sessionObject);
+
+    await this.sendResult<"wc_sessionAuthenticate">({
+      topic: responseTopic,
+      id,
+      result: {
+        cacaos: auths,
+        responder: {
+          publicKey: senderPublicKey,
+          metadata: this.client.metadata,
+        },
+      },
+      encodeOpts,
+      throwOnFailedPublish: true,
+    });
+    console.log("sent response");
+    // TODO: finish multi-chain flow client <-> client
+
+    // pendingRequest.id, responseTopic, cacao, encodeOpts;
+    await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
+    // await this.client.requests.update(pendingRequest.id, { ...cacao });
+  };
+
+  public formatAuthMessage: IEngine["formatAuthMessage"] = (params) => {
+    this.isInitialized();
+    const { request, iss } = params;
+    //TODO: validate params
+
+    return formatMessage(request, iss);
   };
 
   // ---------- Private Helpers --------------------------------------- //
@@ -548,6 +893,7 @@ export class Engine extends IEngine {
       const hash = hashMessage(JSON.stringify(payload));
       this.client.core.verify.register({ attestationId: hash });
     }
+    console.log("sending request", topic);
     const message = await this.client.core.crypto.encode(topic, payload);
     const opts = ENGINE_RPC_OPTS[method].req;
     if (expiry) opts.ttl = expiry;
@@ -568,9 +914,9 @@ export class Engine extends IEngine {
   };
 
   private sendResult: EnginePrivate["sendResult"] = async (args) => {
-    const { id, topic, result, throwOnFailedPublish } = args;
+    const { id, topic, result, throwOnFailedPublish, encodeOpts } = args;
     const payload = formatJsonRpcResult(id, result);
-    const message = await this.client.core.crypto.encode(topic, payload);
+    const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const record = await this.client.core.history.get(topic, id);
     const opts = ENGINE_RPC_OPTS[record.request.method].res;
     if (throwOnFailedPublish) {
@@ -587,9 +933,10 @@ export class Engine extends IEngine {
     await this.client.core.history.resolve(payload);
   };
 
-  private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
+  private sendError: EnginePrivate["sendError"] = async (params) => {
+    const { id, topic, error, encodeOpts } = params;
     const payload = formatJsonRpcError(id, error);
-    const message = await this.client.core.crypto.encode(topic, payload);
+    const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const record = await this.client.core.history.get(topic, id);
     const opts = ENGINE_RPC_OPTS[record.request.method].res;
     // await is intentionally omitted to speed up performance
@@ -628,12 +975,14 @@ export class Engine extends IEngine {
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
 
-        // messages of certain types should be ignored as they are handled by their respective SDKs
-        if (this.ignoredPayloadTypes.includes(this.client.core.crypto.getPayloadType(message))) {
-          return;
-        }
+        // Retrieve the public key (if defined) to decrypt possible `auth_request` response
+        const { publicKey } = this.client.auth.authKeys.keys.includes(AUTH_PUBLIC_KEY_NAME)
+          ? this.client.auth.authKeys.get(AUTH_PUBLIC_KEY_NAME)
+          : ({ responseTopic: undefined, publicKey: undefined } as any);
 
-        const payload = await this.client.core.crypto.decode(topic, message);
+        const payload = await this.client.core.crypto.decode(topic, message, {
+          receiverPublicKey: publicKey,
+        });
         try {
           if (isJsonRpcRequest(payload)) {
             this.client.core.history.set(topic, payload);
@@ -703,6 +1052,8 @@ export class Engine extends IEngine {
         return this.onSessionRequest(topic, payload);
       case "wc_sessionEvent":
         return this.onSessionEventRequest(topic, payload);
+      case "wc_sessionAuthenticate":
+        return this.onSessionAuthenticateRequest(topic, payload);
       default:
         return this.client.logger.info(`Unsupported request method ${reqMethod}`);
     }
@@ -725,6 +1076,8 @@ export class Engine extends IEngine {
         return this.onSessionPingResponse(topic, payload);
       case "wc_sessionRequest":
         return this.onSessionRequestResponse(topic, payload);
+      case "wc_sessionAuthenticate":
+        return this.onSessionAuthenticateResponse(topic, payload);
       default:
         return this.client.logger.info(`Unsupported response method ${resMethod}`);
     }
@@ -755,7 +1108,11 @@ export class Engine extends IEngine {
       const verifyContext = await this.getVerifyContext(hash, proposal.proposer.metadata);
       this.client.events.emit("session_proposal", { id, params: proposal, verifyContext });
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -845,7 +1202,11 @@ export class Engine extends IEngine {
       this.events.emit(engineEvent("session_connect"), { session });
       this.cleanupDuplicatePairings(session);
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -885,7 +1246,11 @@ export class Engine extends IEngine {
       this.client.events.emit("session_update", { id, topic, params });
       MemoryStore.set(memoryKey, id);
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -916,7 +1281,11 @@ export class Engine extends IEngine {
       await this.sendResult<"wc_sessionExtend">({ id, topic, result: true });
       this.client.events.emit("session_extend", { id, topic });
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -937,7 +1306,11 @@ export class Engine extends IEngine {
       await this.sendResult<"wc_sessionPing">({ id, topic, result: true });
       this.client.events.emit("session_ping", { id, topic });
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -991,7 +1364,11 @@ export class Engine extends IEngine {
       this.addSessionRequestToSessionRequestQueue(request);
       this.processSessionRequestQueue();
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -1029,9 +1406,56 @@ export class Engine extends IEngine {
       this.client.events.emit("session_event", { id, topic, params });
       MemoryStore.set(memoryKey, id);
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
+  };
+
+  private onSessionAuthenticateResponse: EnginePrivate["onSessionAuthenticateResponse"] = (
+    topic,
+    payload,
+  ) => {
+    console.log("onSessionAuthenticateResponse", topic, payload);
+    const { id } = payload;
+
+    if (isJsonRpcResult(payload)) {
+      console.log("emitting", engineEvent("session_request", id));
+      this.events.emit(engineEvent("session_request", id), { result: payload.result });
+    } else if (isJsonRpcError(payload)) {
+      this.events.emit(engineEvent("session_request", id), { error: payload.error });
+    }
+  };
+
+  private onSessionAuthenticateRequest: EnginePrivate["onSessionAuthenticateRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    console.log("onSessionAuthenticateRequest", topic, payload);
+    const { requester, authPayload } = payload.params;
+
+    const hash = hashMessage(JSON.stringify(payload));
+    const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
+    const pendingRequest = {
+      requester,
+      pairingTopic: topic,
+      id: payload.id,
+      authPayload,
+      verifyContext,
+    };
+
+    await this.client.auth.requests.set(payload.id, pendingRequest);
+
+    console.log("emitting session_authenticate", payload.id);
+
+    this.client.events.emit("session_authenticate", {
+      topic,
+      params: payload.params,
+      id: payload.id,
+    });
   };
 
   private addSessionRequestToSessionRequestQueue = (request: PendingRequestTypes.Struct) => {
@@ -1355,6 +1779,7 @@ export class Engine extends IEngine {
     const { topic, request, chainId, expiry } = params;
     await this.isValidSessionTopic(topic);
     const { namespaces } = this.client.session.get(topic);
+    console.log("namespaces", namespaces, chainId);
     if (!isValidNamespacesChainId(namespaces, chainId)) {
       const { message } = getInternalError("MISSING_OR_INVALID", `request() chainId: ${chainId}`);
       throw new Error(message);
@@ -1482,5 +1907,16 @@ export class Engine extends IEngine {
         throw new Error(message);
       }
     });
+  };
+
+  // private getPendingAuthRequests = () => {
+  //   return this.client.auth.requests
+  //     .getAll()
+  //     .filter((value) => typeof value === "object") as unknown as AuthTypes.PendingRequest[];
+  // };
+
+  private getPendingRequest = (id: number) => {
+    const request = this.client.auth.requests.get(id);
+    return typeof request === "object" ? request : undefined;
   };
 }

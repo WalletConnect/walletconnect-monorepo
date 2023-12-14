@@ -1,14 +1,26 @@
-import { Core } from "@walletconnect/core";
+import { Core, Store } from "@walletconnect/core";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
   pino,
 } from "@walletconnect/logger";
-import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
+import {
+  SignClientTypes,
+  ISignClient,
+  ISignClientEvents,
+  EngineTypes,
+  AuthTypes,
+} from "@walletconnect/types";
 import { getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
+import {
+  AUTH_PUBLIC_KEY_NAME,
+  AUTH_STORAGE_PREFIX,
+  SIGN_CLIENT_DEFAULT,
+  SIGN_CLIENT_PROTOCOL,
+  SIGN_CLIENT_VERSION,
+} from "./constants";
 import { Engine, PendingRequest, Proposal, Session } from "./controllers";
 
 export class SignClient extends ISignClient {
@@ -24,6 +36,7 @@ export class SignClient extends ISignClient {
   public session: ISignClient["session"];
   public proposal: ISignClient["proposal"];
   public pendingRequest: ISignClient["pendingRequest"];
+  public auth: ISignClient["auth"];
 
   static async init(opts?: SignClientTypes.Options) {
     const client = new SignClient(opts);
@@ -49,6 +62,23 @@ export class SignClient extends ISignClient {
     this.proposal = new Proposal(this.core, this.logger);
     this.pendingRequest = new PendingRequest(this.core, this.logger);
     this.engine = new Engine(this);
+    this.auth = {
+      authKeys: new Store(
+        this.core,
+        this.logger,
+        "authKeys",
+        AUTH_STORAGE_PREFIX,
+        () => AUTH_PUBLIC_KEY_NAME,
+      ),
+      pairingTopics: new Store(this.core, this.logger, "pairingTopics", AUTH_STORAGE_PREFIX),
+      requests: new Store(
+        this.core,
+        this.logger,
+        "requests",
+        AUTH_STORAGE_PREFIX,
+        (val: AuthTypes.PendingRequest) => val.id,
+      ),
+    };
   }
 
   get context() {
@@ -200,6 +230,33 @@ export class SignClient extends ISignClient {
     }
   };
 
+  public sessionAuthenticate: ISignClient["sessionAuthenticate"] = async (params) => {
+    try {
+      return await this.engine.sessionAuthenticate(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public formatAuthMessage: ISignClient["formatAuthMessage"] = (params) => {
+    try {
+      return this.engine.formatAuthMessage(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public approveSessionAuthenticate: ISignClient["approveSessionAuthenticate"] = (params) => {
+    try {
+      return this.engine.approveSessionAuthenticate(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {
@@ -210,6 +267,9 @@ export class SignClient extends ISignClient {
       await this.proposal.init();
       await this.pendingRequest.init();
       await this.engine.init();
+      await this.auth.authKeys.init();
+      await this.auth.pairingTopics.init();
+      await this.auth.requests.init();
       this.core.verify.init({ verifyUrl: this.metadata.verifyUrl });
       this.logger.info(`SignClient Initialization Success`);
     } catch (error: any) {

@@ -6,6 +6,7 @@ import { IPendingRequest } from "./pendingRequest";
 import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
 import { Verify } from "../core/verify";
+import { IAuth, AuthTypes } from "./auth";
 
 export declare namespace SignClientTypes {
   type Event =
@@ -18,7 +19,8 @@ export declare namespace SignClientTypes {
     | "session_request"
     | "session_request_sent"
     | "session_event"
-    | "proposal_expire";
+    | "proposal_expire"
+    | "session_authenticate";
 
   interface BaseEventArgs<T = unknown> {
     id: number;
@@ -51,6 +53,7 @@ export declare namespace SignClientTypes {
       chainId: string;
     }>;
     proposal_expire: { id: number };
+    session_authenticate: BaseEventArgs<AuthTypes.AuthRequestEventArgs>;
   }
 
   type Metadata = CoreTypes.Metadata;
@@ -109,6 +112,7 @@ export abstract class ISignClient {
   public abstract session: ISession;
   public abstract proposal: IProposal;
   public abstract pendingRequest: IPendingRequest;
+  public abstract auth: IAuth;
 
   constructor(public opts?: SignClientTypes.Options) {}
 
@@ -125,4 +129,7 @@ export abstract class ISignClient {
   public abstract disconnect: IEngine["disconnect"];
   public abstract find: IEngine["find"];
   public abstract getPendingSessionRequests: IEngine["getPendingSessionRequests"];
+  public abstract sessionAuthenticate: IEngine["sessionAuthenticate"];
+  public abstract formatAuthMessage: IEngine["formatAuthMessage"];
+  public abstract approveSessionAuthenticate: IEngine["approveSessionAuthenticate"];
 }
