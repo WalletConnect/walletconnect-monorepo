@@ -257,6 +257,15 @@ export class SignClient extends ISignClient {
     }
   };
 
+  public rejectSessionAuthenticate: ISignClient["rejectSessionAuthenticate"] = (params) => {
+    try {
+      return this.engine.rejectSessionAuthenticate(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {

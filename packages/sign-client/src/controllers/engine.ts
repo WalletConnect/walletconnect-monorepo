@@ -77,6 +77,7 @@ import {
   formatRecapFromNamespaces,
   getMethodsFromRecap,
   buildNamespacesFromAuth,
+  parseUri,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -116,6 +117,8 @@ export class Engine extends IEngine {
   };
 
   private requestQueueDelay = ONE_SECOND;
+
+  private expectedPairingMethodMap: Map<string, string> = new Map();
 
   constructor(client: IEngine["client"]) {
     super(client);
@@ -224,6 +227,13 @@ export class Engine extends IEngine {
 
   public pair: IEngine["pair"] = async (params) => {
     await this.isInitialized();
+    const { uri } = params;
+    const { topic, method } = parseUri(uri);
+    console.log("pair", { topic, method });
+    if (method) {
+      this.expectedPairingMethodMap.set(topic, method);
+      console.log("expectedPairingMethodMap", this.expectedPairingMethodMap.entries());
+    }
     return await this.client.core.pairing.pair(params);
   };
 
@@ -480,7 +490,8 @@ export class Engine extends IEngine {
       resources = [],
     } = params;
 
-    const { topic: pairingTopic, uri } = await this.client.core.pairing.create();
+    let { topic: pairingTopic, uri } = await this.client.core.pairing.create();
+    uri = `${uri}&method=wc_sessionAuthenticate`;
 
     this.client.logger.info({
       message: "Generated new pairing",
@@ -512,6 +523,7 @@ export class Engine extends IEngine {
         methods,
       };
     });
+    console.log("new namespaces", namespaces);
 
     const recap = formatRecapFromNamespaces(namespace, "request", methods);
     resources.push(recap);
@@ -540,6 +552,33 @@ export class Engine extends IEngine {
       expiry: params.expiry,
     });
 
+    chains.forEach((chain) => {
+      namespaces[chain] = {
+        methods,
+        events: [],
+      };
+    });
+
+    const proposal = {
+      requiredNamespaces: namespaces,
+      optionalNamespaces: {},
+      relays: [{ protocol: "irn" }],
+      proposer: {
+        publicKey,
+        metadata: this.client.metadata,
+      },
+    };
+
+    const fallbackId = await this.sendRequest({
+      topic: pairingTopic,
+      method: "wc_sessionPropose",
+      params: proposal,
+      expiry: params.expiry,
+    });
+
+    const expiry = calcExpiry(FIVE_MINUTES);
+    await this.setProposal(fallbackId, { id: fallbackId, expiry, ...proposal });
+
     await this.client.auth.requests.set(id, {
       authPayload: request.authPayload,
       requester: request.requester,
@@ -555,8 +594,39 @@ export class Engine extends IEngine {
       rejectPromise = reject;
     });
 
+    this.events.once<"session_connect">(
+      engineEvent("session_connect"),
+      async ({ error, session }) => {
+        console.log("wc_sessionPropose, session", session);
+        if (error) rejectPromise(error);
+        else if (session) {
+          session.self.publicKey = publicKey;
+          const completeSession = {
+            ...session,
+            requiredNamespaces: session.requiredNamespaces,
+            optionalNamespaces: session.optionalNamespaces,
+          };
+          await this.client.session.set(session.topic, completeSession);
+          await this.setExpiry(session.topic, session.expiry);
+          if (pairingTopic) {
+            await this.client.core.pairing.updateMetadata({
+              topic: pairingTopic,
+              metadata: session.peer.metadata,
+            });
+          }
+          const sessionObject = this.client.session.get(session.topic);
+          resolvePromise({
+            session: sessionObject,
+          });
+        }
+      },
+    );
+
     this.events.once(engineEvent("session_request", id), async (payload: any) => {
       if (payload.error) {
+        // ignore unsupported method error
+        const error = getSdkError("WC_METHOD_UNSUPPORTED", "wc_sessionAuthenticate");
+        if (payload.error.message === error.message) return;
         return rejectPromise(payload.error.message);
       }
       const accounts: string[] = [];
@@ -621,7 +691,10 @@ export class Engine extends IEngine {
       const sessionObject = this.client.session.get(sessionTopic);
 
       console.log("dapp sessionObject", sessionObject);
-      resolvePromise(payload as any);
+      resolvePromise({
+        auths: payload,
+        session: sessionObject,
+      });
     });
 
     return { uri, response } as any;
@@ -779,6 +852,36 @@ export class Engine extends IEngine {
     // pendingRequest.id, responseTopic, cacao, encodeOpts;
     await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
     // await this.client.requests.update(pendingRequest.id, { ...cacao });
+  };
+
+  public rejectSessionAuthenticate: IEngine["rejectSessionAuthenticate"] = async (params) => {
+    await this.isInitialized();
+
+    const { id, reason } = params;
+
+    const pendingRequest = this.getPendingRequest(id);
+
+    if (!pendingRequest) {
+      throw new Error(`Could not find pending auth request with id ${id}`);
+    }
+
+    const receiverPublicKey = pendingRequest.requester.publicKey;
+    const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(receiverPublicKey);
+
+    const encodeOpts = {
+      type: TYPE_1,
+      receiverPublicKey,
+      senderPublicKey,
+    };
+
+    await this.sendError({
+      id,
+      topic: responseTopic,
+      error: reason,
+      encodeOpts,
+    });
+    await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
   };
 
   public formatAuthMessage: IEngine["formatAuthMessage"] = (params) => {
@@ -980,9 +1083,23 @@ export class Engine extends IEngine {
           ? this.client.auth.authKeys.get(AUTH_PUBLIC_KEY_NAME)
           : ({ responseTopic: undefined, publicKey: undefined } as any);
 
-        const payload = await this.client.core.crypto.decode(topic, message, {
+        const payload = (await this.client.core.crypto.decode(topic, message, {
           receiverPublicKey: publicKey,
-        });
+        })) as any;
+
+        console.log(
+          "expected pairing topic/method",
+          this.expectedPairingMethodMap.get(topic),
+          topic,
+          payload,
+        );
+        const expectedMethod = this.expectedPairingMethodMap.get(topic);
+        if (expectedMethod && payload.method !== expectedMethod) {
+          console.log("expected method", expectedMethod, payload.method);
+          console.log("ignoring...");
+          return;
+        }
+
         try {
           if (isJsonRpcRequest(payload)) {
             this.client.core.history.set(topic, payload);

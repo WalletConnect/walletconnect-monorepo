@@ -1,5 +1,5 @@
 import { AuthTypes } from "@walletconnect/types";
-
+const didPrefix = "did:pkh:";
 export const getDidAddressSegments = (iss: string) => {
   return iss?.split(":");
 };
@@ -7,7 +7,7 @@ export const getDidAddressSegments = (iss: string) => {
 export const getDidChainId = (iss: string) => {
   const segments = iss && getDidAddressSegments(iss);
   if (segments) {
-    return segments[3];
+    return iss.includes(didPrefix) ? segments[3] : segments[1];
   }
   return undefined;
 };
@@ -82,7 +82,18 @@ export function buildAuthObject(
   signature: AuthTypes.CacaoSignature,
   iss: string,
 ) {
+  if (!iss.includes("did:pkh:")) {
+    iss = `did:pkh:${iss}`;
+  }
   const chainId = getNamespacedDidChainId(iss);
+
+  console.log("buildAuthObject", {
+    requestPayload,
+    signature,
+    iss,
+    chainId,
+  });
+
   const authObject: AuthTypes.Cacao = {
     h: {
       t: "caip122",
@@ -94,6 +105,7 @@ export function buildAuthObject(
     },
     s: signature,
   };
+  console.log("authObject", authObject);
   return authObject;
 }
 
@@ -145,7 +157,7 @@ export function formatStatementFromRecap(recap: any) {
   });
 
   const abilities = Object.keys(uniqueAbilities).map((ability, i) => {
-    return `(${i}) '${ability}': '${uniqueAbilities[ability].join("', '")}' for '${namespace}'`;
+    return `(${i}) '${ability}': '${uniqueAbilities[ability].join("', '")}' for '${namespace}'.`;
   });
 
   base = base.concat(abilities.join(", "));

@@ -34,6 +34,7 @@ export function parseUri(str: string): EngineTypes.UriParameters {
     version: parseInt(requiredValues[1], 10),
     symKey: queryParams.symKey as string,
     relay: parseRelayParams(queryParams),
+    method: queryParams.method as string,
   };
   return result;
 }

@@ -45,6 +45,7 @@ export declare namespace EngineTypes {
     topic: string;
     symKey: string;
     relay: RelayerTypes.ProtocolOptions;
+    method?: string;
   }
 
   interface EventCallback<T extends JsonRpcRequest | JsonRpcResponse> {
@@ -350,7 +351,10 @@ export abstract class IEngine {
 
   public abstract sessionAuthenticate: (params: AuthTypes.SessionAuthenticateParams) => Promise<{
     uri: string;
-    response: Promise<AuthTypes.AuthResponse>;
+    response: Promise<{
+      auths: AuthTypes.AuthResponse,
+      session?: SessionTypes.Struct,
+    }>;
   }>;
 
   public abstract approveSessionAuthenticate: (
@@ -361,4 +365,6 @@ export abstract class IEngine {
     request: AuthTypes.PayloadParams;
     iss: string;
   }) => string;
+
+  public abstract rejectSessionAuthenticate(params: EngineTypes.RejectParams): Promise<void>;
 }
