@@ -512,6 +512,12 @@ export class Engine extends IEngine {
     console.log("sending request to new pairing topic: ", pairingTopic);
 
     //TODO: ----- reject multi namespaces ----- //
+
+    const uniqueNamespaces = [...new Set(chains.map((chain) => chain.split(":")[0]))];
+    if (uniqueNamespaces.length > 1) {
+      throw new Error("Multi-namespace requests are supported.");
+    }
+
     const namespace = chains[0].split(":")[0];
     console.log("namespace", namespace);
 
