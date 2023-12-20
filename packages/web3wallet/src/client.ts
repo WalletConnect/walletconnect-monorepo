@@ -2,6 +2,7 @@ import EventEmitter from "events";
 import { CLIENT_CONTEXT } from "./constants";
 import { Engine } from "./controllers";
 import { IWeb3Wallet, Web3WalletTypes } from "./types";
+import { Notifications } from "./utils";
 
 export class Web3Wallet extends IWeb3Wallet {
   public name: IWeb3Wallet["name"];
@@ -10,6 +11,7 @@ export class Web3Wallet extends IWeb3Wallet {
   public events: IWeb3Wallet["events"] = new EventEmitter();
   public engine: IWeb3Wallet["engine"];
   public metadata: IWeb3Wallet["metadata"];
+  public static notifications: Web3WalletTypes.INotifications = Notifications;
 
   static async init(opts: Web3WalletTypes.Options) {
     const client = new Web3Wallet(opts);
@@ -167,6 +169,15 @@ export class Web3Wallet extends IWeb3Wallet {
   public formatMessage: IWeb3Wallet["formatMessage"] = (params, iss) => {
     try {
       return this.engine.formatMessage(params, iss);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public registerDeviceToken: IWeb3Wallet["registerDeviceToken"] = (params) => {
+    try {
+      return this.engine.registerDeviceToken(params);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;

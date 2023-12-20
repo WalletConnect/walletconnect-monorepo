@@ -1,8 +1,9 @@
 import EventEmmiter, { EventEmitter } from "events";
-import { ICore, ProposalTypes, Verify } from "@walletconnect/types";
+import { ICore, CoreTypes, ProposalTypes, Verify } from "@walletconnect/types";
 import { AuthClientTypes } from "@walletconnect/auth-client";
 import { IWeb3WalletEngine } from "./engine";
 import { Logger } from "@walletconnect/logger";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
 export declare namespace Web3WalletTypes {
   type Event = "session_proposal" | "session_request" | "session_delete" | "auth_request";
@@ -41,7 +42,21 @@ export declare namespace Web3WalletTypes {
     name?: string;
   }
 
-  type Metadata = AuthClientTypes.Metadata;
+  type Metadata = CoreTypes.Metadata;
+
+  interface INotifications {
+    decryptMessage: (params: {
+      topic: string;
+      encryptedMessage: string;
+      storageOptions?: CoreTypes.Options["storageOptions"];
+      storage?: CoreTypes.Options["storage"];
+    }) => Promise<JsonRpcPayload>;
+    getMetadata: (params: {
+      topic: string;
+      storageOptions?: CoreTypes.Options["storageOptions"];
+      storage?: CoreTypes.Options["storage"];
+    }) => Promise<CoreTypes.Metadata>;
+  }
 }
 
 export abstract class IWeb3WalletEvents extends EventEmmiter {
@@ -104,6 +119,8 @@ export abstract class IWeb3Wallet {
   public abstract respondAuthRequest: IWeb3WalletEngine["respondAuthRequest"];
   public abstract getPendingAuthRequests: IWeb3WalletEngine["getPendingAuthRequests"];
   public abstract formatMessage: IWeb3WalletEngine["formatMessage"];
+  // push
+  public abstract registerDeviceToken: IWeb3WalletEngine["registerDeviceToken"];
 
   // ---------- Event Handlers ----------------------------------------------- //
   public abstract on: <E extends Web3WalletTypes.Event>(

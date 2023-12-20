@@ -1,7 +1,11 @@
-import { Core } from "@walletconnect/core";
-import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { Core, RELAYER_EVENTS } from "@walletconnect/core";
+import {
+  JsonRpcPayload,
+  formatJsonRpcResult,
+  isJsonRpcRequest,
+} from "@walletconnect/jsonrpc-utils";
 import { SignClient } from "@walletconnect/sign-client";
-import { ICore, ISignClient, SessionTypes } from "@walletconnect/types";
+import { CoreTypes, ICore, ISignClient, SessionTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
@@ -444,5 +448,238 @@ describe("Sign Integration", () => {
         resolve();
       }),
     ]);
+  });
+
+  describe("Decrypted notifications", () => {
+    it("should get session metadata", async () => {
+      const dappMetadata: CoreTypes.Metadata = {
+        name: "Test Dapp",
+        description: "Test Dapp Description",
+        url: "https://walletconnect.com",
+        icons: ["https://walletconnect.com/walletconnect-logo.png"],
+      };
+      const dappTable = "./test/tmp/dapp";
+      const walletTable = "./test/tmp/wallet";
+      const dapp = await SignClient.init({
+        ...TEST_CORE_OPTIONS,
+        name: "Dapp",
+        metadata: dappMetadata,
+        storageOptions: {
+          database: dappTable,
+        },
+      });
+      const wallet = await Web3Wallet.init({
+        core: new Core({
+          ...TEST_CORE_OPTIONS,
+          storageOptions: { database: walletTable },
+        }),
+        name: "wallet",
+        metadata: {} as any,
+      });
+
+      const { uri: uriString, approval } = await dapp.connect({});
+      let session: SessionTypes.Struct;
+      await Promise.all([
+        new Promise((resolve) => {
+          wallet.on("session_proposal", async (sessionProposal) => {
+            const { id, params, verifyContext } = sessionProposal;
+            expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+            expect(verifyContext.verified.isScam).to.eq(undefined);
+            session = await wallet.approveSession({
+              id,
+              namespaces: TEST_NAMESPACES,
+            });
+            resolve(session);
+          });
+        }),
+        new Promise(async (resolve) => {
+          resolve(await approval());
+        }),
+        wallet.pair({ uri: uriString! }),
+      ]);
+
+      const metadata = await Web3Wallet.notifications.getMetadata({
+        topic: session?.topic,
+        storageOptions: { database: walletTable },
+      });
+
+      expect(metadata).to.be.exist;
+      expect(metadata).to.be.a("object");
+      expect(metadata).to.toMatchObject(dappMetadata);
+    });
+
+    it("should decrypt payload with pairing topic", async () => {
+      const dappMetadata: CoreTypes.Metadata = {
+        name: "Test Dapp",
+        description: "Test Dapp Description",
+        url: "https://walletconnect.com",
+        icons: ["https://walletconnect.com/walletconnect-logo.png"],
+      };
+      const dappTable = "./test/tmp/dapp";
+      const walletTable = "./test/tmp/wallet";
+      const dapp = await SignClient.init({
+        ...TEST_CORE_OPTIONS,
+        name: "Dapp",
+        metadata: dappMetadata,
+        storageOptions: {
+          database: dappTable,
+        },
+      });
+      const wallet = await Web3Wallet.init({
+        core: new Core({
+          ...TEST_CORE_OPTIONS,
+          storageOptions: { database: walletTable },
+        }),
+        name: "wallet",
+        metadata: {} as any,
+      });
+
+      const { uri: uriString = "", approval } = await dapp.connect({});
+      let encryptedMessage = "";
+      let decryptedMessage: JsonRpcPayload = {} as any;
+      let pairingTopic = "";
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          wallet.core.relayer.on(RELAYER_EVENTS.message, async (payload) => {
+            const { topic, message } = payload;
+            const decrypted = await wallet.core.crypto.decode(topic, message);
+            expect(decrypted).to.be.exist;
+            if (decrypted?.method === "wc_sessionPropose" && isJsonRpcRequest(decrypted)) {
+              encryptedMessage = message;
+              decryptedMessage = decrypted;
+              pairingTopic = topic;
+              resolve();
+            }
+          });
+        }),
+        new Promise<void>((resolve) => {
+          wallet.on("session_proposal", async (sessionProposal) => {
+            const { id, params, verifyContext } = sessionProposal;
+            expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+            expect(verifyContext.verified.isScam).to.eq(undefined);
+            await wallet.approveSession({
+              id,
+              namespaces: TEST_NAMESPACES,
+            });
+            resolve();
+          });
+        }),
+        new Promise(async (resolve) => {
+          resolve(await approval());
+        }),
+        wallet.pair({ uri: uriString }),
+      ]);
+
+      const decrypted = await Web3Wallet.notifications.decryptMessage({
+        topic: pairingTopic,
+        encryptedMessage,
+        storageOptions: { database: walletTable },
+      });
+      expect(decrypted).to.be.exist;
+      expect(decrypted).to.be.a("object");
+      expect(decrypted).to.toMatchObject(decryptedMessage);
+    });
+    it("should decrypt payload with session topic", async () => {
+      const dappMetadata: CoreTypes.Metadata = {
+        name: "Test Dapp",
+        description: "Test Dapp Description",
+        url: "https://walletconnect.com",
+        icons: ["https://walletconnect.com/walletconnect-logo.png"],
+      };
+      const dappTable = "./test/tmp/dapp";
+      const walletTable = "./test/tmp/wallet";
+      const dapp = await SignClient.init({
+        ...TEST_CORE_OPTIONS,
+        name: "Dapp",
+        metadata: dappMetadata,
+        storageOptions: {
+          database: dappTable,
+        },
+      });
+      const wallet = await Web3Wallet.init({
+        core: new Core({
+          ...TEST_CORE_OPTIONS,
+          storageOptions: { database: walletTable },
+        }),
+        name: "wallet",
+        metadata: {} as any,
+      });
+
+      const { uri: uriString = "", approval } = await dapp.connect({});
+
+      let session: SessionTypes.Struct = {} as any;
+      // pair and approve session
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          wallet.on("session_proposal", async (sessionProposal) => {
+            const { id, params, verifyContext } = sessionProposal;
+            expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+            expect(verifyContext.verified.isScam).to.eq(undefined);
+            session = await wallet.approveSession({
+              id,
+              namespaces: TEST_NAMESPACES,
+            });
+            resolve();
+          });
+        }),
+        new Promise(async (resolve) => {
+          resolve(await approval());
+        }),
+        wallet.pair({ uri: uriString }),
+      ]);
+
+      let encryptedMessage = "";
+      let decryptedMessage: JsonRpcPayload = {} as any;
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          wallet.core.relayer.on(RELAYER_EVENTS.message, async (payload) => {
+            const { topic, message } = payload;
+            const decrypted = await wallet.core.crypto.decode(topic, message);
+            expect(decrypted).to.be.exist;
+            if (decrypted?.method === "wc_sessionRequest" && isJsonRpcRequest(decrypted)) {
+              encryptedMessage = message;
+              decryptedMessage = decrypted;
+              resolve();
+            }
+          });
+        }),
+        new Promise<void>((resolve) => {
+          wallet.on("session_request", async (payload) => {
+            const { id, params, topic, verifyContext } = payload;
+            await wallet.respondSessionRequest({
+              topic,
+              response: formatJsonRpcResult(id, "0x"),
+            });
+            resolve();
+          });
+        }),
+        dapp.request({
+          topic: session.topic,
+          request: {
+            method: "eth_signTransaction",
+            params: [
+              {
+                from: cryptoWallet.address,
+                to: cryptoWallet.address,
+                data: "0x",
+                nonce: "0x01",
+                gasPrice: "0x020a7ac094",
+                gasLimit: "0x5208",
+                value: "0x00",
+              },
+            ],
+          },
+          chainId: TEST_ETHEREUM_CHAIN,
+        }),
+      ]);
+      const decrypted = await Web3Wallet.notifications.decryptMessage({
+        topic: session.topic,
+        encryptedMessage,
+        storageOptions: { database: walletTable },
+      });
+      expect(decrypted).to.be.exist;
+      expect(decrypted).to.be.a("object");
+      expect(decrypted).to.toMatchObject(decryptedMessage);
+    });
   });
 });
