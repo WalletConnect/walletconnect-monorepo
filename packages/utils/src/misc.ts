@@ -49,7 +49,7 @@ export function isReactNative(): boolean {
 }
 
 export function isBrowser(): boolean {
-  return !isNode() && !!getNavigator();
+  return !isNode() && !!getNavigator() && !!getDocument();
 }
 
 export function getEnvironment(): string {
