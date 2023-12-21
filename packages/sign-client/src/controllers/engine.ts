@@ -490,6 +490,11 @@ export class Engine extends IEngine {
     this.client.core.storage
       .removeItem(WALLETCONNECT_DEEPLINK_CHOICE)
       .catch((e) => this.client.logger.warn(e));
+    this.getPendingSessionRequests().forEach((r) => {
+      if (r.topic === topic) {
+        this.deletePendingSessionRequest(r.id, getSdkError("USER_DISCONNECTED"));
+      }
+    });
   };
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async (id, expirerHasDeleted) => {
@@ -1388,7 +1393,13 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     const { topic, response } = params;
-    await this.isValidSessionTopic(topic);
+    try {
+      // if the session is already disconnected, we can't respond to the request so we need to delete it
+      await this.isValidSessionTopic(topic);
+    } catch (error) {
+      if (params?.response?.id) this.cleanupAfterResponse(params);
+      throw error;
+    }
     if (!isValidResponse(response)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
