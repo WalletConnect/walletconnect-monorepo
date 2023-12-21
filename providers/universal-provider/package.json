@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/universal-provider",
   "description": "Universal Provider for WalletConnect Protocol",
-  "version": "2.10.6",
+  "version": "2.11.0",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "repository": {
@@ -45,9 +45,9 @@
     "@walletconnect/jsonrpc-types": "^1.0.2",
     "@walletconnect/jsonrpc-utils": "^1.0.7",
     "@walletconnect/logger": "^2.0.1",
-    "@walletconnect/sign-client": "2.10.6",
-    "@walletconnect/types": "2.10.6",
-    "@walletconnect/utils": "2.10.6",
+    "@walletconnect/sign-client": "2.11.0",
+    "@walletconnect/types": "2.11.0",
+    "@walletconnect/utils": "2.11.0",
     "events": "^3.3.0"
   },
   "devDependencies": {
