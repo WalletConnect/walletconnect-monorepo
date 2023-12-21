@@ -381,6 +381,13 @@ export class Engine extends IEngine {
 
   public respond: IEngine["respond"] = async (params) => {
     await this.isInitialized();
+
+    // if the session is already disconnected, we can't respond to the request so we need to delete it
+    await this.isValidSessionTopic(params.topic).catch((error) => {
+      this.cleanupAfterResponse(params);
+      throw error;
+    });
+
     await this.isValidRespond(params);
     const { topic, response } = params;
     const { id } = response;
