@@ -11,7 +11,7 @@ export declare namespace AuthTypes {
   type Event = "session_authenticate";
 
   interface AuthRequestEventArgs {
-    requester: PendingRequest["requester"];
+    requester: Participant;
     authPayload: PayloadParams;
   }
 
@@ -119,10 +119,7 @@ export declare namespace AuthTypes {
   interface PendingRequest {
     id: number;
     pairingTopic: string;
-    requester: {
-      publicKey: string;
-      metadata: CoreTypes.Metadata;
-    };
+    requester: Participant;
     authPayload: PayloadParams;
     verifyContext: Verify.Context;
   }

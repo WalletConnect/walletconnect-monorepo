@@ -824,6 +824,7 @@ export class Engine extends IEngine {
       },
       controller: receiverPublicKey,
       expiry: calcExpiry(SESSION_EXPIRY),
+      authentication: auths,
       requiredNamespaces: {},
       optionalNamespaces: {},
       relay: { protocol: "irn" },

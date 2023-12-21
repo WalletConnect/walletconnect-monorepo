@@ -352,8 +352,8 @@ export abstract class IEngine {
   public abstract sessionAuthenticate: (params: AuthTypes.SessionAuthenticateParams) => Promise<{
     uri: string;
     response: Promise<{
-      auths: AuthTypes.AuthResponse,
-      session?: SessionTypes.Struct,
+      auths?: AuthTypes.AuthResponse;
+      session: SessionTypes.Struct;
     }>;
   }>;
 
