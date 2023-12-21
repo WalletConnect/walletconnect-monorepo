@@ -497,6 +497,11 @@ export class Engine extends IEngine {
     this.client.core.storage
       .removeItem(WALLETCONNECT_DEEPLINK_CHOICE)
       .catch((e) => this.client.logger.warn(e));
+    this.getPendingSessionRequests().forEach((r) => {
+      if (r.topic === topic) {
+        this.deletePendingSessionRequest(r.id, getSdkError("USER_DISCONNECTED"));
+      }
+    });
   };
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async (id, expirerHasDeleted) => {
