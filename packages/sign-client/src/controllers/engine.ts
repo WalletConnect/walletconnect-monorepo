@@ -381,13 +381,6 @@ export class Engine extends IEngine {
 
   public respond: IEngine["respond"] = async (params) => {
     await this.isInitialized();
-
-    // if the session is already disconnected, we can't respond to the request so we need to delete it
-    await this.isValidSessionTopic(params.topic).catch((error) => {
-      this.cleanupAfterResponse(params);
-      throw error;
-    });
-
     await this.isValidRespond(params);
     const { topic, response } = params;
     const { id } = response;
@@ -1051,7 +1044,7 @@ export class Engine extends IEngine {
   };
 
   private cleanupAfterResponse = (params: EngineTypes.RespondParams) => {
-    this.deletePendingSessionRequest(params.response.id, { message: "fulfilled", code: 0 });
+    this.deletePendingSessionRequest(params.response?.id, { message: "fulfilled", code: 0 });
     // intentionally delay the emitting of the next pending request a bit
     setTimeout(() => {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
@@ -1400,7 +1393,11 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     const { topic, response } = params;
-    await this.isValidSessionTopic(topic);
+    // if the session is already disconnected, we can't respond to the request so we need to delete it
+    await this.isValidSessionTopic(topic).catch((error) => {
+      this.cleanupAfterResponse(params);
+      throw error;
+    });
     if (!isValidResponse(response)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
