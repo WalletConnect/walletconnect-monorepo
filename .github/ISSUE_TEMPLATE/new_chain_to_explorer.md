@@ -32,8 +32,8 @@ Add any other context here.
 
 **Registering a chain with the Explorer does not impact or improve the ability for wallets and dapps to support your chain.** It is simply a way for users to discover wallets and dapps that support your chain by:
 
-- Browsing the [Chains List](./chain-list.md)
-- Filtering results programmatically via the [Explorer API](../../cloud/explorer.md)
+- Browsing the [Chains List](https://docs.walletconnect.com/advanced/multichain/chain-list)
+- Filtering results programmatically via the [Explorer API](https://docs.walletconnect.com/cloud/explorer)
 
 **It is still up to wallets and dapps to provide concrete support for your chain once it is listed as part of the Explorer.**
 
