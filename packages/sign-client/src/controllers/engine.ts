@@ -291,6 +291,7 @@ export class Engine extends IEngine {
       this.client.logger.error(error);
       // if the publish fails, delete the session and throw an error
       this.client.session.delete(sessionTopic, getSdkError("USER_DISCONNECTED"));
+      await this.client.core.relayer.unsubscribe(sessionTopic);
       throw error;
     }
 
