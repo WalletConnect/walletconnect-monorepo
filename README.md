@@ -16,7 +16,7 @@ To ensure all packages lint, build and test correctly, we can run the following 
 > which will be generated for you when you set up a new project on [WalletConnect Cloud](https://cloud.walletconnect.com).
 
 ```zsh
-TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
+TEST_RELAY_URL=wss://relay.walletconnect.com TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
 ```
 
 ## Command Overview

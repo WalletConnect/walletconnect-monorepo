@@ -5,6 +5,14 @@ on:
     branches:
       - v2.0
 
+concurrency:
+  # Support push/pr as event types with different behaviors each:
+  # 1. push: queue up builds
+  # 2. pr: only allow one run per PR
+  group: ${{ github.workflow }}-${{ github.event.type }}${{ github.event.pull_request.number }}
+  # If there is already a workflow running for the same pull request, cancel it
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -87,3 +95,7 @@ jobs:
         with:
           name: build-artifacts
       - run: npm run test --prefix=${{ matrix.test-prefix }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: ${{ matrix.test-prefix }}/coverage
