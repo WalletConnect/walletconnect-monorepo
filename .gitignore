@@ -35,6 +35,7 @@ setup
 result*
 ops/grafana/grafana.ini
 .rollup.cache
+coverage
 
 # react native module
 ## Android/IJ

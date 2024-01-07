@@ -87,3 +87,7 @@ jobs:
         with:
           name: build-artifacts
       - run: npm run test --prefix=${{ matrix.test-prefix }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: ${{ matrix.test-prefix }}/coverage
