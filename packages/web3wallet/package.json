@@ -24,7 +24,7 @@
     "build:types": "tsc",
     "build:source": "rollup --config rollup.config.js",
     "build": "npm run build:pre; npm run build:source; npm run build:types",
-    "test": "vitest run --dir test --no-threads --coverage.enabled --reporter=junit --coverage.reporter=json-summary --coverage.reporter=html",
+    "test": "vitest run --dir test --pool=forks --coverage.enabled --reporter=junit --coverage.reporter=json-summary --coverage.reporter=html",
     "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
