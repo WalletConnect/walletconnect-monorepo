@@ -206,6 +206,7 @@ export class Engine extends IEngine {
       topic,
       method: "wc_sessionPropose",
       params: proposal,
+      throwOnFailedPublish: true,
     });
 
     const expiry = calcExpiry(FIVE_MINUTES);
