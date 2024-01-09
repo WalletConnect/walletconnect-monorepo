@@ -39,8 +39,6 @@ export declare namespace JsonRpcTypes {
     wc_sessionSettle: {
       relay: RelayerTypes.ProtocolOptions;
       namespaces: SessionTypes.Namespaces;
-      requiredNamespaces: ProposalTypes.RequiredNamespaces;
-      optionalNamespaces: ProposalTypes.OptionalNamespaces;
       sessionProperties?: ProposalTypes.SessionProperties;
       pairingTopic: string;
       expiry: number;
