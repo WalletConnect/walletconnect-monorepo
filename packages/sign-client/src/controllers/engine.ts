@@ -205,6 +205,7 @@ export class Engine extends IEngine {
       topic,
       method: "wc_sessionPropose",
       params: proposal,
+      throwOnFailedPublish: true,
     });
 
     const expiry = calcExpiry(FIVE_MINUTES);
@@ -261,12 +262,6 @@ export class Engine extends IEngine {
       ...(sessionProperties && { sessionProperties }),
     };
     await this.client.core.relayer.subscribe(sessionTopic);
-    await this.sendRequest({
-      topic: sessionTopic,
-      method: "wc_sessionSettle",
-      params: sessionSettle,
-      throwOnFailedPublish: true,
-    });
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
@@ -282,6 +277,21 @@ export class Engine extends IEngine {
       controller: selfPublicKey,
     };
     await this.client.session.set(sessionTopic, session);
+    try {
+      await this.sendRequest({
+        topic: sessionTopic,
+        method: "wc_sessionSettle",
+        params: sessionSettle,
+        throwOnFailedPublish: true,
+      });
+    } catch (error) {
+      this.client.logger.error(error);
+      // if the publish fails, delete the session and throw an error
+      this.client.session.delete(sessionTopic, getSdkError("USER_DISCONNECTED"));
+      await this.client.core.relayer.unsubscribe(sessionTopic);
+      throw error;
+    }
+
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
     return {
       topic: sessionTopic,
