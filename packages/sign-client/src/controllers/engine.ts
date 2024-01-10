@@ -38,7 +38,6 @@ import {
   createDelayedPromise,
   engineEvent,
   getInternalError,
-  getRequiredNamespacesFromNamespaces,
   getSdkError,
   isConformingNamespaces,
   isExpired,
@@ -181,8 +180,8 @@ export class Engine extends IEngine {
           session.self.publicKey = publicKey;
           const completeSession = {
             ...session,
-            requiredNamespaces: session.requiredNamespaces,
-            optionalNamespaces: session.optionalNamespaces,
+            requiredNamespaces: proposal.requiredNamespaces,
+            optionalNamespaces: proposal.optionalNamespaces,
           };
           await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
@@ -227,9 +226,6 @@ export class Engine extends IEngine {
     const proposal = this.client.proposal.get(id);
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
     pairingTopic = pairingTopic || "";
-    if (!isValidObject(requiredNamespaces)) {
-      requiredNamespaces = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
-    }
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -260,8 +256,6 @@ export class Engine extends IEngine {
     const sessionSettle = {
       relay: { protocol: relayProtocol ?? "irn" },
       namespaces,
-      requiredNamespaces,
-      optionalNamespaces,
       pairingTopic,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
@@ -271,6 +265,8 @@ export class Engine extends IEngine {
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
+      requiredNamespaces,
+      optionalNamespaces,
       pairingTopic,
       acknowledged: false,
       self: sessionSettle.controller,
@@ -826,16 +822,8 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidSessionSettleRequest(params);
-      const {
-        relay,
-        controller,
-        expiry,
-        namespaces,
-        requiredNamespaces,
-        optionalNamespaces,
-        sessionProperties,
-        pairingTopic,
-      } = payload.params;
+      const { relay, controller, expiry, namespaces, sessionProperties, pairingTopic } =
+        payload.params;
       const session = {
         topic,
         relay,
@@ -843,8 +831,8 @@ export class Engine extends IEngine {
         namespaces,
         acknowledged: true,
         pairingTopic,
-        requiredNamespaces,
-        optionalNamespaces,
+        requiredNamespaces: {},
+        optionalNamespaces: {},
         controller: controller.publicKey,
         self: {
           publicKey: "",

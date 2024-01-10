@@ -504,8 +504,6 @@ describe("Sign Client Integration", () => {
         namespaces: TEST_NAMESPACES,
       });
       expect(requiredNamespaces).toMatchObject({});
-      // requiredNamespaces are built internally from the namespaces during approve()
-      expect(sessionA.requiredNamespaces).toMatchObject(TEST_REQUIRED_NAMESPACES);
       expect(sessionA.requiredNamespaces).toMatchObject(
         clients.B.session.get(sessionA.topic).requiredNamespaces,
       );
