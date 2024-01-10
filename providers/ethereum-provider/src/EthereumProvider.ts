@@ -236,15 +236,16 @@ export class EthereumProvider implements IEthereumProvider {
     return provider;
   }
 
-  public async request<T = unknown>(args: RequestArguments): Promise<T> {
-    return await this.signer.request(args, this.formatChainId(this.chainId));
+  public async request<T = unknown>(args: RequestArguments, expiry?: number): Promise<T> {
+    return await this.signer.request(args, this.formatChainId(this.chainId), expiry);
   }
 
   public sendAsync(
     args: RequestArguments,
     callback: (error: Error | null, response: JsonRpcResult) => void,
+    expiry?: number,
   ): void {
-    this.signer.sendAsync(args, callback, this.formatChainId(this.chainId));
+    this.signer.sendAsync(args, callback, this.formatChainId(this.chainId), expiry);
   }
 
   get connected(): boolean {
