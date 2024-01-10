@@ -175,7 +175,7 @@ describe("EthereumProvider", function () {
         `Missing or invalid. request() expiry: ${expiryToTest}. Expiry must be a number (in seconds) between ${SESSION_REQUEST_EXPIRY_BOUNDARIES.min} and ${SESSION_REQUEST_EXPIRY_BOUNDARIES.max}`,
       );
     });
-    it("should reject when low expiry is used", async () => {
+    it("should reject when higher than max expiry is used", async () => {
       const expiryToTest = SESSION_REQUEST_EXPIRY_BOUNDARIES.max + 1;
       await expect(
         provider.request({ method: "personal_sign" }, expiryToTest),
