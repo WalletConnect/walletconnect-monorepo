@@ -3,7 +3,7 @@ import Web3 from "web3";
 import { BigNumber, providers, utils } from "ethers";
 import { TestNetwork } from "ethereum-test-network";
 
-import { SignClient } from "@walletconnect/sign-client";
+import { SESSION_REQUEST_EXPIRY_BOUNDARIES, SignClient } from "@walletconnect/sign-client";
 
 import {
   ERC20Token__factory,
@@ -48,7 +48,7 @@ describe("EthereumProvider", function () {
       qrModalOptions: {
         themeMode: "dark",
         themeVariables: {
-          "--w3m-z-index": "99",
+          "--wcm-z-index": "99",
         },
       },
       disableProviderPing: true,
@@ -165,6 +165,26 @@ describe("EthereumProvider", function () {
       }),
     ]);
   });
+
+  describe("validation", () => {
+    it("should reject when lower than min expiry is used", async () => {
+      const expiryToTest = SESSION_REQUEST_EXPIRY_BOUNDARIES.min - 1;
+      await expect(
+        provider.request({ method: "personal_sign" }, expiryToTest),
+      ).rejects.toThrowError(
+        `Missing or invalid. request() expiry: ${expiryToTest}. Expiry must be a number (in seconds) between ${SESSION_REQUEST_EXPIRY_BOUNDARIES.min} and ${SESSION_REQUEST_EXPIRY_BOUNDARIES.max}`,
+      );
+    });
+    it("should reject when higher than max expiry is used", async () => {
+      const expiryToTest = SESSION_REQUEST_EXPIRY_BOUNDARIES.max + 1;
+      await expect(
+        provider.request({ method: "personal_sign" }, expiryToTest),
+      ).rejects.toThrowError(
+        `Missing or invalid. request() expiry: ${expiryToTest}. Expiry must be a number (in seconds) between ${SESSION_REQUEST_EXPIRY_BOUNDARIES.min} and ${SESSION_REQUEST_EXPIRY_BOUNDARIES.max}`,
+      );
+    });
+  });
+
   describe("eip155", () => {
     describe("Web3", () => {
       let web3: Web3;

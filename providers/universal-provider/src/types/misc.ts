@@ -67,6 +67,7 @@ export interface RequestParams {
   request: RequestArguments;
   chainId: string;
   id?: number;
+  expiry?: number;
 }
 
 export interface RequestArguments {

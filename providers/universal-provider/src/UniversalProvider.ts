@@ -71,6 +71,7 @@ export class UniversalProvider implements IUniversalProvider {
   public async request<T = unknown>(
     args: RequestArguments,
     chain?: string | undefined,
+    expiry?: number | undefined,
   ): Promise<T> {
     const [namespace, chainId] = this.validateChain(chain);
 
@@ -84,6 +85,7 @@ export class UniversalProvider implements IUniversalProvider {
       },
       chainId: `${namespace}:${chainId}`,
       topic: this.session.topic,
+      expiry,
     });
   }
 
@@ -91,9 +93,10 @@ export class UniversalProvider implements IUniversalProvider {
     args: RequestArguments,
     callback: (error: Error | null, response: JsonRpcResult) => void,
     chain?: string | undefined,
+    expiry?: number | undefined,
   ): void {
     const id = new Date().getTime();
-    this.request(args, chain)
+    this.request(args, chain, expiry)
       .then((response) => callback(null, formatJsonRpcResult(id, response)))
       .catch((error) => callback(error, undefined as any));
   }
