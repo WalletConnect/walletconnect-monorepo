@@ -122,20 +122,20 @@ export class Subscriber extends ISubscriber {
   public isSubscribed: ISubscriber["isSubscribed"] = async (topic: string) => {
     // topic subscription is already resolved
     if (this.topics.includes(topic)) return true;
-
+    const label = `${this.pendingSubscriptionWatchLabel}_${topic}`;
     // wait for the subscription to resolve
     const exists = await new Promise<boolean>((resolve, reject) => {
       const watch = new Watch();
-      watch.start(this.pendingSubscriptionWatchLabel);
+      watch.start(label);
       const interval = setInterval(() => {
         if (!this.pending.has(topic) && this.topics.includes(topic)) {
           clearInterval(interval);
-          watch.stop(this.pendingSubscriptionWatchLabel);
+          watch.stop(label);
           resolve(true);
         }
-        if (watch.elapsed(this.pendingSubscriptionWatchLabel) >= PENDING_SUB_RESOLUTION_TIMEOUT) {
+        if (watch.elapsed(label) >= PENDING_SUB_RESOLUTION_TIMEOUT) {
           clearInterval(interval);
-          watch.stop(this.pendingSubscriptionWatchLabel);
+          watch.stop(label);
           reject(new Error("Subscription resolution timeout"));
         }
       }, this.pollingInterval);
