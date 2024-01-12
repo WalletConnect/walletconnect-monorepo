@@ -23,6 +23,12 @@ To get a new chain added to the Explorer, you will need to submit the following:
 6. **[SLIP-0044](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) coin type**:
    _\* slip44 coin type used in the namespace_
 
+**References**
+To ensure timely processing of your request, please provide the following references:
+
+- [ ] Source of RPC endpoints (e.g. RPC docs): [link]
+- [ ] Source of namespace (if non-EIP155) chain information (particularly chainIds): [link]
+
 **Additional context**
 Add any other context here.
 
