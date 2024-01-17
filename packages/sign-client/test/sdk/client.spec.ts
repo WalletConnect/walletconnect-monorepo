@@ -428,6 +428,41 @@ describe("Sign Client Integration", () => {
           await throttle(1000);
           await deleteClients(clients);
         });
+        it("should handle invalid session state with missing keychain", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
+          const dapp = clients.A as SignClient;
+          const sessions = dapp.session.getAll();
+          expect(sessions.length).to.eq(1);
+          await dapp.core.crypto.keychain.del(topic);
+
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              dapp.on("session_delete", async (args) => {
+                const { topic: sessionTopic } = args;
+                expect(sessionTopic).to.eq(topic);
+                resolve();
+              });
+            }),
+            new Promise<void>(async (resolve) => {
+              try {
+                await dapp.ping({ topic });
+              } catch (err) {
+                expect(err.message).to.eq(
+                  `Missing or invalid. session keychain doesn't exist: ${topic}`,
+                );
+              }
+              resolve();
+            }),
+          ]);
+
+          const sessionsAfter = dapp.session.getAll();
+          expect(sessionsAfter.length).to.eq(0);
+
+          await deleteClients(clients);
+        });
       });
     });
   });
