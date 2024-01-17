@@ -179,7 +179,12 @@ export interface EnginePrivate {
 
   onRelayEventUnknownPayload(event: EngineTypes.EventCallback<any>): Promise<void>;
 
-  deleteSession(topic: string, expirerHasDeleted?: boolean): Promise<void>;
+  deleteSession(params: {
+    topic: string;
+    expirerHasDeleted?: boolean;
+    id?: number;
+    emitEvent?: boolean;
+  }): Promise<void>;
 
   deleteProposal(id: number, expirerHasDeleted?: boolean): Promise<void>;
 
