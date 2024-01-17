@@ -439,7 +439,7 @@ export class Engine extends IEngine {
     } else {
       const { message } = getInternalError(
         "MISMATCHED_TOPIC",
-        `No Session or Pairing topic found: ${topic}`,
+        `Session or pairing topic not found: ${topic}`,
       );
       throw new Error(message);
     }
@@ -1179,7 +1179,7 @@ export class Engine extends IEngine {
     if (!this.client.core.crypto.keychain.has(topic)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
-        `session keychain doesn't exist: ${topic}`,
+        `session topic does not exist in keychain: ${topic}`,
       );
       await this.deleteSession({ topic });
       throw new Error(message);

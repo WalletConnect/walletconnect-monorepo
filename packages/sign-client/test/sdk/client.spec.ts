@@ -451,7 +451,7 @@ describe("Sign Client Integration", () => {
                 await dapp.ping({ topic });
               } catch (err) {
                 expect(err.message).to.eq(
-                  `Missing or invalid. session keychain doesn't exist: ${topic}`,
+                  `Missing or invalid. session topic does not exist in keychain: ${topic}`,
                 );
               }
               resolve();
