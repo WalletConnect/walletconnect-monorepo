@@ -419,12 +419,17 @@ describe("Sign Client Integration", () => {
               });
               resolve();
             }),
-            Array.from(Array(expectedRequests).keys()).map(() =>
-              clients.A.request({
-                topic: topicA,
-                ...TEST_REQUEST_PARAMS,
-              }),
-            ),
+            new Promise<void>(async (resolve) => {
+              await Promise.all([
+                ...Array.from(Array(expectedRequests).keys()).map(() =>
+                  clients.A.request({
+                    topic: topicA,
+                    ...TEST_REQUEST_PARAMS,
+                  }),
+                ),
+              ]);
+              resolve();
+            }),
           ]);
           await throttle(1000);
           await deleteClients(clients);
