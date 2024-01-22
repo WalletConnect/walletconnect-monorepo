@@ -5,7 +5,7 @@ import {
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
-import { getSdkError, parseUri } from "@walletconnect/utils";
+import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 
@@ -25,6 +25,7 @@ import {
   initTwoPairedClients,
   TEST_CONNECT_PARAMS,
 } from "../shared";
+import { toMiliseconds } from "@walletconnect/time";
 
 describe("Sign Client Integration", () => {
   it("init", async () => {
@@ -552,18 +553,14 @@ describe("Sign Client Integration", () => {
         clients,
         sessionA: { topic },
       } = await initTwoPairedClients({}, {}, { logger: "error" });
-      const expiry = 5000;
+      const expiry = 600; // 10 minutes in seconds
 
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.A.core.relayer.once(
-            RELAYER_EVENTS.publish,
-            (payload: RelayerTypes.PublishPayload) => {
-              // ttl of the request should match the expiry
-              // expect(payload?.opts?.ttl).toEqual(expiry);
-              resolve();
-            },
-          );
+          (clients.B as SignClient).once("session_request", (payload) => {
+            expect(payload.params.expiry).to.be.approximately(calcExpiry(expiry), 1000);
+            resolve();
+          });
         }),
         new Promise<void>((resolve) => {
           clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });

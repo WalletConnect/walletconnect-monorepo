@@ -43,6 +43,7 @@ export declare namespace EngineTypes {
     topic: string;
     symKey: string;
     relay: RelayerTypes.ProtocolOptions;
+    expiryTimestamp?: number;
   }
 
   interface EventCallback<T extends JsonRpcRequest | JsonRpcResponse> {

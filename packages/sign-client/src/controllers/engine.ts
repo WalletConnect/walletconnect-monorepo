@@ -156,6 +156,8 @@ export class Engine extends IEngine {
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
 
+    const expiry = ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl || FIVE_MINUTES;
+    const expiryTimestamp = calcExpiry(expiry);
     const proposal = {
       requiredNamespaces,
       optionalNamespaces,
@@ -164,13 +166,14 @@ export class Engine extends IEngine {
         publicKey,
         metadata: this.client.metadata,
       },
+      expiryTimestamp,
       ...(sessionProperties && { sessionProperties }),
     };
     const {
       reject,
       resolve,
       done: approval,
-    } = createDelayedPromise<SessionTypes.Struct>(FIVE_MINUTES, PROPOSAL_EXPIRY_MESSAGE);
+    } = createDelayedPromise<SessionTypes.Struct>(expiry, PROPOSAL_EXPIRY_MESSAGE);
     this.events.once<"session_connect">(
       engineEvent("session_connect"),
       async ({ error, session }) => {
@@ -207,8 +210,7 @@ export class Engine extends IEngine {
       throwOnFailedPublish: true,
     });
 
-    const expiry = calcExpiry(FIVE_MINUTES);
-    await this.setProposal(id, { id, expiry, ...proposal });
+    await this.setProposal(id, { id, ...proposal });
     return { uri, approval };
   };
 
@@ -349,7 +351,7 @@ export class Engine extends IEngine {
   public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
     await this.isInitialized();
     await this.isValidRequest(params);
-    const { chainId, request, topic, expiry } = params;
+    const { chainId, request, topic, expiry = FIVE_MINUTES } = params;
     const id = payloadId();
     const { done, resolve, reject } = createDelayedPromise<T>(
       expiry,
@@ -365,7 +367,7 @@ export class Engine extends IEngine {
           clientRpcId: id,
           topic,
           method: "wc_sessionRequest",
-          params: { request, chainId },
+          params: { request, chainId, expiryTimestamp: calcExpiry(expiry) },
           expiry,
           throwOnFailedPublish: true,
         }).catch((error) => reject(error));
@@ -541,21 +543,21 @@ export class Engine extends IEngine {
 
   private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
     await this.client.proposal.set(id, proposal);
-    this.client.core.expirer.set(id, proposal.expiry);
+    this.client.core.expirer.set(id, calcExpiry(FIVE_MINUTES));
   };
 
   private setPendingSessionRequest: EnginePrivate["setPendingSessionRequest"] = async (
     pendingRequest: PendingRequestTypes.Struct,
   ) => {
-    const expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl;
     const { id, topic, params, verifyContext } = pendingRequest;
+    const expiry = params.expiry ? params.expiry : calcExpiry(FIVE_MINUTES);
     await this.client.pendingRequest.set(id, {
       id,
       topic,
       params,
       verifyContext,
     });
-    if (expiry) this.client.core.expirer.set(id, calcExpiry(expiry));
+    if (expiry) this.client.core.expirer.set(id, expiry);
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
@@ -624,7 +626,7 @@ export class Engine extends IEngine {
       if (toCleanup) sessionTopics.push(session.topic);
     });
     this.client.proposal.getAll().forEach((proposal) => {
-      if (isExpired(proposal.expiry)) proposalIds.push(proposal.id);
+      if (isExpired(proposal.expiryTimestamp)) proposalIds.push(proposal.id);
     });
     await Promise.all([
       ...sessionTopics.map((topic) => this.deleteSession({ topic })),
@@ -768,8 +770,8 @@ export class Engine extends IEngine {
     const { params, id } = payload;
     try {
       this.isValidConnect({ ...payload.params });
-      const expiry = calcExpiry(FIVE_MINUTES);
-      const proposal = { id, pairingTopic: topic, expiry, ...params };
+      const expiryTimestamp = params.expiryTimestamp || calcExpiry(FIVE_MINUTES);
+      const proposal = { id, pairingTopic: topic, expiryTimestamp, ...params };
       await this.setProposal(id, proposal);
       const hash = hashMessage(JSON.stringify(payload));
       const verifyContext = await this.getVerifyContext(hash, proposal.proposer.metadata);
@@ -997,7 +999,17 @@ export class Engine extends IEngine {
       );
       const session = this.client.session.get(topic);
       const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
-      const request = { id, topic, params, verifyContext };
+      const expiry = params.expiryTimestamp;
+      delete params.expiryTimestamp;
+      const request = {
+        id,
+        topic,
+        params: {
+          ...params,
+          expiry,
+        },
+        verifyContext,
+      };
       await this.setPendingSessionRequest(request);
       this.addSessionRequestToSessionRequestQueue(request);
       this.processSessionRequestQueue();
@@ -1218,7 +1230,7 @@ export class Engine extends IEngine {
       const { message } = getInternalError("NO_MATCHING_KEY", `proposal id doesn't exist: ${id}`);
       throw new Error(message);
     }
-    if (isExpired(this.client.proposal.get(id).expiry)) {
+    if (isExpired(this.client.proposal.get(id).expiryTimestamp)) {
       await this.deleteProposal(id);
       const { message } = getInternalError("EXPIRED", `proposal id: ${id}`);
       throw new Error(message);

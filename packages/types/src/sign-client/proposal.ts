@@ -17,7 +17,8 @@ export declare namespace ProposalTypes {
 
   export interface Struct {
     id: number;
-    expiry: number;
+    expiry?: number; // deprecated in favour of expiryTimespamp
+    expiryTimestamp: number;
     relays: RelayerTypes.ProtocolOptions[];
     proposer: {
       publicKey: string;

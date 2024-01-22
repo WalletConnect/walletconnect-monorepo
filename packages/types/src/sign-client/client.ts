@@ -39,6 +39,7 @@ export declare namespace SignClientTypes {
     } & BaseEventArgs<{
       request: { method: string; params: any };
       chainId: string;
+      expiry?: number;
     }>;
     session_request_sent: {
       request: { method: string; params: any };
