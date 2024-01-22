@@ -435,6 +435,9 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
         it("should handle invalid session state with missing keychain", async () => {
+          process.on("unhandledRejection", (err) => {
+            console.error("ping failed", err);
+          });
           const {
             clients,
             sessionA: { topic },
