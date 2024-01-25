@@ -25,7 +25,6 @@ import {
   initTwoPairedClients,
   TEST_CONNECT_PARAMS,
 } from "../shared";
-import { toMiliseconds } from "@walletconnect/time";
 
 describe("Sign Client Integration", () => {
   it("init", async () => {
@@ -561,8 +560,12 @@ describe("Sign Client Integration", () => {
 
       await Promise.all([
         new Promise<void>((resolve) => {
-          (clients.B as SignClient).once("session_request", (payload) => {
+          (clients.B as SignClient).once("session_request", async (payload) => {
             expect(payload.params.expiry).to.be.approximately(calcExpiry(expiry), 1000);
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
             resolve();
           });
         }),
@@ -611,7 +614,7 @@ describe("Sign Client Integration", () => {
       };
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.B.once("session_request", (payload) => {
+          clients.B.once("session_request", async (payload) => {
             const { params } = payload;
             const session = clients.B.session.get(payload.topic);
             expect(params).toMatchObject(testRequestProps);
@@ -621,6 +624,10 @@ describe("Sign Client Integration", () => {
               ),
             ).to.exist;
             expect(session.requiredNamespaces[TEST_AVALANCHE_CHAIN]).to.exist;
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
             resolve();
           });
         }),
