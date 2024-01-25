@@ -87,7 +87,6 @@ export class Core extends ICore {
     this.pairing = new Pairing(this, this.logger);
     this.verify = new Verify(this.projectId || "", this.logger);
     this.echoClient = new EchoClient(this.projectId || "", this.logger);
-    this.name = opts?.name || CORE_DEFAULT.name;
   }
 
   get context() {
