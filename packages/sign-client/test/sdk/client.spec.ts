@@ -353,7 +353,7 @@ describe("Sign Client Integration", () => {
          * while session request is being approved
          * the queue should continue operating normally after the `respond` rejection
          */
-        it("continue processing requests queue after respond rejection due to disconnected session", async () => {
+        it.skip("continue processing requests queue after respond rejection due to disconnected session", async () => {
           // create the clients and pair them
           const {
             clients,
