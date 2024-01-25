@@ -213,8 +213,8 @@ export class Relayer extends IRelayer {
   public async transportClose() {
     // wait for all requests to finish before closing the transport
     if (this.requestsInFlight.size > 0) {
-      this.logger.warn(`waiting for requests to finish: ${this.requestsInFlight.size}`);
-      await Promise.all(this.requestsInFlight.values());
+      console.log(`waiting for requests to finish: ${this.requestsInFlight.size}`);
+      await Promise.all(this.requestsInFlight.values()).catch((error) => this.logger.error(error));
     }
 
     this.transportExplicitlyClosed = true;
