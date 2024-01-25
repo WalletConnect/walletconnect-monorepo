@@ -76,6 +76,7 @@ export class Relayer extends IRelayer {
   private connectionStatusPollingInterval = 20;
   private staleConnectionErrors = ["socket hang up", "socket stalled"];
   private hasExperiencedNetworkDisruption = false;
+  private requestsInFlight = new Map<number, Promise<unknown>>();
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -172,13 +173,19 @@ export class Relayer extends IRelayer {
 
   public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
     this.logger.debug(`Publishing Request Payload`);
+    const id = request.id as number;
+    const requestPromise = this.provider.request(request);
+    this.requestsInFlight.set(id, requestPromise);
     try {
       await this.toEstablishConnection();
-      return await this.provider.request(request);
+      const result = await requestPromise;
+      return result;
     } catch (e) {
       this.logger.debug(`Failed to Publish Request`);
       this.logger.error(e as any);
       throw e;
+    } finally {
+      this.requestsInFlight.delete(id);
     }
   };
 
@@ -204,6 +211,12 @@ export class Relayer extends IRelayer {
   }
 
   public async transportClose() {
+    // wait for all requests to finish before closing the transport
+    if (this.requestsInFlight.size > 0) {
+      this.logger.warn(`waiting for requests to finish: ${this.requestsInFlight.size}`);
+      await Promise.all(this.requestsInFlight.values());
+    }
+
     this.transportExplicitlyClosed = true;
     /**
      * if there was a network disruption like restart of network driver, the socket is most likely stalled and we can't rely on it
