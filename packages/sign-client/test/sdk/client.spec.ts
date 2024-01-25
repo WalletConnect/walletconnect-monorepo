@@ -560,7 +560,10 @@ describe("Sign Client Integration", () => {
       await Promise.all([
         new Promise<void>((resolve) => {
           (clients.B as SignClient).once("session_request", async (payload) => {
-            expect(payload.params.expiry).to.be.approximately(calcExpiry(expiry), 1000);
+            expect(payload.params.request.expiryTimestamp).to.be.approximately(
+              calcExpiry(expiry),
+              1000,
+            );
             await clients.B.respond({
               topic,
               response: formatJsonRpcResult(payload.id, "test response"),

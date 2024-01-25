@@ -37,9 +37,8 @@ export declare namespace SignClientTypes {
     session_request: {
       verifyContext: Verify.Context;
     } & BaseEventArgs<{
-      request: { method: string; params: any };
+      request: { method: string; params: any; expiryTimestamp?: number; };
       chainId: string;
-      expiry?: number;
     }>;
     session_request_sent: {
       request: { method: string; params: any };

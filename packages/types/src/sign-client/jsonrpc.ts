@@ -61,8 +61,8 @@ export declare namespace JsonRpcTypes {
       request: {
         method: string;
         params: any;
+        expiryTimestamp?: number;
       };
-      expiryTimestamp?: number;
       chainId: string;
     };
     wc_sessionEvent: {

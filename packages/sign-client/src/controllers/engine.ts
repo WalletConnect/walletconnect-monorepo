@@ -368,7 +368,13 @@ export class Engine extends IEngine {
           clientRpcId: id,
           topic,
           method: "wc_sessionRequest",
-          params: { request, chainId, expiryTimestamp: calcExpiry(expiry) },
+          params: {
+            request: {
+              ...request,
+              expiryTimestamp: calcExpiry(expiry),
+            },
+            chainId,
+          },
           expiry,
           throwOnFailedPublish: true,
         }).catch((error) => reject(error));
@@ -551,7 +557,7 @@ export class Engine extends IEngine {
     pendingRequest: PendingRequestTypes.Struct,
   ) => {
     const { id, topic, params, verifyContext } = pendingRequest;
-    const expiry = params.expiry ? params.expiry : calcExpiry(FIVE_MINUTES);
+    const expiry = params.request.expiryTimestamp || calcExpiry(FIVE_MINUTES);
     await this.client.pendingRequest.set(id, {
       id,
       topic,
@@ -1001,15 +1007,10 @@ export class Engine extends IEngine {
       );
       const session = this.client.session.get(topic);
       const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
-      const expiry = params.expiryTimestamp;
-      delete params.expiryTimestamp;
       const request = {
         id,
         topic,
-        params: {
-          ...params,
-          expiry,
-        },
+        params,
         verifyContext,
       };
       await this.setPendingSessionRequest(request);
