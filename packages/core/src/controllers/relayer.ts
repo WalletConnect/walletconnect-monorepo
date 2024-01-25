@@ -77,7 +77,13 @@ export class Relayer extends IRelayer {
   private connectionStatusPollingInterval = 20;
   private staleConnectionErrors = ["socket hang up", "socket stalled"];
   private hasExperiencedNetworkDisruption = false;
-  private requestsInFlight = new Map<number, Promise<unknown>>();
+  private requestsInFlight = new Map<
+    number,
+    {
+      promise: Promise<any>;
+      request: RequestArguments<RelayJsonRpc.SubscribeParams>;
+    }
+  >();
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -176,7 +182,10 @@ export class Relayer extends IRelayer {
     this.logger.debug(`Publishing Request Payload`);
     const id = request.id as number;
     const requestPromise = this.provider.request(request);
-    this.requestsInFlight.set(id, requestPromise);
+    this.requestsInFlight.set(id, {
+      promise: requestPromise,
+      request,
+    });
     try {
       await this.toEstablishConnection();
       const result = await requestPromise;
@@ -214,7 +223,9 @@ export class Relayer extends IRelayer {
   public async transportClose() {
     // wait for all requests to finish before closing the transport
     if (this.requestsInFlight.size > 0) {
-      await Promise.all(this.requestsInFlight.values());
+      this.requestsInFlight.forEach(async (value) => {
+        await value.promise;
+      });
     }
 
     this.transportExplicitlyClosed = true;
