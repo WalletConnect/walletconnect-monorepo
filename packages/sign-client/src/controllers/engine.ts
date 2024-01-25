@@ -16,6 +16,7 @@ import {
   isJsonRpcResponse,
   isJsonRpcResult,
   JsonRpcRequest,
+  ErrorResponse,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import {
@@ -984,6 +985,7 @@ export class Engine extends IEngine {
           });
         }),
         this.sendResult<"wc_sessionDelete">({ id, topic, result: true }),
+        this.cleanupPendingSentRequestsForTopic({ topic, error: getSdkError("USER_DISCONNECTED") }),
       ]);
     } catch (err: any) {
       this.client.logger.error(err);
@@ -1068,6 +1070,30 @@ export class Engine extends IEngine {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
       this.processSessionRequestQueue();
     }, toMiliseconds(this.requestQueueDelay));
+  };
+
+  // Allows for cleanup on any sent pending requests if the peer disconnects the session before responding
+  private cleanupPendingSentRequestsForTopic = ({
+    topic,
+    error,
+  }: {
+    topic: string;
+    error: ErrorResponse;
+  }) => {
+    const pendingRequests = this.client.core.history.pending;
+    if (pendingRequests.length > 0) {
+      const forSession = pendingRequests.filter(
+        (r) => r.topic === topic && r.request.method === "wc_sessionRequest",
+      );
+      if (forSession.length > 0) {
+        forSession.forEach((r) => {
+          // notify .request() handler of the rejection
+          this.events.emit(engineEvent("session_request", r.request.id), {
+            error,
+          });
+        });
+      }
+    }
   };
 
   private processSessionRequestQueue = () => {

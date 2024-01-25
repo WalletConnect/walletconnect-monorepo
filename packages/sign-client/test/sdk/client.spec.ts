@@ -410,24 +410,23 @@ describe("Sign Client Integration", () => {
                   // eslint-disable-next-line no-console
                   console.log("respond error", err);
                 });
-                if (receivedRequests >= expectedRequests) resolve();
+                if (receivedRequests > expectedRequests) resolve();
               });
-            }),
-            new Promise<void>(async (resolve) => {
-              await clients.A.request({
-                topic: topicB,
-                ...TEST_REQUEST_PARAMS,
-              });
-              resolve();
             }),
             new Promise<void>(async (resolve) => {
               await Promise.all([
-                ...Array.from(Array(expectedRequests).keys()).map(() =>
-                  clients.A.request({
-                    topic: topicA,
-                    ...TEST_REQUEST_PARAMS,
-                  }),
+                ...Array.from(Array(expectedRequests).keys()).map(
+                  async () =>
+                    await clients.A.request({
+                      topic: topicA,
+                      ...TEST_REQUEST_PARAMS,
+                    }),
                 ),
+                clients.A.request({
+                  topic: topicB,
+                  ...TEST_REQUEST_PARAMS,
+                  // eslint-disable-next-line no-console
+                }).catch((e) => console.error(e)), // capture the error from the session disconnect
               ]);
               resolve();
             }),
@@ -436,9 +435,6 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
         it("should handle invalid session state with missing keychain", async () => {
-          process.on("unhandledRejection", (err) => {
-            console.error("ping failed", err);
-          });
           const {
             clients,
             sessionA: { topic },
