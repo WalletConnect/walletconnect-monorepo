@@ -337,11 +337,12 @@ describe("Sign Client Integration", () => {
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
-            Array.from(Array(expectedRequests).keys()).map(() =>
-              clients.A.request({
-                topic,
-                ...TEST_REQUEST_PARAMS,
-              }),
+            Array.from(Array(expectedRequests).keys()).map(
+              async () =>
+                await clients.A.request({
+                  topic,
+                  ...TEST_REQUEST_PARAMS,
+                }),
             ),
           ]);
           await throttle(1000);
