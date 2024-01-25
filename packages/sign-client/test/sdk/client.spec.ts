@@ -165,7 +165,6 @@ describe("Sign Client Integration", () => {
       // 7. attempt to pair again with the same URI
       // 8. should receive an error the pairing already exists
       await expect(wallet.pair({ uri })).rejects.toThrowError();
-
       await deleteClients({ A: dapp, B: wallet });
     });
   });
@@ -352,7 +351,7 @@ describe("Sign Client Integration", () => {
          * while session request is being approved
          * the queue should continue operating normally after the `respond` rejection
          */
-        it.skip("continue processing requests queue after respond rejection due to disconnected session", async () => {
+        it("continue processing requests queue after respond rejection due to disconnected session", async () => {
           // create the clients and pair them
           const {
             clients,
