@@ -50,7 +50,7 @@ export class Publisher extends IPublisher {
         const publish = await createExpiringPromise(
           this.rpcPublish(topic, message, ttl, relay, prompt, tag, id),
           this.publishTimeout,
-          "Failed to publish payload, please try again.",
+          `Failed to publish payload, please try again. id:${id} tag:${tag}`,
         );
         await publish;
         this.removeRequestFromQueue(id);
