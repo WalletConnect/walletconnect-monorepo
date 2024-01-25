@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
@@ -76,7 +77,13 @@ export class Relayer extends IRelayer {
   private connectionStatusPollingInterval = 20;
   private staleConnectionErrors = ["socket hang up", "socket stalled"];
   private hasExperiencedNetworkDisruption = false;
-  private requestsInFlight = new Map<number, Promise<unknown>>();
+  private requestsInFlight = new Map<
+    number,
+    {
+      promise: Promise<any>;
+      request: RequestArguments<RelayJsonRpc.SubscribeParams>;
+    }
+  >();
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -175,7 +182,10 @@ export class Relayer extends IRelayer {
     this.logger.debug(`Publishing Request Payload`);
     const id = request.id as number;
     const requestPromise = this.provider.request(request);
-    this.requestsInFlight.set(id, requestPromise);
+    this.requestsInFlight.set(id, {
+      promise: requestPromise,
+      request,
+    });
     try {
       await this.toEstablishConnection();
       const result = await requestPromise;
@@ -213,9 +223,15 @@ export class Relayer extends IRelayer {
   public async transportClose() {
     // wait for all requests to finish before closing the transport
     if (this.requestsInFlight.size > 0) {
-      // eslint-disable-next-line no-console
-      console.log(`waiting for requests to finish: ${this.requestsInFlight.size}`);
-      await Promise.all(this.requestsInFlight.values()).catch((error) => this.logger.error(error));
+      const identifier = Math.random().toString(36).substring(7);
+      console.log(
+        `${identifier} | ${this.core.name} - waiting for requests to finish: ${this.requestsInFlight.size}`,
+      );
+      this.requestsInFlight.forEach(async (value) => {
+        console.log(`${identifier} | ${this.core.name} - waiting for request`, value.request);
+        await value.promise;
+      });
+      console.log(`${identifier} | ${this.core.name} - requests finished`);
     }
 
     this.transportExplicitlyClosed = true;
