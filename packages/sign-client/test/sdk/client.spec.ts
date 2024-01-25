@@ -413,8 +413,8 @@ describe("Sign Client Integration", () => {
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
-            new Promise<void>((resolve) => {
-              clients.A.request({
+            new Promise<void>(async (resolve) => {
+              await clients.A.request({
                 topic: topicB,
                 ...TEST_REQUEST_PARAMS,
               });
@@ -447,7 +447,6 @@ describe("Sign Client Integration", () => {
           const sessions = dapp.session.getAll();
           expect(sessions.length).to.eq(1);
           await dapp.core.crypto.keychain.del(topic);
-
           await Promise.all([
             new Promise<void>((resolve) => {
               dapp.on("session_delete", async (args) => {
@@ -571,8 +570,8 @@ describe("Sign Client Integration", () => {
             resolve();
           });
         }),
-        new Promise<void>((resolve) => {
-          clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });
           resolve();
         }),
       ]);
@@ -629,8 +628,8 @@ describe("Sign Client Integration", () => {
             resolve();
           });
         }),
-        new Promise<void>((resolve) => {
-          clients.A.request({ ...testRequestProps, topic });
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...testRequestProps, topic });
           resolve();
         }),
       ]);
