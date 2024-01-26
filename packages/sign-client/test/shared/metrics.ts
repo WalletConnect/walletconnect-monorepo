@@ -1,5 +1,7 @@
 import { CloudWatch, PutMetricDataCommandInput } from "@aws-sdk/client-cloudwatch";
 
+const tag = process.env.TAG || "default";
+
 export const uploadCanaryResultsToCloudWatch = async (
   env: string,
   region: string,
@@ -23,6 +25,10 @@ export const uploadCanaryResultsToCloudWatch = async (
           Name: "Region",
           Value: region,
         },
+        {
+          Name: "Tag",
+          Value: tag,
+        },
       ],
       Unit: "Count",
       Value: isTestPassed ? 1 : 0,
@@ -38,6 +44,10 @@ export const uploadCanaryResultsToCloudWatch = async (
         {
           Name: "Region",
           Value: region,
+        },
+        {
+          Name: "Tag",
+          Value: tag,
         },
       ],
       Unit: "Count",
@@ -58,6 +68,10 @@ export const uploadCanaryResultsToCloudWatch = async (
           Name: "Region",
           Value: region,
         },
+        {
+          Name: "Tag",
+          Value: tag,
+        },
       ],
       Unit: "Milliseconds",
       Value: testDurationMs,
@@ -77,6 +91,10 @@ export const uploadCanaryResultsToCloudWatch = async (
         {
           Name: "Region",
           Value: region,
+        },
+        {
+          Name: "Tag",
+          Value: tag,
         },
       ],
       Unit: "Milliseconds",
@@ -124,6 +142,10 @@ export const uploadLoadTestConnectionDataToCloudWatch = async (
             Name: "Target",
             Value: target,
           },
+          {
+            Name: "Tag",
+            Value: tag,
+          },
         ],
         Unit: "Count",
         Value: successfullyConnected,
@@ -135,6 +157,10 @@ export const uploadLoadTestConnectionDataToCloudWatch = async (
           {
             Name: "Target",
             Value: target,
+          },
+          {
+            Name: "Tag",
+            Value: tag,
           },
         ],
         Unit: "Count",
@@ -148,6 +174,10 @@ export const uploadLoadTestConnectionDataToCloudWatch = async (
             Name: "Target",
             Value: target,
           },
+          {
+            Name: "Tag",
+            Value: tag,
+          },
         ],
         Unit: "Milliseconds",
         Value: averagePairingTimeMs,
@@ -159,6 +189,10 @@ export const uploadLoadTestConnectionDataToCloudWatch = async (
           {
             Name: "Target",
             Value: target,
+          },
+          {
+            Name: "Tag",
+            Value: tag,
           },
         ],
         Unit: "Milliseconds",

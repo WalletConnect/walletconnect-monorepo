@@ -5,7 +5,6 @@ import {
   deleteClients,
   throttle,
   uploadCanaryResultsToCloudWatch,
-  throttle,
   publishToStatusPage,
 } from "../shared";
 import {
@@ -56,7 +55,6 @@ describe("Canary", () => {
       const pairingLatencyMs = Date.now() - start - humanInputLatencyMs;
 
       // Send a ping
-      await throttle(humanInputLatencyMs); // Introduce some realistic timeout and allow backend to replicate
       const pingStart = Date.now();
       await new Promise<void>(async (resolve, reject) => {
         try {
