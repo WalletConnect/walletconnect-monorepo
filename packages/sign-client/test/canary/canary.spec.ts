@@ -3,17 +3,20 @@ import {
   initTwoClients,
   testConnectMethod,
   deleteClients,
+  throttle,
   uploadCanaryResultsToCloudWatch,
   throttle,
   publishToStatusPage,
 } from "../shared";
 import {
+  TEST_EMIT_PARAMS,
   TEST_RELAY_URL,
   TEST_SIGN_CLIENT_OPTIONS_A,
   TEST_SIGN_CLIENT_OPTIONS_B,
 } from "./../shared/values";
 import { describe, it, expect, afterEach } from "vitest";
 import { SignClient } from "../../src";
+import { EngineTypes } from "@walletconnect/types";
 
 const environment = process.env.ENVIRONMENT || "dev";
 const region = process.env.REGION || "unknown";
@@ -69,6 +72,28 @@ describe("Canary", () => {
       });
       const pingLatencyMs = Date.now() - pingStart;
       const latencyMs = Date.now() - start - 2 * humanInputLatencyMs;
+
+      // Send message
+      const eventPayload: EngineTypes.EmitParams = {
+        topic: sessionA.topic,
+        ...TEST_EMIT_PARAMS,
+      };
+      await new Promise<void>(async (resolve, reject) => {
+        try {
+          clients.B.on("session_event", (event) => {
+            expect(TEST_EMIT_PARAMS).to.eql(event.params);
+            expect(eventPayload.topic).to.eql(event.topic);
+            resolve();
+          });
+
+          // Force the recipient to go offline so the mailbox is used
+          await clients.B.core.relayer.transportClose();
+          await clients.A.emit(eventPayload);
+          await clients.B.core.relayer.transportOpen();
+        } catch (e) {
+          reject(e);
+        }
+      });
 
       console.log(`Clients paired after ${pairingLatencyMs}ms`);
       if (environment !== "dev") {
