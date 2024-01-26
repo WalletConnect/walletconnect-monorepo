@@ -66,22 +66,7 @@ describe("UniversalProvider", function () {
   afterAll(async () => {
     // close test network
     await testNetwork.close();
-    // disconnect provider
-    await Promise.all([
-      new Promise<void>((resolve) => {
-        provider.on("session_delete", () => {
-          resolve();
-        });
-      }),
-      new Promise<void>(async (resolve) => {
-        await walletClient.disconnect();
-        resolve();
-      }),
-    ]);
-    expect(walletClient.client?.session.values.length).to.eql(0);
-    await throttle(1_000);
-    await provider.client.core.relayer.transportClose();
-    await walletClient.client?.core.relayer.transportClose();
+    await deleteProviders({ A: provider, B: walletClient.provider });
   });
 
   describe("eip155", () => {
