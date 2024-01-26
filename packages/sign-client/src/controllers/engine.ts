@@ -352,7 +352,7 @@ export class Engine extends IEngine {
   public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
     await this.isInitialized();
     await this.isValidRequest(params);
-    const { chainId, request, topic, expiry = FIVE_MINUTES } = params;
+    const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
     const id = payloadId();
     const { done, resolve, reject } = createDelayedPromise<T>(
       expiry,
@@ -550,14 +550,15 @@ export class Engine extends IEngine {
 
   private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
     await this.client.proposal.set(id, proposal);
-    this.client.core.expirer.set(id, calcExpiry(FIVE_MINUTES));
+    this.client.core.expirer.set(id, calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl));
   };
 
   private setPendingSessionRequest: EnginePrivate["setPendingSessionRequest"] = async (
     pendingRequest: PendingRequestTypes.Struct,
   ) => {
     const { id, topic, params, verifyContext } = pendingRequest;
-    const expiry = params.request.expiryTimestamp || calcExpiry(FIVE_MINUTES);
+    const expiry =
+      params.request.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl);
     await this.client.pendingRequest.set(id, {
       id,
       topic,
@@ -777,7 +778,8 @@ export class Engine extends IEngine {
     const { params, id } = payload;
     try {
       this.isValidConnect({ ...payload.params });
-      const expiryTimestamp = params.expiryTimestamp || calcExpiry(FIVE_MINUTES);
+      const expiryTimestamp =
+        params.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
       const proposal = { id, pairingTopic: topic, expiryTimestamp, ...params };
       await this.setProposal(id, proposal);
       const hash = hashMessage(JSON.stringify(payload));
@@ -1086,14 +1088,12 @@ export class Engine extends IEngine {
       const forSession = pendingRequests.filter(
         (r) => r.topic === topic && r.request.method === "wc_sessionRequest",
       );
-      if (forSession.length > 0) {
-        forSession.forEach((r) => {
-          // notify .request() handler of the rejection
-          this.events.emit(engineEvent("session_request", r.request.id), {
-            error,
-          });
+      forSession.forEach((r) => {
+        // notify .request() handler of the rejection
+        this.events.emit(engineEvent("session_request", r.request.id), {
+          error,
         });
-      }
+      });
     }
   };
 

@@ -20,7 +20,7 @@ export class Publisher extends IPublisher {
   public name = PUBLISHER_CONTEXT;
   public queue = new Map<string, PublisherTypes.Params>();
 
-  private publishTimeout = toMiliseconds(TEN_SECONDS + TEN_SECONDS);
+  private publishTimeout = toMiliseconds(TEN_SECONDS * 2);
   private needsTransportRestart = false;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
