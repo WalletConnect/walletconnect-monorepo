@@ -20,7 +20,7 @@ export class Publisher extends IPublisher {
   public name = PUBLISHER_CONTEXT;
   public queue = new Map<string, PublisherTypes.Params>();
 
-  private publishTimeout = toMiliseconds(TEN_SECONDS);
+  private publishTimeout = toMiliseconds(TEN_SECONDS * 2);
   private needsTransportRestart = false;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
@@ -50,7 +50,7 @@ export class Publisher extends IPublisher {
         const publish = await createExpiringPromise(
           this.rpcPublish(topic, message, ttl, relay, prompt, tag, id),
           this.publishTimeout,
-          "Failed to publish payload, please try again.",
+          `Failed to publish payload, please try again. id:${id} tag:${tag}`,
         );
         await publish;
         this.removeRequestFromQueue(id);
