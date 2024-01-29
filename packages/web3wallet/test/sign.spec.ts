@@ -386,7 +386,7 @@ describe("Sign Integration", () => {
 
   it("receive proposal_expire event", async () => {
     const { uri: uriString } = await dapp.connect({ requiredNamespaces: TEST_REQUIRED_NAMESPACES });
-    let startTimer;
+
     // first pair and approve session
     await Promise.all([
       new Promise<void>((resolve) => {
@@ -399,10 +399,10 @@ describe("Sign Integration", () => {
           vi.setSystemTime(
             Date.now() + toMiliseconds(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl - 2),
           );
-          startTimer = Date.now();
         });
         wallet.on("session_proposal", async (event) => {
           const { id } = event;
+          const startTimer = Date.now();
           await new Promise<void>((resolve) => {
             wallet.on("proposal_expire", (event) => {
               const { id: expiredId } = event;
@@ -441,7 +441,6 @@ describe("Sign Integration", () => {
       sessionApproval(),
       wallet.pair({ uri: uriString }),
     ]);
-    let startTimer;
     // first pair and approve session
     await Promise.all([
       new Promise<void>((resolve) => {
@@ -454,10 +453,10 @@ describe("Sign Integration", () => {
           vi.setSystemTime(
             Date.now() + toMiliseconds(ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl - 2),
           );
-          startTimer = Date.now();
         });
         wallet.on("session_request", async (event) => {
           const { id } = event;
+          const startTimer = Date.now();
           await new Promise<void>((resolve) => {
             wallet.on("session_request_expire", (event) => {
               const { id: expiredId } = event;
