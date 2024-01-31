@@ -1,5 +1,10 @@
 import { describe, it } from "vitest";
-import { buildNamespacesFromAuth, formatMessage, getMethodsFromRecap } from "../src";
+import {
+  buildNamespacesFromAuth,
+  formatMessage,
+  formatRecapFromNamespaces,
+  getMethodsFromRecap,
+} from "../src";
 
 describe("URI", () => {
   it("formatStatementFromRecap", async () => {
@@ -31,7 +36,7 @@ describe("URI", () => {
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
 
-  it.only("should build namespaces from auth", async () => {
+  it("should build namespaces from auth", async () => {
     const accounts = [
       "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
       "did:pkh:eip155:2:0x3613699A6c5D8BC97a08805876c8005543125F09",
@@ -39,5 +44,13 @@ describe("URI", () => {
     const methods = ["personal_sign", "eth_signTypedData_v4"];
 
     const namespace = buildNamespacesFromAuth(methods, accounts);
+  });
+  it("sort recap abilities alphabetically", async () => {
+    const recap = formatRecapFromNamespaces("eip155", "request", [
+      "personal_sign",
+      "eth_sendTransaction",
+      "eth_signTypedData_v4",
+    ]);
+    console.log("recap", recap);
   });
 });

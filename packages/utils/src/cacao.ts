@@ -122,6 +122,8 @@ export function formatRecapFromNamespaces(
   ability: string,
   resources: string[],
 ): string {
+  // sort resources alphabetically
+  resources?.sort((a, b) => a.localeCompare(b));
   const recap = {
     att: {
       [namespace]: resources.map((resource) => {

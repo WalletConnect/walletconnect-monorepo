@@ -1,13 +1,8 @@
 /* eslint-disable no-console */
 import { expect, describe, it, beforeAll } from "vitest";
 import { SignClient } from "../../src";
-import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, deleteClients, throttle } from "../shared";
-import {
-  buildApprovedNamespaces,
-  buildAuthObject,
-  formatRecapFromNamespaces,
-  hashMessage,
-} from "@walletconnect/utils";
+import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, throttle } from "../shared";
+import { buildApprovedNamespaces, buildAuthObject } from "@walletconnect/utils";
 import { AuthTypes } from "@walletconnect/types";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
@@ -19,7 +14,7 @@ describe("Authenticated Sessions", () => {
     cryptoWallet = CryptoWallet.createRandom();
   });
 
-  it("init", async () => {
+  it("should establish authenticated session", async () => {
     const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
     expect(dapp).to.be.exist;
     expect(dapp.metadata.redirect).to.exist;
@@ -31,7 +26,7 @@ describe("Authenticated Sessions", () => {
       domain: "localhost",
       nonce: "1",
       aud: "aud",
-      methods: ["personal_sign", "eth_signTypedData_v4"],
+      methods: ["personal_sign", "eth_chainId", "eth_signTypedData_v4"],
     });
     console.log("uri", uri);
     const wallet = await SignClient.init({
@@ -118,7 +113,7 @@ describe("Authenticated Sessions", () => {
     ]);
   });
 
-  it("fallback", async () => {
+  it("should establish normal sign session when URI doesn't specify `wc_sessionAuthenticate` method", async () => {
     const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
     expect(dapp).to.be.exist;
     expect(dapp.metadata.redirect).to.exist;

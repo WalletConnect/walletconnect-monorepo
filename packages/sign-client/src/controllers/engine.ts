@@ -523,18 +523,19 @@ export class Engine extends IEngine {
     await this.client.auth.authKeys.set(AUTH_PUBLIC_KEY_NAME, { responseTopic, publicKey });
     await this.client.auth.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic });
 
-    // Subscribe to auth_response topic
+    // Subscribe to response topic
     await this.client.core.relayer.subscribe(responseTopic);
     console.log("subscribed to response topic", responseTopic);
 
     this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
     console.log("sending request to new pairing topic: ", pairingTopic);
 
-    //TODO: ----- reject multi namespaces ----- //
-
+    // ----- reject multi namespaces ----- //
     const uniqueNamespaces = [...new Set(chains.map((chain) => chain.split(":")[0]))];
     if (uniqueNamespaces.length > 1) {
-      throw new Error("Multi-namespace requests are supported.");
+      throw new Error(
+        "Multi-namespace requests are not supported. Please request single namespace only.",
+      );
     }
 
     const namespace = chains[0].split(":")[0];
@@ -552,7 +553,7 @@ export class Engine extends IEngine {
 
     const recap = formatRecapFromNamespaces(namespace, "request", methods);
     resources.push(recap);
-
+    console.log("formatted recap", recap);
     const request = {
       authPayload: {
         type: type ?? "caip122",
@@ -570,13 +571,7 @@ export class Engine extends IEngine {
       requester: { publicKey, metadata: this.client.metadata },
     };
 
-    const id = await this.sendRequest({
-      topic: pairingTopic,
-      method: "wc_sessionAuthenticate",
-      params: request,
-      expiry: params.expiry,
-    });
-
+    // build optional namespaces for the proposal
     chains.forEach((chain) => {
       namespaces[chain] = {
         methods,
@@ -585,24 +580,38 @@ export class Engine extends IEngine {
     });
 
     const proposal = {
-      requiredNamespaces: namespaces,
-      optionalNamespaces: {},
+      requiredNamespaces: {},
+      optionalNamespaces: namespaces,
       relays: [{ protocol: "irn" }],
       proposer: {
         publicKey,
         metadata: this.client.metadata,
       },
+      expiryTimestamp: calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl),
     };
-
-    const fallbackId = await this.sendRequest({
-      topic: pairingTopic,
-      method: "wc_sessionPropose",
-      params: proposal,
-      expiry: params.expiry,
+    // send both (main & fallback) requests
+    const [id, fallbackId] = await Promise.all([
+      this.sendRequest({
+        topic: pairingTopic,
+        method: "wc_sessionAuthenticate",
+        params: request,
+        expiry: params.expiry,
+        throwOnFailedPublish: true,
+      }),
+      this.sendRequest({
+        topic: pairingTopic,
+        method: "wc_sessionPropose",
+        params: proposal,
+        expiry: ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl,
+        throwOnFailedPublish: true,
+      }),
+    ]);
+    console.log("ids", {
+      id,
+      fallbackId,
     });
 
-    const expiry = calcExpiry(FIVE_MINUTES);
-    await this.setProposal(fallbackId, { id: fallbackId, expiry, ...proposal });
+    await this.setProposal(fallbackId, { id: fallbackId, ...proposal });
 
     await this.client.auth.requests.set(id, {
       authPayload: request.authPayload,
@@ -619,6 +628,7 @@ export class Engine extends IEngine {
       rejectPromise = reject;
     });
 
+    // handle fallback session proposal response
     this.events.once<"session_connect">(
       engineEvent("session_connect"),
       async ({ error, session }) => {
@@ -626,12 +636,7 @@ export class Engine extends IEngine {
         if (error) rejectPromise(error);
         else if (session) {
           session.self.publicKey = publicKey;
-          const completeSession = {
-            ...session,
-            requiredNamespaces: session.requiredNamespaces,
-            optionalNamespaces: session.optionalNamespaces,
-          };
-          await this.client.session.set(session.topic, completeSession);
+          await this.client.session.set(session.topic, session);
           await this.setExpiry(session.topic, session.expiry);
           if (pairingTopic) {
             await this.client.core.pairing.updateMetadata({
@@ -646,9 +651,10 @@ export class Engine extends IEngine {
         }
       },
     );
-
+    // handle session authenticate response
     this.events.once(engineEvent("session_request", id), async (payload: any) => {
       if (payload.error) {
+        console.log("payload.error", payload.error);
         // ignore unsupported method error
         const error = getSdkError("WC_METHOD_UNSUPPORTED", "wc_sessionAuthenticate");
         if (payload.error.message === error.message) return;
@@ -663,20 +669,22 @@ export class Engine extends IEngine {
         responder: AuthTypes.SessionAuthenticateResponseParams["responder"];
       } = payload.result as any;
 
+      const pendingRequest = this.client.auth.requests.get(id);
+      if (!pendingRequest) {
+        throw new Error(`Could not find pending auth request with id ${id}`);
+      }
+
       cacaos.forEach(async (cacao) => {
         const { s: signature, p: payload } = cacao;
-        const pendingRequest = this.client.auth.requests.get(id);
-        if (!pendingRequest) {
-          throw new Error(`Could not find pending auth request with id ${id}`);
-        }
+
         console.log("pendingRequest");
         const reconstructed = this.formatAuthMessage({
           request: pendingRequest.authPayload as any,
           iss: payload.iss,
         });
         console.log("reconstructed", reconstructed);
-        const walletAddress = getDidAddress(payload.iss);
-        const valid = await verifySignature(walletAddress!, reconstructed, signature);
+        const walletAddress = getDidAddress(payload.iss) as string;
+        const valid = await verifySignature(walletAddress, reconstructed, signature);
 
         console.log("valid", valid ? "✅" : "🛑", valid);
         accounts.push(payload.iss);
@@ -706,7 +714,7 @@ export class Engine extends IEngine {
         requiredNamespaces: {},
         optionalNamespaces: {},
         relay: { protocol: "irn" },
-        pairingTopic: "",
+        pairingTopic,
         namespaces: buildNamespacesFromAuth(methods, accounts),
       };
 
@@ -758,20 +766,16 @@ export class Engine extends IEngine {
     const accounts: string[] = [];
     const methods = [];
 
-    if (
-      pendingRequest?.authPayload.resources?.map((resource: string) =>
-        resource.includes("urn:recap:"),
-      )
-    ) {
-      const recap = pendingRequest?.authPayload.resources?.find((resource: string) =>
-        resource.includes("urn:recap:"),
-      );
+    const recap = pendingRequest?.authPayload.resources?.find((resource: string) =>
+      resource.includes("urn:recap:"),
+    );
+    if (recap?.length) {
       console.log("recap", recap);
-      const recapMethods = getMethodsFromRecap(recap!);
+      const recapMethods = getMethodsFromRecap(recap);
       methods.push(...recapMethods);
     }
 
-    await new Promise<void>(async (resolve) => {
+    await new Promise<void>((resolve) => {
       auths.forEach(async (cacao) => {
         const { s: signature, p: payload } = cacao;
         console.log("pendingRequest", payload);
@@ -780,10 +784,10 @@ export class Engine extends IEngine {
           iss: payload.iss,
         });
         console.log("reconstructed", reconstructed);
-        const walletAddress = getDidAddress(payload.iss);
+        const walletAddress = getDidAddress(payload.iss) as string;
         console.log("walletAddress", payload.iss);
         try {
-          const valid = await verifySignature(walletAddress!, reconstructed, signature);
+          const valid = await verifySignature(walletAddress, reconstructed, signature);
           if (!valid) allValid = false;
           console.log("wallet - valid", valid ? "✅" : "🛑", valid);
         } catch (error) {
@@ -873,11 +877,7 @@ export class Engine extends IEngine {
       throwOnFailedPublish: true,
     });
     console.log("sent response");
-    // TODO: finish multi-chain flow client <-> client
-
-    // pendingRequest.id, responseTopic, cacao, encodeOpts;
     await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
-    // await this.client.requests.update(pendingRequest.id, { ...cacao });
   };
 
   public rejectSessionAuthenticate: IEngine["rejectSessionAuthenticate"] = async (params) => {

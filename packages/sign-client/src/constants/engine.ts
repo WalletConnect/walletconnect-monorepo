@@ -103,12 +103,12 @@ export const ENGINE_RPC_OPTS: EngineTypes.RpcOptsMap = {
   },
   wc_sessionAuthenticate: {
     req: {
-      ttl: FIVE_MINUTES,
-      prompt: false,
+      ttl: FIVE_MINUTES * 3,
+      prompt: true,
       tag: 1116,
     },
     res: {
-      ttl: FIVE_MINUTES,
+      ttl: FIVE_MINUTES * 3,
       prompt: false,
       tag: 1117,
     },
