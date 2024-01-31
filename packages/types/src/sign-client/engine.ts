@@ -45,7 +45,7 @@ export declare namespace EngineTypes {
     topic: string;
     symKey: string;
     relay: RelayerTypes.ProtocolOptions;
-    method?: string;
+    methods?: string;
     expiryTimestamp?: number;
   }
 

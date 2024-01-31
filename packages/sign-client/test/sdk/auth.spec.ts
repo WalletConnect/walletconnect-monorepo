@@ -140,7 +140,7 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
-          console.log("wallet session_proposal", payload);
+          console.log("wallet session_proposal", payload.id);
           const approved = buildApprovedNamespaces({
             supportedNamespaces: {
               eip155: {
@@ -165,7 +165,7 @@ describe("Authenticated Sessions", () => {
         });
       }),
       new Promise<void>((resolve) => {
-        wallet.pair({ uri: uri.replace("method", "") });
+        wallet.pair({ uri: uri.replace("methods", "") });
         resolve();
       }),
     ]);

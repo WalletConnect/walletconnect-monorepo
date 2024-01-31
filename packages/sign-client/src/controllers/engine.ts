@@ -230,8 +230,8 @@ export class Engine extends IEngine {
   public pair: IEngine["pair"] = async (params) => {
     await this.isInitialized();
     const { uri } = params;
-    const { topic, method } = parseUri(uri);
-    console.log("pair", { topic, method });
+    const { topic, methods } = parseUri(uri);
+    console.log("pair", { topic, methods });
     return await this.client.core.pairing.pair(params);
   };
 
@@ -506,7 +506,7 @@ export class Engine extends IEngine {
     } = params;
 
     let { topic: pairingTopic, uri } = await this.client.core.pairing.create();
-    uri = `${uri}&method=wc_sessionAuthenticate`;
+    uri = `${uri}&methods=wc_sessionAuthenticate`;
 
     this.client.logger.info({
       message: "Generated new pairing",
@@ -1178,7 +1178,7 @@ export class Engine extends IEngine {
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
     const expectedMethod = this.expectedPairingMethodMap.get(topic);
-    if (expectedMethod && payload.method !== expectedMethod) {
+    if (expectedMethod && !expectedMethod.includes(reqMethod)) {
       console.log(
         "expected pairing topic/method",
         this.expectedPairingMethodMap.get(topic),
@@ -1700,8 +1700,8 @@ export class Engine extends IEngine {
    * It allows QR/URI to be scanned multiple times without having to create new pairing.
    */
   private onPairingCreated = (pairing: PairingTypes.Struct) => {
-    if (pairing.method) {
-      this.expectedPairingMethodMap.set(pairing.topic, pairing.method);
+    if (pairing.methods) {
+      this.expectedPairingMethodMap.set(pairing.topic, pairing.methods);
     }
     if (pairing.active) return;
     const proposals = this.client.proposal.getAll();

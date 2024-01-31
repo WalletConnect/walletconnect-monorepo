@@ -34,7 +34,7 @@ export function parseUri(str: string): EngineTypes.UriParameters {
     version: parseInt(requiredValues[1], 10),
     symKey: queryParams.symKey as string,
     relay: parseRelayParams(queryParams),
-    method: queryParams.method as string,
+    methods: queryParams.methods as string,
     expiryTimestamp: queryParams.expiryTimestamp
       ? parseInt(queryParams.expiryTimestamp as string, 10)
       : undefined,

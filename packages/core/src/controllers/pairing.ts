@@ -111,7 +111,7 @@ export class Pairing implements IPairing {
   public pair: IPairing["pair"] = async (params) => {
     this.isInitialized();
     this.isValidPair(params);
-    const { topic, symKey, relay, expiryTimestamp, method } = parseUri(params.uri);
+    const { topic, symKey, relay, expiryTimestamp, methods } = parseUri(params.uri);
     let existingPairing;
     if (this.pairings.keys.includes(topic)) {
       existingPairing = this.pairings.get(topic);
@@ -123,7 +123,7 @@ export class Pairing implements IPairing {
     }
 
     const expiry = expiryTimestamp || calcExpiry(FIVE_MINUTES);
-    const pairing = { topic, relay, expiry, active: false, method };
+    const pairing = { topic, relay, expiry, active: false, methods };
     await this.pairings.set(topic, pairing);
     this.core.expirer.set(topic, expiry);
 
