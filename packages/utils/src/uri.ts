@@ -35,6 +35,9 @@ export function parseUri(str: string): EngineTypes.UriParameters {
     symKey: queryParams.symKey as string,
     relay: parseRelayParams(queryParams),
     method: queryParams.method as string,
+    expiryTimestamp: queryParams.expiryTimestamp
+      ? parseInt(queryParams.expiryTimestamp as string, 10)
+      : undefined,
   };
   return result;
 }
@@ -61,6 +64,7 @@ export function formatUri(params: EngineTypes.UriParameters): string {
     qs.stringify({
       symKey: params.symKey,
       ...formatRelayParams(params.relay),
+      expiryTimestamp: params.expiryTimestamp,
     })
   );
 }

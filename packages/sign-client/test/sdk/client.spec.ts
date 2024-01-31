@@ -5,8 +5,8 @@ import {
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
-import { getSdkError, parseUri } from "@walletconnect/utils";
-import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
+import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
+import { expect, describe, it, vi } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 
 import {
@@ -165,7 +165,6 @@ describe("Sign Client Integration", () => {
       // 7. attempt to pair again with the same URI
       // 8. should receive an error the pairing already exists
       await expect(wallet.pair({ uri })).rejects.toThrowError();
-
       await deleteClients({ A: dapp, B: wallet });
     });
   });
@@ -336,14 +335,135 @@ describe("Sign Client Integration", () => {
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
-            Array.from(Array(expectedRequests).keys()).map(() =>
-              clients.A.request({
-                topic,
-                ...TEST_REQUEST_PARAMS,
-              }),
+            Array.from(Array(expectedRequests).keys()).map(
+              async () =>
+                await clients.A.request({
+                  topic,
+                  ...TEST_REQUEST_PARAMS,
+                }),
             ),
           ]);
           await throttle(1000);
+          await deleteClients(clients);
+        });
+        /**
+         * this test simulates the case where a session is disconnected
+         * while session request is being approved
+         * the queue should continue operating normally after the `respond` rejection
+         */
+        it("continue processing requests queue after respond rejection due to disconnected session", async () => {
+          // create the clients and pair them
+          const {
+            clients,
+            sessionA: { topic: topicA },
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
+          const dapp = clients.A as SignClient;
+          const wallet = clients.B as SignClient;
+          const { uri, approval } = await dapp.connect({
+            requiredNamespaces: {},
+          });
+
+          let topicB = "";
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              wallet.once("session_proposal", async (args) => {
+                const { id } = args.params;
+                await wallet.approve({
+                  id,
+                  namespaces: TEST_NAMESPACES,
+                });
+                resolve();
+              });
+            }),
+            wallet.pair({ uri: uri! }),
+            new Promise<void>(async (resolve) => {
+              const session = await approval();
+              topicB = session.topic;
+              resolve();
+            }),
+          ]);
+
+          const expectedRequests = 5;
+          let receivedRequests = 0;
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.on("session_request", async (args) => {
+                receivedRequests++;
+                const { id, topic } = args;
+
+                // capture the request on topicB, disconnect and try to approve the request
+                if (topic === topicB) {
+                  await new Promise<void>(async (_resolve) => {
+                    await wallet.disconnect({
+                      topic,
+                      reason: getSdkError("USER_DISCONNECTED"),
+                    });
+                    _resolve();
+                  });
+                }
+                await clients.B.respond({
+                  topic,
+                  response: formatJsonRpcResult(id, "ok"),
+                }).catch((err) => {
+                  // eslint-disable-next-line no-console
+                  console.log("respond error", err);
+                });
+                if (receivedRequests > expectedRequests) resolve();
+              });
+            }),
+            new Promise<void>(async (resolve) => {
+              await Promise.all([
+                ...Array.from(Array(expectedRequests).keys()).map(
+                  async () =>
+                    await clients.A.request({
+                      topic: topicA,
+                      ...TEST_REQUEST_PARAMS,
+                    }),
+                ),
+                clients.A.request({
+                  topic: topicB,
+                  ...TEST_REQUEST_PARAMS,
+                  // eslint-disable-next-line no-console
+                }).catch((e) => console.error(e)), // capture the error from the session disconnect
+              ]);
+              resolve();
+            }),
+          ]);
+          await throttle(1000);
+          await deleteClients(clients);
+        });
+        it("should handle invalid session state with missing keychain", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
+          const dapp = clients.A as SignClient;
+          const sessions = dapp.session.getAll();
+          expect(sessions.length).to.eq(1);
+          await dapp.core.crypto.keychain.del(topic);
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              dapp.on("session_delete", async (args) => {
+                const { topic: sessionTopic } = args;
+                expect(sessionTopic).to.eq(topic);
+                resolve();
+              });
+            }),
+            new Promise<void>(async (resolve) => {
+              try {
+                await dapp.ping({ topic });
+              } catch (err) {
+                expect(err.message).to.eq(
+                  `Missing or invalid. session topic does not exist in keychain: ${topic}`,
+                );
+              }
+              resolve();
+            }),
+          ]);
+
+          const sessionsAfter = dapp.session.getAll();
+          expect(sessionsAfter.length).to.eq(0);
+
           await deleteClients(clients);
         });
       });
@@ -422,8 +542,6 @@ describe("Sign Client Integration", () => {
         namespaces: TEST_NAMESPACES,
       });
       expect(requiredNamespaces).toMatchObject({});
-      // requiredNamespaces are built internally from the namespaces during approve()
-      expect(sessionA.requiredNamespaces).toMatchObject(TEST_REQUIRED_NAMESPACES);
       expect(sessionA.requiredNamespaces).toMatchObject(
         clients.B.session.get(sessionA.topic).requiredNamespaces,
       );
@@ -437,21 +555,24 @@ describe("Sign Client Integration", () => {
         clients,
         sessionA: { topic },
       } = await initTwoPairedClients({}, {}, { logger: "error" });
-      const expiry = 5000;
+      const expiry = 600; // 10 minutes in seconds
 
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.A.core.relayer.once(
-            RELAYER_EVENTS.publish,
-            (payload: RelayerTypes.PublishPayload) => {
-              // ttl of the request should match the expiry
-              // expect(payload?.opts?.ttl).toEqual(expiry);
-              resolve();
-            },
-          );
+          (clients.B as SignClient).once("session_request", async (payload) => {
+            expect(payload.params.request.expiryTimestamp).to.be.approximately(
+              calcExpiry(expiry),
+              1000,
+            );
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
+            resolve();
+          });
         }),
-        new Promise<void>((resolve) => {
-          clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });
           resolve();
         }),
       ]);
@@ -495,7 +616,7 @@ describe("Sign Client Integration", () => {
       };
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.B.once("session_request", (payload) => {
+          clients.B.once("session_request", async (payload) => {
             const { params } = payload;
             const session = clients.B.session.get(payload.topic);
             expect(params).toMatchObject(testRequestProps);
@@ -505,11 +626,15 @@ describe("Sign Client Integration", () => {
               ),
             ).to.exist;
             expect(session.requiredNamespaces[TEST_AVALANCHE_CHAIN]).to.exist;
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
             resolve();
           });
         }),
-        new Promise<void>((resolve) => {
-          clients.A.request({ ...testRequestProps, topic });
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...testRequestProps, topic });
           resolve();
         }),
       ]);

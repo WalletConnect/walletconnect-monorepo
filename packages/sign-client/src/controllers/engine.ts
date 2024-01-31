@@ -17,6 +17,7 @@ import {
   isJsonRpcResponse,
   isJsonRpcResult,
   JsonRpcRequest,
+  ErrorResponse,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import {
@@ -40,7 +41,6 @@ import {
   createDelayedPromise,
   engineEvent,
   getInternalError,
-  getRequiredNamespacesFromNamespaces,
   getSdkError,
   isConformingNamespaces,
   isExpired,
@@ -132,7 +132,6 @@ export class Engine extends IEngine {
       this.registerPairingEvents();
       this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       this.initialized = true;
-
       setTimeout(() => {
         this.sessionRequestQueue.queue = this.getPendingSessionRequests();
         this.processSessionRequestQueue();
@@ -170,6 +169,8 @@ export class Engine extends IEngine {
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
 
+    const expiry = ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl || FIVE_MINUTES;
+    const expiryTimestamp = calcExpiry(expiry);
     const proposal = {
       requiredNamespaces,
       optionalNamespaces,
@@ -178,13 +179,14 @@ export class Engine extends IEngine {
         publicKey,
         metadata: this.client.metadata,
       },
+      expiryTimestamp,
       ...(sessionProperties && { sessionProperties }),
     };
     const {
       reject,
       resolve,
       done: approval,
-    } = createDelayedPromise<SessionTypes.Struct>(FIVE_MINUTES, PROPOSAL_EXPIRY_MESSAGE);
+    } = createDelayedPromise<SessionTypes.Struct>(expiry, PROPOSAL_EXPIRY_MESSAGE);
     this.events.once<"session_connect">(
       engineEvent("session_connect"),
       async ({ error, session }) => {
@@ -193,8 +195,8 @@ export class Engine extends IEngine {
           session.self.publicKey = publicKey;
           const completeSession = {
             ...session,
-            requiredNamespaces: session.requiredNamespaces,
-            optionalNamespaces: session.optionalNamespaces,
+            requiredNamespaces: proposal.requiredNamespaces,
+            optionalNamespaces: proposal.optionalNamespaces,
           };
           await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
@@ -218,10 +220,10 @@ export class Engine extends IEngine {
       topic,
       method: "wc_sessionPropose",
       params: proposal,
+      throwOnFailedPublish: true,
     });
 
-    const expiry = calcExpiry(FIVE_MINUTES);
-    await this.setProposal(id, { id, expiry, ...proposal });
+    await this.setProposal(id, { id, ...proposal });
     return { uri, approval };
   };
 
@@ -245,9 +247,6 @@ export class Engine extends IEngine {
     const proposal = this.client.proposal.get(id);
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
     pairingTopic = pairingTopic || "";
-    if (!isValidObject(requiredNamespaces)) {
-      requiredNamespaces = getRequiredNamespacesFromNamespaces(namespaces, "approve()");
-    }
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -278,23 +277,17 @@ export class Engine extends IEngine {
     const sessionSettle = {
       relay: { protocol: relayProtocol ?? "irn" },
       namespaces,
-      requiredNamespaces,
-      optionalNamespaces,
       pairingTopic,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
       ...(sessionProperties && { sessionProperties }),
     };
     await this.client.core.relayer.subscribe(sessionTopic);
-    await this.sendRequest({
-      topic: sessionTopic,
-      method: "wc_sessionSettle",
-      params: sessionSettle,
-      throwOnFailedPublish: true,
-    });
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
+      requiredNamespaces,
+      optionalNamespaces,
       pairingTopic,
       acknowledged: false,
       self: sessionSettle.controller,
@@ -305,6 +298,21 @@ export class Engine extends IEngine {
       controller: selfPublicKey,
     };
     await this.client.session.set(sessionTopic, session);
+    try {
+      await this.sendRequest({
+        topic: sessionTopic,
+        method: "wc_sessionSettle",
+        params: sessionSettle,
+        throwOnFailedPublish: true,
+      });
+    } catch (error) {
+      this.client.logger.error(error);
+      // if the publish fails, delete the session and throw an error
+      this.client.session.delete(sessionTopic, getSdkError("USER_DISCONNECTED"));
+      await this.client.core.relayer.unsubscribe(sessionTopic);
+      throw error;
+    }
+
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
     return {
       topic: sessionTopic,
@@ -367,7 +375,7 @@ export class Engine extends IEngine {
   public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
     await this.isInitialized();
     await this.isValidRequest(params);
-    const { chainId, request, topic, expiry } = params;
+    const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
     console.log("request", request);
     const id = payloadId();
     const { done, resolve, reject } = createDelayedPromise<T>(
@@ -384,7 +392,13 @@ export class Engine extends IEngine {
           clientRpcId: id,
           topic,
           method: "wc_sessionRequest",
-          params: { request, chainId },
+          params: {
+            request: {
+              ...request,
+              expiryTimestamp: calcExpiry(expiry),
+            },
+            chainId,
+          },
           expiry,
           throwOnFailedPublish: true,
         }).catch((error) => reject(error));
@@ -452,9 +466,15 @@ export class Engine extends IEngine {
         params: getSdkError("USER_DISCONNECTED"),
         throwOnFailedPublish: true,
       });
-      await this.deleteSession(topic);
-    } else {
+      await this.deleteSession({ topic, emitEvent: false });
+    } else if (this.client.core.pairing.pairings.keys.includes(topic)) {
       await this.client.core.pairing.disconnect({ topic });
+    } else {
+      const { message } = getInternalError(
+        "MISMATCHED_TOPIC",
+        `Session or pairing topic not found: ${topic}`,
+      );
+      throw new Error(message);
     }
   };
 
@@ -464,7 +484,6 @@ export class Engine extends IEngine {
   };
 
   public getPendingSessionRequests: IEngine["getPendingSessionRequests"] = () => {
-    this.isInitialized();
     return this.client.pendingRequest.getAll();
   };
 
@@ -928,11 +947,12 @@ export class Engine extends IEngine {
     }
   };
 
-  private deleteSession: EnginePrivate["deleteSession"] = async (topic, expirerHasDeleted) => {
+  private deleteSession: EnginePrivate["deleteSession"] = async (params) => {
+    const { topic, expirerHasDeleted = false, emitEvent = true, id = 0 } = params;
     const { self } = this.client.session.get(topic);
     // Await the unsubscribe first to avoid deleting the symKey too early below.
     await this.client.core.relayer.unsubscribe(topic);
-    this.client.session.delete(topic, getSdkError("USER_DISCONNECTED"));
+    await this.client.session.delete(topic, getSdkError("USER_DISCONNECTED"));
     if (this.client.core.crypto.keychain.has(self.publicKey)) {
       await this.client.core.crypto.deleteKeyPair(self.publicKey);
     }
@@ -945,6 +965,12 @@ export class Engine extends IEngine {
     this.client.core.storage
       .removeItem(WALLETCONNECT_DEEPLINK_CHOICE)
       .catch((e) => this.client.logger.warn(e));
+    this.getPendingSessionRequests().forEach((r) => {
+      if (r.topic === topic) {
+        this.deletePendingSessionRequest(r.id, getSdkError("USER_DISCONNECTED"));
+      }
+    });
+    if (emitEvent) this.client.events.emit("session_delete", { id, topic });
   };
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async (id, expirerHasDeleted) => {
@@ -979,21 +1005,22 @@ export class Engine extends IEngine {
 
   private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
     await this.client.proposal.set(id, proposal);
-    this.client.core.expirer.set(id, proposal.expiry);
+    this.client.core.expirer.set(id, calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl));
   };
 
   private setPendingSessionRequest: EnginePrivate["setPendingSessionRequest"] = async (
     pendingRequest: PendingRequestTypes.Struct,
   ) => {
-    const expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl;
     const { id, topic, params, verifyContext } = pendingRequest;
+    const expiry =
+      params.request.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl);
     await this.client.pendingRequest.set(id, {
       id,
       topic,
       params,
       verifyContext,
     });
-    if (expiry) this.client.core.expirer.set(id, calcExpiry(expiry));
+    if (expiry) this.client.core.expirer.set(id, expiry);
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
@@ -1058,13 +1085,16 @@ export class Engine extends IEngine {
     const sessionTopics: string[] = [];
     const proposalIds: number[] = [];
     this.client.session.getAll().forEach((session) => {
-      if (isExpired(session.expiry)) sessionTopics.push(session.topic);
+      let toCleanup = false;
+      if (isExpired(session.expiry)) toCleanup = true;
+      if (!this.client.core.crypto.keychain.has(session.topic)) toCleanup = true;
+      if (toCleanup) sessionTopics.push(session.topic);
     });
     this.client.proposal.getAll().forEach((proposal) => {
-      if (isExpired(proposal.expiry)) proposalIds.push(proposal.id);
+      if (isExpired(proposal.expiryTimestamp)) proposalIds.push(proposal.id);
     });
     await Promise.all([
-      ...sessionTopics.map((topic) => this.deleteSession(topic)),
+      ...sessionTopics.map((topic) => this.deleteSession({ topic })),
       ...proposalIds.map((id) => this.deleteProposal(id)),
     ]);
   };
@@ -1225,8 +1255,9 @@ export class Engine extends IEngine {
     const { params, id } = payload;
     try {
       this.isValidConnect({ ...payload.params });
-      const expiry = calcExpiry(FIVE_MINUTES);
-      const proposal = { id, pairingTopic: topic, expiry, ...params };
+      const expiryTimestamp =
+        params.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
+      const proposal = { id, pairingTopic: topic, expiryTimestamp, ...params };
       await this.setProposal(id, proposal);
       const hash = hashMessage(JSON.stringify(payload));
       const verifyContext = await this.getVerifyContext(hash, proposal.proposer.metadata);
@@ -1292,16 +1323,8 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidSessionSettleRequest(params);
-      const {
-        relay,
-        controller,
-        expiry,
-        namespaces,
-        requiredNamespaces,
-        optionalNamespaces,
-        sessionProperties,
-        pairingTopic,
-      } = payload.params;
+      const { relay, controller, expiry, namespaces, sessionProperties, pairingTopic } =
+        payload.params;
       const session = {
         topic,
         relay,
@@ -1309,8 +1332,8 @@ export class Engine extends IEngine {
         namespaces,
         acknowledged: true,
         pairingTopic,
-        requiredNamespaces,
-        optionalNamespaces,
+        requiredNamespaces: {},
+        optionalNamespaces: {},
         controller: controller.publicKey,
         self: {
           publicKey: "",
@@ -1463,12 +1486,12 @@ export class Engine extends IEngine {
         new Promise((resolve) => {
           // RPC request needs to happen before deletion as it utalises session encryption
           this.client.core.relayer.once(RELAYER_EVENTS.publish, async () => {
-            resolve(await this.deleteSession(topic));
+            resolve(await this.deleteSession({ topic, id }));
           });
         }),
         this.sendResult<"wc_sessionDelete">({ id, topic, result: true }),
+        this.cleanupPendingSentRequestsForTopic({ topic, error: getSdkError("USER_DISCONNECTED") }),
       ]);
-      this.client.events.emit("session_delete", { id, topic });
     } catch (err: any) {
       this.client.logger.error(err);
     }
@@ -1483,7 +1506,12 @@ export class Engine extends IEngine {
       );
       const session = this.client.session.get(topic);
       const verifyContext = await this.getVerifyContext(hash, session.peer.metadata);
-      const request = { id, topic, params, verifyContext };
+      const request = {
+        id,
+        topic,
+        params,
+        verifyContext,
+      };
       await this.setPendingSessionRequest(request);
       this.addSessionRequestToSessionRequestQueue(request);
       this.processSessionRequestQueue();
@@ -1595,6 +1623,28 @@ export class Engine extends IEngine {
     }, toMiliseconds(this.requestQueueDelay));
   };
 
+  // Allows for cleanup on any sent pending requests if the peer disconnects the session before responding
+  private cleanupPendingSentRequestsForTopic = ({
+    topic,
+    error,
+  }: {
+    topic: string;
+    error: ErrorResponse;
+  }) => {
+    const pendingRequests = this.client.core.history.pending;
+    if (pendingRequests.length > 0) {
+      const forSession = pendingRequests.filter(
+        (r) => r.topic === topic && r.request.method === "wc_sessionRequest",
+      );
+      forSession.forEach((r) => {
+        // notify .request() handler of the rejection
+        this.events.emit(engineEvent("session_request", r.request.id), {
+          error,
+        });
+      });
+    }
+  };
+
   private processSessionRequestQueue = () => {
     if (this.sessionRequestQueue.state === ENGINE_QUEUE_STATES.active) {
       this.client.logger.info("session request queue is already active.");
@@ -1626,7 +1676,7 @@ export class Engine extends IEngine {
 
       if (topic) {
         if (this.client.session.keys.includes(topic)) {
-          await this.deleteSession(topic, true);
+          await this.deleteSession({ topic, expirerHasDeleted: true });
           this.client.events.emit("session_expire", { topic });
         }
       } else if (id) {
@@ -1708,8 +1758,17 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     if (isExpired(this.client.session.get(topic).expiry)) {
-      await this.deleteSession(topic);
+      await this.deleteSession({ topic });
       const { message } = getInternalError("EXPIRED", `session topic: ${topic}`);
+      throw new Error(message);
+    }
+
+    if (!this.client.core.crypto.keychain.has(topic)) {
+      const { message } = getInternalError(
+        "MISSING_OR_INVALID",
+        `session topic does not exist in keychain: ${topic}`,
+      );
+      await this.deleteSession({ topic });
       throw new Error(message);
     }
   }
@@ -1746,7 +1805,7 @@ export class Engine extends IEngine {
       const { message } = getInternalError("NO_MATCHING_KEY", `proposal id doesn't exist: ${id}`);
       throw new Error(message);
     }
-    if (isExpired(this.client.proposal.get(id).expiry)) {
+    if (isExpired(this.client.proposal.get(id).expiryTimestamp)) {
       await this.deleteProposal(id);
       const { message } = getInternalError("EXPIRED", `proposal id: ${id}`);
       throw new Error(message);
@@ -1937,7 +1996,13 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     const { topic, response } = params;
-    await this.isValidSessionTopic(topic);
+    try {
+      // if the session is already disconnected, we can't respond to the request so we need to delete it
+      await this.isValidSessionTopic(topic);
+    } catch (error) {
+      if (params?.response?.id) this.cleanupAfterResponse(params);
+      throw error;
+    }
     if (!isValidResponse(response)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",

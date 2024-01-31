@@ -23,6 +23,12 @@ To get a new chain added to the Explorer, you will need to submit the following:
 6. **[SLIP-0044](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) coin type**:
    _\* slip44 coin type used in the namespace_
 
+**References**
+To ensure timely processing of your request, please provide the following references:
+
+- [ ] Source of RPC endpoints (e.g. RPC docs): [link]
+- [ ] Source of namespace (if non-EIP155) chain information (particularly chainIds): [link]
+
 **Additional context**
 Add any other context here.
 
@@ -32,8 +38,8 @@ Add any other context here.
 
 **Registering a chain with the Explorer does not impact or improve the ability for wallets and dapps to support your chain.** It is simply a way for users to discover wallets and dapps that support your chain by:
 
-- Browsing the [Chains List](./chain-list.md)
-- Filtering results programmatically via the [Explorer API](../../cloud/explorer.md)
+- Browsing the [Chains List](https://docs.walletconnect.com/advanced/multichain/chain-list)
+- Filtering results programmatically via the [Explorer API](https://docs.walletconnect.com/cloud/explorer)
 
 **It is still up to wallets and dapps to provide concrete support for your chain once it is listed as part of the Explorer.**
 

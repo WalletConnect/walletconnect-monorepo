@@ -10,6 +10,7 @@ import {
 } from "./types";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
 import { SessionTypes, SignClientTypes } from "@walletconnect/types";
+import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import {
   STORAGE_KEY,
   REQUIRED_METHODS,
@@ -235,15 +236,16 @@ export class EthereumProvider implements IEthereumProvider {
     return provider;
   }
 
-  public async request<T = unknown>(args: RequestArguments): Promise<T> {
-    return await this.signer.request(args, this.formatChainId(this.chainId));
+  public async request<T = unknown>(args: RequestArguments, expiry?: number): Promise<T> {
+    return await this.signer.request(args, this.formatChainId(this.chainId), expiry);
   }
 
   public sendAsync(
     args: RequestArguments,
-    callback: (error: Error | null, response: any) => void,
+    callback: (error: Error | null, response: JsonRpcResult) => void,
+    expiry?: number,
   ): void {
-    this.signer.sendAsync(args, callback, this.formatChainId(this.chainId));
+    this.signer.sendAsync(args, callback, this.formatChainId(this.chainId), expiry);
   }
 
   get connected(): boolean {
@@ -518,9 +520,7 @@ export class EthereumProvider implements IEthereumProvider {
       if (WalletConnectModalClass) {
         try {
           this.modal = new WalletConnectModalClass({
-            walletConnectVersion: 2,
             projectId: this.rpc.projectId,
-            standaloneChains: this.rpc.chains,
             ...this.rpc.qrModalOptions,
           });
         } catch (e) {

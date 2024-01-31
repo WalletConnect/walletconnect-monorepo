@@ -1,8 +1,5 @@
 {
   "npmClient": "npm",
-  "packages": [
-    "packages/*",
-    "providers/*"
-  ],
-  "version": "2.10.6"
+  "packages": ["packages/*", "providers/*"],
+  "version": "2.11.0"
 }
