@@ -126,6 +126,14 @@ export declare namespace EngineTypes {
 
   type AcknowledgedPromise = Promise<{ acknowledged: () => Promise<void> }>;
 
+  type SessionAuthenticateResponsePromise = {
+    uri: string;
+    response: () => Promise<{
+      auths?: AuthTypes.AuthResponse;
+      session: SessionTypes.Struct;
+    }>;
+  }
+
   interface RpcOpts {
     req: RelayerTypes.PublishOptions & {
       ttl: number;
@@ -359,13 +367,7 @@ export abstract class IEngine {
 
   public abstract getPendingSessionRequests: () => PendingRequestTypes.Struct[];
 
-  public abstract sessionAuthenticate: (params: AuthTypes.SessionAuthenticateParams) => Promise<{
-    uri: string;
-    response: Promise<{
-      auths?: AuthTypes.AuthResponse;
-      session: SessionTypes.Struct;
-    }>;
-  }>;
+  public abstract sessionAuthenticate: (params: AuthTypes.SessionAuthenticateParams) => Promise<EngineTypes.SessionAuthenticateResponsePromise>
 
   public abstract approveSessionAuthenticate: (
     params: AuthTypes.ApproveSessionAuthenticateParams,

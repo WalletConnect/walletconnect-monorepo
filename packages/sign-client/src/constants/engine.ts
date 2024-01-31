@@ -115,16 +115,6 @@ export const ENGINE_RPC_OPTS: EngineTypes.RpcOptsMap = {
   },
 };
 
-export const SIGN_PAIRING_METHODS = {
-  wc_sessionPropose: {
-    method: "wc_sessionPropose",
-  },
-  wc_sessionAuthenticate: {
-    method: "wc_sessionAuthenticate",
-    fallbackMethod: "wc_sessionPropose",
-  },
-};
-
 export const SESSION_REQUEST_EXPIRY_BOUNDARIES = {
   min: FIVE_MINUTES,
   max: SEVEN_DAYS,

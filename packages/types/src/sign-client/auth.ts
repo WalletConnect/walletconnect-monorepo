@@ -13,6 +13,7 @@ export declare namespace AuthTypes {
   interface AuthRequestEventArgs {
     requester: Participant;
     authPayload: PayloadParams;
+    expiryTimestamp: number;
   }
 
   type AuthResponseEventArgs =
@@ -120,6 +121,7 @@ export declare namespace AuthTypes {
     id: number;
     pairingTopic: string;
     requester: Participant;
+    expiryTimestamp: number;
     authPayload: PayloadParams;
     verifyContext: Verify.Context;
   }
@@ -149,6 +151,7 @@ export declare namespace AuthTypes {
   interface SessionAuthenticateRequestParams {
     requester: Participant;
     authPayload: PayloadParams;
+    expiryTimestamp: number;
   }
 }
 

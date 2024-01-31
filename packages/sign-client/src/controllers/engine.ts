@@ -554,6 +554,7 @@ export class Engine extends IEngine {
     const recap = formatRecapFromNamespaces(namespace, "request", methods);
     resources.push(recap);
     console.log("formatted recap", recap);
+    const expiryTimestamp = calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
     const request = {
       authPayload: {
         type: type ?? "caip122",
@@ -569,6 +570,7 @@ export class Engine extends IEngine {
         resources,
       },
       requester: { publicKey, metadata: this.client.metadata },
+      expiryTimestamp,
     };
 
     // build optional namespaces for the proposal
@@ -587,7 +589,7 @@ export class Engine extends IEngine {
         publicKey,
         metadata: this.client.metadata,
       },
-      expiryTimestamp: calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl),
+      expiryTimestamp,
     };
     // send both (main & fallback) requests
     const [id, fallbackId] = await Promise.all([
@@ -616,24 +618,23 @@ export class Engine extends IEngine {
     await this.client.auth.requests.set(id, {
       authPayload: request.authPayload,
       requester: request.requester,
+      expiryTimestamp,
       id,
       pairingTopic,
       verifyContext: {} as any,
     });
 
-    let resolvePromise: (value: unknown) => void;
-    let rejectPromise: (value: unknown) => void;
-    const response = new Promise((resolve, reject) => {
-      resolvePromise = resolve;
-      rejectPromise = reject;
-    });
+    const { done, resolve, reject } = createDelayedPromise(
+      ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl,
+      "Request expired",
+    );
 
     // handle fallback session proposal response
     this.events.once<"session_connect">(
       engineEvent("session_connect"),
       async ({ error, session }) => {
         console.log("wc_sessionPropose, session", session);
-        if (error) rejectPromise(error);
+        if (error) reject(error);
         else if (session) {
           session.self.publicKey = publicKey;
           await this.client.session.set(session.topic, session);
@@ -645,7 +646,7 @@ export class Engine extends IEngine {
             });
           }
           const sessionObject = this.client.session.get(session.topic);
-          resolvePromise({
+          resolve({
             session: sessionObject,
           });
         }
@@ -658,7 +659,7 @@ export class Engine extends IEngine {
         // ignore unsupported method error
         const error = getSdkError("WC_METHOD_UNSUPPORTED", "wc_sessionAuthenticate");
         if (payload.error.message === error.message) return;
-        return rejectPromise(payload.error.message);
+        return reject(payload.error.message);
       }
       const accounts: string[] = [];
       const {
@@ -700,7 +701,7 @@ export class Engine extends IEngine {
       );
       console.log("sessionTopic", sessionTopic);
 
-      //TODO: create session object
+      //create session object
       const session: SessionTypes.Struct = {
         topic: sessionTopic,
         acknowledged: true,
@@ -724,13 +725,16 @@ export class Engine extends IEngine {
       const sessionObject = this.client.session.get(sessionTopic);
 
       console.log("dapp sessionObject", sessionObject);
-      resolvePromise({
+      resolve({
         auths: payload,
         session: sessionObject,
       });
     });
 
-    return { uri, response } as any;
+    return {
+      uri,
+      response: done,
+    } as EngineTypes.SessionAuthenticateResponsePromise;
   };
 
   public approveSessionAuthenticate: IEngine["approveSessionAuthenticate"] = async (
@@ -1587,8 +1591,7 @@ export class Engine extends IEngine {
     payload,
   ) => {
     console.log("onSessionAuthenticateRequest", topic, payload);
-    const { requester, authPayload } = payload.params;
-
+    const { requester, authPayload, expiryTimestamp } = payload.params;
     const hash = hashMessage(JSON.stringify(payload));
     const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
     const pendingRequest = {
@@ -1597,6 +1600,7 @@ export class Engine extends IEngine {
       id: payload.id,
       authPayload,
       verifyContext,
+      expiryTimestamp,
     };
 
     await this.client.auth.requests.set(payload.id, pendingRequest);

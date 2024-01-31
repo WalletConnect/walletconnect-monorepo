@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import { expect, describe, it, beforeAll } from "vitest";
-import { SignClient } from "../../src";
+import { ENGINE_RPC_OPTS, SignClient } from "../../src";
 import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, throttle } from "../shared";
-import { buildApprovedNamespaces, buildAuthObject } from "@walletconnect/utils";
+import { buildApprovedNamespaces, buildAuthObject, calcExpiry } from "@walletconnect/utils";
 import { AuthTypes } from "@walletconnect/types";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
@@ -28,6 +28,7 @@ describe("Authenticated Sessions", () => {
       aud: "aud",
       methods: ["personal_sign", "eth_chainId", "eth_signTypedData_v4"],
     });
+    const expectedExpiry = calcExpiry(ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl);
     console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
@@ -38,6 +39,9 @@ describe("Authenticated Sessions", () => {
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
           console.log("wallet session_authenticate", payload.params);
+
+          // validate expiryTimestamp
+          expect(payload.params.expiryTimestamp).to.be.approximately(expectedExpiry, 2000);
 
           const auths: AuthTypes.Cacao[] = [];
           payload.params.authPayload.chains.forEach(async (chain) => {
@@ -78,8 +82,8 @@ describe("Authenticated Sessions", () => {
     console.log("paired");
 
     console.log("response", response);
-    const session = (await response).session;
-    console.log("sessions");
+    const session = (await response()).session;
+    console.log("sessions", session);
     // await throttle(1000);
 
     await Promise.all([
@@ -167,7 +171,7 @@ describe("Authenticated Sessions", () => {
     ]);
     console.log("paired");
 
-    const res = await response;
+    const res = await response();
     const session = res.session;
     console.log("response", res);
     await throttle(1000);
