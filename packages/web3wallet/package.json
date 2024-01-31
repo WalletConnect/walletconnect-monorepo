@@ -39,7 +39,6 @@
     "@walletconnect/jsonrpc-provider": "1.0.13"
   },
   "devDependencies": {
-    "@ethersproject/wallet": "^5.7.0",
-    "lokijs": "^1.5.12"
+    "@ethersproject/wallet": "^5.7.0"
   }
 }
