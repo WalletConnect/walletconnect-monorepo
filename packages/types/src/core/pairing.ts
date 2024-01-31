@@ -20,6 +20,7 @@ export declare namespace PairingTypes {
     relay: RelayerTypes.ProtocolOptions;
     active: boolean;
     peerMetadata?: CoreTypes.Metadata;
+    method?: string;
   }
 }
 

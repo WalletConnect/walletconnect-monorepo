@@ -232,10 +232,6 @@ export class Engine extends IEngine {
     const { uri } = params;
     const { topic, method } = parseUri(uri);
     console.log("pair", { topic, method });
-    if (method) {
-      this.expectedPairingMethodMap.set(topic, method);
-      console.log("expectedPairingMethodMap", this.expectedPairingMethodMap.entries());
-    }
     return await this.client.core.pairing.pair(params);
   };
 
@@ -1128,19 +1124,6 @@ export class Engine extends IEngine {
           receiverPublicKey: publicKey,
         })) as any;
 
-        console.log(
-          "expected pairing topic/method",
-          this.expectedPairingMethodMap.get(topic),
-          topic,
-          payload,
-        );
-        const expectedMethod = this.expectedPairingMethodMap.get(topic);
-        if (expectedMethod && payload.method !== expectedMethod) {
-          console.log("expected method", expectedMethod, payload.method);
-          console.log("ignoring...");
-          return;
-        }
-
         try {
           if (isJsonRpcRequest(payload)) {
             this.client.core.history.set(topic, payload);
@@ -1193,6 +1176,20 @@ export class Engine extends IEngine {
   private processRequest: EnginePrivate["onRelayEventRequest"] = (event) => {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
+
+    const expectedMethod = this.expectedPairingMethodMap.get(topic);
+    if (expectedMethod && payload.method !== expectedMethod) {
+      console.log(
+        "expected pairing topic/method",
+        this.expectedPairingMethodMap.get(topic),
+        topic,
+        payload,
+      );
+      console.log("expected method", expectedMethod, payload.method);
+      console.log("ignoring...");
+      return;
+    }
+
     switch (reqMethod) {
       case "wc_sessionPropose":
         return this.onSessionProposeRequest(topic, payload);
@@ -1703,6 +1700,9 @@ export class Engine extends IEngine {
    * It allows QR/URI to be scanned multiple times without having to create new pairing.
    */
   private onPairingCreated = (pairing: PairingTypes.Struct) => {
+    if (pairing.method) {
+      this.expectedPairingMethodMap.set(pairing.topic, pairing.method);
+    }
     if (pairing.active) return;
     const proposals = this.client.proposal.getAll();
     const proposal = proposals.find((p) => p.pairingTopic === pairing.topic);
