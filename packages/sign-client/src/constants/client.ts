@@ -24,6 +24,7 @@ export const SIGN_CLIENT_EVENTS: Record<SignClientTypes.Event, SignClientTypes.E
   session_request_sent: "session_request_sent",
   session_event: "session_event",
   proposal_expire: "proposal_expire",
+  session_request_expire: "session_request_expire",
 };
 
 export const SIGN_CLIENT_STORAGE_OPTIONS = {

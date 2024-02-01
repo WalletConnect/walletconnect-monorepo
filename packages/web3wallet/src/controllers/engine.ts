@@ -121,10 +121,20 @@ export class Engine extends IWeb3WalletEngine {
     this.client.events.emit("auth_request", event);
   };
 
+  private onProposalExpire = (event: Web3WalletTypes.ProposalExpire) => {
+    this.client.events.emit("proposal_expire", event);
+  };
+
+  private onSessionRequestExpire = (event: Web3WalletTypes.SessionRequestExpire) => {
+    this.client.events.emit("session_request_expire", event);
+  };
+
   private initializeEventListeners = () => {
     this.signClient.events.on("session_proposal", this.onSessionProposal);
     this.signClient.events.on("session_request", this.onSessionRequest);
     this.signClient.events.on("session_delete", this.onSessionDelete);
     this.authClient.on("auth_request", this.onAuthRequest);
+    this.signClient.events.on("proposal_expire", this.onProposalExpire);
+    this.signClient.events.on("session_request_expire", this.onSessionRequestExpire);
   };
 }
