@@ -393,7 +393,6 @@ describe("Sign Integration", () => {
         wallet.once("session_proposal", () => {
           vi.useFakeTimers({
             shouldAdvanceTime: true,
-            shouldClearNativeTimers: true,
           });
           // Fast-forward system time by 4 min 58 seconds after expiry was first set.
           vi.setSystemTime(
@@ -447,7 +446,6 @@ describe("Sign Integration", () => {
         wallet.once("session_request", () => {
           vi.useFakeTimers({
             shouldAdvanceTime: true,
-            shouldClearNativeTimers: true,
           });
           // Fast-forward system time by 4 min 58 seconds after expiry was first set.
           vi.setSystemTime(
