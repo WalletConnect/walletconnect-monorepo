@@ -156,7 +156,9 @@ describe("Store", () => {
       try {
         await store.get(key);
       } catch (e) {
-        expect(e.message).to.equal(`Expired. Record was recently deleted - mock-entity: ${key}`);
+        expect(e.message).to.equal(
+          `Missing or invalid. Record was recently deleted - mock-entity: ${key}`,
+        );
       }
     });
   });

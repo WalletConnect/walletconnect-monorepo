@@ -153,7 +153,7 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
     if (!value) {
       if (this.recentlyDeleted.includes(key)) {
         const { message } = getInternalError(
-          "EXPIRED",
+          "MISSING_OR_INVALID",
           `Record was recently deleted - ${this.name}: ${key}`,
         );
         this.logger.error(message);

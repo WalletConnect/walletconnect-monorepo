@@ -150,7 +150,7 @@ export class Engine extends IEngine {
         active = pairing.active;
       }
     } catch (error) {
-      this.client.logger.error(`connect() -> pairing.get(${topic}) failed`);
+      this.client.logger.error(error, `connect() -> pairing.get(${topic}) failed`);
       throw error;
     }
 
@@ -225,7 +225,7 @@ export class Engine extends IEngine {
     try {
       return await this.client.core.pairing.pair(params);
     } catch (error) {
-      this.client.logger.error("pair() failed");
+      this.client.logger.error(error, "pair() failed");
       throw error;
     }
   };
@@ -235,7 +235,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidApprove(params);
     } catch (error) {
-      this.client.logger.error("approve() -> isValidApprove() failed");
+      this.client.logger.error(error, "approve() -> isValidApprove() failed");
       throw error;
     }
     const { id, relayProtocol, namespaces, sessionProperties } = params;
@@ -330,7 +330,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidReject(params);
     } catch (error) {
-      this.client.logger.error("reject() -> isValidReject() failed");
+      this.client.logger.error(error, "reject() -> isValidReject() failed");
       throw error;
     }
     const { id, reason } = params;
@@ -354,7 +354,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidUpdate(params);
     } catch (error) {
-      this.client.logger.error("update() -> isValidUpdate() failed");
+      this.client.logger.error(error, "update() -> isValidUpdate() failed");
       throw error;
     }
     const { topic, namespaces } = params;
@@ -378,7 +378,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidExtend(params);
     } catch (error) {
-      this.client.logger.error("extend() -> isValidExtend() failed");
+      this.client.logger.error(error, "extend() -> isValidExtend() failed");
       throw error;
     }
     const { topic } = params;
@@ -398,7 +398,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidRequest(params);
     } catch (error) {
-      this.client.logger.error("request() -> isValidRequest() failed");
+      this.client.logger.error(error, "request() -> isValidRequest() failed");
       throw error;
     }
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
@@ -460,7 +460,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidPing(params);
     } catch (error) {
-      this.client.logger.error("ping() -> isValidPing() failed");
+      this.client.logger.error(error, "ping() -> isValidPing() failed");
       throw error;
     }
     const { topic } = params;
@@ -1290,7 +1290,14 @@ export class Engine extends IEngine {
       );
       throw new Error(message);
     }
-    if (!this.client.session.keys.includes(topic)) {
+
+    // Store will throw custom message if topic was recently deleted
+    try {
+      this.client.session.get(topic);
+    } catch (error) {
+      if ((error as Error)?.message.includes("recently deleted")) {
+        throw error;
+      }
       const { message } = getInternalError(
         "NO_MATCHING_KEY",
         `session topic doesn't exist: ${topic}`,

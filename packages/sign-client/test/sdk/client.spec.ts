@@ -178,7 +178,9 @@ describe("Sign Client Integration", () => {
         } = await initTwoPairedClients({}, {}, { logger: "error" });
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
-        expect(() => clients.A.pairing.get(topic)).to.throw(`No matching key. pairing: ${topic}`);
+        expect(() => clients.A.pairing.get(topic)).to.throw(
+          `Missing or invalid. Record was recently deleted - pairing: ${topic}`,
+        );
         const promise = clients.A.ping({ topic });
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
@@ -200,7 +202,9 @@ describe("Sign Client Integration", () => {
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
         const promise = clients.A.ping({ topic });
-        expect(() => clients.A.session.get(topic)).to.throw(`No matching key. session: ${topic}`);
+        expect(() => clients.A.session.get(topic)).to.throw(
+          `Missing or invalid. Record was recently deleted - session: ${topic}`,
+        );
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
