@@ -144,15 +144,25 @@ export class Engine extends IEngine {
     let uri: string | undefined;
     let active = false;
 
-    if (topic) {
-      const pairing = this.client.core.pairing.pairings.get(topic);
-      active = pairing.active;
+    try {
+      if (topic) {
+        const pairing = this.client.core.pairing.pairings.get(topic);
+        active = pairing.active;
+      }
+    } catch (error) {
+      this.client.logger.error(`connect() -> pairing.get(${topic}) failed`);
+      throw error;
     }
 
     if (!topic || !active) {
       const { topic: newTopic, uri: newUri } = await this.client.core.pairing.create();
       topic = newTopic;
       uri = newUri;
+    }
+
+    if (!topic) {
+      const { message } = getInternalError("NO_MATCHING_KEY", `connect() pairing topic: ${topic}`);
+      throw new Error(message);
     }
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
@@ -199,11 +209,6 @@ export class Engine extends IEngine {
       },
     );
 
-    if (!topic) {
-      const { message } = getInternalError("NO_MATCHING_KEY", `connect() pairing topic: ${topic}`);
-      throw new Error(message);
-    }
-
     const id = await this.sendRequest({
       topic,
       method: "wc_sessionPropose",
@@ -217,15 +222,31 @@ export class Engine extends IEngine {
 
   public pair: IEngine["pair"] = async (params) => {
     await this.isInitialized();
-    return await this.client.core.pairing.pair(params);
+    try {
+      return await this.client.core.pairing.pair(params);
+    } catch (error) {
+      this.client.logger.error("pair() failed");
+      throw error;
+    }
   };
 
   public approve: IEngine["approve"] = async (params) => {
     await this.isInitialized();
-    await this.isValidApprove(params);
-
+    try {
+      await this.isValidApprove(params);
+    } catch (error) {
+      this.client.logger.error("approve() -> isValidApprove() failed");
+      throw error;
+    }
     const { id, relayProtocol, namespaces, sessionProperties } = params;
-    const proposal = this.client.proposal.get(id);
+    let proposal;
+    try {
+      proposal = this.client.proposal.get(id);
+    } catch (error) {
+      this.client.logger.error(`approve() -> proposal.get(${id}) failed`);
+      throw new Error(getInternalError("MISSING_OR_INVALID", `Proposal not found: ${id}`).message);
+    }
+
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
     pairingTopic = pairingTopic || "";
 
@@ -306,9 +327,22 @@ export class Engine extends IEngine {
 
   public reject: IEngine["reject"] = async (params) => {
     await this.isInitialized();
-    await this.isValidReject(params);
+    try {
+      await this.isValidReject(params);
+    } catch (error) {
+      this.client.logger.error("reject() -> isValidReject() failed");
+      throw error;
+    }
     const { id, reason } = params;
-    const { pairingTopic } = this.client.proposal.get(id);
+    let pairingTopic;
+    try {
+      const proposal = this.client.proposal.get(id);
+      pairingTopic = proposal.pairingTopic;
+    } catch (error) {
+      this.client.logger.error(`reject() -> proposal.get(${id}) failed`);
+      throw new Error(getInternalError("MISSING_OR_INVALID", `Proposal not found: ${id}`).message);
+    }
+
     if (pairingTopic) {
       await this.sendError(id, pairingTopic, reason);
       await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
@@ -317,7 +351,12 @@ export class Engine extends IEngine {
 
   public update: IEngine["update"] = async (params) => {
     await this.isInitialized();
-    await this.isValidUpdate(params);
+    try {
+      await this.isValidUpdate(params);
+    } catch (error) {
+      this.client.logger.error("update() -> isValidUpdate() failed");
+      throw error;
+    }
     const { topic, namespaces } = params;
     const id = await this.sendRequest({
       topic,
@@ -336,7 +375,12 @@ export class Engine extends IEngine {
 
   public extend: IEngine["extend"] = async (params) => {
     await this.isInitialized();
-    await this.isValidExtend(params);
+    try {
+      await this.isValidExtend(params);
+    } catch (error) {
+      this.client.logger.error("extend() -> isValidExtend() failed");
+      throw error;
+    }
     const { topic } = params;
     const id = await this.sendRequest({ topic, method: "wc_sessionExtend", params: {} });
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
@@ -351,7 +395,12 @@ export class Engine extends IEngine {
 
   public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
     await this.isInitialized();
-    await this.isValidRequest(params);
+    try {
+      await this.isValidRequest(params);
+    } catch (error) {
+      this.client.logger.error("request() -> isValidRequest() failed");
+      throw error;
+    }
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
     const id = payloadId();
     const { done, resolve, reject } = createDelayedPromise<T>(
@@ -408,7 +457,12 @@ export class Engine extends IEngine {
 
   public ping: IEngine["ping"] = async (params) => {
     await this.isInitialized();
-    await this.isValidPing(params);
+    try {
+      await this.isValidPing(params);
+    } catch (error) {
+      this.client.logger.error("ping() -> isValidPing() failed");
+      throw error;
+    }
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
       const id = await this.sendRequest({ topic, method: "wc_sessionPing", params: {} });
@@ -576,7 +630,14 @@ export class Engine extends IEngine {
       const hash = hashMessage(JSON.stringify(payload));
       this.client.core.verify.register({ attestationId: hash });
     }
-    const message = await this.client.core.crypto.encode(topic, payload);
+    let message;
+    try {
+      message = await this.client.core.crypto.encode(topic, payload);
+    } catch (error) {
+      await this.cleanup();
+      this.client.logger.error(`sendRequest() -> encode(${topic}) failed`);
+      throw error;
+    }
     const opts = ENGINE_RPC_OPTS[method].req;
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
@@ -598,8 +659,21 @@ export class Engine extends IEngine {
   private sendResult: EnginePrivate["sendResult"] = async (args) => {
     const { id, topic, result, throwOnFailedPublish } = args;
     const payload = formatJsonRpcResult(id, result);
-    const message = await this.client.core.crypto.encode(topic, payload);
-    const record = await this.client.core.history.get(topic, id);
+    let message;
+    try {
+      message = await this.client.core.crypto.encode(topic, payload);
+    } catch (error) {
+      await this.cleanup();
+      this.client.logger.error(`sendResult() -> encode(${topic}) failed`);
+      throw error;
+    }
+    let record;
+    try {
+      record = await this.client.core.history.get(topic, id);
+    } catch (error) {
+      this.client.logger.error(`sendResult() -> history.get(${topic}, ${id}) failed`);
+      throw error;
+    }
     const opts = ENGINE_RPC_OPTS[record.request.method].res;
     if (throwOnFailedPublish) {
       opts.internal = {
@@ -617,8 +691,21 @@ export class Engine extends IEngine {
 
   private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
     const payload = formatJsonRpcError(id, error);
-    const message = await this.client.core.crypto.encode(topic, payload);
-    const record = await this.client.core.history.get(topic, id);
+    let message;
+    try {
+      message = await this.client.core.crypto.encode(topic, payload);
+    } catch (error) {
+      await this.cleanup();
+      this.client.logger.error(`sendError() -> encode(${topic}) failed`);
+      throw error;
+    }
+    let record;
+    try {
+      record = await this.client.core.history.get(topic, id);
+    } catch (error) {
+      this.client.logger.error(`sendError() -> history.get(${topic}, ${id}) failed`);
+      throw error;
+    }
     const opts = ENGINE_RPC_OPTS[record.request.method].res;
     // await is intentionally omitted to speed up performance
     this.client.core.relayer.publish(topic, message, opts);
