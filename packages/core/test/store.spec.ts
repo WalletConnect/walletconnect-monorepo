@@ -148,6 +148,17 @@ describe("Store", () => {
       await store.delete("key", { code: 0, message: "reason" });
       expect(store.length).to.equal(0);
     });
+    it("should add deleted key to the recentlyDeleted list", async () => {
+      const key = "key";
+      const value = "value";
+      await store.set(key, value);
+      await store.delete(key, { code: 0, message: "reason" });
+      try {
+        await store.get(key);
+      } catch (e) {
+        expect(e.message).to.equal(`Expired. Record was recently deleted - mock-entity: ${key}`);
+      }
+    });
   });
 
   describe("getAll", () => {

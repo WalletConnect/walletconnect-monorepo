@@ -244,7 +244,7 @@ export class Engine extends IEngine {
       proposal = this.client.proposal.get(id);
     } catch (error) {
       this.client.logger.error(`approve() -> proposal.get(${id}) failed`);
-      throw new Error(getInternalError("MISSING_OR_INVALID", `Proposal not found: ${id}`).message);
+      throw error;
     }
 
     let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
@@ -340,7 +340,7 @@ export class Engine extends IEngine {
       pairingTopic = proposal.pairingTopic;
     } catch (error) {
       this.client.logger.error(`reject() -> proposal.get(${id}) failed`);
-      throw new Error(getInternalError("MISSING_OR_INVALID", `Proposal not found: ${id}`).message);
+      throw error;
     }
 
     if (pairingTopic) {
