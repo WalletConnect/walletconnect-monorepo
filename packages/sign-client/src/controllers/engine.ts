@@ -108,6 +108,12 @@ export class Engine extends IEngine {
 
   private requestQueueDelay = ONE_SECOND;
 
+  // temporary map to store recently deleted items
+  private recentlyDeletedMap = new Map<
+    string | number,
+    "pairing" | "session" | "proposal" | "request"
+  >();
+
   constructor(client: IEngine["client"]) {
     super(client);
   }
@@ -150,7 +156,7 @@ export class Engine extends IEngine {
         active = pairing.active;
       }
     } catch (error) {
-      this.client.logger.error(error, `connect() -> pairing.get(${topic}) failed`);
+      this.client.logger.error(`connect() -> pairing.get(${topic}) failed`);
       throw error;
     }
 
@@ -225,7 +231,7 @@ export class Engine extends IEngine {
     try {
       return await this.client.core.pairing.pair(params);
     } catch (error) {
-      this.client.logger.error(error, "pair() failed");
+      this.client.logger.error("pair() failed");
       throw error;
     }
   };
@@ -235,7 +241,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidApprove(params);
     } catch (error) {
-      this.client.logger.error(error, "approve() -> isValidApprove() failed");
+      this.client.logger.error("approve() -> isValidApprove() failed");
       throw error;
     }
     const { id, relayProtocol, namespaces, sessionProperties } = params;
@@ -330,7 +336,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidReject(params);
     } catch (error) {
-      this.client.logger.error(error, "reject() -> isValidReject() failed");
+      this.client.logger.error("reject() -> isValidReject() failed");
       throw error;
     }
     const { id, reason } = params;
@@ -354,7 +360,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidUpdate(params);
     } catch (error) {
-      this.client.logger.error(error, "update() -> isValidUpdate() failed");
+      this.client.logger.error("update() -> isValidUpdate() failed");
       throw error;
     }
     const { topic, namespaces } = params;
@@ -378,7 +384,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidExtend(params);
     } catch (error) {
-      this.client.logger.error(error, "extend() -> isValidExtend() failed");
+      this.client.logger.error("extend() -> isValidExtend() failed");
       throw error;
     }
     const { topic } = params;
@@ -398,7 +404,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidRequest(params);
     } catch (error) {
-      this.client.logger.error(error, "request() -> isValidRequest() failed");
+      this.client.logger.error("request() -> isValidRequest() failed");
       throw error;
     }
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
@@ -460,7 +466,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidPing(params);
     } catch (error) {
-      this.client.logger.error(error, "ping() -> isValidPing() failed");
+      this.client.logger.error("ping() -> isValidPing() failed");
       throw error;
     }
     const { topic } = params;
@@ -552,6 +558,7 @@ export class Engine extends IEngine {
     // Await the unsubscribe first to avoid deleting the symKey too early below.
     await this.client.core.relayer.unsubscribe(topic);
     await this.client.session.delete(topic, getSdkError("USER_DISCONNECTED"));
+    this.recentlyDeletedMap.set(topic, "session");
     if (this.client.core.crypto.keychain.has(self.publicKey)) {
       await this.client.core.crypto.deleteKeyPair(self.publicKey);
     }
@@ -577,6 +584,7 @@ export class Engine extends IEngine {
       this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED")),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
+    this.recentlyDeletedMap.set(id, "proposal");
   };
 
   private deletePendingSessionRequest: EnginePrivate["deletePendingSessionRequest"] = async (
@@ -588,6 +596,7 @@ export class Engine extends IEngine {
       this.client.pendingRequest.delete(id, reason),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
+    this.recentlyDeletedMap.set(id, "request");
     this.sessionRequestQueue.queue = this.sessionRequestQueue.queue.filter((r) => r.id !== id);
     // set the requestQueue state to idle if expirer has deleted a request as trying to respond to it would result in an exception
     if (expirerHasDeleted) {
@@ -1231,6 +1240,9 @@ export class Engine extends IEngine {
     this.client.core.pairing.events.on(PAIRING_EVENTS.create, (pairing: PairingTypes.Struct) =>
       this.onPairingCreated(pairing),
     );
+    this.client.core.pairing.events.on(PAIRING_EVENTS.delete, (pairing: PairingTypes.Struct) => {
+      this.recentlyDeletedMap.set(pairing.topic, "pairing");
+    });
   }
 
   /**
@@ -1276,7 +1288,6 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     if (isExpired(this.client.core.pairing.pairings.get(topic).expiry)) {
-      // await this.deletePairing(topic);
       const { message } = getInternalError("EXPIRED", `pairing topic: ${topic}`);
       throw new Error(message);
     }
@@ -1291,13 +1302,9 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
 
+    this.checkRecentlyDeleted(topic);
     // Store will throw custom message if topic was recently deleted
-    try {
-      this.client.session.get(topic);
-    } catch (error) {
-      if ((error as Error)?.message.includes("recently deleted")) {
-        throw error;
-      }
+    if (!this.client.session.keys.includes(topic)) {
       const { message } = getInternalError(
         "NO_MATCHING_KEY",
         `session topic doesn't exist: ${topic}`,
@@ -1321,6 +1328,7 @@ export class Engine extends IEngine {
   }
 
   private async isValidSessionOrPairingTopic(topic: string) {
+    this.checkRecentlyDeleted(topic);
     if (this.client.session.keys.includes(topic)) {
       await this.isValidSessionTopic(topic);
     } else if (this.client.core.pairing.pairings.keys.includes(topic)) {
@@ -1408,6 +1416,8 @@ export class Engine extends IEngine {
         getInternalError("MISSING_OR_INVALID", `approve() params: ${params}`).message,
       );
     const { id, namespaces, relayProtocol, sessionProperties } = params;
+
+    this.checkRecentlyDeleted(id);
     await this.isValidProposalId(id);
     const proposal = this.client.proposal.get(id);
     const validNamespacesError = isValidNamespaces(namespaces, "approve()");
@@ -1437,6 +1447,7 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     const { id, reason } = params;
+    this.checkRecentlyDeleted(id);
     await this.isValidProposalId(id);
     if (!isValidErrorReason(reason)) {
       const { message } = getInternalError(
@@ -1479,6 +1490,8 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     const { topic, namespaces } = params;
+
+    this.checkRecentlyDeleted(topic);
     await this.isValidSessionTopic(topic);
     const session = this.client.session.get(topic);
     const validNamespacesError = isValidNamespaces(namespaces, "update()");
@@ -1498,6 +1511,8 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     const { topic } = params;
+
+    this.checkRecentlyDeleted(topic);
     await this.isValidSessionTopic(topic);
   };
 
@@ -1507,6 +1522,7 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     const { topic, request, chainId, expiry } = params;
+    this.checkRecentlyDeleted(topic);
     await this.isValidSessionTopic(topic);
     const { namespaces } = this.client.session.get(topic);
     if (!isValidNamespacesChainId(namespaces, chainId)) {
@@ -1542,6 +1558,8 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     const { topic, response } = params;
+
+    this.checkRecentlyDeleted(topic);
     try {
       // if the session is already disconnected, we can't respond to the request so we need to delete it
       await this.isValidSessionTopic(topic);
@@ -1642,5 +1660,18 @@ export class Engine extends IEngine {
         throw new Error(message);
       }
     });
+  };
+
+  private checkRecentlyDeleted = (id: string | number) => {
+    console.log("checkRecentlyDeleted", id);
+    const deletedRecord = this.recentlyDeletedMap.get(id);
+    console.log("deletedRecord", deletedRecord);
+    if (deletedRecord) {
+      const { message } = getInternalError(
+        "MISSING_OR_INVALID",
+        `Record was recently deleted - ${deletedRecord}: ${id}`,
+      );
+      throw new Error(message);
+    }
   };
 }
