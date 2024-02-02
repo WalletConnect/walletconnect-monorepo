@@ -136,13 +136,7 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
   // ---------- Private ----------------------------------------------- //
 
   private async setDataStore(value: Data[]) {
-    try {
-      await this.core.storage.setItem<Data[]>(this.storageKey, value);
-    } catch (e) {
-      this.logger.error(`Failed to persist value for ${this.name}`);
-      this.logger.error(e as any);
-      await this.core.storage.setItem<Data[]>(this.storageKey, []); // nuke the storage if it fails persisting
-    }
+    await this.core.storage.setItem<Data[]>(this.storageKey, value);
   }
 
   private async getDataStore() {
