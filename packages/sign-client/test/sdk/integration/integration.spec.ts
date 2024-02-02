@@ -84,7 +84,7 @@ describe("Sign Client Integration", () => {
           `Missing or invalid. Record was recently deleted - session: ${topic}`,
         );
         await expect(promise).rejects.toThrowError(
-          `No matching key. session or pairing topic doesn't exist: ${topic}`,
+          `Missing or invalid. Record was recently deleted - session: ${topic}`,
         );
       });
     });

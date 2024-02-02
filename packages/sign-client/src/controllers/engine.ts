@@ -1558,8 +1558,6 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     const { topic, response } = params;
-
-    this.checkRecentlyDeleted(topic);
     try {
       // if the session is already disconnected, we can't respond to the request so we need to delete it
       await this.isValidSessionTopic(topic);
@@ -1663,9 +1661,7 @@ export class Engine extends IEngine {
   };
 
   private checkRecentlyDeleted = (id: string | number) => {
-    console.log("checkRecentlyDeleted", id);
     const deletedRecord = this.recentlyDeletedMap.get(id);
-    console.log("deletedRecord", deletedRecord);
     if (deletedRecord) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
