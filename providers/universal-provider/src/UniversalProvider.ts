@@ -416,6 +416,13 @@ export class UniversalProvider implements IUniversalProvider {
         this.session?.namespaces[namespace] as SessionTypes.BaseNamespace,
       );
     });
+    if (this.session) {
+      this.namespaces = {
+        ...this.namespaces,
+        ...this.session.namespaces,
+      } as NamespaceConfig;
+      this.persist("namespaces", this.namespaces);
+    }
   }
 
   private setNamespaces(params: ConnectParams): void {
@@ -462,20 +469,21 @@ export class UniversalProvider implements IUniversalProvider {
     return await this.getProvider(namespace).requestAccounts();
   }
 
-  private onChainChanged(caip2Chain: string, internal = false): void {
+  private onChainChanged = (caip2Chain: string, internal = false) => {
     if (!this.namespaces) return;
 
     const [namespace, chainId] = this.validateChain(caip2Chain);
-
     if (!internal) {
       this.getProvider(namespace).setDefaultChain(chainId);
     }
-
-    (this.namespaces[namespace] ?? this.namespaces[`${namespace}:${chainId}`]).defaultChain =
-      chainId;
+    if (this.namespaces[namespace]) {
+      this.namespaces[namespace].defaultChain = chainId;
+    } else if (this.namespaces[`${namespace}:${chainId}`]) {
+      this.namespaces[`${namespace}:${chainId}`].defaultChain = chainId;
+    }
     this.persist("namespaces", this.namespaces);
     this.events.emit("chainChanged", chainId);
-  }
+  };
 
   private onConnect() {
     this.createProviders();
