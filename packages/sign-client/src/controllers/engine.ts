@@ -228,6 +228,7 @@ export class Engine extends IEngine {
 
   public pair: IEngine["pair"] = async (params) => {
     await this.isInitialized();
+    // this.startPairingEventLog(params);
     try {
       return await this.client.core.pairing.pair(params);
     } catch (error) {
@@ -263,25 +264,6 @@ export class Engine extends IEngine {
       peerPublicKey,
     );
 
-    if (pairingTopic && id) {
-      await this.client.core.pairing.updateMetadata({
-        topic: pairingTopic,
-        metadata: proposer.metadata,
-      });
-      await this.sendResult<"wc_sessionPropose">({
-        id,
-        topic: pairingTopic,
-        result: {
-          relay: {
-            protocol: relayProtocol ?? "irn",
-          },
-          responderPublicKey: selfPublicKey,
-        },
-      });
-      await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
-      await this.client.core.pairing.activate({ topic: pairingTopic });
-    }
-
     const sessionSettle = {
       relay: { protocol: relayProtocol ?? "irn" },
       namespaces,
@@ -307,12 +289,25 @@ export class Engine extends IEngine {
     };
     await this.client.session.set(sessionTopic, session);
     try {
-      await this.sendRequest({
-        topic: sessionTopic,
-        method: "wc_sessionSettle",
-        params: sessionSettle,
-        throwOnFailedPublish: true,
-      });
+      await Promise.all([
+        this.sendResult<"wc_sessionPropose">({
+          id,
+          topic: pairingTopic,
+          result: {
+            relay: {
+              protocol: relayProtocol ?? "irn",
+            },
+            responderPublicKey: selfPublicKey,
+          },
+          throwOnFailedPublish: true,
+        }),
+        this.sendRequest({
+          topic: sessionTopic,
+          method: "wc_sessionSettle",
+          params: sessionSettle,
+          throwOnFailedPublish: true,
+        }),
+      ]);
     } catch (error) {
       this.client.logger.error(error);
       // if the publish fails, delete the session and throw an error
@@ -321,6 +316,12 @@ export class Engine extends IEngine {
       throw error;
     }
 
+    await this.client.core.pairing.updateMetadata({
+      topic: pairingTopic,
+      metadata: proposer.metadata,
+    });
+    await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
+    await this.client.core.pairing.activate({ topic: pairingTopic });
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
     return {
       topic: sessionTopic,
@@ -370,7 +371,7 @@ export class Engine extends IEngine {
       params: { namespaces },
     });
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("session_update", id), ({ error }) => {
+    this.events.once(engineEvent("session_update", id), ({ error }: any) => {
       if (error) reject(error);
       else resolve();
     });
@@ -390,7 +391,7 @@ export class Engine extends IEngine {
     const { topic } = params;
     const id = await this.sendRequest({ topic, method: "wc_sessionExtend", params: {} });
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("session_extend", id), ({ error }) => {
+    this.events.once(engineEvent("session_extend", id), ({ error }: any) => {
       if (error) reject(error);
       else resolve();
     });
@@ -473,7 +474,7 @@ export class Engine extends IEngine {
     if (this.client.session.keys.includes(topic)) {
       const id = await this.sendRequest({ topic, method: "wc_sessionPing", params: {} });
       const { done, resolve, reject } = createDelayedPromise<void>();
-      this.events.once(engineEvent("session_ping", id), ({ error }) => {
+      this.events.once(engineEvent("session_ping", id), ({ error }: any) => {
         if (error) reject(error);
         else resolve();
       });
@@ -662,6 +663,12 @@ export class Engine extends IEngine {
         .publish(topic, message, opts)
         .catch((error) => this.client.logger.error(error));
     }
+    this.events.emit("engine_request_sent", {
+      topic,
+      id: payload.id,
+      params,
+      tag: opts.tag,
+    });
     return payload.id;
   };
 
@@ -695,6 +702,12 @@ export class Engine extends IEngine {
         .publish(topic, message, opts)
         .catch((error) => this.client.logger.error(error));
     }
+    this.events.emit("engine_result_sent", {
+      topic,
+      id,
+      result,
+      tag: opts.tag,
+    });
     await this.client.core.history.resolve(payload);
   };
 
@@ -719,6 +732,12 @@ export class Engine extends IEngine {
     // await is intentionally omitted to speed up performance
     this.client.core.relayer.publish(topic, message, opts);
     await this.client.core.history.resolve(payload);
+    this.events.emit("engine_error_sent", {
+      topic,
+      id,
+      error,
+      tag: opts.tag,
+    });
   };
 
   private cleanup: EnginePrivate["cleanup"] = async () => {
@@ -1101,6 +1120,7 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidRequest({ topic, ...params });
+      // this.startSessionRequestActivityLog({ id, topic });
       const hash = hashMessage(
         JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
       );
@@ -1670,4 +1690,253 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
   };
+
+  // private startPairingEventLog = async ({ uri }: { uri: string }) => {
+  //   return;
+  //   // step 1 create pairing
+  //   console.log("startPairingEventLog");
+
+  //   const { topic } = parseUri(uri);
+  //   let sessionTopic = "";
+
+  //   const activityLog = ActivityLog.init({
+  //     id: topic,
+  //     title: `Pairing activity log`,
+  //     totalSteps: 7,
+  //     onStep: (params) => {
+  //       console.log("onStep", {
+  //         params,
+  //         old: {
+  //           id: params.id,
+  //           state: {
+  //             init: true,
+  //           },
+  //           message: `Pairing activity log`,
+  //           totalSteps: params.totalSteps,
+  //         },
+  //       });
+
+  //       this.events.emit("engine_activity_log", params as any);
+  //     },
+  //   });
+
+  //   // this.events.on("engine_activity_log", (event) => console.log("event", event));
+
+  //   // this.events.emit("engine_activity_log", {
+  //   //   id,
+  //   //   state: {
+  //   //     init: true,
+  //   //   },
+  //   //   message: `Pairing activity log`,
+  //   //   totalSteps,
+  //   // });
+
+  //   await Promise.all([
+  //     new Promise<void>((resolve) => {
+  //       const waitForPairing = (pairing: { topic: string }) => {
+  //         if (pairing.topic === topic) {
+  //           // console.log("step 1 create pairing");
+  //           this.client.core.pairing.events.off("pairing_create", waitForPairing);
+
+  //           activityLog.logActivity({
+  //             message: `Pairing created ${topic}`,
+  //             success: true,
+  //           });
+  //           resolve();
+  //         }
+  //       };
+  //       this.client.core.pairing.events.on("pairing_create", waitForPairing);
+  //     }),
+  //     // step 2 subscribe
+  //     new Promise<void>((resolve) => {
+  //       const waitForSubscription = (subscription: { topic: string }) => {
+  //         if (subscription.topic === topic) {
+  //           // console.log("step 2 subscribe");
+  //           this.client.core.relayer.subscriber.off("subscription_created", waitForSubscription);
+  //           activityLog.logActivity({
+  //             message: `Subscribed to pairing topic ${topic}`,
+  //             success: true,
+  //           });
+  //           activityLog.logActivity({
+  //             message: `Waiting for payload from relay on ${topic}`,
+  //             success: true,
+  //           });
+  //           resolve();
+  //         }
+  //       };
+  //       this.client.core.relayer.subscriber.on("subscription_created", waitForSubscription);
+
+  //       // check if pairing already exist
+  //       if (this.client.core.pairing.pairings.keys.includes(topic)) {
+  //         const pairing = this.client.core.pairing.pairings.get(topic);
+  //         if (pairing.active) {
+  //           throw new Error(`Pairing already exists for topic ${topic}`);
+  //         }
+  //       }
+  //     }),
+  //     new Promise<void>((resolve) => {
+  //       const waitForProposalPayload = async (event: RelayerTypes.MessageEvent) => {
+  //         const { topic: payloadTopic, message } = event;
+  //         try {
+  //           const payload = await this.client.core.crypto.decode(topic, message);
+  //           const method = (payload as JsonRpcRequest).method;
+  //           if (payload && method === "wc_sessionPropose" && topic === payloadTopic) {
+  //             // console.log("step 3 session_propose");
+  //             activityLog.logActivity({
+  //               message: `Session proposal received by SDK ${payload.id}`,
+  //               success: true,
+  //             });
+  //           }
+  //         } catch (err) {
+  //         } finally {
+  //           resolve();
+  //           this.client.core.relayer.off(RELAYER_EVENTS.message, waitForProposalPayload);
+  //         }
+  //       };
+  //       this.client.core.relayer.on(RELAYER_EVENTS.message, waitForProposalPayload);
+  //     }),
+  //     // step 4 session_propose
+  //     new Promise<void>((resolve) => {
+  //       const waitForSessionPropose = (
+  //         proposal: SignClientTypes.EventArguments["session_proposal"],
+  //       ) => {
+  //         if (proposal.params.pairingTopic === topic) {
+  //           // console.log("step 4 session_propose");
+  //           this.client.events.off("session_proposal", waitForSessionPropose);
+  //           activityLog.logActivity({
+  //             message: `Session proposal emitted by SDK to wallet ${proposal.id}`,
+  //             success: true,
+  //           });
+  //           resolve();
+  //         }
+  //       };
+  //       this.client.events.on("session_proposal", waitForSessionPropose);
+  //     }),
+  //     // step 5 session_settle
+  //     new Promise<void>((resolve) => {
+  //       const waitForProposalResponse = (
+  //         result: EngineTypes.EventArguments["engine_result_sent"],
+  //       ) => {
+  //         if (result.topic === topic && result?.tag === ENGINE_RPC_OPTS.wc_sessionPropose.res.tag) {
+  //           // console.log("step 5 session_settle");
+  //           this.events.off("engine_result_sent", waitForProposalResponse);
+  //           activityLog.logActivity({
+  //             message: `Session proposal response set to dapp ${topic}`,
+  //             success: true,
+  //           });
+  //           resolve();
+  //         }
+  //       };
+  //       this.events.on("engine_result_sent", waitForProposalResponse);
+
+  //       this.events.once("engine_error_sent", ({ topic: resultTopic, id }) => {
+  //         if (resultTopic === topic) {
+  //           activityLog.abort({ message: "Proposal rejected" });
+  //         }
+  //       });
+  //     }),
+  //     // step 5 session_settle
+  //     new Promise<void>((resolve) => {
+  //       const waitForSessionSettle = (
+  //         request: EngineTypes.EventArguments["engine_request_sent"],
+  //       ) => {
+  //         if (
+  //           request.params.pairingTopic === topic &&
+  //           request?.tag === ENGINE_RPC_OPTS.wc_sessionSettle.req.tag
+  //         ) {
+  //           // console.log("step 6 session_settle");
+  //           this.events.off("engine_request_sent", waitForSessionSettle);
+  //           sessionTopic = request.topic;
+  //           activityLog.logActivity({
+  //             message: `Session settled sent to dapp ${sessionTopic}`,
+  //             success: true,
+  //           });
+  //           resolve();
+  //         }
+  //       };
+  //       this.events.on("engine_request_sent", waitForSessionSettle);
+  //     }),
+  //   ]).catch((err) => {
+  //     console.log("pairing flow error", err);
+  //     activityLog.abort({ message: err.message || "error" });
+  //   });
+  //   console.log("session done", sessionTopic);
+  // };
+
+  // private startSessionRequestActivityLog = async (params: { id: number; topic: string }) => {
+  //   return;
+  //   const { id, topic } = params;
+  //   // step 1 receive request payload by SDK
+  //   const activityLog = ActivityLog.init({
+  //     id: id.toString(),
+  //     title: `Session request activity log`,
+  //     totalSteps: 4,
+  //     onStep: (params) => {
+  //       console.log("onStep", {
+  //         params,
+  //         old: {
+  //           id: params.id,
+  //           state: {
+  //             init: true,
+  //           },
+  //           message: `Session request activity log`,
+  //           totalSteps: params.totalSteps,
+  //         },
+  //       });
+  //       this.events.emit("engine_activity_log", params as any);
+  //     },
+  //   });
+
+  //   activityLog.logActivity({
+  //     message: `Session request payload received by SDK ${id}`,
+  //     success: true,
+  //   });
+
+  //   await Promise.all([
+  //     new Promise<void>((resolve) => {
+  //       const waitForSessionRequest = (request: PendingRequestTypes.Struct) => {
+  //         console.log("step 1 receive request payload by SDK");
+  //         if (request.id === id) {
+  //           console.log("step 1 receive emit request payload by SDK");
+  //           this.events.off("session_request", waitForSessionRequest);
+  //           activityLog.logActivity({
+  //             message: `Session request emitted by SDK to wallet ${id}`,
+  //             success: true,
+  //           });
+  //           activityLog.logActivity({
+  //             message: `Waiting for wallet response on session request ${id}`,
+  //             success: true,
+  //           });
+  //           resolve();
+  //         }
+  //       };
+  //       this.client.events.on("session_request", waitForSessionRequest);
+  //     }),
+  //     new Promise<void>((resolve) => {
+  //       const waitForRequestResult = (response: { id: number; topic: string }) => {
+  //         if (response.id === id) {
+  //           console.log("step 2 receive response payload by SDK");
+  //           this.events.off("engine_result_sent", waitForRequestResult);
+  //           this.events.off("engine_error_sent", waitForRequestError);
+  //           activityLog.logActivity({
+  //             message: `Session request response sent to dapp ${id}`,
+  //             success: true,
+  //           });
+  //           resolve();
+  //         }
+  //       };
+  //       const waitForRequestError = (response: { id: number; topic: string }) => {
+  //         if (response.id === id) {
+  //           console.log("step 2 receive response payload by SDK");
+  //           this.events.off("engine_result_sent", waitForRequestResult);
+  //           this.events.off("engine_error_sent", waitForRequestError);
+  //           activityLog.abort({ message: "Request rejected" });
+  //           resolve();
+  //         }
+  //       };
+  //       this.events.on("engine_result_sent", waitForRequestResult);
+  //       this.events.on("engine_error_sent", waitForRequestError);
+  //     }),
+  //   ]);
+  // };
 }

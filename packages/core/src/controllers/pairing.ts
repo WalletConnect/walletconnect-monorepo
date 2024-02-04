@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import {
   ICore,
@@ -136,9 +137,10 @@ export class Pairing implements IPairing {
     // avoid overwriting keychain pairing already exists
     if (!this.core.crypto.keychain.has(topic)) {
       await this.core.crypto.setSymKey(symKey, topic);
-      await this.core.relayer.subscribe(topic, { relay });
     }
-
+    console.log("pairing subscribing...");
+    await this.core.relayer.subscribe(topic, { relay });
+    console.log("pairing subscribed");
     return pairing;
   };
 

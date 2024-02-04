@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
@@ -131,11 +132,13 @@ export class Relayer extends IRelayer {
   }
 
   get connected() {
-    return this.provider.connection.connected;
+    // @ts-ignore
+    return this.provider?.connection?.socket?.readyState === 1;
   }
 
   get connecting() {
-    return this.provider.connection.connecting;
+    // @ts-ignore
+    return this.provider?.connection?.socket?.readyState === 0;
   }
 
   public async publish(topic: string, message: string, opts?: RelayerTypes.PublishOptions) {
@@ -152,11 +155,10 @@ export class Relayer extends IRelayer {
   public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
     this.isInitialized();
     let id = this.subscriber.topicMap.get(topic)?.[0] || "";
-
-    if (id) return id;
-
+    console.log("@relayer.ts subscribe");
     let resolvePromise: () => void;
     const onSubCreated = (subscription: SubscriberTypes.Active) => {
+      console.log("@relayer.ts onSubCreated");
       if (subscription.topic === topic) {
         this.subscriber.off(SUBSCRIBER_EVENTS.created, onSubCreated);
         resolvePromise();
@@ -169,11 +171,13 @@ export class Relayer extends IRelayer {
         this.subscriber.on(SUBSCRIBER_EVENTS.created, onSubCreated);
       }),
       new Promise<void>(async (resolve) => {
+        console.log("@relayer.ts new subscriing..");
         id = await this.subscriber.subscribe(topic, opts);
+        console.log("@relayer.ts new subscriing.. id", id);
         resolve();
       }),
     ]);
-
+    console.log("@relayer.ts subscribed id", id);
     return id;
   }
 
@@ -186,8 +190,10 @@ export class Relayer extends IRelayer {
       request,
     });
     try {
+      console.log("@relayer.ts request");
       await this.toEstablishConnection();
       const result = await requestPromise;
+      this.logger.debug(`@relayer.ts Request Published`);
       return result;
     } catch (e) {
       this.logger.debug(`Failed to Publish Request`);
@@ -220,8 +226,13 @@ export class Relayer extends IRelayer {
   }
 
   public async transportClose() {
+    console.log("@relayer.ts transportClose in-flight requests", {
+      requestsInFlight: this.requestsInFlight.size,
+      connected: this.connected,
+      hasExperiencedNetworkDisruption: this.hasExperiencedNetworkDisruption,
+    });
     // wait for all requests to finish before closing the transport
-    if (this.requestsInFlight.size > 0) {
+    if (this.connected && this.requestsInFlight.size > 0) {
       this.logger.debug("Waiting for all in-flight requests to finish before closing transport...");
       this.requestsInFlight.forEach(async (value) => {
         await value.promise;
@@ -240,6 +251,7 @@ export class Relayer extends IRelayer {
     } else if (this.connected) {
       await this.provider.disconnect();
     }
+    console.log("@relayer.ts transportClose done");
   }
 
   public async transportOpen(relayUrl?: string) {
@@ -266,7 +278,7 @@ export class Relayer extends IRelayer {
           try {
             await createExpiringPromise(
               this.provider.connect(),
-              10_000,
+              15_000,
               `Socket stalled when trying to connect to ${this.relayUrl}`,
             );
           } catch (e) {
@@ -290,6 +302,12 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
+    console.log(
+      "@relayer.ts socket restartTransport",
+      // @ts-ignore
+      this.provider.connection?.socket?.readyState,
+    );
+
     await this.confirmOnlineStateOrThrow();
     if (this.connectionAttemptInProgress) return;
     this.relayUrl = relayUrl || this.relayUrl;
@@ -430,6 +448,11 @@ export class Relayer extends IRelayer {
 
   private async registerEventListeners() {
     this.events.on(RELAYER_EVENTS.connection_stalled, () => {
+      console.log("@relayer.ts on connection_stalled");
+      if (this.connected) {
+        console.log("@relayer.ts on connection_stalled, skipping already connected");
+        return;
+      }
       this.restartTransport().catch((error) => this.logger.error(error));
     });
 
@@ -441,27 +464,46 @@ export class Relayer extends IRelayer {
       if (lastConnectedState === connected) return;
 
       lastConnectedState = connected;
-
-      if (connected) {
-        await this.restartTransport().catch((error) => this.logger.error(error));
-      } else {
+      console.log(
+        "@relayer.ts subscribeToNetworkChange socket readyState",
+        // @ts-ignore
+        this.provider.connection?.socket?.readyState,
+      );
+      if (!connected) {
         // when the device network is restarted, the socket might stay in false `connected` state
         this.hasExperiencedNetworkDisruption = true;
-        await this.transportClose().catch((error) => this.logger.error(error));
+        await this.transportClose();
+        this.transportExplicitlyClosed = false;
+      } else {
+        console.log("@relayer.ts subscribeToNetworkChange, restarting transport");
+        await this.restartTransport().catch((error) => this.logger.error(error));
       }
     });
   }
 
   private onProviderDisconnect() {
+    console.log(
+      "@relayer.ts onProviderDisconnect - readyState",
+      // @ts-ignore
+      this.provider.connection?.socket?.readyState,
+      this.provider?.connection?.connected,
+    );
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.attemptToReconnect();
   }
 
   private attemptToReconnect() {
+    console.log("@relayer.ts attemptToReconnect", this.transportExplicitlyClosed);
     if (this.transportExplicitlyClosed) {
       return;
     }
 
+    console.log(
+      "@relayer.ts attemptToReconnect - readyState",
+
+      // @ts-ignore
+      this.provider.connection?.socket?.readyState,
+    );
     this.logger.info("attemptToReconnect called. Connecting...");
     // Attempt reconnection after one second.
     setTimeout(async () => {
@@ -478,6 +520,12 @@ export class Relayer extends IRelayer {
 
   private async toEstablishConnection() {
     await this.confirmOnlineStateOrThrow();
+    console.log("@relayer.ts  toEstablishConnection socket readyState", {
+      // @ts-ignore
+      readyState: this.provider.connection?.socket?.readyState,
+      connected: this.connected,
+      connecting: this.connecting,
+    });
     if (this.connected) return;
     if (this.connectionAttemptInProgress) {
       return await new Promise<void>((resolve) => {

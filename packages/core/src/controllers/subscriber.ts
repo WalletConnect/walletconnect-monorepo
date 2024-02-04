@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
@@ -43,7 +44,7 @@ export class Subscriber extends ISubscriber {
   private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
   private pollingInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
-  private subscribeTimeout = 10_000;
+  private subscribeTimeout = 15_000;
   private restartInProgress = false;
   private clientId: string;
   private batchSubscribeTopicsLimit = 500;
@@ -302,7 +303,6 @@ export class Subscriber extends ISubscriber {
   }
 
   private setSubscription(id: string, subscription: SubscriberTypes.Active) {
-    if (this.subscriptions.has(id)) return;
     this.logger.debug(`Setting subscription`);
     this.logger.trace({ type: "method", method: "setSubscription", id, subscription });
     this.addSubscription(id, subscription);
@@ -382,9 +382,12 @@ export class Subscriber extends ISubscriber {
 
   private async batchSubscribe(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
+
+    console.log("batchSubscribe");
     const result = (await this.rpcBatchSubscribe(subscriptions)) as string[];
     if (!isValidArray(result)) return;
     this.onBatchSubscribe(result.map((id, i) => ({ ...subscriptions[i], id })));
+    console.log("batchSubscribe done");
   }
 
   private async onConnect() {

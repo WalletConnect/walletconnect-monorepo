@@ -13,14 +13,14 @@ import { EventEmitter } from "events";
 
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
 import { getBigIntRpcId } from "@walletconnect/jsonrpc-utils";
-import { TEN_SECONDS, toMiliseconds } from "@walletconnect/time";
+import { ONE_MINUTE, toMiliseconds } from "@walletconnect/time";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
   public name = PUBLISHER_CONTEXT;
   public queue = new Map<string, PublisherTypes.Params>();
 
-  private publishTimeout = toMiliseconds(TEN_SECONDS * 2);
+  private publishTimeout = toMiliseconds(ONE_MINUTE);
   private needsTransportRestart = false;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
