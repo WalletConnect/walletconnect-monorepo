@@ -4,7 +4,7 @@ import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { Watch } from "@walletconnect/time";
+import { ONE_MINUTE, Watch, toMiliseconds } from "@walletconnect/time";
 import {
   IRelayer,
   ISubscriber,
@@ -44,7 +44,7 @@ export class Subscriber extends ISubscriber {
   private pendingSubscriptionWatchLabel = "pending_sub_watch_label";
   private pollingInterval = 20;
   private storagePrefix = CORE_STORAGE_PREFIX;
-  private subscribeTimeout = 15_000;
+  private subscribeTimeout = toMiliseconds(ONE_MINUTE);
   private restartInProgress = false;
   private clientId: string;
   private batchSubscribeTopicsLimit = 500;
