@@ -192,6 +192,7 @@ export class Relayer extends IRelayer {
     try {
       console.log("@relayer.ts request");
       await this.toEstablishConnection();
+      console.log("@relayer.ts request publish...");
       const result = await requestPromise;
       this.logger.debug(`@relayer.ts Request Published`);
       return result;
@@ -255,6 +256,7 @@ export class Relayer extends IRelayer {
   }
 
   public async transportOpen(relayUrl?: string) {
+    console.log("@relayer.ts transportOpen");
     this.transportExplicitlyClosed = false;
     await this.confirmOnlineStateOrThrow();
     if (this.connectionAttemptInProgress) return;
@@ -268,17 +270,23 @@ export class Relayer extends IRelayer {
     try {
       await Promise.all([
         new Promise<void>((resolve) => {
-          if (!this.initialized) return resolve();
+          console.log(
+            "@relayer.ts transportOpen, waiting for subscriber to resubscribe",
+            this.initialized,
+          );
+          // if (!this.initialized) return resolve();
           // wait for the subscriber to finish resubscribing to its topics
           this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, () => {
+            console.log("@relayer.ts transportOpen, subscriber resubscribed");
             resolve();
           });
         }),
         new Promise<void>(async (resolve, reject) => {
           try {
+            console.log("@relayer.ts transportOpen, connecting to", this.relayUrl);
             await createExpiringPromise(
               this.provider.connect(),
-              15_000,
+              30_000,
               `Socket stalled when trying to connect to ${this.relayUrl}`,
             );
           } catch (e) {
@@ -299,6 +307,7 @@ export class Relayer extends IRelayer {
       this.connectionAttemptInProgress = false;
       this.hasExperiencedNetworkDisruption = false;
     }
+    console.log("@relayer.ts transportOpen done");
   }
 
   public async restartTransport(relayUrl?: string) {
