@@ -5,7 +5,7 @@ import {
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
-import { getSdkError, parseUri } from "@walletconnect/utils";
+import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 
@@ -165,7 +165,6 @@ describe("Sign Client Integration", () => {
       // 7. attempt to pair again with the same URI
       // 8. should receive an error the pairing already exists
       await expect(wallet.pair({ uri })).rejects.toThrowError();
-
       await deleteClients({ A: dapp, B: wallet });
     });
   });
@@ -336,11 +335,12 @@ describe("Sign Client Integration", () => {
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
-            Array.from(Array(expectedRequests).keys()).map(() =>
-              clients.A.request({
-                topic,
-                ...TEST_REQUEST_PARAMS,
-              }),
+            Array.from(Array(expectedRequests).keys()).map(
+              async () =>
+                await clients.A.request({
+                  topic,
+                  ...TEST_REQUEST_PARAMS,
+                }),
             ),
           ]);
           await throttle(1000);
@@ -408,24 +408,62 @@ describe("Sign Client Integration", () => {
                   // eslint-disable-next-line no-console
                   console.log("respond error", err);
                 });
-                if (receivedRequests >= expectedRequests) resolve();
+                if (receivedRequests > expectedRequests) resolve();
               });
             }),
-            new Promise<void>((resolve) => {
-              clients.A.request({
-                topic: topicB,
-                ...TEST_REQUEST_PARAMS,
-              });
+            new Promise<void>(async (resolve) => {
+              await Promise.all([
+                ...Array.from(Array(expectedRequests).keys()).map(
+                  async () =>
+                    await clients.A.request({
+                      topic: topicA,
+                      ...TEST_REQUEST_PARAMS,
+                    }),
+                ),
+                clients.A.request({
+                  topic: topicB,
+                  ...TEST_REQUEST_PARAMS,
+                  // eslint-disable-next-line no-console
+                }).catch((e) => console.error(e)), // capture the error from the session disconnect
+              ]);
               resolve();
             }),
-            Array.from(Array(expectedRequests).keys()).map(() =>
-              clients.A.request({
-                topic: topicA,
-                ...TEST_REQUEST_PARAMS,
-              }),
-            ),
           ]);
           await throttle(1000);
+          await deleteClients(clients);
+        });
+        it("should handle invalid session state with missing keychain", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
+          const dapp = clients.A as SignClient;
+          const sessions = dapp.session.getAll();
+          expect(sessions.length).to.eq(1);
+          await dapp.core.crypto.keychain.del(topic);
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              dapp.on("session_delete", async (args) => {
+                const { topic: sessionTopic } = args;
+                expect(sessionTopic).to.eq(topic);
+                resolve();
+              });
+            }),
+            new Promise<void>(async (resolve) => {
+              try {
+                await dapp.ping({ topic });
+              } catch (err) {
+                expect(err.message).to.eq(
+                  `Missing or invalid. session topic does not exist in keychain: ${topic}`,
+                );
+              }
+              resolve();
+            }),
+          ]);
+
+          const sessionsAfter = dapp.session.getAll();
+          expect(sessionsAfter.length).to.eq(0);
+
           await deleteClients(clients);
         });
       });
@@ -517,21 +555,24 @@ describe("Sign Client Integration", () => {
         clients,
         sessionA: { topic },
       } = await initTwoPairedClients({}, {}, { logger: "error" });
-      const expiry = 5000;
+      const expiry = 600; // 10 minutes in seconds
 
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.A.core.relayer.once(
-            RELAYER_EVENTS.publish,
-            (payload: RelayerTypes.PublishPayload) => {
-              // ttl of the request should match the expiry
-              // expect(payload?.opts?.ttl).toEqual(expiry);
-              resolve();
-            },
-          );
+          (clients.B as SignClient).once("session_request", async (payload) => {
+            expect(payload.params.request.expiryTimestamp).to.be.approximately(
+              calcExpiry(expiry),
+              1000,
+            );
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
+            resolve();
+          });
         }),
-        new Promise<void>((resolve) => {
-          clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });
           resolve();
         }),
       ]);
@@ -575,7 +616,7 @@ describe("Sign Client Integration", () => {
       };
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.B.once("session_request", (payload) => {
+          clients.B.once("session_request", async (payload) => {
             const { params } = payload;
             const session = clients.B.session.get(payload.topic);
             expect(params).toMatchObject(testRequestProps);
@@ -585,11 +626,15 @@ describe("Sign Client Integration", () => {
               ),
             ).to.exist;
             expect(session.requiredNamespaces[TEST_AVALANCHE_CHAIN]).to.exist;
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
             resolve();
           });
         }),
-        new Promise<void>((resolve) => {
-          clients.A.request({ ...testRequestProps, topic });
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...testRequestProps, topic });
           resolve();
         }),
       ]);

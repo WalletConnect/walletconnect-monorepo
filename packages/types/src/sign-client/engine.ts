@@ -43,6 +43,7 @@ export declare namespace EngineTypes {
     topic: string;
     symKey: string;
     relay: RelayerTypes.ProtocolOptions;
+    expiryTimestamp?: number;
   }
 
   interface EventCallback<T extends JsonRpcRequest | JsonRpcResponse> {
@@ -123,8 +124,12 @@ export declare namespace EngineTypes {
   type AcknowledgedPromise = Promise<{ acknowledged: () => Promise<void> }>;
 
   interface RpcOpts {
-    req: RelayerTypes.PublishOptions;
-    res: RelayerTypes.PublishOptions;
+    req: RelayerTypes.PublishOptions & {
+      ttl: number;
+    };
+    res: RelayerTypes.PublishOptions & {
+      ttl: number;
+    };
   }
 
   type RpcOptsMap = Record<JsonRpcTypes.WcMethod, RpcOpts>;
@@ -179,7 +184,12 @@ export interface EnginePrivate {
 
   onRelayEventUnknownPayload(event: EngineTypes.EventCallback<any>): Promise<void>;
 
-  deleteSession(topic: string, expirerHasDeleted?: boolean): Promise<void>;
+  deleteSession(params: {
+    topic: string;
+    expirerHasDeleted?: boolean;
+    id?: number;
+    emitEvent?: boolean;
+  }): Promise<void>;
 
   deleteProposal(id: number, expirerHasDeleted?: boolean): Promise<void>;
 

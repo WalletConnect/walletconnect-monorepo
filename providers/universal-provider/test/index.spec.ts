@@ -66,22 +66,7 @@ describe("UniversalProvider", function () {
   afterAll(async () => {
     // close test network
     await testNetwork.close();
-    // disconnect provider
-    await Promise.all([
-      new Promise<void>((resolve) => {
-        provider.on("session_delete", () => {
-          resolve();
-        });
-      }),
-      new Promise<void>(async (resolve) => {
-        await walletClient.disconnect();
-        resolve();
-      }),
-    ]);
-    expect(walletClient.client?.session.values.length).to.eql(0);
-    await throttle(1_000);
-    await provider.client.core.relayer.transportClose();
-    await walletClient.client?.core.relayer.transportClose();
+    await deleteProviders({ A: provider, B: walletClient.provider });
   });
 
   describe("eip155", () => {
@@ -863,6 +848,159 @@ describe("UniversalProvider", function () {
           expectedChainId: chains[1],
         });
       });
+      it("should handle switch chain event on non required namespaces", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1", "eip155:2"];
+        const solanaChains = [
+          "solana:91b171bb158e2d3848fa23a9f1c25182",
+          "solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ",
+        ];
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              "eip155:1": {
+                methods,
+                events,
+              },
+            },
+            optionalNamespaces: {},
+            namespaces: {
+              eip155: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                methods,
+                events,
+              },
+              solana: {
+                accounts: solanaChains.map((chain) => `${chain}:${walletAddress}`),
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        const expectedChainId = solanaChains[1];
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            dapp.on("chainChanged", (chainId: any) => {
+              expect(chainId).to.eql(expectedChainId.split(":")[1]);
+              resolve();
+            });
+          }),
+          wallet.client.emit({
+            topic: dapp.session?.topic || "",
+            event: {
+              name: "chainChanged",
+              data: expectedChainId,
+            },
+            chainId: expectedChainId,
+          }),
+        ]);
+
+        await validateProvider({
+          provider: dapp,
+          chains: solanaChains,
+          addresses: [walletAddress],
+          defaultNamespace: "solana",
+          expectedChainId,
+        });
+      });
+      it("should handle requesting x & y as required & optional chains while wallet approves x + y + z", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = {
+          eip155: ["eip155:1", "eip155:2"],
+          solana: [
+            "solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ",
+            "solana:91b171bb158e2d3848fa23a9f1c25182",
+          ],
+          cosmos: ["cosmos:hub1", "cosmos:hub2"],
+        };
+
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              eip155: {
+                chains: chains.eip155,
+                methods,
+                events,
+              },
+            },
+            optionalNamespaces: {
+              solana: {
+                chains: chains.solana,
+                methods,
+                events,
+              },
+            },
+            namespaces: {
+              eip155: {
+                accounts: chains.eip155.map((chain) => `${chain}:${walletAddress}`),
+                methods,
+                events,
+              },
+              solana: {
+                accounts: chains.solana.map((chain) => `${chain}:${walletAddress}`),
+                methods,
+                events,
+              },
+              cosmos: {
+                accounts: chains.cosmos.map((chain) => `${chain}:${walletAddress}`),
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        const expectedChainId = chains.solana[1];
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            dapp.on("chainChanged", (chainId: any) => {
+              expect(chainId).to.eql(expectedChainId.split(":")[1]);
+              resolve();
+            });
+          }),
+          wallet.client.emit({
+            topic: dapp.session?.topic || "",
+            event: {
+              name: "chainChanged",
+              data: expectedChainId,
+            },
+            chainId: expectedChainId,
+          }),
+        ]);
+
+        // validate that provider is created for each approed namespace
+        expect(Object.keys(dapp.rpcProviders).length).to.eql(Object.keys(chains).length);
+
+        await validateProvider({
+          provider: dapp,
+          chains: chains.solana,
+          addresses: [walletAddress],
+          defaultNamespace: "solana",
+          expectedChainId,
+        });
+      });
     });
   });
 
@@ -963,15 +1101,18 @@ const validateProvider = async (params: ValidateProviderParams) => {
   if (addresses) {
     expect(accounts).to.toMatchObject(addresses);
   }
-  const chain = await provider.request({ method: "eth_chainId" });
-  expect(chain).to.not.be.null;
+
   if (chains) {
-    expect(chains).toContain(`${defaultNamespace}:${chain}`);
     expect(Object.keys(provider.rpcProviders[defaultNamespace].httpProviders)).to.toMatchObject(
       chains.map((c) => c.split(":")[1]),
     );
   }
   if (expectedChainId) {
-    expect(expectedChainId).to.equal(`${defaultNamespace}:${chain}`);
+    const chainId = provider.rpcProviders[defaultNamespace].getDefaultChain();
+    expect(chainId).to.not.be.null;
+    expect(expectedChainId).to.equal(`${defaultNamespace}:${chainId}`);
+    if (chains) {
+      expect(chains).to.include(`${defaultNamespace}:${chainId}`);
+    }
   }
 };

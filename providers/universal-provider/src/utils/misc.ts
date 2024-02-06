@@ -125,10 +125,12 @@ export function populateNamespacesChains(
   return parsedNamespaces;
 }
 
-export function convertChainIdToNumber(chainId: string | number): number {
+export function convertChainIdToNumber(chainId: string | number): number | string {
   if (typeof chainId === "number") return chainId;
   if (chainId.includes("0x")) {
     return parseInt(chainId, 16);
   }
-  return chainId.includes(":") ? Number(chainId.split(":")[1]) : Number(chainId);
+
+  chainId = chainId.includes(":") ? chainId.split(":")[1] : chainId;
+  return isNaN(Number(chainId)) ? chainId : Number(chainId);
 }

@@ -35,6 +35,7 @@ export declare namespace JsonRpcTypes {
         publicKey: string;
         metadata: SignClientTypes.Metadata;
       };
+      expiryTimestamp?: number;
     };
     wc_sessionSettle: {
       relay: RelayerTypes.ProtocolOptions;
@@ -60,6 +61,7 @@ export declare namespace JsonRpcTypes {
       request: {
         method: string;
         params: any;
+        expiryTimestamp?: number;
       };
       chainId: string;
     };
