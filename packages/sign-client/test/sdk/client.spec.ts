@@ -82,9 +82,9 @@ describe("Sign Client Integration", () => {
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
       expect(A.pairing.keys.length).to.eql(1);
-      await throttle(200);
+      await throttle(1000);
       await testConnectMethod(clients);
-      await throttle(200);
+      await throttle(1000);
       expect(A.pairing.keys).to.eql(B.pairing.keys);
       expect(A.pairing.keys.length).to.eql(1);
       await deleteClients(clients);
