@@ -230,6 +230,9 @@ export class Relayer extends IRelayer {
   }
 
   public async transportDisconnect() {
+    console.log("transportDisconnect called", {
+      name: this.core.name,
+    });
     if (!this.hasExperiencedNetworkDisruption && this.connected && this.requestsInFlight.size > 0) {
       this.logger.info(
         "Transport close called while requests in flight",
@@ -509,14 +512,20 @@ export class Relayer extends IRelayer {
       name: this.core.name,
       transportExplicitlyClosed: this.transportExplicitlyClosed,
       connecting: this.connecting,
+      connected: this.connected,
     });
-    if (this.transportExplicitlyClosed) return;
+    if (this.transportExplicitlyClosed) {
+      console.log("explicitly closed, returning", {
+        name: this.core.name,
+      });
+      return;
+    }
 
     this.logger.info("attemptToReconnect called. Connecting...");
     // Attempt reconnection
     setTimeout(async () => {
       await this.restartTransport().catch((error) => this.logger.error(error));
-    }, 1000);
+    }, 0);
   }
 
   private isInitialized() {
