@@ -6,7 +6,7 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
-import { expect, describe, it, vi } from "vitest";
+import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 
 import {
@@ -27,6 +27,13 @@ import {
 } from "../shared";
 
 describe("Sign Client Integration", () => {
+  beforeEach((context) => {
+    console.log("starting test ", { name: context.meta.name });
+  });
+  afterEach((context) => {
+    console.log("test complete", { name: context.meta.name });
+  });
+
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
     expect(client).to.be.exist;
