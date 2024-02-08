@@ -274,11 +274,17 @@ export class Relayer extends IRelayer {
           this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
           this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
         }),
-        await createExpiringPromise(
-          this.provider.connect(),
-          toMiliseconds(ONE_MINUTE),
-          `Socket stalled when trying to connect to ${this.relayUrl}`,
-        ),
+        new Promise<void>(async (resolve, reject) => {
+          await createExpiringPromise(
+            this.provider.connect().catch((e) => {
+              this.logger.error(e);
+              reject(e);
+            }),
+            toMiliseconds(ONE_MINUTE),
+            `Socket stalled when trying to connect to ${this.relayUrl}`,
+          );
+          resolve();
+        }),
       ]);
     } catch (e) {
       this.logger.error(e);
