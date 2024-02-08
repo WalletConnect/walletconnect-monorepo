@@ -118,7 +118,6 @@ export class Relayer extends IRelayer {
     }
     this.initialized = true;
     setTimeout(async () => {
-      // @ts-ignore
       if (this.subscriber.topics.length === 0 && this.connected) {
         this.logger.info(`No topics subscribed to after init, closing transport`);
         await this.transportClose();
@@ -186,15 +185,7 @@ export class Relayer extends IRelayer {
     });
     try {
       await this.toEstablishConnection();
-      return await new Promise<JsonRpcPayload>(async (resolve, reject) => {
-        const listener = () => {
-          reject(new Error("Socket connection disconnected. Please try again."));
-        };
-        this.provider.once(RELAYER_PROVIDER_EVENTS.disconnect, listener);
-        const result = await requestPromise;
-        this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, listener);
-        resolve(result);
-      });
+      return await requestPromise;
     } catch (e) {
       this.logger.debug(`Failed to Publish Request`);
       this.logger.error(e as any);
@@ -239,7 +230,7 @@ export class Relayer extends IRelayer {
         this.logger.warn(e);
       }
     }
-
+    this.transportExplicitlyClosed = true;
     /**
      * if there was a network disruption like restart of network driver, the socket is most likely stalled and we can't rely on it
      * as in this case provider.disconnect() is not reliable, since it might resolve after a long time or not emit disconnect event at all.
@@ -251,7 +242,6 @@ export class Relayer extends IRelayer {
     } else if (this.connected) {
       await this.provider.disconnect();
     }
-    this.transportExplicitlyClosed = true;
   }
 
   public async transportOpen(relayUrl?: string) {
@@ -268,6 +258,8 @@ export class Relayer extends IRelayer {
     try {
       await Promise.all([
         new Promise<void>((resolve, reject) => {
+          if (!this.initialized) resolve();
+
           const onSubscribed = () => {
             this.subscriber.off(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
             this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
@@ -488,22 +480,15 @@ export class Relayer extends IRelayer {
     await this.confirmOnlineStateOrThrow();
     if (this.connected) return;
     if (this.connectionAttemptInProgress) {
-      return await new Promise<void>((resolve, reject) => {
-        const onDisconnect = () => {
-          clearInterval(interval);
-          reject(new Error("Failed to publish payload, please try again."));
-        };
-        this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
+      return await new Promise<void>((resolve) => {
         const interval = setInterval(() => {
           if (this.connected) {
-            this.provider.off(RELAYER_PROVIDER_EVENTS.connect, onDisconnect);
             clearInterval(interval);
             resolve();
           }
         }, this.connectionStatusPollingInterval);
       });
     }
-    console.warn("toEstablishConnection, Connection not established, attempting to connect...");
     await this.restartTransport().catch((error) => this.logger.error(error));
   }
 }

@@ -56,12 +56,12 @@ describe("Relayer", () => {
       await relayer.init();
       expect(initSpy.calledOnce).to.be.true;
     });
-    it.skip("initializes a Subscriber", async () => {
+    it("initializes a Subscriber", async () => {
       relayer.subscriber.init = initSpy;
       await relayer.init();
       expect(initSpy.calledOnce).to.be.true;
     });
-    it.skip("initializes a Publisher", async () => {
+    it("initializes a Publisher", async () => {
       relayer.subscriber.init = initSpy;
       await relayer.init();
       expect(initSpy.calledOnce).to.be.true;
