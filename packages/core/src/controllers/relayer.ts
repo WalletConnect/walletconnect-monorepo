@@ -187,15 +187,24 @@ export class Relayer extends IRelayer {
       request,
     });
     try {
-      console.log("@rel request ", request.id, {
+      console.log("@rel request ", {
+        id: request.id,
+        // @ts-ignore
+        tag: request.params?.tag,
         name: this.core.name,
       });
       await this.toEstablishConnection();
-      console.log("@rel publishing..", request.id, {
+      console.log("@rel publishing..", {
+        id: request.id,
+        // @ts-ignore
+        tag: request.params?.tag,
         name: this.core.name,
       });
       const res = await requestPromise;
-      console.log("@rel published", request.id, {
+      console.log("@rel published", {
+        id: request.id,
+        // @ts-ignore
+        tag: request.params?.tag,
         name: this.core.name,
       });
       return res;
