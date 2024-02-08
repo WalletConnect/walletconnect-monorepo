@@ -218,7 +218,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subscribe = await createExpiringPromise(
-        this.relayer.request(request).catch(),
+        this.relayer.request(request).catch((e) => console.error("rpcSubscribe", e)),
         this.subscribeTimeout,
       );
       await subscribe;
@@ -243,7 +243,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subscribe = await createExpiringPromise(
-        this.relayer.request(request).catch(),
+        this.relayer.request(request).catch((e) => console.error("rpcBatchSubscribe", e)),
         this.subscribeTimeout,
       );
       const result = await subscribe;
