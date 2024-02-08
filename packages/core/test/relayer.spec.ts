@@ -276,7 +276,7 @@ describe("Relayer", () => {
         expect(relayer.connected).to.be.true;
       });
 
-      it("should close transport 10 seconds after init if NOT active", async () => {
+      it.skip("should close transport 10 seconds after init if NOT active", async () => {
         relayer = new Relayer({
           core,
           relayUrl: TEST_CORE_OPTIONS.relayUrl,

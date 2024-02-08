@@ -49,7 +49,7 @@ import {
   RELAYER_DEFAULT_RELAY_URL,
   RELAYER_FAILOVER_RELAY_URL,
   SUBSCRIBER_EVENTS,
-  RELAYER_TRANSPORT_CUTOFF,
+  // RELAYER_TRANSPORT_CUTOFF,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
@@ -118,15 +118,15 @@ export class Relayer extends IRelayer {
       await this.restartTransport(RELAYER_FAILOVER_RELAY_URL);
     }
     this.initialized = true;
-    setTimeout(async () => {
-      if (this.subscriber.subscriptions.size === 0 && this.connected) {
-        this.logger.info(`No topics subscribed to after init, closing transport`);
-        console.log(" auto closing..", {
-          name: this.name,
-        });
-        await this.transportClose();
-      }
-    }, RELAYER_TRANSPORT_CUTOFF);
+    // setTimeout(async () => {
+    //   if (this.subscriber.subscriptions.size === 0 && this.connected) {
+    //     this.logger.info(`No topics subscribed to after init, closing transport`);
+    //     console.log(" auto closing..", {
+    //       name: this.name,
+    //     });
+    //     await this.transportClose();
+    //   }
+    // }, RELAYER_TRANSPORT_CUTOFF);
   }
 
   get context() {
