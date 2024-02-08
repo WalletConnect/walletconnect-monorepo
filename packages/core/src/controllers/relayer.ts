@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
@@ -275,14 +276,16 @@ export class Relayer extends IRelayer {
           this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
         }),
         new Promise<void>(async (resolve, reject) => {
+          console.log("this.provider.connect() start");
           await createExpiringPromise(
-            this.provider.connect().catch((e) => {
-              this.logger.error(e);
-              reject(e);
-            }),
+            this.provider.connect(),
             toMiliseconds(ONE_MINUTE),
             `Socket stalled when trying to connect to ${this.relayUrl}`,
-          );
+          ).catch((e) => {
+            console.error("this.provider.connect() catch", e);
+            reject(e);
+          });
+          console.log("this.provider.connect() end");
           resolve();
         }),
       ]);
@@ -295,6 +298,7 @@ export class Relayer extends IRelayer {
       }
     } finally {
       this.connectionAttemptInProgress = false;
+      console.log("this.connectionAttemptInProgress = false");
     }
   }
 
