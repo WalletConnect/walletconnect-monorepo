@@ -27,6 +27,9 @@ import {
 } from "../shared";
 
 describe("Sign Client Integration", () => {
+  process.on("unhandledRejection", (reason) => {
+    console.error("unhandledRejection", reason);
+  });
   beforeEach((context) => {
     console.log("starting test ", { name: context.meta.name });
   });
