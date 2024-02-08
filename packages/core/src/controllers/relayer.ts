@@ -241,20 +241,20 @@ export class Relayer extends IRelayer {
   public async transportDisconnect() {
     console.log("transportDisconnect called", {
       name: this.core.name,
+      hasExperiencedNetworkDisruption: this.hasExperiencedNetworkDisruption,
+      connected: this.connected,
+      requestsInFlight: this.requestsInFlight.size,
     });
-    if (!this.hasExperiencedNetworkDisruption && this.connected && this.requestsInFlight.size > 0) {
-      this.logger.info(
-        "Transport close called while requests in flight",
-        this.requestsInFlight.size,
-      );
-      try {
-        await Promise.all(
-          Array.from(this.requestsInFlight.values()).map((request) => request.promise),
-        );
-      } catch (e) {
-        this.logger.warn(e);
-      }
-    }
+    // if (!this.hasExperiencedNetworkDisruption && this.connected && this.requestsInFlight.size > 0) {
+    //   console.log("Transport close called while requests in flight", this.requestsInFlight.size);
+    //   try {
+    //     await Promise.all(
+    //       Array.from(this.requestsInFlight.values()).map((request) => request.promise),
+    //     );
+    //   } catch (e) {
+    //     this.logger.warn(e);
+    //   }
+    // }
 
     /**
      * if there was a network disruption like restart of network driver, the socket is most likely stalled and we can't rely on it
@@ -341,7 +341,7 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
-    this.logger.debug(`restartTransport called, skipping? ${this.connectionAttemptInProgress}`);
+    console.log(`restartTransport called, skipping? ${this.connectionAttemptInProgress}`);
     if (this.connectionAttemptInProgress) return;
 
     this.relayUrl = relayUrl || this.relayUrl;
