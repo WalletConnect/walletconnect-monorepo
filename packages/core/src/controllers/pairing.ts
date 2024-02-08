@@ -138,9 +138,7 @@ export class Pairing implements IPairing {
     if (!this.core.crypto.keychain.has(topic)) {
       await this.core.crypto.setSymKey(symKey, topic);
     }
-    console.log("pairing subscribing...");
     await this.core.relayer.subscribe(topic, { relay });
-    console.log("pairing subscribed");
     return pairing;
   };
 

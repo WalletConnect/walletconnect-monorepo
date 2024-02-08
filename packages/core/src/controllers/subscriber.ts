@@ -218,7 +218,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subscribe = await createExpiringPromise(
-        this.relayer.request(request),
+        this.relayer.request(request).catch(),
         this.subscribeTimeout,
       );
       await subscribe;
@@ -243,12 +243,12 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subscribe = await createExpiringPromise(
-        this.relayer.request(request),
+        this.relayer.request(request).catch(),
         this.subscribeTimeout,
       );
-      return await subscribe;
+      const result = await subscribe;
+      return result;
     } catch (err) {
-      this.logger.debug(`Outgoing Relay Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
     }
   }
@@ -383,11 +383,10 @@ export class Subscriber extends ISubscriber {
   private async batchSubscribe(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
 
-    console.log("batchSubscribe");
     const result = (await this.rpcBatchSubscribe(subscriptions)) as string[];
     if (!isValidArray(result)) return;
+
     this.onBatchSubscribe(result.map((id, i) => ({ ...subscriptions[i], id })));
-    console.log("batchSubscribe done");
   }
 
   private async onConnect() {
@@ -401,9 +400,8 @@ export class Subscriber extends ISubscriber {
   }
 
   private async checkPending() {
-    if (!this.initialized || this.relayer.transportExplicitlyClosed) {
-      return;
-    }
+    if (!this.initialized || !this.relayer.connected) return;
+
     const pendingSubscriptions: SubscriberTypes.Params[] = [];
     this.pending.forEach((params) => {
       pendingSubscriptions.push(params);

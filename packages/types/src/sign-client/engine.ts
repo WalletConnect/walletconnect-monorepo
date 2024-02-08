@@ -22,11 +22,7 @@ export declare namespace EngineTypes {
     | "session_extend"
     | "session_ping"
     | "pairing_ping"
-    | "session_request"
-    | "engine_request_sent"
-    | "engine_result_sent"
-    | "engine_error_sent"
-    | "engine_activity_log";
+    | "session_request";
 
   interface EventArguments {
     session_connect: {
@@ -39,20 +35,6 @@ export declare namespace EngineTypes {
     session_ping: { error?: ErrorResponse };
     pairing_ping: { error?: ErrorResponse };
     session_request: { error?: ErrorResponse; result?: any };
-    engine_request_sent: { id: number; topic: string; params: any; tag?: number };
-    engine_result_sent: { id: number; topic: string; result: any; tag?: number };
-    engine_error_sent: { id: number; topic: string; error: any; tag?: number };
-    engine_activity_log: {
-      id: string;
-      totalSteps: number;
-      step?: number;
-      state?: {
-        init?: boolean;
-        completed?: boolean;
-      };
-      message?: string;
-      success?: boolean;
-    };
   }
 
   interface UriParameters {

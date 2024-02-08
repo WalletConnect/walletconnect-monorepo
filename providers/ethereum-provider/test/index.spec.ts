@@ -423,8 +423,8 @@ describe("EthereumProvider", function () {
           });
         }),
         new Promise<void>((resolve) => {
-          provider.on("display_uri", (uri) => {
-            walletClient.pair({ uri });
+          provider.on("display_uri", async (uri) => {
+            await walletClient.pair({ uri });
             resolve();
           });
         }),
