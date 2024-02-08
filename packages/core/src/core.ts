@@ -62,7 +62,7 @@ export class Core extends ICore {
 
   constructor(opts?: CoreTypes.Options) {
     super(opts);
-
+    this.name = opts?.name || CORE_CONTEXT;
     this.projectId = opts?.projectId;
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
     this.customStoragePrefix = opts?.customStoragePrefix ? `:${opts.customStoragePrefix}` : "";
