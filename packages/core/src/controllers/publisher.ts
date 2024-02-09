@@ -49,6 +49,7 @@ export class Publisher extends IPublisher {
       // const queueTimeout = setTimeout(() => this.queue.set(id, params), this.publishTimeout);
       this.queue.set(id, params);
       try {
+        const start = Date.now();
         this.rpcPublish(topic, message, ttl, relay, prompt, tag, id);
         const toPublish = await createExpiringPromise(
           new Promise((resolve, reject) => {
@@ -56,6 +57,12 @@ export class Publisher extends IPublisher {
               console.log("onPublishResult", result);
               if (result.id !== id) return;
               this.events.off("publisher_result", onPublishResult);
+              console.log("piblish resolve", {
+                name: this.relayer.core.name,
+                id,
+                elapsed: Date.now() - start,
+                ttl,
+              });
               if (result.error) {
                 reject(result.error);
               } else {
