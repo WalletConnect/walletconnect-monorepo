@@ -352,7 +352,7 @@ export class Relayer extends IRelayer {
           });
           await createExpiringPromise(
             this.provider.connect(),
-            toMiliseconds(ONE_MINUTE),
+            toMiliseconds(ONE_MINUTE / 2),
             `Socket stalled when trying to connect to ${this.relayUrl}`,
           ).catch((e) => {
             console.error("this.provider.connect() catch", e);
