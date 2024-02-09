@@ -91,12 +91,12 @@ export const ENGINE_RPC_OPTS: EngineTypes.RpcOptsMap = {
   },
   wc_sessionPing: {
     req: {
-      ttl: THIRTY_SECONDS,
+      ttl: ONE_DAY,
       prompt: false,
       tag: 1114,
     },
     res: {
-      ttl: THIRTY_SECONDS,
+      ttl: ONE_DAY,
       prompt: false,
       tag: 1115,
     },
