@@ -3,6 +3,7 @@ import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
   formatJsonRpcResult,
+  getBigIntRpcId,
   IJsonRpcProvider,
   isJsonRpcRequest,
   isJsonRpcResponse,
@@ -189,7 +190,7 @@ export class Relayer extends IRelayer {
 
   public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
     this.logger.debug(`Publishing Request Payload`);
-    const id = request.id as number;
+    const id = request.id || (getBigIntRpcId().toString() as any);
     const requestPromise = this.provider.request(request);
     this.requestsInFlight.set(id, {
       promise: requestPromise,
