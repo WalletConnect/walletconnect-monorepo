@@ -261,7 +261,7 @@ describe("Sign Client Integration", () => {
             pairingA: { topic },
           } = await initTwoPairedClients({}, {}, { logger: "error" });
           await clients.A.ping({ topic });
-          await deleteClients(clients);
+          // await deleteClients(clients);
         });
         it("B pings A", async () => {
           const clients = await initTwoClients({ name: "dapp" }, { name: "wallet" });
@@ -269,7 +269,7 @@ describe("Sign Client Integration", () => {
             pairingA: { topic },
           } = await testConnectMethod(clients);
           await clients.B.ping({ topic });
-          await deleteClients(clients);
+          // await deleteClients(clients);
         });
       });
     });
@@ -281,7 +281,7 @@ describe("Sign Client Integration", () => {
             sessionA: { topic },
           } = await initTwoPairedClients({}, {}, { logger: "error" });
           await clients.A.ping({ topic });
-          await deleteClients(clients);
+          // await deleteClients(clients);
         });
         it("B pings A", async () => {
           const clients = await initTwoClients();
@@ -289,7 +289,7 @@ describe("Sign Client Integration", () => {
             sessionA: { topic },
           } = await testConnectMethod(clients);
           await clients.B.ping({ topic });
-          await deleteClients(clients);
+          // await deleteClients(clients);
         });
         it("can get pending session request", async () => {
           const {
