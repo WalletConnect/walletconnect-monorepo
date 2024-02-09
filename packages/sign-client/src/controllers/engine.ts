@@ -481,18 +481,22 @@ export class Engine extends IEngine {
     }
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
-      const id = await this.sendRequest({
-        topic,
-        method: "wc_sessionPing",
-        params: {},
-        throwOnFailedPublish: true,
-      });
+      const id = payloadId();
       const { done, resolve, reject } = createDelayedPromise<void>();
       this.events.once(engineEvent("session_ping", id), ({ error }: any) => {
         if (error) reject(error);
         else resolve();
       });
-      await done();
+      await Promise.all([
+        this.sendRequest({
+          topic,
+          method: "wc_sessionPing",
+          params: {},
+          throwOnFailedPublish: true,
+          clientRpcId: id,
+        }),
+        done(),
+      ]);
     } else if (this.client.core.pairing.pairings.keys.includes(topic)) {
       await this.client.core.pairing.ping({ topic });
     }
