@@ -217,6 +217,7 @@ export class Relayer extends IRelayer {
         tag: request.params?.tag,
         name: this.core.name,
       });
+
       return res;
     } catch (e) {
       this.logger.debug(`Failed to Publish Request`);
@@ -256,16 +257,16 @@ export class Relayer extends IRelayer {
       requestsInFlight: this.requestsInFlight.size,
       connectionState: this.connectionState,
     });
-    // if (!this.hasExperiencedNetworkDisruption && this.connected && this.requestsInFlight.size > 0) {
-    //   console.log("Transport close called while requests in flight", this.requestsInFlight.size);
-    //   try {
-    //     await Promise.all(
-    //       Array.from(this.requestsInFlight.values()).map((request) => request.promise),
-    //     );
-    //   } catch (e) {
-    //     this.logger.warn(e);
-    //   }
-    // }
+    if (!this.hasExperiencedNetworkDisruption && this.connected && this.requestsInFlight.size > 0) {
+      console.log("Transport close called while requests in flight", this.requestsInFlight.size);
+      try {
+        await Promise.all(
+          Array.from(this.requestsInFlight.values()).map((request) => request.promise),
+        );
+      } catch (e) {
+        this.logger.warn(e);
+      }
+    }
 
     /**
      * if there was a network disruption like restart of network driver, the socket is most likely stalled and we can't rely on it
@@ -290,6 +291,7 @@ export class Relayer extends IRelayer {
   public async transportOpen(relayUrl?: string) {
     await this.confirmOnlineStateOrThrow();
 
+    const start = Date.now();
     if (relayUrl && relayUrl !== this.relayUrl) {
       this.relayUrl = relayUrl;
       await this.transportDisconnect();
@@ -356,11 +358,26 @@ export class Relayer extends IRelayer {
       this.connectionAttemptInProgress = false;
     }
     this.connectionState.completed = true;
+    const done = Date.now();
+
     console.log("transportOpen done", {
       name: this.core.name,
       connectionState: this.connectionState,
+      duration: done - start,
     });
     this.connectionState.initiatedBy = "";
+    // if (this.initialized) {
+    //   console.log("throttle", { name: this.core.name });
+    //   await new Promise((resolve) => setTimeout(resolve, 5_000));
+    // }
+    // setTimeout(() => {
+    //   if (this.connected) {
+    //     console.log("simulating drop", {
+    //       name: this.core.name,
+    //     });
+    //     this.provider.connection.close();
+    //   }
+    // }, done - start + 1500);
   }
 
   public async restartTransport(relayUrl?: string) {
@@ -443,6 +460,12 @@ export class Relayer extends IRelayer {
     if (isJsonRpcRequest(payload)) {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
+      console.log("@relayer received", {
+        name: this.core.name,
+        id: payload.id,
+        //@ts-ignore
+        tag: event.data.tag,
+      });
       const { topic, message, publishedAt } = event.data;
       const messageEvent: RelayerTypes.MessageEvent = { topic, message, publishedAt };
       this.logger.debug(`Emitting Relayer Payload`);
@@ -481,6 +504,7 @@ export class Relayer extends IRelayer {
   private onDisconnectHandler = () => {
     console.log("onDisconnectHandler", {
       name: this.core.name,
+      connected: this.connected,
       connectionState: this.connectionState,
     });
     this.onProviderDisconnect();
