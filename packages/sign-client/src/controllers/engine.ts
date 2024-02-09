@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
   EXPIRER_EVENTS,
   PAIRING_EVENTS,
