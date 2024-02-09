@@ -947,6 +947,11 @@ export class Engine extends IEngine {
       await this.client.core.pairing.activate({ topic });
     } else if (isJsonRpcError(payload)) {
       await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
+      const target = engineEvent("session_connect");
+      const listeners = this.events.listenerCount(target);
+      if (listeners === 0) {
+        throw new Error(`emitting ${target} without any listeners, 954`);
+      }
       this.events.emit(engineEvent("session_connect"), { error: payload.error });
     }
   };
@@ -986,6 +991,11 @@ export class Engine extends IEngine {
         result: true,
         throwOnFailedPublish: true,
       });
+      const target = engineEvent("session_connect");
+      const listeners = this.events.listenerCount(target);
+      if (listeners === 0) {
+        throw new Error(`emitting ${target} without any listeners 997`);
+      }
       this.events.emit(engineEvent("session_connect"), { session });
       this.cleanupDuplicatePairings(session);
     } catch (err: any) {
@@ -1042,6 +1052,11 @@ export class Engine extends IEngine {
 
   private onSessionUpdateResponse: EnginePrivate["onSessionUpdateResponse"] = (_topic, payload) => {
     const { id } = payload;
+    const target = engineEvent("session_update", id);
+    const listeners = this.events.listenerCount(target);
+    if (listeners === 0) {
+      throw new Error(`emitting ${target} without any listeners`);
+    }
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_update", id), {});
     } else if (isJsonRpcError(payload)) {
@@ -1067,6 +1082,11 @@ export class Engine extends IEngine {
 
   private onSessionExtendResponse: EnginePrivate["onSessionExtendResponse"] = (_topic, payload) => {
     const { id } = payload;
+    const target = engineEvent("session_extend", id);
+    const listeners = this.events.listenerCount(target);
+    if (listeners === 0) {
+      throw new Error(`emitting ${target} without any listeners`);
+    }
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_extend", id), {});
     } else if (isJsonRpcError(payload)) {
@@ -1088,6 +1108,11 @@ export class Engine extends IEngine {
 
   private onSessionPingResponse: EnginePrivate["onSessionPingResponse"] = (_topic, payload) => {
     const { id } = payload;
+    const target = engineEvent("session_ping", id);
+    const listeners = this.events.listenerCount(target);
+    if (listeners === 0) {
+      throw new Error(`emitting ${target} without any listeners`);
+    }
     // put at the end of the stack to avoid a race condition
     // where session_ping listener is not yet initialized
     setTimeout(() => {
@@ -1151,6 +1176,11 @@ export class Engine extends IEngine {
     payload,
   ) => {
     const { id } = payload;
+    const target = engineEvent("session_request", id);
+    const listeners = this.events.listenerCount(target);
+    if (listeners === 0) {
+      throw new Error(`emitting ${target} without any listeners`);
+    }
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_request", id), { result: payload.result });
     } else if (isJsonRpcError(payload)) {
@@ -1211,6 +1241,12 @@ export class Engine extends IEngine {
         (r) => r.topic === topic && r.request.method === "wc_sessionRequest",
       );
       forSession.forEach((r) => {
+        const id = r.request.id;
+        const target = engineEvent("session_request", id);
+        const listeners = this.events.listenerCount(target);
+        if (listeners === 0) {
+          throw new Error(`emitting ${target} without any listeners`);
+        }
         // notify .request() handler of the rejection
         this.events.emit(engineEvent("session_request", r.request.id), {
           error,
