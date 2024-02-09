@@ -55,6 +55,7 @@ import {
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
 import { Subscriber } from "./subscriber";
+import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 export class Relayer extends IRelayer {
   public protocol = "wc";
   public version = 2;
@@ -193,38 +194,21 @@ export class Relayer extends IRelayer {
   public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
     this.logger.debug(`Publishing Request Payload`);
     const id = request.id || (getBigIntRpcId() as any);
-    // const attempts = this.publishAttempts.get(id) || 0;
 
-    // let requestPromise;
-    // console.log("requestPromise", request.method, id);
-    // if (
-    //   request.method === "irn_subscribe" ||
-    //   request.method === "irn_batchSubscribe" ||
-    //   !id ||
-    //   attempts > 3
-    // ) {
-    //   requestPromise = this.provider.request(request);
-    // } else {
-    //   requestPromise = new Promise(() => {
-    //     //@ts-ignore
-    //     console.log(`Request not published`, id, request.params.tag, attempts);
-    //   });
-    // }
-
-    // this.publishAttempts.set(id, attempts + 1);
     const requestPromise = this.provider.request(request);
     this.requestsInFlight.set(id, {
       promise: requestPromise,
       request,
     });
     try {
+      await this.toEstablishConnection();
       console.log("@rel request ", {
         id,
         // @ts-ignore
         tag: request.params?.tag,
         name: this.core.name,
       });
-      await this.toEstablishConnection();
+
       console.log("@rel publishing..", {
         id,
         // @ts-ignore
@@ -376,11 +360,6 @@ export class Relayer extends IRelayer {
       }
     } finally {
       this.connectionAttemptInProgress = false;
-      if (!this.connected) {
-        setTimeout(() => {
-          this.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
-        }, 0);
-      }
     }
     this.connectionState.completed = true;
     const done = Date.now();
@@ -391,22 +370,18 @@ export class Relayer extends IRelayer {
       duration: done - start,
     });
     this.connectionState.initiatedBy = "";
-    // if (this.initialized) {
-    //   console.log("throttle", { name: this.core.name });
-    //   await new Promise((resolve) => setTimeout(resolve, 5_000));
-    // }
-    // setTimeout(() => {
-    //   if (this.connected) {
-    //     console.log("simulating drop", {
-    //       name: this.core.name,
-    //     });
-    //     this.provider.connection.close();
-    //   }
-    // }, done - start + 1500);
   }
 
   public async restartTransport(relayUrl?: string) {
-    console.log(`restartTransport called, skipping? ${this.connectionAttemptInProgress}`);
+    console.log(`restartTransport called, skipping? ${this.connectionAttemptInProgress}`, {
+      name: this.core.name,
+    });
+    if (this.connectionAttemptInProgress) {
+      return;
+    }
+    console.log("restart transport, continuee", {
+      name: this.core.name,
+    });
     this.connectionAttemptInProgress = true;
     this.relayUrl = relayUrl || this.relayUrl;
     await this.transportDisconnect();
@@ -560,6 +535,27 @@ export class Relayer extends IRelayer {
   }
 
   private async registerEventListeners() {
+    this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
+      console.log("heartbeat", {
+        name: this.core.name,
+        connected: this.connected,
+        connecting: this.connecting,
+        requestsInFlight: this.requestsInFlight,
+        connectionAttemptInProgress: this.connectionAttemptInProgress,
+      });
+
+      if (this.transportExplicitlyClosed) {
+        console.log("heartbeat, transportExplicitlyClosed, returning", {
+          name: this.core.name,
+        });
+        return;
+      }
+
+      if (this.hasExperiencedNetworkDisruption || !this.connected) {
+        this.restartTransport();
+      }
+    });
+
     this.events.on(RELAYER_EVENTS.connection_stalled, () => {
       if (this.connected) return;
       console.log("@rel connection stalled", {
@@ -589,33 +585,32 @@ export class Relayer extends IRelayer {
 
   private onProviderDisconnect() {
     this.events.emit(RELAYER_EVENTS.disconnect);
-    this.attemptToReconnect();
   }
 
-  private attemptToReconnect() {
-    console.log("attemptToReconnect", {
-      name: this.core.name,
-      transportExplicitlyClosed: this.transportExplicitlyClosed,
-      connectionAttemptInProgress: this.connectionAttemptInProgress,
-      connecting: this.connecting,
-      connected: this.connected,
-    });
-    if (this.transportExplicitlyClosed || this.connectionAttemptInProgress) {
-      console.log("explicitly closed, returning", {
-        name: this.core.name,
-        connectionAttemptInProgress: this.connectionAttemptInProgress,
-        transportExplicitlyClosed: this.transportExplicitlyClosed,
-      });
-      return;
-    }
+  // private attemptToReconnect() {
+  //   console.log("attemptToReconnect", {
+  //     name: this.core.name,
+  //     transportExplicitlyClosed: this.transportExplicitlyClosed,
+  //     connectionAttemptInProgress: this.connectionAttemptInProgress,
+  //     connecting: this.connecting,
+  //     connected: this.connected,
+  //   });
+  //   if (this.transportExplicitlyClosed || this.connectionAttemptInProgress) {
+  //     console.log("explicitly closed, returning", {
+  //       name: this.core.name,
+  //       connectionAttemptInProgress: this.connectionAttemptInProgress,
+  //       transportExplicitlyClosed: this.transportExplicitlyClosed,
+  //     });
+  //     return;
+  //   }
 
-    this.logger.info("attemptToReconnect called. Connecting...");
-    // Attempt reconnection
-    setTimeout(async () => {
-      this.connectionState.initiatedBy = "attemptToReconnect";
-      await this.restartTransport().catch((error) => this.logger.error(error));
-    }, 0);
-  }
+  //   this.logger.info("attemptToReconnect called. Connecting...");
+  //   // Attempt reconnection
+  //   setTimeout(async () => {
+  //     this.connectionState.initiatedBy = "attemptToReconnect";
+  //     await this.restartTransport().catch((error) => this.logger.error(error));
+  //   }, 0);
+  // }
 
   private isInitialized() {
     if (!this.initialized) {
