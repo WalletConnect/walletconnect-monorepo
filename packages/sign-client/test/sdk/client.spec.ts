@@ -136,7 +136,6 @@ describe("Sign Client Integration", () => {
       if (!uri) throw new Error("URI is undefined");
       expect(uri).to.exist;
       const parsedUri = parseUri(uri);
-
       // 1. attempt to pair
       // 2. receive the session_proposal event
       // 3. avoid approving or rejecting the proposal - simulates accidental closing of the app/modal etc
@@ -276,12 +275,12 @@ describe("Sign Client Integration", () => {
     describe("session", () => {
       describe("with existing session", () => {
         it("A pings B", async () => {
+          const clients = await initTwoClients();
           const {
-            clients,
             sessionA: { topic },
-          } = await initTwoPairedClients({}, {}, { logger: "error" });
+          } = await testConnectMethod(clients);
           await clients.A.ping({ topic });
-          // await deleteClients(clients);
+          await deleteClients(clients);
         });
         it("B pings A", async () => {
           const clients = await initTwoClients();
@@ -289,7 +288,7 @@ describe("Sign Client Integration", () => {
             sessionA: { topic },
           } = await testConnectMethod(clients);
           await clients.B.ping({ topic });
-          // await deleteClients(clients);
+          await deleteClients(clients);
         });
         it("can get pending session request", async () => {
           const {

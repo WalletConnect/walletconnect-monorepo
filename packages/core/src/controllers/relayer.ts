@@ -542,6 +542,7 @@ export class Relayer extends IRelayer {
         connecting: this.connecting,
         requestsInFlight: this.requestsInFlight,
         connectionAttemptInProgress: this.connectionAttemptInProgress,
+        transportExplicitlyClosed: this.transportExplicitlyClosed,
       });
 
       if (this.transportExplicitlyClosed) {
@@ -552,6 +553,9 @@ export class Relayer extends IRelayer {
       }
 
       if (this.hasExperiencedNetworkDisruption || !this.connected) {
+        console.log("heartbeat restarting transport", {
+          name: this.core.name,
+        });
         this.restartTransport();
       }
     });
