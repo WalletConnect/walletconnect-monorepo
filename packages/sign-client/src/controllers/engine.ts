@@ -1035,7 +1035,12 @@ export class Engine extends IEngine {
 
       this.isValidUpdate({ topic, ...params });
       await this.client.session.update(topic, { namespaces: params.namespaces });
-      await this.sendResult<"wc_sessionUpdate">({ id, topic, result: true });
+      await this.sendResult<"wc_sessionUpdate">({
+        id,
+        topic,
+        result: true,
+        throwOnFailedPublish: true,
+      });
       this.client.events.emit("session_update", { id, topic, params });
       MemoryStore.set(memoryKey, id);
     } catch (err: any) {
@@ -1072,7 +1077,12 @@ export class Engine extends IEngine {
     try {
       this.isValidExtend({ topic });
       await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
-      await this.sendResult<"wc_sessionExtend">({ id, topic, result: true });
+      await this.sendResult<"wc_sessionExtend">({
+        id,
+        topic,
+        result: true,
+        throwOnFailedPublish: true,
+      });
       this.client.events.emit("session_extend", { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
@@ -1098,7 +1108,12 @@ export class Engine extends IEngine {
     const { id } = payload;
     try {
       this.isValidPing({ topic });
-      await this.sendResult<"wc_sessionPing">({ id, topic, result: true });
+      await this.sendResult<"wc_sessionPing">({
+        id,
+        topic,
+        result: true,
+        throwOnFailedPublish: true,
+      });
       this.client.events.emit("session_ping", { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
@@ -1138,7 +1153,12 @@ export class Engine extends IEngine {
             resolve(await this.deleteSession({ topic, id }));
           });
         }),
-        this.sendResult<"wc_sessionDelete">({ id, topic, result: true }),
+        this.sendResult<"wc_sessionDelete">({
+          id,
+          topic,
+          result: true,
+          throwOnFailedPublish: true,
+        }),
         this.cleanupPendingSentRequestsForTopic({ topic, error: getSdkError("USER_DISCONNECTED") }),
       ]);
     } catch (err: any) {
