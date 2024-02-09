@@ -56,8 +56,8 @@ export class Publisher extends IPublisher {
             const onPublishResult = (result: any) => {
               console.log("onPublishResult", result);
               if (result.id !== id) return;
-              this.events.off("publisher_result", onPublishResult);
-              console.log("piblish resolve", {
+              this.events.off(`publisher_result_${id}`, onPublishResult);
+              console.log(`publisher_result_${id}`, {
                 name: this.relayer.core.name,
                 id,
                 elapsed: Date.now() - start,
@@ -69,7 +69,7 @@ export class Publisher extends IPublisher {
                 resolve(result.result);
               }
             };
-            this.events.on("publisher_result", onPublishResult);
+            this.events.on(`publisher_result_${id}`, onPublishResult);
           }),
           this.publishTimeout,
           `Failed to publish payload, please try again. id:${id} tag:${tag}`,
@@ -148,7 +148,7 @@ export class Publisher extends IPublisher {
         result,
       });
       this.relayer.events.emit(RELAYER_EVENTS.publish, request.params);
-      this.events.emit("publisher_result", {
+      this.events.emit(`publisher_result_${id}`, {
         id,
         result,
       });

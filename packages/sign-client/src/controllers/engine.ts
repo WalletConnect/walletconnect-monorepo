@@ -159,13 +159,13 @@ export class Engine extends IEngine {
       this.client.logger.error(`connect() -> pairing.get(${topic}) failed`);
       throw error;
     }
-
+    console.log("pairing create");
     if (!topic || !active) {
       const { topic: newTopic, uri: newUri } = await this.client.core.pairing.create();
       topic = newTopic;
       uri = newUri;
     }
-
+    console.log("pairing created", topic);
     if (!topic) {
       const { message } = getInternalError("NO_MATCHING_KEY", `connect() pairing topic: ${topic}`);
       throw new Error(message);
@@ -214,14 +214,14 @@ export class Engine extends IEngine {
         }
       },
     );
-
+    console.log("sending proposal");
     const id = await this.sendRequest({
       topic,
       method: "wc_sessionPropose",
       params: proposal,
       throwOnFailedPublish: true,
     });
-
+    console.log("proposal sent");
     await this.setProposal(id, { id, ...proposal });
     return { uri, approval };
   };
@@ -289,6 +289,9 @@ export class Engine extends IEngine {
     };
     await this.client.session.set(sessionTopic, session);
     try {
+      console.log("@engine ack proposal", {
+        name: this.client.name,
+      });
       await this.sendResult<"wc_sessionPropose">({
         id,
         topic: pairingTopic,
@@ -300,11 +303,18 @@ export class Engine extends IEngine {
         },
         throwOnFailedPublish: true,
       });
+
+      console.log("@engine sending sessionSettle", {
+        name: this.client.name,
+      });
       await this.sendRequest({
         topic: sessionTopic,
         method: "wc_sessionSettle",
         params: sessionSettle,
         throwOnFailedPublish: true,
+      });
+      console.log("@engine sending sessionSettle DONE!", {
+        name: this.client.name,
       });
     } catch (error) {
       this.client.logger.error(error);
@@ -965,7 +975,12 @@ export class Engine extends IEngine {
         },
         ...(sessionProperties && { sessionProperties }),
       };
-      await this.sendResult<"wc_sessionSettle">({ id: payload.id, topic, result: true });
+      await this.sendResult<"wc_sessionSettle">({
+        id: payload.id,
+        topic,
+        result: true,
+        throwOnFailedPublish: true,
+      });
       this.events.emit(engineEvent("session_connect"), { session });
       this.cleanupDuplicatePairings(session);
     } catch (err: any) {

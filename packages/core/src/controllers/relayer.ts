@@ -93,6 +93,8 @@ export class Relayer extends IRelayer {
     completed: false,
   };
 
+  // private publishAttempts = new Map<string, number>();
+
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -190,7 +192,26 @@ export class Relayer extends IRelayer {
 
   public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
     this.logger.debug(`Publishing Request Payload`);
-    const id = request.id || (getBigIntRpcId().toString() as any);
+    const id = request.id || (getBigIntRpcId() as any);
+    // const attempts = this.publishAttempts.get(id) || 0;
+
+    // let requestPromise;
+    // console.log("requestPromise", request.method, id);
+    // if (
+    //   request.method === "irn_subscribe" ||
+    //   request.method === "irn_batchSubscribe" ||
+    //   !id ||
+    //   attempts > 3
+    // ) {
+    //   requestPromise = this.provider.request(request);
+    // } else {
+    //   requestPromise = new Promise(() => {
+    //     //@ts-ignore
+    //     console.log(`Request not published`, id, request.params.tag, attempts);
+    //   });
+    // }
+
+    // this.publishAttempts.set(id, attempts + 1);
     const requestPromise = this.provider.request(request);
     this.requestsInFlight.set(id, {
       promise: requestPromise,
@@ -198,21 +219,21 @@ export class Relayer extends IRelayer {
     });
     try {
       console.log("@rel request ", {
-        id: request.id,
+        id,
         // @ts-ignore
         tag: request.params?.tag,
         name: this.core.name,
       });
       await this.toEstablishConnection();
       console.log("@rel publishing..", {
-        id: request.id,
+        id,
         // @ts-ignore
         tag: request.params?.tag,
         name: this.core.name,
       });
       const res = await requestPromise;
       console.log("@rel published", {
-        id: request.id,
+        id,
         // @ts-ignore
         tag: request.params?.tag,
         name: this.core.name,
@@ -254,7 +275,7 @@ export class Relayer extends IRelayer {
       name: this.core.name,
       hasExperiencedNetworkDisruption: this.hasExperiencedNetworkDisruption,
       connected: this.connected,
-      requestsInFlight: this.requestsInFlight.size,
+      requestsInFlight: this.requestsInFlight,
       connectionState: this.connectionState,
     });
     if (!this.hasExperiencedNetworkDisruption && this.connected && this.requestsInFlight.size > 0) {
@@ -350,12 +371,16 @@ export class Relayer extends IRelayer {
       this.connectionState.connecting = false;
       this.connectionState.connected = false;
       this.connectionState.initiatedBy = "exception while connect()";
-      this.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
     } finally {
       this.connectionAttemptInProgress = false;
+      if (!this.connected) {
+        setTimeout(() => {
+          this.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
+        }, 0);
+      }
     }
     this.connectionState.completed = true;
     const done = Date.now();
@@ -506,6 +531,7 @@ export class Relayer extends IRelayer {
       name: this.core.name,
       connected: this.connected,
       connectionState: this.connectionState,
+      requestsInFlight: this.requestsInFlight,
     });
     this.onProviderDisconnect();
   };
@@ -570,6 +596,7 @@ export class Relayer extends IRelayer {
     console.log("attemptToReconnect", {
       name: this.core.name,
       transportExplicitlyClosed: this.transportExplicitlyClosed,
+      connectionAttemptInProgress: this.connectionAttemptInProgress,
       connecting: this.connecting,
       connected: this.connected,
     });
