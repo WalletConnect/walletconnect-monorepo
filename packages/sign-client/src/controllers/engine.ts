@@ -374,16 +374,21 @@ export class Engine extends IEngine {
       throw error;
     }
     const { topic, namespaces } = params;
-    const id = await this.sendRequest({
-      topic,
-      method: "wc_sessionUpdate",
-      params: { namespaces },
-    });
+
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
+    const id = payloadId();
     this.events.once(engineEvent("session_update", id), ({ error }: any) => {
       if (error) reject(error);
       else resolve();
     });
+    await this.sendRequest({
+      topic,
+      method: "wc_sessionUpdate",
+      params: { namespaces },
+      throwOnFailedPublish: true,
+      clientRpcId: id,
+    });
+
     await this.client.session.update(topic, { namespaces });
 
     return { acknowledged };
@@ -398,11 +403,18 @@ export class Engine extends IEngine {
       throw error;
     }
     const { topic } = params;
-    const id = await this.sendRequest({ topic, method: "wc_sessionExtend", params: {} });
+    const id = payloadId();
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
     this.events.once(engineEvent("session_extend", id), ({ error }: any) => {
       if (error) reject(error);
       else resolve();
+    });
+    await this.sendRequest({
+      topic,
+      method: "wc_sessionExtend",
+      params: {},
+      throwOnFailedPublish: true,
+      clientRpcId: id,
     });
     await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
 
@@ -1028,21 +1040,34 @@ export class Engine extends IEngine {
       // compare the current request id with the last processed session update
       // we want to update only if the request is newer than the last processed one
       const lastSessionUpdateId = MemoryStore.get<number>(memoryKey);
+      console.log("session update request received", {
+        id,
+        name: this.client.name,
+        memoryKey,
+        isRequestOutOfSync: this.isRequestOutOfSync(lastSessionUpdateId || 0, id),
+      });
+
       if (lastSessionUpdateId && this.isRequestOutOfSync(lastSessionUpdateId, id)) {
+        console.log("last sessionIpdate out of order", id, this.client.name);
         this.client.logger.info(`Discarding out of sync request - ${id}`);
         return;
       }
-
       this.isValidUpdate({ topic, ...params });
-      await this.client.session.update(topic, { namespaces: params.namespaces });
-      await this.sendResult<"wc_sessionUpdate">({
-        id,
-        topic,
-        result: true,
-        throwOnFailedPublish: true,
-      });
+      try {
+        MemoryStore.set(memoryKey, id);
+        await this.client.session.update(topic, { namespaces: params.namespaces });
+        await this.sendResult<"wc_sessionUpdate">({
+          id,
+          topic,
+          result: true,
+          throwOnFailedPublish: true,
+        });
+      } catch (e) {
+        MemoryStore.delete(memoryKey);
+        throw e;
+      }
+      console.log("processing update key done", id, memoryKey);
       this.client.events.emit("session_update", { id, topic, params });
-      MemoryStore.set(memoryKey, id);
     } catch (err: any) {
       await this.sendError(id, topic, err);
       this.client.logger.error(err);
