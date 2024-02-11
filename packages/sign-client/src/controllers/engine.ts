@@ -398,8 +398,10 @@ export class Engine extends IEngine {
       this.client.logger.error("update() -> isValidUpdate() failed");
       throw error;
     }
+    const start = Date.now();
     console.log("UPDATE: 1.", {
       name: this.client.name,
+      elapsed: Date.now() - start,
     });
     const { topic, namespaces } = params;
 
@@ -415,6 +417,8 @@ export class Engine extends IEngine {
       else {
         console.log("UPDATE: 4. END", {
           name: this.client.name,
+
+          elapsed: Date.now() - start,
         });
         resolve();
       }
@@ -433,16 +437,20 @@ export class Engine extends IEngine {
     });
     console.log("UPDATE: 2.", {
       name: this.client.name,
+      elapsed: Date.now() - start,
     });
     console.log("UPDATE: 3.", {
       name: this.client.name,
+      elapsed: Date.now() - start,
     });
     return { acknowledged };
   };
 
   public extend: IEngine["extend"] = async (params) => {
+    const start = Date.now();
     console.log("EXTEND: 1.", {
       name: this.client.name,
+      elapsed: Date.now() - start,
     });
     await this.isInitialized();
     try {
@@ -451,6 +459,7 @@ export class Engine extends IEngine {
       this.client.logger.error("extend() -> isValidExtend() failed");
       throw error;
     }
+
     const { topic } = params;
     const clientRpcId = payloadId();
     const relayRpcId = getBigIntRpcId().toString() as any;
@@ -460,13 +469,17 @@ export class Engine extends IEngine {
       else {
         console.log("EXTEND: 4. END", {
           name: this.client.name,
+          elapsed: Date.now() - start,
         });
         resolve();
       }
     });
     console.log("EXTEND: 2.", {
       name: this.client.name,
+      elapsed: Date.now() - start,
     });
+
+    await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
     await this.sendRequest({
       topic,
       method: "wc_sessionExtend",
@@ -477,8 +490,8 @@ export class Engine extends IEngine {
     });
     console.log("EXTEND: 3.", {
       name: this.client.name,
+      elapsed: Date.now() - start,
     });
-    await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
 
     return { acknowledged };
   };
@@ -556,8 +569,10 @@ export class Engine extends IEngine {
   };
 
   public ping: IEngine["ping"] = async (params) => {
+    const start = Date.now();
     console.log("PING: 1.", {
       name: this.client.name,
+      elapsed: Date.now() - start,
     });
     await this.isInitialized();
     try {
@@ -576,12 +591,14 @@ export class Engine extends IEngine {
         else {
           console.log("PING: 3. END", {
             name: this.client.name,
+            elapsed: Date.now() - start,
           });
           resolve();
         }
       });
       console.log("PING: 2.", {
         name: this.client.name,
+        elapsed: Date.now() - start,
       });
       await Promise.all([
         this.sendRequest({
