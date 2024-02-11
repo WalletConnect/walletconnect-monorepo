@@ -1074,6 +1074,7 @@ export class Engine extends IEngine {
       if (lastSessionUpdateId && this.isRequestOutOfSync(lastSessionUpdateId, id)) {
         console.log("last sessionIpdate out of order", id, this.client.name);
         this.client.logger.info(`Discarding out of sync request - ${id}`);
+        this.sendError(id, topic, getSdkError("INVALID_UPDATE_REQUEST"));
         return;
       }
       this.isValidUpdate({ topic, ...params });
