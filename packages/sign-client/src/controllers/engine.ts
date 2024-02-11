@@ -407,33 +407,33 @@ export class Engine extends IEngine {
     const clientRpcId = payloadId();
     const relayRpcId = getBigIntRpcId().toString() as any;
 
-    await Promise.all([
-      new Promise<void>((_res) => {
-        this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
-          if (error) reject(error);
-          else {
-            console.log("UPDATE: 4. END", {
-              name: this.client.name,
-            });
-            resolve();
-          }
-          _res();
-        });
-      }),
-      this.sendRequest({
-        topic,
-        method: "wc_sessionUpdate",
-        params: { namespaces },
-        throwOnFailedPublish: true,
-        clientRpcId,
-        relayRpcId,
-      }),
-    ]);
+    const oldNamespaces = this.client.session.get(topic).namespaces;
+    await this.client.session.update(topic, { namespaces });
 
+    this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
+      if (error) reject(error);
+      else {
+        console.log("UPDATE: 4. END", {
+          name: this.client.name,
+        });
+        resolve();
+      }
+    });
+    this.sendRequest({
+      topic,
+      method: "wc_sessionUpdate",
+      params: { namespaces },
+      throwOnFailedPublish: true,
+      clientRpcId,
+      relayRpcId,
+    }).catch((error) => {
+      this.client.logger.error(error);
+      this.client.session.update(topic, { namespaces: oldNamespaces });
+      reject(error);
+    });
     console.log("UPDATE: 2.", {
       name: this.client.name,
     });
-    await this.client.session.update(topic, { namespaces });
     console.log("UPDATE: 3.", {
       name: this.client.name,
     });
