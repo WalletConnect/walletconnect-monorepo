@@ -281,16 +281,10 @@ export class Relayer extends IRelayer {
       });
     }
 
-    /**
-     * if there was a network disruption like restart of network driver, the socket is most likely stalled and we can't rely on it
-     * as in this case provider.disconnect() is not reliable, since it might resolve after a long time or not emit disconnect event at all.
-     */
-    if (this.hasExperiencedNetworkDisruption && this.connected) {
-      await createExpiringPromise(this.provider.disconnect(), 1000, "provider.disconnect()").catch(
+    if (this.connected) {
+      await createExpiringPromise(this.provider.disconnect(), 2000, "provider.disconnect()").catch(
         () => this.onProviderDisconnect(),
       );
-    } else if (this.connected) {
-      await this.provider.disconnect();
     }
     this.connectionState.connected = false;
   }
