@@ -138,6 +138,9 @@ export class Engine extends IEngine {
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async (params) => {
+    console.log("CONNECT: 1.", {
+      name: this.client.name,
+    });
     await this.isInitialized();
 
     const connectParams = {
@@ -198,6 +201,9 @@ export class Engine extends IEngine {
       async ({ error, session }) => {
         if (error) reject(error);
         else if (session) {
+          console.log("CONNECT: 4. END", {
+            name: this.client.name,
+          });
           session.self.publicKey = publicKey;
           const completeSession = {
             ...session,
@@ -216,14 +222,18 @@ export class Engine extends IEngine {
         }
       },
     );
-    console.log("sending proposal");
+    console.log("CONNECT: 2.", {
+      name: this.client.name,
+    });
     const id = await this.sendRequest({
       topic,
       method: "wc_sessionPropose",
       params: proposal,
       throwOnFailedPublish: true,
     });
-    console.log("proposal sent");
+    console.log("CONNECT: 3.", {
+      name: this.client.name,
+    });
     await this.setProposal(id, { id, ...proposal });
     return { uri, approval };
   };
@@ -240,6 +250,9 @@ export class Engine extends IEngine {
   };
 
   public approve: IEngine["approve"] = async (params) => {
+    console.log("APPROVE: 1.", {
+      name: this.client.name,
+    });
     await this.isInitialized();
     try {
       await this.isValidApprove(params);
@@ -265,7 +278,6 @@ export class Engine extends IEngine {
       selfPublicKey,
       peerPublicKey,
     );
-
     const sessionSettle = {
       relay: { protocol: relayProtocol ?? "irn" },
       namespaces,
@@ -275,6 +287,10 @@ export class Engine extends IEngine {
       ...(sessionProperties && { sessionProperties }),
     };
     await this.client.core.relayer.subscribe(sessionTopic);
+
+    console.log("APPROVE: 2.", {
+      name: this.client.name,
+    });
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
@@ -290,10 +306,10 @@ export class Engine extends IEngine {
       controller: selfPublicKey,
     };
     await this.client.session.set(sessionTopic, session);
+    console.log("APPROVE: 3.", {
+      name: this.client.name,
+    });
     try {
-      console.log("@engine ack proposal", {
-        name: this.client.name,
-      });
       await this.sendResult<"wc_sessionPropose">({
         id,
         topic: pairingTopic,
@@ -305,7 +321,9 @@ export class Engine extends IEngine {
         },
         throwOnFailedPublish: true,
       });
-
+      console.log("APPROVE: 4.", {
+        name: this.client.name,
+      });
       console.log("@engine sending sessionSettle", {
         name: this.client.name,
       });
@@ -316,6 +334,9 @@ export class Engine extends IEngine {
         throwOnFailedPublish: true,
       });
       console.log("@engine sending sessionSettle DONE!", {
+        name: this.client.name,
+      });
+      console.log("APPROVE: 5.", {
         name: this.client.name,
       });
     } catch (error) {
@@ -333,6 +354,9 @@ export class Engine extends IEngine {
     await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
     await this.client.core.pairing.activate({ topic: pairingTopic });
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
+    console.log("APPROVE: 6. END", {
+      name: this.client.name,
+    });
     return {
       topic: sessionTopic,
       acknowledged: () =>
@@ -374,6 +398,9 @@ export class Engine extends IEngine {
       this.client.logger.error("update() -> isValidUpdate() failed");
       throw error;
     }
+    console.log("UPDATE: 1.", {
+      name: this.client.name,
+    });
     const { topic, namespaces } = params;
 
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
@@ -381,7 +408,12 @@ export class Engine extends IEngine {
     const relayRpcId = getBigIntRpcId().toString() as any;
     this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
       if (error) reject(error);
-      else resolve();
+      else {
+        console.log("UPDATE: 4. END", {
+          name: this.client.name,
+        });
+        resolve();
+      }
     });
     await this.sendRequest({
       topic,
@@ -391,13 +423,21 @@ export class Engine extends IEngine {
       clientRpcId,
       relayRpcId,
     });
-
+    console.log("UPDATE: 2.", {
+      name: this.client.name,
+    });
     await this.client.session.update(topic, { namespaces });
 
+    console.log("UPDATE: 3.", {
+      name: this.client.name,
+    });
     return { acknowledged };
   };
 
   public extend: IEngine["extend"] = async (params) => {
+    console.log("EXTEND: 1.", {
+      name: this.client.name,
+    });
     await this.isInitialized();
     try {
       await this.isValidExtend(params);
@@ -411,7 +451,15 @@ export class Engine extends IEngine {
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
     this.events.once(engineEvent("session_extend", clientRpcId), ({ error }: any) => {
       if (error) reject(error);
-      else resolve();
+      else {
+        console.log("EXTEND: 4. END", {
+          name: this.client.name,
+        });
+        resolve();
+      }
+    });
+    console.log("EXTEND: 2.", {
+      name: this.client.name,
     });
     await this.sendRequest({
       topic,
@@ -420,6 +468,9 @@ export class Engine extends IEngine {
       throwOnFailedPublish: true,
       clientRpcId,
       relayRpcId,
+    });
+    console.log("EXTEND: 3.", {
+      name: this.client.name,
     });
     await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
 
@@ -499,6 +550,9 @@ export class Engine extends IEngine {
   };
 
   public ping: IEngine["ping"] = async (params) => {
+    console.log("PING: 1.", {
+      name: this.client.name,
+    });
     await this.isInitialized();
     try {
       await this.isValidPing(params);
@@ -513,7 +567,15 @@ export class Engine extends IEngine {
       const { done, resolve, reject } = createDelayedPromise<void>();
       this.events.once(engineEvent("session_ping", clientRpcId), ({ error }: any) => {
         if (error) reject(error);
-        else resolve();
+        else {
+          console.log("EXTEND: 3. END", {
+            name: this.client.name,
+          });
+          resolve();
+        }
+      });
+      console.log("PING: 2.", {
+        name: this.client.name,
       });
       await Promise.all([
         this.sendRequest({
