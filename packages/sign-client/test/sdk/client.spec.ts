@@ -515,7 +515,7 @@ describe("Sign Client Integration", () => {
         sessionA: { topic },
       } = await initTwoPairedClients({}, {}, { logger: "error" });
       const prevExpiry = clients.A.session.get(topic).expiry;
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
       // Fast-forward system time by 60 seconds after expiry was first set.
       vi.setSystemTime(Date.now() + 60_000);
       const { acknowledged } = await clients.A.extend({
@@ -533,7 +533,7 @@ describe("Sign Client Integration", () => {
         sessionA: { topic },
       } = await initTwoPairedClients({}, {}, { logger: "error" });
       const prevExpiry = clients.A.session.get(topic).expiry;
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
       // Fast-forward system time by 60 seconds after expiry was first set.
       vi.setSystemTime(Date.now() + 60_000);
       const { acknowledged } = await clients.A.extend({
