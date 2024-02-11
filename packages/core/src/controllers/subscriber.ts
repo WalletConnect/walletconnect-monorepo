@@ -194,7 +194,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
     try {
       const relay = getRelayProtocolName(opts);
-      await this.rpcUnsubscribe(topic, id, relay);
+      this.rpcUnsubscribe(topic, id, relay);
       const reason = getSdkError("USER_DISCONNECTED", `${this.name}, ${topic}`);
       await this.onUnsubscribe(topic, id, reason);
       this.logger.debug(`Successfully Unsubscribed Topic`);
