@@ -18,6 +18,7 @@ import {
   isJsonRpcResult,
   JsonRpcRequest,
   ErrorResponse,
+  getBigIntRpcId,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import {
@@ -376,8 +377,9 @@ export class Engine extends IEngine {
     const { topic, namespaces } = params;
 
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
-    const id = payloadId();
-    this.events.once(engineEvent("session_update", id), ({ error }: any) => {
+    const clientRpcId = payloadId();
+    const relayRpcId = getBigIntRpcId().toString() as any;
+    this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
       if (error) reject(error);
       else resolve();
     });
@@ -386,7 +388,8 @@ export class Engine extends IEngine {
       method: "wc_sessionUpdate",
       params: { namespaces },
       throwOnFailedPublish: true,
-      clientRpcId: id,
+      clientRpcId,
+      relayRpcId,
     });
 
     await this.client.session.update(topic, { namespaces });
@@ -403,9 +406,10 @@ export class Engine extends IEngine {
       throw error;
     }
     const { topic } = params;
-    const id = payloadId();
+    const clientRpcId = payloadId();
+    const relayRpcId = getBigIntRpcId().toString() as any;
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
-    this.events.once(engineEvent("session_extend", id), ({ error }: any) => {
+    this.events.once(engineEvent("session_extend", clientRpcId), ({ error }: any) => {
       if (error) reject(error);
       else resolve();
     });
@@ -414,7 +418,8 @@ export class Engine extends IEngine {
       method: "wc_sessionExtend",
       params: {},
       throwOnFailedPublish: true,
-      clientRpcId: id,
+      clientRpcId,
+      relayRpcId,
     });
     await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
 
@@ -430,19 +435,24 @@ export class Engine extends IEngine {
       throw error;
     }
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
-    const id = payloadId();
+    const clientRpcId = payloadId();
+    const relayRpcId = getBigIntRpcId().toString() as any;
     const { done, resolve, reject } = createDelayedPromise<T>(
       expiry,
       "Request expired. Please try again.",
     );
-    this.events.once<"session_request">(engineEvent("session_request", id), ({ error, result }) => {
-      if (error) reject(error);
-      else resolve(result);
-    });
+    this.events.once<"session_request">(
+      engineEvent("session_request", clientRpcId),
+      ({ error, result }) => {
+        if (error) reject(error);
+        else resolve(result);
+      },
+    );
     return await Promise.all([
       new Promise<void>(async (resolve) => {
         await this.sendRequest({
-          clientRpcId: id,
+          clientRpcId,
+          relayRpcId,
           topic,
           method: "wc_sessionRequest",
           params: {
@@ -493,9 +503,10 @@ export class Engine extends IEngine {
     }
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
-      const id = payloadId();
+      const clientRpcId = payloadId();
+      const relayRpcId = getBigIntRpcId().toString() as any;
       const { done, resolve, reject } = createDelayedPromise<void>();
-      this.events.once(engineEvent("session_ping", id), ({ error }: any) => {
+      this.events.once(engineEvent("session_ping", clientRpcId), ({ error }: any) => {
         if (error) reject(error);
         else resolve();
       });
@@ -505,7 +516,8 @@ export class Engine extends IEngine {
           method: "wc_sessionPing",
           params: {},
           throwOnFailedPublish: true,
-          clientRpcId: id,
+          clientRpcId,
+          relayRpcId,
         }),
         done(),
       ]);
@@ -518,7 +530,14 @@ export class Engine extends IEngine {
     await this.isInitialized();
     await this.isValidEmit(params);
     const { topic, event, chainId } = params;
-    await this.sendRequest({ topic, method: "wc_sessionEvent", params: { event, chainId } });
+    const relayRpcId = getBigIntRpcId().toString() as any;
+    await this.sendRequest({
+      topic,
+      method: "wc_sessionEvent",
+      params: { event, chainId },
+      throwOnFailedPublish: true,
+      relayRpcId,
+    });
   };
 
   public disconnect: IEngine["disconnect"] = async (params) => {
