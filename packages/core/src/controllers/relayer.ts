@@ -193,6 +193,7 @@ export class Relayer extends IRelayer {
 
   public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
     this.logger.debug(`Publishing Request Payload`);
+    await this.toEstablishConnection();
     const id = request.id || (getBigIntRpcId() as any);
 
     const requestPromise = this.provider.request(request);
@@ -201,7 +202,6 @@ export class Relayer extends IRelayer {
       request,
     });
     try {
-      await this.toEstablishConnection();
       console.log("@rel request ", {
         id,
         topic: request.params?.topic,
@@ -266,7 +266,9 @@ export class Relayer extends IRelayer {
       connectionState: this.connectionState,
     });
     if (!this.hasExperiencedNetworkDisruption && this.connected && this.requestsInFlight.size > 0) {
-      console.log("Transport close called while requests in flight", this.requestsInFlight.size);
+      console.log("Transport close called while requests in flight", this.requestsInFlight.size, {
+        name: this.core.name,
+      });
       try {
         await Promise.all(
           Array.from(this.requestsInFlight.values()).map((request) => request.promise),
@@ -274,6 +276,9 @@ export class Relayer extends IRelayer {
       } catch (e) {
         this.logger.warn(e);
       }
+      console.log("awaiting requests in flight, done", this.requestsInFlight.size, {
+        name: this.core.name,
+      });
     }
 
     /**
