@@ -406,28 +406,34 @@ export class Engine extends IEngine {
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
     const clientRpcId = payloadId();
     const relayRpcId = getBigIntRpcId().toString() as any;
-    this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
-      if (error) reject(error);
-      else {
-        console.log("UPDATE: 4. END", {
-          name: this.client.name,
+
+    await Promise.all([
+      new Promise<void>((_res) => {
+        this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
+          if (error) reject(error);
+          else {
+            console.log("UPDATE: 4. END", {
+              name: this.client.name,
+            });
+            resolve();
+          }
+          _res();
         });
-        resolve();
-      }
-    });
-    await this.sendRequest({
-      topic,
-      method: "wc_sessionUpdate",
-      params: { namespaces },
-      throwOnFailedPublish: true,
-      clientRpcId,
-      relayRpcId,
-    });
+      }),
+      this.sendRequest({
+        topic,
+        method: "wc_sessionUpdate",
+        params: { namespaces },
+        throwOnFailedPublish: true,
+        clientRpcId,
+        relayRpcId,
+      }),
+    ]);
+
     console.log("UPDATE: 2.", {
       name: this.client.name,
     });
     await this.client.session.update(topic, { namespaces });
-
     console.log("UPDATE: 3.", {
       name: this.client.name,
     });
@@ -568,7 +574,7 @@ export class Engine extends IEngine {
       this.events.once(engineEvent("session_ping", clientRpcId), ({ error }: any) => {
         if (error) reject(error);
         else {
-          console.log("EXTEND: 3. END", {
+          console.log("PING: 3. END", {
             name: this.client.name,
           });
           resolve();
