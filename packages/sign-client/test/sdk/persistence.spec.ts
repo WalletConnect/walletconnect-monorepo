@@ -220,7 +220,7 @@ describe("Sign Client Persistence", () => {
         },
       };
 
-      const db_a = generateClientDbName("client_b");
+      const db_a = generateClientDbName("client_a");
       const clients = await initTwoClients({
         storageOptions: { database: db_a },
       });
@@ -254,21 +254,18 @@ describe("Sign Client Persistence", () => {
         },
       };
 
-      const lastAccountsChangedValue = [`${chains[0]}:${accounts[1]}`];
-      await Promise.all([
-        clients.B.update({
-          topic,
-          namespaces: lastWalletSessionNamespacesValue,
-        }),
-        clients.B.emit({
-          topic,
-          event: {
-            name: "accountsChanged",
-            data: [`${chains[0]}:${accounts[1]}`],
-          },
-          chainId: "eip155:1",
-        }),
-      ]);
+      await clients.B.update({
+        topic,
+        namespaces: lastWalletSessionNamespacesValue,
+      });
+      await clients.B.emit({
+        topic,
+        event: {
+          name: "accountsChanged",
+          data: [`${chains[0]}:${accounts[1]}`],
+        },
+        chainId: "eip155:1",
+      });
       await throttle(500);
       await clients.B.emit({
         topic,
@@ -278,6 +275,8 @@ describe("Sign Client Persistence", () => {
         },
         chainId: "eip155:1",
       });
+
+      const lastAccountsChangedValue = [`${chains[0]}:${accounts[1]}`];
       await clients.B.emit({
         topic,
         event: {
