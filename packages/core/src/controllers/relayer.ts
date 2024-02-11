@@ -204,6 +204,7 @@ export class Relayer extends IRelayer {
       await this.toEstablishConnection();
       console.log("@rel request ", {
         id,
+        topic: request.params?.topic,
         // @ts-ignore
         tag: request.params?.tag,
         name: this.core.name,
@@ -211,6 +212,7 @@ export class Relayer extends IRelayer {
 
       console.log("@rel publishing..", {
         id,
+        topic: request.params?.topic,
         // @ts-ignore
         tag: request.params?.tag,
         name: this.core.name,
@@ -218,6 +220,7 @@ export class Relayer extends IRelayer {
       const res = await requestPromise;
       console.log("@rel published", {
         id,
+        topic: request.params?.topic,
         // @ts-ignore
         tag: request.params?.tag,
         name: this.core.name,
@@ -465,6 +468,7 @@ export class Relayer extends IRelayer {
         id: payload.id,
         //@ts-ignore
         tag: event.data.tag,
+        topic: event.data.topic,
       });
       const { topic, message, publishedAt } = event.data;
       const messageEvent: RelayerTypes.MessageEvent = { topic, message, publishedAt };
