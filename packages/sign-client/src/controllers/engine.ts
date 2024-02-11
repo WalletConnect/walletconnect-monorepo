@@ -410,9 +410,7 @@ export class Engine extends IEngine {
     const relayRpcId = getBigIntRpcId().toString() as any;
 
     const oldNamespaces = this.client.session.get(topic).namespaces;
-    await this.client.session.update(topic, { namespaces });
-
-    this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
+    this.events.once(engineEvent("session_update", clientRpcId), async ({ error }: any) => {
       if (error) reject(error);
       else {
         console.log("UPDATE: 4. END", {
@@ -420,9 +418,11 @@ export class Engine extends IEngine {
 
           elapsed: Date.now() - start,
         });
+        await this.client.session.update(topic, { namespaces });
         resolve();
       }
     });
+
     this.sendRequest({
       topic,
       method: "wc_sessionUpdate",
@@ -462,7 +462,6 @@ export class Engine extends IEngine {
 
     const { topic } = params;
     const clientRpcId = payloadId();
-    const relayRpcId = getBigIntRpcId().toString() as any;
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
     this.events.once(engineEvent("session_extend", clientRpcId), ({ error }: any) => {
       if (error) reject(error);
@@ -484,9 +483,7 @@ export class Engine extends IEngine {
       topic,
       method: "wc_sessionExtend",
       params: {},
-      throwOnFailedPublish: true,
       clientRpcId,
-      relayRpcId,
     });
     console.log("EXTEND: 3.", {
       name: this.client.name,
