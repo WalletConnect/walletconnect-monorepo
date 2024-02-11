@@ -465,7 +465,12 @@ export class Engine extends IEngine {
           expiry,
           throwOnFailedPublish: true,
         }).catch((error) => reject(error));
-        this.client.events.emit("session_request_sent", { topic, request, chainId, id });
+        this.client.events.emit("session_request_sent", {
+          topic,
+          request,
+          chainId,
+          id: clientRpcId,
+        });
         resolve();
       }),
       new Promise<void>(async (resolve) => {
@@ -473,7 +478,7 @@ export class Engine extends IEngine {
           this.client.core.storage,
           WALLETCONNECT_DEEPLINK_CHOICE,
         );
-        handleDeeplinkRedirect({ id, topic, wcDeepLink });
+        handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink });
         resolve();
       }),
       done(),
