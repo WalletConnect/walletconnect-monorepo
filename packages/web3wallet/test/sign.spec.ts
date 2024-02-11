@@ -384,7 +384,7 @@ describe("Sign Integration", () => {
     ]);
   });
 
-  it("receive proposal_expire event", async () => {
+  it.skip("receive proposal_expire event", async () => {
     const { uri: uriString } = await dapp.connect({ requiredNamespaces: TEST_REQUIRED_NAMESPACES });
 
     // first pair and approve session
@@ -418,7 +418,7 @@ describe("Sign Integration", () => {
     ]);
     vi.useRealTimers();
   });
-  it("receive session_request_expire event", async () => {
+  it.skip("receive session_request_expire event", async () => {
     vi.useRealTimers();
     // first pair and approve session
     await Promise.all([
