@@ -1,12 +1,10 @@
-import { RELAYER_EVENTS } from "@walletconnect/core";
 import {
   formatJsonRpcError,
   formatJsonRpcResult,
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { RelayerTypes } from "@walletconnect/types";
 import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
-import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
+import { expect, describe, it, vi } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 
 import {
@@ -17,7 +15,6 @@ import {
   throttle,
   TEST_REQUEST_PARAMS,
   TEST_NAMESPACES,
-  TEST_REQUIRED_NAMESPACES,
   TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE,
   TEST_AVALANCHE_CHAIN,
   TEST_REQUIRED_NAMESPACES_V2,
@@ -27,16 +24,6 @@ import {
 } from "../shared";
 
 describe("Sign Client Integration", () => {
-  process.on("unhandledRejection", (reason) => {
-    console.error("unhandledRejection", reason);
-  });
-  beforeEach((context) => {
-    console.log("starting test ", { name: context.meta.name });
-  });
-  afterEach((context) => {
-    console.log("test complete", { name: context.meta.name });
-  });
-
   it("init", async () => {
     const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
     expect(client).to.be.exist;

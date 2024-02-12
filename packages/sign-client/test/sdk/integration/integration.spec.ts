@@ -1,16 +1,7 @@
 import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
 import { expect, describe, it, afterAll, beforeAll } from "vitest";
-import { createExpiringPromise } from "../../../../utils/src";
-import {
-  initTwoClients,
-  testConnectMethod,
-  deleteClients,
-  Clients,
-  TESTS_CONNECT_TIMEOUT,
-  TESTS_CONNECT_RETRIES,
-  initTwoPairedClients,
-} from "../../shared";
+import { testConnectMethod, deleteClients, Clients, initTwoPairedClients } from "../../shared";
 
 describe("Sign Client Integration", () => {
   let clients: Clients;

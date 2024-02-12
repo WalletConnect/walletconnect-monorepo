@@ -87,15 +87,6 @@ export class Relayer extends IRelayer {
     }
   >();
 
-  private connectionState = {
-    connected: false,
-    connecting: false,
-    initiatedBy: "",
-    completed: false,
-  };
-
-  // private publishAttempts = new Map<string, number>();
-
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -121,25 +112,14 @@ export class Relayer extends IRelayer {
     await this.createProvider();
     await Promise.all([this.messages.init(), this.subscriber.init()]);
     try {
-      this.connectionState.initiatedBy = "init";
       await this.transportOpen();
     } catch {
       this.logger.warn(
         `Connection via ${this.relayUrl} failed, attempting to connect via failover domain ${RELAYER_FAILOVER_RELAY_URL}...`,
       );
-      this.connectionState.initiatedBy = "init_failover";
       await this.restartTransport(RELAYER_FAILOVER_RELAY_URL);
     }
     this.initialized = true;
-    // setTimeout(async () => {
-    //   if (this.subscriber.subscriptions.size === 0 && this.connected) {
-    //     this.logger.info(`No topics subscribed to after init, closing transport`);
-    //     console.log(" auto closing..", {
-    //       name: this.name,
-    //     });
-    //     await this.transportClose();
-    //   }
-    // }, RELAYER_TRANSPORT_CUTOFF);
   }
 
   get context() {
@@ -202,31 +182,7 @@ export class Relayer extends IRelayer {
       request,
     });
     try {
-      console.log("@rel request ", {
-        id,
-        topic: request.params?.topic,
-        // @ts-ignore
-        tag: request.params?.tag,
-        name: this.core.name,
-      });
-
-      console.log("@rel publishing..", {
-        id,
-        topic: request.params?.topic,
-        // @ts-ignore
-        tag: request.params?.tag,
-        name: this.core.name,
-      });
-      const res = await requestPromise;
-      console.log("@rel published", {
-        id,
-        topic: request.params?.topic,
-        // @ts-ignore
-        tag: request.params?.tag,
-        name: this.core.name,
-      });
-
-      return res;
+      return await requestPromise;
     } catch (e) {
       this.logger.debug(`Failed to Publish Request`);
       this.logger.error(e as any);
@@ -258,17 +214,7 @@ export class Relayer extends IRelayer {
   }
 
   public async transportDisconnect() {
-    console.log("transportDisconnect called", {
-      name: this.core.name,
-      hasExperiencedNetworkDisruption: this.hasExperiencedNetworkDisruption,
-      connected: this.connected,
-      requestsInFlight: this.requestsInFlight,
-      connectionState: this.connectionState,
-    });
     if (!this.hasExperiencedNetworkDisruption && this.connected && this.requestsInFlight.size > 0) {
-      console.log("Transport close called while requests in flight", this.requestsInFlight.size, {
-        name: this.core.name,
-      });
       try {
         await Promise.all(
           Array.from(this.requestsInFlight.values()).map((request) => request.promise),
@@ -276,9 +222,6 @@ export class Relayer extends IRelayer {
       } catch (e) {
         this.logger.warn(e);
       }
-      console.log("awaiting requests in flight, done", this.requestsInFlight.size, {
-        name: this.core.name,
-      });
     }
 
     if (this.connected) {
@@ -286,12 +229,10 @@ export class Relayer extends IRelayer {
         () => this.onProviderDisconnect(),
       );
     }
-    this.connectionState.connected = false;
   }
 
   public async transportClose() {
     this.transportExplicitlyClosed = true;
-    this.connectionState.initiatedBy = "transportClose";
     await this.transportDisconnect();
   }
 
@@ -307,17 +248,12 @@ export class Relayer extends IRelayer {
 
     this.connectionAttemptInProgress = true;
     this.transportExplicitlyClosed = false;
-    this.connectionState.connecting = true;
-    this.connectionState.completed = false;
     try {
       await Promise.all([
         new Promise<void>((resolve, reject) => {
           if (!this.initialized) resolve();
 
           const onSubscribed = () => {
-            console.log("@rel - subscribed", {
-              name: this.core.name,
-            });
             this.subscriber.off(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
             this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
             resolve();
@@ -332,22 +268,13 @@ export class Relayer extends IRelayer {
           this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
         }),
         new Promise<void>(async (resolve, reject) => {
-          console.log("this.provider.connect() start", {
-            name: this.core.name,
-            connectionState: this.connectionState,
-          });
           await createExpiringPromise(
             this.provider.connect(),
             toMiliseconds(ONE_MINUTE / 2),
             `Socket stalled when trying to connect to ${this.relayUrl}`,
           ).catch((e) => {
-            console.error("this.provider.connect() catch", e);
             reject(e);
           });
-          console.log("this.provider.connect() end", {
-            name: this.core.name,
-          });
-          this.connectionState.connected = true;
           this.hasExperiencedNetworkDisruption = false;
           resolve();
         }),
@@ -355,38 +282,17 @@ export class Relayer extends IRelayer {
     } catch (e) {
       this.logger.error(e);
       const error = e as Error;
-      this.connectionState.connecting = false;
-      this.connectionState.connected = false;
-      this.connectionState.initiatedBy = "exception while connect()";
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
     } finally {
       this.connectionAttemptInProgress = false;
     }
-    this.connectionState.completed = true;
-    const done = Date.now();
-
-    console.log("transportOpen done", {
-      name: this.core.name,
-      connectionState: this.connectionState,
-      duration: done - start,
-    });
-    this.connectionState.initiatedBy = "";
   }
 
   public async restartTransport(relayUrl?: string) {
-    console.log(`restartTransport called, skipping? ${this.connectionAttemptInProgress}`, {
-      name: this.core.name,
-    });
-    if (this.connectionAttemptInProgress) {
-      return;
-    }
-    console.log("restart transport, continuee", {
-      name: this.core.name,
-    });
+    if (this.connectionAttemptInProgress) return;
     this.relayUrl = relayUrl || this.relayUrl;
-
     await this.confirmOnlineStateOrThrow();
     await this.transportDisconnect();
     await this.createProvider();
@@ -463,13 +369,6 @@ export class Relayer extends IRelayer {
     if (isJsonRpcRequest(payload)) {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
-      console.log("@relayer received", {
-        name: this.core.name,
-        id: payload.id,
-        //@ts-ignore
-        tag: event.data.tag,
-        topic: event.data.topic,
-      });
       const { topic, message, publishedAt } = event.data;
       const messageEvent: RelayerTypes.MessageEvent = { topic, message, publishedAt };
       this.logger.debug(`Emitting Relayer Payload`);
@@ -499,19 +398,10 @@ export class Relayer extends IRelayer {
   };
 
   private onConnectHandler = () => {
-    console.log("onConnectHandler", {
-      name: this.core.name,
-    });
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
   private onDisconnectHandler = () => {
-    console.log("onDisconnectHandler", {
-      name: this.core.name,
-      connected: this.connected,
-      connectionState: this.connectionState,
-      requestsInFlight: this.requestsInFlight,
-    });
     this.onProviderDisconnect();
   };
 
@@ -540,38 +430,14 @@ export class Relayer extends IRelayer {
 
   private async registerEventListeners() {
     this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
-      if (!this.transportExplicitlyClosed) {
-        console.log("heartbeat", {
-          name: this.core.name,
-          connected: this.connected,
-          connecting: this.connecting,
-          requestsInFlight: this.requestsInFlight,
-          connectionAttemptInProgress: this.connectionAttemptInProgress,
-          transportExplicitlyClosed: this.transportExplicitlyClosed,
-        });
-      }
-
-      if (this.transportExplicitlyClosed) {
-        console.log("heartbeat, transportExplicitlyClosed, returning", {
-          name: this.core.name,
-        });
-        return;
-      }
-
+      if (this.transportExplicitlyClosed) return;
       if (this.hasExperiencedNetworkDisruption || !this.connected) {
-        console.log("heartbeat restarting transport", {
-          name: this.core.name,
-        });
-        await this.restartTransport().catch((e) => console.error(e));
+        await this.restartTransport().catch((e) => this.logger.error(e));
       }
     });
 
     this.events.on(RELAYER_EVENTS.connection_stalled, () => {
       if (this.connected) return;
-      console.log("@rel connection stalled", {
-        name: this.core.name,
-      });
-      this.connectionState.initiatedBy = "connection_stalled";
       this.restartTransport().catch((error) => this.logger.error(error));
     });
 
@@ -587,7 +453,6 @@ export class Relayer extends IRelayer {
         await this.transportDisconnect();
         this.transportExplicitlyClosed = false;
       } else {
-        this.connectionState.initiatedBy = "network_change";
         await this.restartTransport().catch((error) => this.logger.error(error));
       }
     });
@@ -597,31 +462,6 @@ export class Relayer extends IRelayer {
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.connectionAttemptInProgress = false;
   }
-
-  // private attemptToReconnect() {
-  //   console.log("attemptToReconnect", {
-  //     name: this.core.name,
-  //     transportExplicitlyClosed: this.transportExplicitlyClosed,
-  //     connectionAttemptInProgress: this.connectionAttemptInProgress,
-  //     connecting: this.connecting,
-  //     connected: this.connected,
-  //   });
-  //   if (this.transportExplicitlyClosed || this.connectionAttemptInProgress) {
-  //     console.log("explicitly closed, returning", {
-  //       name: this.core.name,
-  //       connectionAttemptInProgress: this.connectionAttemptInProgress,
-  //       transportExplicitlyClosed: this.transportExplicitlyClosed,
-  //     });
-  //     return;
-  //   }
-
-  //   this.logger.info("attemptToReconnect called. Connecting...");
-  //   // Attempt reconnection
-  //   setTimeout(async () => {
-  //     this.connectionState.initiatedBy = "attemptToReconnect";
-  //     await this.restartTransport().catch((error) => this.logger.error(error));
-  //   }, 0);
-  // }
 
   private isInitialized() {
     if (!this.initialized) {
@@ -634,14 +474,8 @@ export class Relayer extends IRelayer {
     await this.confirmOnlineStateOrThrow();
     if (this.connected) return;
     return await new Promise<void>((resolve) => {
-      console.log("waiting for connection..", {
-        name: this.core.name,
-      });
       const interval = setInterval(() => {
         if (this.connected) {
-          console.log("connection is back!", {
-            name: this.core.name,
-          });
           clearInterval(interval);
           resolve();
         }

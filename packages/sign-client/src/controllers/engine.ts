@@ -138,11 +138,7 @@ export class Engine extends IEngine {
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async (params) => {
-    console.log("CONNECT: 1.", {
-      name: this.client.name,
-    });
     await this.isInitialized();
-
     const connectParams = {
       ...params,
       requiredNamespaces: params.requiredNamespaces || {},
@@ -164,13 +160,11 @@ export class Engine extends IEngine {
       this.client.logger.error(`connect() -> pairing.get(${topic}) failed`);
       throw error;
     }
-    console.log("pairing create");
     if (!topic || !active) {
       const { topic: newTopic, uri: newUri } = await this.client.core.pairing.create();
       topic = newTopic;
       uri = newUri;
     }
-    console.log("pairing created", topic);
     if (!topic) {
       const { message } = getInternalError("NO_MATCHING_KEY", `connect() pairing topic: ${topic}`);
       throw new Error(message);
@@ -201,9 +195,6 @@ export class Engine extends IEngine {
       async ({ error, session }) => {
         if (error) reject(error);
         else if (session) {
-          console.log("CONNECT: 4. END", {
-            name: this.client.name,
-          });
           session.self.publicKey = publicKey;
           const completeSession = {
             ...session,
@@ -222,17 +213,11 @@ export class Engine extends IEngine {
         }
       },
     );
-    console.log("CONNECT: 2.", {
-      name: this.client.name,
-    });
     const id = await this.sendRequest({
       topic,
       method: "wc_sessionPropose",
       params: proposal,
       throwOnFailedPublish: true,
-    });
-    console.log("CONNECT: 3.", {
-      name: this.client.name,
     });
     await this.setProposal(id, { id, ...proposal });
     return { uri, approval };
@@ -240,7 +225,6 @@ export class Engine extends IEngine {
 
   public pair: IEngine["pair"] = async (params) => {
     await this.isInitialized();
-    // this.startPairingEventLog(params);
     try {
       return await this.client.core.pairing.pair(params);
     } catch (error) {
@@ -250,9 +234,6 @@ export class Engine extends IEngine {
   };
 
   public approve: IEngine["approve"] = async (params) => {
-    console.log("APPROVE: 1.", {
-      name: this.client.name,
-    });
     await this.isInitialized();
     try {
       await this.isValidApprove(params);
@@ -287,10 +268,6 @@ export class Engine extends IEngine {
       ...(sessionProperties && { sessionProperties }),
     };
     await this.client.core.relayer.subscribe(sessionTopic);
-
-    console.log("APPROVE: 2.", {
-      name: this.client.name,
-    });
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
@@ -306,9 +283,6 @@ export class Engine extends IEngine {
       controller: selfPublicKey,
     };
     await this.client.session.set(sessionTopic, session);
-    console.log("APPROVE: 3.", {
-      name: this.client.name,
-    });
     try {
       await this.sendResult<"wc_sessionPropose">({
         id,
@@ -321,23 +295,11 @@ export class Engine extends IEngine {
         },
         throwOnFailedPublish: true,
       });
-      console.log("APPROVE: 4.", {
-        name: this.client.name,
-      });
-      console.log("@engine sending sessionSettle", {
-        name: this.client.name,
-      });
       await this.sendRequest({
         topic: sessionTopic,
         method: "wc_sessionSettle",
         params: sessionSettle,
         throwOnFailedPublish: true,
-      });
-      console.log("@engine sending sessionSettle DONE!", {
-        name: this.client.name,
-      });
-      console.log("APPROVE: 5.", {
-        name: this.client.name,
       });
     } catch (error) {
       this.client.logger.error(error);
@@ -354,9 +316,6 @@ export class Engine extends IEngine {
     await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
     await this.client.core.pairing.activate({ topic: pairingTopic });
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
-    console.log("APPROVE: 6. END", {
-      name: this.client.name,
-    });
     return {
       topic: sessionTopic,
       acknowledged: () =>
@@ -399,10 +358,6 @@ export class Engine extends IEngine {
       throw error;
     }
     const start = Date.now();
-    console.log("UPDATE: 1.", {
-      name: this.client.name,
-      elapsed: Date.now() - start,
-    });
     const { topic, namespaces } = params;
 
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
@@ -413,11 +368,6 @@ export class Engine extends IEngine {
     this.events.once(engineEvent("session_update", clientRpcId), async ({ error }: any) => {
       if (error) reject(error);
       else {
-        console.log("UPDATE: 4. END", {
-          name: this.client.name,
-
-          elapsed: Date.now() - start,
-        });
         await this.client.session.update(topic, { namespaces });
         resolve();
       }
@@ -435,23 +385,10 @@ export class Engine extends IEngine {
       this.client.session.update(topic, { namespaces: oldNamespaces });
       reject(error);
     });
-    console.log("UPDATE: 2.", {
-      name: this.client.name,
-      elapsed: Date.now() - start,
-    });
-    console.log("UPDATE: 3.", {
-      name: this.client.name,
-      elapsed: Date.now() - start,
-    });
     return { acknowledged };
   };
 
   public extend: IEngine["extend"] = async (params) => {
-    const start = Date.now();
-    console.log("EXTEND: 1.", {
-      name: this.client.name,
-      elapsed: Date.now() - start,
-    });
     await this.isInitialized();
     try {
       await this.isValidExtend(params);
@@ -465,17 +402,7 @@ export class Engine extends IEngine {
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
     this.events.once(engineEvent("session_extend", clientRpcId), ({ error }: any) => {
       if (error) reject(error);
-      else {
-        console.log("EXTEND: 4. END", {
-          name: this.client.name,
-          elapsed: Date.now() - start,
-        });
-        resolve();
-      }
-    });
-    console.log("EXTEND: 2.", {
-      name: this.client.name,
-      elapsed: Date.now() - start,
+      else resolve();
     });
 
     await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
@@ -487,10 +414,6 @@ export class Engine extends IEngine {
       throwOnFailedPublish: true,
     }).catch((e) => {
       reject(e);
-    });
-    console.log("EXTEND: 3.", {
-      name: this.client.name,
-      elapsed: Date.now() - start,
     });
 
     return { acknowledged };
@@ -570,10 +493,6 @@ export class Engine extends IEngine {
 
   public ping: IEngine["ping"] = async (params) => {
     const start = Date.now();
-    console.log("PING: 1.", {
-      name: this.client.name,
-      elapsed: Date.now() - start,
-    });
     await this.isInitialized();
     try {
       await this.isValidPing(params);
@@ -588,17 +507,7 @@ export class Engine extends IEngine {
       const { done, resolve, reject } = createDelayedPromise<void>();
       this.events.once(engineEvent("session_ping", clientRpcId), ({ error }: any) => {
         if (error) reject(error);
-        else {
-          console.log("PING: 3. END", {
-            name: this.client.name,
-            elapsed: Date.now() - start,
-          });
-          resolve();
-        }
-      });
-      console.log("PING: 2.", {
-        name: this.client.name,
-        elapsed: Date.now() - start,
+        else resolve();
       });
       await Promise.all([
         this.sendRequest({
@@ -1149,15 +1058,8 @@ export class Engine extends IEngine {
       // compare the current request id with the last processed session update
       // we want to update only if the request is newer than the last processed one
       const lastSessionUpdateId = MemoryStore.get<number>(memoryKey);
-      console.log("session update request received", {
-        id,
-        name: this.client.name,
-        memoryKey,
-        isRequestOutOfSync: this.isRequestOutOfSync(lastSessionUpdateId || 0, id),
-      });
 
       if (lastSessionUpdateId && this.isRequestOutOfSync(lastSessionUpdateId, id)) {
-        console.log("last sessionIpdate out of order", id, this.client.name);
         this.client.logger.info(`Discarding out of sync request - ${id}`);
         this.sendError(id, topic, getSdkError("INVALID_UPDATE_REQUEST"));
         return;
@@ -1176,7 +1078,6 @@ export class Engine extends IEngine {
         MemoryStore.delete(memoryKey);
         throw e;
       }
-      console.log("processing update key done", id, memoryKey);
       this.client.events.emit("session_update", { id, topic, params });
     } catch (err: any) {
       await this.sendError(id, topic, err);

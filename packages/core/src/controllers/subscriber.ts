@@ -218,7 +218,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subscribe = await createExpiringPromise(
-        this.relayer.request(request).catch((e) => console.error("rpcSubscribe", e)),
+        this.relayer.request(request).catch((e) => this.logger.error(e)),
         this.subscribeTimeout,
       );
       await subscribe;
@@ -243,7 +243,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subscribe = await createExpiringPromise(
-        this.relayer.request(request).catch((e) => console.error("rpcBatchSubscribe", e)),
+        this.relayer.request(request).catch((e) => this.logger.error(e)),
         this.subscribeTimeout,
       );
       const result = await subscribe;
@@ -390,9 +390,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private async onConnect() {
-    console.log("@sub onConnect()", this.restartInProgress);
     if (this.restartInProgress) {
-      console.log("@sub restartInProgress.. onDisable");
       this.onDisable();
     }
     await this.restart();
