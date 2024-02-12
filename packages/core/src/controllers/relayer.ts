@@ -348,6 +348,7 @@ export class Relayer extends IRelayer {
             name: this.core.name,
           });
           this.connectionState.connected = true;
+          this.hasExperiencedNetworkDisruption = false;
           resolve();
         }),
       ]);
@@ -386,6 +387,8 @@ export class Relayer extends IRelayer {
     });
     this.connectionAttemptInProgress = true;
     this.relayUrl = relayUrl || this.relayUrl;
+
+    await this.confirmOnlineStateOrThrow();
     await this.transportDisconnect();
     await this.createProvider();
     await this.transportOpen();
@@ -538,15 +541,17 @@ export class Relayer extends IRelayer {
   }
 
   private async registerEventListeners() {
-    this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
-      console.log("heartbeat", {
-        name: this.core.name,
-        connected: this.connected,
-        connecting: this.connecting,
-        requestsInFlight: this.requestsInFlight,
-        connectionAttemptInProgress: this.connectionAttemptInProgress,
-        transportExplicitlyClosed: this.transportExplicitlyClosed,
-      });
+    this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
+      if (!this.transportExplicitlyClosed) {
+        console.log("heartbeat", {
+          name: this.core.name,
+          connected: this.connected,
+          connecting: this.connecting,
+          requestsInFlight: this.requestsInFlight,
+          connectionAttemptInProgress: this.connectionAttemptInProgress,
+          transportExplicitlyClosed: this.transportExplicitlyClosed,
+        });
+      }
 
       if (this.transportExplicitlyClosed) {
         console.log("heartbeat, transportExplicitlyClosed, returning", {
@@ -559,7 +564,7 @@ export class Relayer extends IRelayer {
         console.log("heartbeat restarting transport", {
           name: this.core.name,
         });
-        this.restartTransport();
+        await this.restartTransport().catch((e) => console.error(e));
       }
     });
 
