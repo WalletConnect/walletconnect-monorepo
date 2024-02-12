@@ -385,14 +385,12 @@ export class Relayer extends IRelayer {
     console.log("restart transport, continuee", {
       name: this.core.name,
     });
-    this.connectionAttemptInProgress = true;
     this.relayUrl = relayUrl || this.relayUrl;
 
     await this.confirmOnlineStateOrThrow();
     await this.transportDisconnect();
     await this.createProvider();
     await this.transportOpen();
-    this.connectionAttemptInProgress = false;
   }
 
   public async confirmOnlineStateOrThrow() {
@@ -597,6 +595,7 @@ export class Relayer extends IRelayer {
 
   private onProviderDisconnect() {
     this.events.emit(RELAYER_EVENTS.disconnect);
+    this.connectionAttemptInProgress = false;
   }
 
   // private attemptToReconnect() {

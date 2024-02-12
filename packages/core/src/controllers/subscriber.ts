@@ -390,7 +390,11 @@ export class Subscriber extends ISubscriber {
   }
 
   private async onConnect() {
-    if (this.restartInProgress) return;
+    console.log("@sub onConnect()", this.restartInProgress);
+    if (this.restartInProgress) {
+      console.log("@sub restartInProgress.. onDisable");
+      this.onDisable();
+    }
     await this.restart();
     this.onEnable();
   }
