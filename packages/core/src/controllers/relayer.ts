@@ -238,8 +238,6 @@ export class Relayer extends IRelayer {
 
   public async transportOpen(relayUrl?: string) {
     await this.confirmOnlineStateOrThrow();
-
-    const start = Date.now();
     if (relayUrl && relayUrl !== this.relayUrl) {
       this.relayUrl = relayUrl;
       await this.transportDisconnect();

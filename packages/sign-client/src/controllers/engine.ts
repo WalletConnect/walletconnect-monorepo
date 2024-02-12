@@ -357,7 +357,6 @@ export class Engine extends IEngine {
       this.client.logger.error("update() -> isValidUpdate() failed");
       throw error;
     }
-    const start = Date.now();
     const { topic, namespaces } = params;
 
     const { done: acknowledged, resolve, reject } = createDelayedPromise<void>();
@@ -492,7 +491,6 @@ export class Engine extends IEngine {
   };
 
   public ping: IEngine["ping"] = async (params) => {
-    const start = Date.now();
     await this.isInitialized();
     try {
       await this.isValidPing(params);
