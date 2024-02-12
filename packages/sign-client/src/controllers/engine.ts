@@ -479,11 +479,14 @@ export class Engine extends IEngine {
     });
 
     await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
-    await this.sendRequest({
+    this.sendRequest({
       topic,
       method: "wc_sessionExtend",
       params: {},
       clientRpcId,
+      throwOnFailedPublish: true,
+    }).catch((e) => {
+      reject(e);
     });
     console.log("EXTEND: 3.", {
       name: this.client.name,
