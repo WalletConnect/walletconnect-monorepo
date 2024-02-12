@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
@@ -46,42 +45,27 @@ export class Publisher extends IPublisher {
       const id = opts?.id || (getBigIntRpcId().toString() as any);
       const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
       // delay adding to queue to avoid cases where heartbeat might pulse right after publish resulting in duplicate publish
-      // const queueTimeout = setTimeout(() => this.queue.set(id, params), this.publishTimeout);
-      this.queue.set(id, params);
+      const queueTimeout = setTimeout(() => this.queue.set(id, params), this.publishTimeout);
       try {
-        const start = Date.now();
-        this.rpcPublish(topic, message, ttl, relay, prompt, tag, id);
-        const toPublish = await createExpiringPromise(
-          new Promise((resolve, reject) => {
-            const onPublishResult = (result: any) => {
-              console.log("onPublishResult", result);
-              if (result.id !== id) return;
-              this.events.off(`publisher_result_${id}`, onPublishResult);
-              console.log(`publisher_result_${id}`, {
-                name: this.relayer.core.name,
-                id,
-                elapsed: Date.now() - start,
-                ttl,
-              });
-              if (result.error) {
-                reject(result.error);
-              } else {
-                resolve(result.result);
-              }
-            };
-            this.events.on(`publisher_result_${id}`, onPublishResult);
-          }),
+        const publish = await createExpiringPromise(
+          this.rpcPublish(topic, message, ttl, relay, prompt, tag, id),
           this.publishTimeout,
           `Failed to publish payload, please try again. id:${id} tag:${tag}`,
         );
-        await toPublish;
+        await publish;
         this.removeRequestFromQueue(id);
+        this.relayer.events.emit(RELAYER_EVENTS.publish, params);
       } catch (err) {
+        this.logger.debug(`Publishing Payload stalled`);
+        this.needsTransportRestart = true;
         if (opts?.internal?.throwOnFailedPublish) {
           // remove the request from the queue so it's not retried automatically
           this.removeRequestFromQueue(id);
           throw err;
         }
+        return;
+      } finally {
+        clearTimeout(queueTimeout);
       }
       this.logger.debug(`Successfully Published Payload`);
       this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
@@ -110,7 +94,7 @@ export class Publisher extends IPublisher {
 
   // ---------- Private ----------------------------------------------- //
 
-  private async rpcPublish(
+  private rpcPublish(
     topic: string,
     message: string,
     ttl: number,
@@ -135,31 +119,7 @@ export class Publisher extends IPublisher {
     if (isUndefined(request.params?.tag)) delete request.params?.tag;
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "message", direction: "outgoing", request });
-
-    try {
-      const publish = await createExpiringPromise(
-        this.relayer.request(request),
-        this.publishTimeout,
-        `Failed to publish payload, please try again. id:${id} tag:${tag}`,
-      );
-      const result = await publish;
-      console.log("result", {
-        id,
-        result,
-      });
-      this.relayer.events.emit(RELAYER_EVENTS.publish, request.params);
-      this.events.emit(`publisher_result_${id}`, {
-        id,
-        result,
-      });
-    } catch (err) {
-      this.logger.debug(`Publishing Payload stalled`);
-      this.needsTransportRestart = true;
-      this.events.emit("publisher_result", {
-        id,
-        error: err,
-      });
-    }
+    return this.relayer.request(request);
   }
 
   private removeRequestFromQueue(id: string) {
@@ -167,16 +127,9 @@ export class Publisher extends IPublisher {
   }
 
   private checkQueue() {
-    this.queue.forEach((queuedRequest) => {
-      const { topic, message, opts } = queuedRequest;
-      const ttl = opts?.ttl || PUBLISHER_DEFAULT_TTL;
-      const relay = getRelayProtocolName(opts);
-      const prompt = opts?.prompt || false;
-      const tag = opts?.tag || 0;
-      const id = opts?.id || (getBigIntRpcId().toString() as any);
-      const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
-      this.queue.set(id, params);
-      this.rpcPublish(topic, message, ttl, relay, prompt, tag, id);
+    this.queue.forEach(async (params) => {
+      const { topic, message, opts } = params;
+      await this.publish(topic, message, opts);
     });
   }
 
