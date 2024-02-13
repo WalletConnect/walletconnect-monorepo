@@ -182,7 +182,21 @@ export class Relayer extends IRelayer {
       request,
     });
     try {
-      return await requestPromise;
+      const start = Date.now();
+      console.log("publishing message..", {
+        id,
+        method: request.method,
+        topic: request.params?.topic,
+        elapsed: Date.now() - start,
+      });
+      const res = await requestPromise;
+      console.log("message published", {
+        id,
+        method: request.method,
+        topic: request.params?.topic,
+        elapsed: Date.now() - start,
+      });
+      return res;
     } catch (e) {
       this.logger.debug(`Failed to Publish Request`);
       this.logger.error(e as any);
