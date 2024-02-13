@@ -522,10 +522,10 @@ export class Relayer extends IRelayer {
       }
     });
 
-    this.events.on(RELAYER_EVENTS.connection_stalled, () => {
-      if (this.connected) return;
-      this.restartTransport().catch((error) => this.logger.error(error));
-    });
+    // this.events.on(RELAYER_EVENTS.connection_stalled, () => {
+    //   if (this.connected) return;
+    //   this.restartTransport().catch((error) => this.logger.error(error));
+    // });
 
     let lastConnectedState = await isOnline();
     subscribeToNetworkChange(async (connected: boolean) => {
