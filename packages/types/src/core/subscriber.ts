@@ -68,4 +68,9 @@ export abstract class ISubscriber extends IEvents {
   public abstract unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void>;
 
   public abstract isSubscribed(topic: string): Promise<boolean>;
+
+  public abstract start(): Promise<void>;
+  
+  public abstract stop(): Promise<void>;
+  
 }

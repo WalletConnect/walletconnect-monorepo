@@ -160,6 +160,14 @@ export class Subscriber extends ISubscriber {
     this.events.removeListener(event, listener);
   };
 
+  public start: ISubscriber["start"] = async () => {
+    await this.onConnect();
+  };
+
+  public stop: ISubscriber["stop"] = async () => {
+    await this.onDisconnect();
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private hasSubscription(id: string, topic: string) {
@@ -401,9 +409,6 @@ export class Subscriber extends ISubscriber {
   }
 
   private async onConnect() {
-    if (this.restartInProgress) {
-      this.onDisable();
-    }
     await this.restart();
     this.onEnable();
   }
@@ -426,12 +431,12 @@ export class Subscriber extends ISubscriber {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
       await this.checkPending();
     });
-    this.relayer.on(RELAYER_EVENTS.connect, async () => {
-      await this.onConnect();
-    });
-    this.relayer.on(RELAYER_EVENTS.disconnect, () => {
-      this.onDisconnect();
-    });
+    // this.relayer.on(RELAYER_EVENTS.connect, async () => {
+    //   await this.onConnect();
+    // });
+    // this.relayer.on(RELAYER_EVENTS.disconnect, () => {
+    //   this.onDisconnect();
+    // });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
       const eventName = SUBSCRIBER_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);

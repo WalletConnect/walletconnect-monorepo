@@ -283,30 +283,37 @@ export class Relayer extends IRelayer {
     this.transportExplicitlyClosed = false;
     try {
       await Promise.all([
-        new Promise<void>((resolve, reject) => {
-          // if (!this.initialized) resolve();
-          const onSubscribed = () => {
-            console.log("subscriber done", {
-              name: this.core.name,
-              elapsed: Date.now() - start,
-            });
-            this.subscriber.off(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
-            this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
-            resolve();
-          };
-          const onDisconnect = () => {
-            this.subscriber.off(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
-            this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
-            reject(new Error(`Socket stalled when trying to connect to ${this.relayUrl}`));
-          };
-          this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
-          this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
-        }),
+        // new Promise<void>((resolve, reject) => {
+        //   // if (!this.initialized) resolve();
+        //   const onSubscribed = () => {
+        //     console.log("subscriber done", {
+        //       name: this.core.name,
+        //       elapsed: Date.now() - start,
+        //     });
+        //     this.subscriber.off(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
+        //     this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
+        //     resolve();
+        //   };
+        //   const onDisconnect = () => {
+        //     this.subscriber.off(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
+        //     this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
+        //     reject(new Error(`Socket stalled when trying to connect to ${this.relayUrl}`));
+        //   };
+        //   this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
+        //   this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
+        // }),
         new Promise<void>(async (resolve, reject) => {
           console.log("opening socket connection...", {
             name: this.core.name,
             elapsed: Date.now() - start,
           });
+
+          const onDisconnect = () => {
+            this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
+            reject(new Error(`Socket stalled when trying to connect to ${this.relayUrl}`));
+          };
+          this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
+
           await createExpiringPromise(
             this.provider.connect(),
             toMiliseconds(ONE_MINUTE),
@@ -314,7 +321,10 @@ export class Relayer extends IRelayer {
           ).catch((e) => {
             reject(e);
           });
-          console.log("socket connection opened, waiting for subscriber...", {
+
+          await this.subscriber.start();
+
+          console.log("socket connection opened!", {
             name: this.core.name,
             elapsed: Date.now() - start,
           });
@@ -544,7 +554,8 @@ export class Relayer extends IRelayer {
     });
   }
 
-  private onProviderDisconnect() {
+  private async onProviderDisconnect() {
+    await this.subscriber.stop();
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.connectionAttemptInProgress = false;
   }
