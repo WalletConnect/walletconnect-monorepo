@@ -321,12 +321,13 @@ export class Relayer extends IRelayer {
             reject(e);
           });
 
-          console.log("socket connection opened, starting subscriber in 2s...", {
+          console.log("socket connection opened, starting subscriber in 3s...", {
             name: this.core.name,
             elapsed: Date.now() - this.start,
           });
-          await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+          await new Promise<void>((resolve) => setTimeout(resolve, 3000));
           await this.subscriber.start();
+          await new Promise<void>((resolve) => setTimeout(resolve, 1000));
 
           console.log("socket connection opened!", {
             name: this.core.name,
