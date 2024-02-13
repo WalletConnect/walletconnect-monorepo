@@ -88,7 +88,7 @@ export class Relayer extends IRelayer {
     }
   >();
 
-  private pingTimeouts = new Map<number, NodeJS.Timeout>();
+  private pingInterval: NodeJS.Timer | undefined;
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -184,6 +184,7 @@ export class Relayer extends IRelayer {
       promise: requestPromise,
       request,
     });
+
     try {
       const start = Date.now();
       console.log("publishing message..", {
@@ -192,7 +193,6 @@ export class Relayer extends IRelayer {
         topic: request.params?.topic,
         elapsed: Date.now() - start,
       });
-      this.ping(id);
       const res = await requestPromise;
       console.log("message published", {
         id,
@@ -303,6 +303,7 @@ export class Relayer extends IRelayer {
             name: this.core.name,
             elapsed: Date.now() - start,
           });
+          this.startPingInterval();
           this.hasExperiencedNetworkDisruption = false;
           resolve();
         }),
@@ -334,26 +335,52 @@ export class Relayer extends IRelayer {
 
   // ---------- Private ----------------------------------------------- //
 
-  private ping(id: number) {
+  private startPingInterval() {
+    console.log("starting ping interval..", {
+      name: this.core.name,
+    });
+    this.pingInterval = setInterval(() => {
+      console.log("pinging..", {
+        name: this.core.name,
+      });
+      this.ping();
+    }, 20_000);
+  }
+
+  private stopPingInterval() {
+    console.log("stopping ping interval..", {
+      name: this.core.name,
+      requestsInFlight: this.requestsInFlight.size,
+    });
+    clearInterval(this.pingInterval);
+  }
+
+  private ping() {
     // @ts-ignore
     const socket = this.provider?.connection?.socket;
     if (!socket) {
       console.log("socket not found, returning..");
       return;
     }
-    socket.on("pong", () => {
-      console.log("pong received, clearing timeouts", id);
-      const timeout = this.pingTimeouts.get(id);
-      clearTimeout(timeout);
-    });
+
     const timeout = setTimeout(() => {
-      console.log("ping timeouit reached, terminating..", id);
+      console.log("ping timeouit reached, terminating..", {
+        name: this.core.name,
+        requestsInFlight: this.requestsInFlight.size,
+      });
       socket.terminate();
     }, 30_000);
-    this.pingTimeouts.set(id, timeout);
-    console.log("sending ping..", id);
+
+    socket.once("pong", () => {
+      console.log("pong received, clearing timeout", {
+        name: this.core.name,
+      });
+      clearTimeout(timeout);
+    });
     socket.ping(undefined, undefined, () => {
-      console.log("ping sent!", id);
+      console.log("ping sent!", {
+        name: this.core.name,
+      });
     });
   }
 
@@ -453,8 +480,11 @@ export class Relayer extends IRelayer {
   };
 
   private onDisconnectHandler = () => {
-    console.log("onDisconnectHandler");
+    console.log("onDisconnectHandler", {
+      name: this.core.name,
+    });
     this.onProviderDisconnect();
+    this.stopPingInterval();
   };
 
   private onProviderErrorHandler = (error: Error) => {
