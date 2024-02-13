@@ -88,7 +88,7 @@ export class Relayer extends IRelayer {
     }
   >();
 
-  private pingTimeout: NodeJS.Timeout | undefined;
+  private pingTimeouts = new Map<number, NodeJS.Timeout>();
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -192,7 +192,7 @@ export class Relayer extends IRelayer {
         topic: request.params?.topic,
         elapsed: Date.now() - start,
       });
-      this.ping();
+      this.ping(id);
       const res = await requestPromise;
       console.log("message published", {
         id,
@@ -303,7 +303,6 @@ export class Relayer extends IRelayer {
             name: this.core.name,
             elapsed: Date.now() - start,
           });
-          this.ping();
           this.hasExperiencedNetworkDisruption = false;
           resolve();
         }),
@@ -335,7 +334,7 @@ export class Relayer extends IRelayer {
 
   // ---------- Private ----------------------------------------------- //
 
-  private ping() {
+  private ping(id: number) {
     // @ts-ignore
     const socket = this.provider?.connection?.socket;
     if (!socket) {
@@ -343,16 +342,18 @@ export class Relayer extends IRelayer {
       return;
     }
     socket.on("pong", () => {
-      console.log("pong received, clearing timeouts");
-      clearTimeout(this.pingTimeout);
+      console.log("pong received, clearing timeouts", id);
+      const timeout = this.pingTimeouts.get(id);
+      clearTimeout(timeout);
     });
-    this.pingTimeout = setTimeout(() => {
-      console.log("ping timeouit reached, terminating..");
+    const timeout = setTimeout(() => {
+      console.log("ping timeouit reached, terminating..", id);
       socket.terminate();
     }, 30_000);
-    console.log("sending ping..");
+    this.pingTimeouts.set(id, timeout);
+    console.log("sending ping..", id);
     socket.ping(undefined, undefined, () => {
-      console.log("ping sent!");
+      console.log("ping sent!", id);
     });
   }
 
