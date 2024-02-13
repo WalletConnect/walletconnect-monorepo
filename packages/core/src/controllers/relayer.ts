@@ -343,6 +343,11 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
+    console.log("restartTransport called", {
+      name: this.core.name,
+      elapsed: Date.now() - this.start,
+      connectionAttemptInProgress: this.connectionAttemptInProgress,
+    });
     if (this.connectionAttemptInProgress) return;
     this.relayUrl = relayUrl || this.relayUrl;
     await this.confirmOnlineStateOrThrow();
@@ -512,7 +517,13 @@ export class Relayer extends IRelayer {
   private registerProviderListeners = () => {
     this.provider.on(RELAYER_PROVIDER_EVENTS.payload, this.onPayloadHandler);
     this.provider.on(RELAYER_PROVIDER_EVENTS.connect, this.onConnectHandler);
-    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, this.onDisconnectHandler);
+    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
+      console.log("disconnect event received", {
+        name: this.core.name,
+        elapsed: Date.now() - this.start,
+      });
+      this.onDisconnectHandler();
+    });
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, this.onProviderErrorHandler);
   };
 
