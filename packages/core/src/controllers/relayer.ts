@@ -88,7 +88,7 @@ export class Relayer extends IRelayer {
     }
   >();
 
-  private pingInterval: NodeJS.Timer | undefined;
+  private pingTimeout: NodeJS.Timeout | undefined;
   private start = Date.now();
 
   constructor(opts: RelayerOptions) {
@@ -301,7 +301,6 @@ export class Relayer extends IRelayer {
             name: this.core.name,
             elapsed: Date.now() - start,
           });
-          this.startPingInterval();
           this.hasExperiencedNetworkDisruption = false;
           resolve();
         }),
@@ -333,54 +332,25 @@ export class Relayer extends IRelayer {
 
   // ---------- Private ----------------------------------------------- //
 
-  private startPingInterval() {
-    console.log("starting ping interval..", {
+  private startPingTimeout() {
+    console.log("starting ping timeout..", {
       name: this.core.name,
     });
-    this.pingInterval = setInterval(() => {
-      console.log("pinging..", {
-        name: this.core.name,
-      });
-      this.ping();
-    }, 20_000);
+    this.heartbeat();
   }
 
-  private stopPingInterval() {
-    console.log("stopping ping interval..", {
-      name: this.core.name,
-      requestsInFlight: this.requestsInFlight.size,
-    });
-    clearInterval(this.pingInterval);
-  }
+  private heartbeat = () => {
+    clearTimeout(this.pingTimeout);
 
-  private ping() {
-    // @ts-ignore
-    const socket = this.provider?.connection?.socket;
-    if (!socket) {
-      console.log("socket not found, returning..");
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      console.log("ping timeouit reached, terminating..", {
+    this.pingTimeout = setTimeout(() => {
+      console.log("ping timeout reached, terminating..", {
         name: this.core.name,
         requestsInFlight: this.requestsInFlight.size,
       });
-      socket.terminate();
-    }, 30_000);
-
-    socket.once("pong", () => {
-      console.log("pong received, clearing timeout", {
-        name: this.core.name,
-      });
-      clearTimeout(timeout);
-    });
-    socket.ping(undefined, undefined, () => {
-      console.log("ping sent!", {
-        name: this.core.name,
-      });
-    });
-  }
+      //@ts-ignore
+      this.provider?.connection?.socket?.terminate();
+    }, 30000 + 1000);
+  };
 
   private isConnectionStalled(message: string) {
     return this.staleConnectionErrors.some((error) => message.includes(error));
@@ -471,6 +441,7 @@ export class Relayer extends IRelayer {
   // ---------- Events Handlers ----------------------------------------------- //
   private onPayloadHandler = (payload: JsonRpcPayload) => {
     this.onProviderPayload(payload);
+    this.startPingTimeout();
   };
 
   private onConnectHandler = () => {
@@ -478,6 +449,18 @@ export class Relayer extends IRelayer {
       name: this.core.name,
       elapsed: Date.now() - this.start,
     });
+    this.startPingTimeout();
+
+    //@ts-ignore
+    if (this.provider?.connection?.socket) {
+      //@ts-ignore
+      this.provider?.connection?.socket?.on("ping", () => {
+        console.log("ping received, clearing timeout", {
+          name: this.core.name,
+        });
+        this.heartbeat();
+      });
+    }
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
@@ -487,7 +470,6 @@ export class Relayer extends IRelayer {
       elapsed: Date.now() - this.start,
     });
     this.onProviderDisconnect();
-    this.stopPingInterval();
   };
 
   private onProviderErrorHandler = (error: Error) => {
