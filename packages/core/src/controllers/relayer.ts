@@ -56,7 +56,7 @@ import {
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
 import { Subscriber } from "./subscriber";
-import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
+// import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 
 export class Relayer extends IRelayer {
   public protocol = "wc";
@@ -278,7 +278,6 @@ export class Relayer extends IRelayer {
       await this.transportDisconnect();
       await this.createProvider();
     }
-    const start = Date.now();
     this.connectionAttemptInProgress = true;
     this.transportExplicitlyClosed = false;
     try {
@@ -305,7 +304,7 @@ export class Relayer extends IRelayer {
         new Promise<void>(async (resolve, reject) => {
           console.log("opening socket connection...", {
             name: this.core.name,
-            elapsed: Date.now() - start,
+            elapsed: Date.now() - this.start,
           });
 
           const onDisconnect = () => {
@@ -326,7 +325,7 @@ export class Relayer extends IRelayer {
 
           console.log("socket connection opened!", {
             name: this.core.name,
-            elapsed: Date.now() - start,
+            elapsed: Date.now() - this.start,
           });
           this.hasExperiencedNetworkDisruption = false;
           resolve();
@@ -525,12 +524,12 @@ export class Relayer extends IRelayer {
   }
 
   private async registerEventListeners() {
-    this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
-      if (this.transportExplicitlyClosed) return;
-      if (this.hasExperiencedNetworkDisruption || !this.connected) {
-        await this.restartTransport().catch((e) => this.logger.error(e));
-      }
-    });
+    // this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
+    //   if (this.transportExplicitlyClosed) return;
+    //   if (this.hasExperiencedNetworkDisruption || !this.connected) {
+    //     await this.restartTransport().catch((e) => this.logger.error(e));
+    //   }
+    // });
 
     // this.events.on(RELAYER_EVENTS.connection_stalled, () => {
     //   if (this.connected) return;
@@ -558,6 +557,10 @@ export class Relayer extends IRelayer {
     await this.subscriber.stop();
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.connectionAttemptInProgress = false;
+
+    setTimeout(async () => {
+      await this.transportOpen().catch((error) => this.logger.error(error));
+    }, 1000);
   }
 
   private isInitialized() {
