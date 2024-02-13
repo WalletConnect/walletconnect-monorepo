@@ -68,7 +68,6 @@ export async function initTwoPairedClients(
       sessionA = settled.sessionA;
     } catch (e) {
       console.error("Error initTwoPairedClients, attempts: ", retries, e);
-      if (clients) await deleteClients(clients);
     }
     retries++;
   }

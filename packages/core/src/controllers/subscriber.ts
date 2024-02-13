@@ -231,10 +231,6 @@ export class Subscriber extends ISubscriber {
 
   private async rpcBatchSubscribe(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
-    console.log("rpcBatchSubscribe sent", {
-      name: this.name,
-      subscriptions: subscriptions.length,
-    });
     const relay = subscriptions[0].relay;
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.BatchSubscribeParams> = {
@@ -246,11 +242,19 @@ export class Subscriber extends ISubscriber {
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
+      console.log("rpcBatchSubscribe sending..", {
+        name: this.relayer.core.name,
+        subscriptions: subscriptions.length,
+      });
       const subscribe = await createExpiringPromise(
         this.relayer.request(request).catch((e) => this.logger.error(e)),
         this.subscribeTimeout,
       );
       const result = await subscribe;
+      console.log("rpcBatchSubscribe sent!", {
+        name: this.relayer.core.name,
+        subscriptions: subscriptions.length,
+      });
       return result;
     } catch (err) {
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);

@@ -253,7 +253,7 @@ export class Relayer extends IRelayer {
 
           const onSubscribed = () => {
             console.log("subscriber done", {
-              name: this.name,
+              name: this.core.name,
               elapsed: Date.now() - start,
             });
             this.subscriber.off(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
@@ -271,7 +271,7 @@ export class Relayer extends IRelayer {
         }),
         new Promise<void>(async (resolve, reject) => {
           console.log("opening socket connection...", {
-            name: this.name,
+            name: this.core.name,
             elapsed: Date.now() - start,
           });
           await createExpiringPromise(
@@ -282,7 +282,7 @@ export class Relayer extends IRelayer {
             reject(e);
           });
           console.log("socket connection opened, waiting for subscriber...", {
-            name: this.name,
+            name: this.core.name,
             elapsed: Date.now() - start,
           });
           this.hasExperiencedNetworkDisruption = false;
