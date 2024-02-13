@@ -243,7 +243,7 @@ export class Relayer extends IRelayer {
       await this.transportDisconnect();
       await this.createProvider();
     }
-
+    const start = Date.now();
     this.connectionAttemptInProgress = true;
     this.transportExplicitlyClosed = false;
     try {
@@ -252,6 +252,10 @@ export class Relayer extends IRelayer {
           if (!this.initialized) resolve();
 
           const onSubscribed = () => {
+            console.log("subscriber done", {
+              name: this.name,
+              elapsed: Date.now() - start,
+            });
             this.subscriber.off(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
             this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
             resolve();
@@ -266,12 +270,20 @@ export class Relayer extends IRelayer {
           this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
         }),
         new Promise<void>(async (resolve, reject) => {
+          console.log("opening socket connection...", {
+            name: this.name,
+            elapsed: Date.now() - start,
+          });
           await createExpiringPromise(
             this.provider.connect(),
             toMiliseconds(ONE_MINUTE),
             `Socket stalled when trying to connect to ${this.relayUrl}`,
           ).catch((e) => {
             reject(e);
+          });
+          console.log("socket connection opened, waiting for subscriber...", {
+            name: this.name,
+            elapsed: Date.now() - start,
           });
           this.hasExperiencedNetworkDisruption = false;
           resolve();
