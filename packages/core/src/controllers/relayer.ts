@@ -268,7 +268,7 @@ export class Relayer extends IRelayer {
         new Promise<void>(async (resolve, reject) => {
           await createExpiringPromise(
             this.provider.connect(),
-            toMiliseconds(ONE_MINUTE / 2),
+            toMiliseconds(ONE_MINUTE),
             `Socket stalled when trying to connect to ${this.relayUrl}`,
           ).catch((e) => {
             reject(e);
