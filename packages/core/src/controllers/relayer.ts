@@ -89,6 +89,7 @@ export class Relayer extends IRelayer {
   >();
 
   private pingInterval: NodeJS.Timer | undefined;
+  private start = Date.now();
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -184,21 +185,20 @@ export class Relayer extends IRelayer {
       promise: requestPromise,
       request,
     });
-
+    const reqStart = Date.now();
     try {
-      const start = Date.now();
       console.log("publishing message..", {
         id,
         method: request.method,
         topic: request.params?.topic,
-        elapsed: Date.now() - start,
+        elapsed: Date.now() - reqStart,
       });
       const res = await requestPromise;
       console.log("message published", {
         id,
         method: request.method,
         topic: request.params?.topic,
-        elapsed: Date.now() - start,
+        elapsed: Date.now() - reqStart,
       });
       return res;
     } catch (e) {
@@ -474,12 +474,17 @@ export class Relayer extends IRelayer {
   };
 
   private onConnectHandler = () => {
+    console.log("onConnectHandler", {
+      name: this.core.name,
+      elapsed: Date.now() - this.start,
+    });
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
   private onDisconnectHandler = () => {
     console.log("onDisconnectHandler", {
       name: this.core.name,
+      elapsed: Date.now() - this.start,
     });
     this.onProviderDisconnect();
     this.stopPingInterval();
