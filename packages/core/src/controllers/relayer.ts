@@ -38,6 +38,7 @@ import {
   subscribeToNetworkChange,
   getBundleId,
   getInternalError,
+  isNode,
 } from "@walletconnect/utils";
 
 import {
@@ -193,14 +194,30 @@ export class Relayer extends IRelayer {
         topic: request.params?.topic,
         elapsed: Date.now() - reqStart,
       });
-      const res = await requestPromise;
+
+      const result = await new Promise(async (resolve, reject) => {
+        const onDisconnect = () => {
+          console.log("socket stalled", {
+            id,
+            method: request.method,
+            topic: request.params?.topic,
+            elapsed: Date.now() - reqStart,
+          });
+          reject(new Error(`Socket stalled - ${id}`));
+        };
+        this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
+        const res = await requestPromise;
+        this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
+        resolve(res);
+      });
+
       console.log("message published", {
         id,
         method: request.method,
         topic: request.params?.topic,
         elapsed: Date.now() - reqStart,
       });
-      return res;
+      return result as any;
     } catch (e) {
       this.logger.debug(`Failed to Publish Request`);
       this.logger.error(e as any);
@@ -333,9 +350,22 @@ export class Relayer extends IRelayer {
   // ---------- Private ----------------------------------------------- //
 
   private startPingTimeout() {
+    if (!isNode()) return;
     console.log("starting ping timeout..", {
       name: this.core.name,
     });
+
+    //@ts-ignore
+    if (this.provider?.connection?.socket) {
+      //@ts-ignore
+      this.provider?.connection?.socket?.on("ping", () => {
+        console.log("ping received, clearing timeout", {
+          name: this.core.name,
+        });
+        this.heartbeat();
+      });
+    }
+
     this.heartbeat();
   }
 
@@ -450,17 +480,6 @@ export class Relayer extends IRelayer {
       elapsed: Date.now() - this.start,
     });
     this.startPingTimeout();
-
-    //@ts-ignore
-    if (this.provider?.connection?.socket) {
-      //@ts-ignore
-      this.provider?.connection?.socket?.on("ping", () => {
-        console.log("ping received, clearing timeout", {
-          name: this.core.name,
-        });
-        this.heartbeat();
-      });
-    }
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
