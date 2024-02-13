@@ -267,8 +267,7 @@ export class Relayer extends IRelayer {
     try {
       await Promise.all([
         new Promise<void>((resolve, reject) => {
-          if (!this.initialized) resolve();
-
+          // if (!this.initialized) resolve();
           const onSubscribed = () => {
             console.log("subscriber done", {
               name: this.core.name,
@@ -291,7 +290,6 @@ export class Relayer extends IRelayer {
             name: this.core.name,
             elapsed: Date.now() - start,
           });
-
           await createExpiringPromise(
             this.provider.connect(),
             toMiliseconds(ONE_MINUTE),
