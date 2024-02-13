@@ -229,12 +229,13 @@ export class Subscriber extends ISubscriber {
         this.relayer.request(request).catch((e) => this.logger.error(e)),
         this.subscribeTimeout,
       );
-      await subscribe;
+      const result = await subscribe;
+      return result ? hashMessage(topic + this.clientId) : "";
     } catch (err) {
       this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
     }
-    return hashMessage(topic + this.clientId);
+    return "";
   }
 
   private async rpcBatchSubscribe(subscriptions: SubscriberTypes.Params[]) {
@@ -287,6 +288,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private onSubscribe(id: string, params: SubscriberTypes.Params) {
+    if (!id) return;
     this.setSubscription(id, { ...params, id });
     this.pending.delete(params.topic);
   }
