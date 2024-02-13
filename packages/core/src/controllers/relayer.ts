@@ -56,6 +56,7 @@ import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
 import { Subscriber } from "./subscriber";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
+
 export class Relayer extends IRelayer {
   public protocol = "wc";
   public version = 2;
@@ -86,6 +87,8 @@ export class Relayer extends IRelayer {
       request: RequestArguments<RelayJsonRpc.SubscribeParams>;
     }
   >();
+
+  private pingTimeout: NodeJS.Timeout | undefined;
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -189,6 +192,7 @@ export class Relayer extends IRelayer {
         topic: request.params?.topic,
         elapsed: Date.now() - start,
       });
+      this.ping();
       const res = await requestPromise;
       console.log("message published", {
         id,
@@ -279,7 +283,6 @@ export class Relayer extends IRelayer {
             this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
             reject(new Error(`Socket stalled when trying to connect to ${this.relayUrl}`));
           };
-
           this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
           this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
         }),
@@ -288,6 +291,7 @@ export class Relayer extends IRelayer {
             name: this.core.name,
             elapsed: Date.now() - start,
           });
+
           await createExpiringPromise(
             this.provider.connect(),
             toMiliseconds(ONE_MINUTE),
@@ -299,6 +303,7 @@ export class Relayer extends IRelayer {
             name: this.core.name,
             elapsed: Date.now() - start,
           });
+          this.ping();
           this.hasExperiencedNetworkDisruption = false;
           resolve();
         }),
@@ -329,6 +334,27 @@ export class Relayer extends IRelayer {
   }
 
   // ---------- Private ----------------------------------------------- //
+
+  private ping() {
+    // @ts-ignore
+    const socket = this.provider?.connection?.socket;
+    if (!socket) {
+      console.log("socket not found, returning..");
+      return;
+    }
+    socket.on("pong", () => {
+      console.log("pong received, clearing timeouts");
+      clearTimeout(this.pingTimeout);
+    });
+    this.pingTimeout = setTimeout(() => {
+      console.log("ping timeouit reached, terminating..");
+      socket.terminate();
+    }, 30_000);
+    console.log("sending ping..");
+    socket.ping(undefined, undefined, () => {
+      console.log("ping sent!");
+    });
+  }
 
   private isConnectionStalled(message: string) {
     return this.staleConnectionErrors.some((error) => message.includes(error));
@@ -426,6 +452,7 @@ export class Relayer extends IRelayer {
   };
 
   private onDisconnectHandler = () => {
+    console.log("onDisconnectHandler");
     this.onProviderDisconnect();
   };
 
