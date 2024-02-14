@@ -325,9 +325,25 @@ export class Relayer extends IRelayer {
             name: this.core.name,
             elapsed: Date.now() - this.start,
           });
-          await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+          await new Promise<void>((resolve) => setTimeout(resolve, 500));
+
+          await new Promise<void>((resolve) => {
+            //@ts-ignore
+            this.provider.connection?.socket?.once("pong", () => {
+              console.log("pong received, starting subscriber..", {
+                name: this.core.name,
+                elapsed: Date.now() - this.start,
+              });
+              resolve();
+            });
+            console.log("pinging socket..", {
+              name: this.core.name,
+              elapsed: Date.now() - this.start,
+            });
+            //@ts-ignore
+            this.provider.connection?.socket?.ping();
+          });
           await this.subscriber.start();
-          await new Promise<void>((resolve) => setTimeout(resolve, 1000));
 
           console.log("socket connection opened!", {
             name: this.core.name,
