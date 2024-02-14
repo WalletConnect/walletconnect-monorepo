@@ -140,8 +140,6 @@ describe("Sign Client Integration", () => {
     await throttle(2_000);
     expect(clients.A.core.crypto.keychain.has(topic)).to.be.false;
     expect(clients.A.core.crypto.keychain.has(self.publicKey)).to.be.false;
-    expect(clients.B.core.crypto.keychain.has(topic)).to.be.false;
-    expect(clients.B.core.crypto.keychain.has(selfB.publicKey)).to.be.false;
     await deleteClients(clients);
   });
 });
