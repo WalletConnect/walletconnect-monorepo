@@ -263,6 +263,8 @@ export class Relayer extends IRelayer {
       await createExpiringPromise(this.provider.disconnect(), 2000, "provider.disconnect()").catch(
         () => this.onProviderDisconnect(),
       );
+    } else {
+      this.onProviderDisconnect();
     }
   }
 
@@ -355,7 +357,7 @@ export class Relayer extends IRelayer {
     }
     this.relayUrl = relayUrl || this.relayUrl;
     await this.confirmOnlineStateOrThrow();
-    await this.transportDisconnect();
+    await this.transportClose();
     await this.createProvider();
     await this.transportOpen();
   }
@@ -488,7 +490,7 @@ export class Relayer extends IRelayer {
   // ---------- Events Handlers ----------------------------------------------- //
   private onPayloadHandler = (payload: JsonRpcPayload) => {
     this.onProviderPayload(payload);
-    this.startPingTimeout();
+    this.heartbeat();
   };
 
   private onConnectHandler = () => {
@@ -571,9 +573,14 @@ export class Relayer extends IRelayer {
     await this.subscriber.stop();
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.connectionAttemptInProgress = false;
-
+    if (this.transportExplicitlyClosed) {
+      console.log("transport explicitly closed, ignoring disconnect event", {
+        name: this.core.name,
+      });
+      return;
+    }
     setTimeout(async () => {
-      await this.restartTransport().catch((error) => this.logger.error(error));
+      await this.transportOpen().catch((error) => this.logger.error(error));
     }, 1000);
   }
 
