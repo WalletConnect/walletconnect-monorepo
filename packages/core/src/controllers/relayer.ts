@@ -346,7 +346,13 @@ export class Relayer extends IRelayer {
       elapsed: Date.now() - this.start,
       connectionAttemptInProgress: this.connectionAttemptInProgress,
     });
-    if (this.connectionAttemptInProgress) return;
+    if (this.connectionAttemptInProgress) {
+      console.log("connection attempt in progress, ignoring restart request", {
+        name: this.core.name,
+        elapsed: Date.now() - this.start,
+      });
+      return;
+    }
     this.relayUrl = relayUrl || this.relayUrl;
     await this.confirmOnlineStateOrThrow();
     await this.transportDisconnect();
@@ -567,7 +573,7 @@ export class Relayer extends IRelayer {
     this.connectionAttemptInProgress = false;
 
     setTimeout(async () => {
-      await this.transportOpen().catch((error) => this.logger.error(error));
+      await this.restartTransport().catch((error) => this.logger.error(error));
     }, 1000);
   }
 
