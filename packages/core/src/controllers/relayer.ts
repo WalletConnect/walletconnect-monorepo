@@ -38,7 +38,6 @@ import {
   subscribeToNetworkChange,
   getBundleId,
   getInternalError,
-  isNode,
 } from "@walletconnect/utils";
 
 import {
@@ -89,7 +88,6 @@ export class Relayer extends IRelayer {
     }
   >();
 
-  private pingTimeout: NodeJS.Timeout | undefined;
   private start = Date.now();
 
   constructor(opts: RelayerOptions) {
@@ -325,10 +323,7 @@ export class Relayer extends IRelayer {
             name: this.core.name,
             elapsed: Date.now() - this.start,
           });
-          await new Promise<void>((resolve) => setTimeout(resolve, 500));
-
           await this.subscriber.start();
-
           console.log("socket connection opened!", {
             name: this.core.name,
             elapsed: Date.now() - this.start,
@@ -368,39 +363,6 @@ export class Relayer extends IRelayer {
   }
 
   // ---------- Private ----------------------------------------------- //
-
-  private startPingTimeout() {
-    if (!isNode()) return;
-    console.log("starting ping timeout..", {
-      name: this.core.name,
-    });
-
-    //@ts-ignore
-    if (this.provider?.connection?.socket) {
-      //@ts-ignore
-      this.provider?.connection?.socket?.on("ping", () => {
-        console.log("ping received, clearing timeout", {
-          name: this.core.name,
-        });
-        this.heartbeat();
-      });
-    }
-    this.heartbeat();
-  }
-
-  private heartbeat = () => {
-    clearTimeout(this.pingTimeout);
-
-    this.pingTimeout = setTimeout(() => {
-      console.log("ping timeout reached, terminating..", {
-        name: this.core.name,
-        requestsInFlight: this.requestsInFlight.size,
-      });
-      //@ts-ignore
-      this.provider?.connection?.socket?.terminate();
-    }, 30000 + 1000);
-  };
-
   private isConnectionStalled(message: string) {
     return this.staleConnectionErrors.some((error) => message.includes(error));
   }
@@ -490,7 +452,6 @@ export class Relayer extends IRelayer {
   // ---------- Events Handlers ----------------------------------------------- //
   private onPayloadHandler = (payload: JsonRpcPayload) => {
     this.onProviderPayload(payload);
-    this.startPingTimeout();
   };
 
   private onConnectHandler = () => {
@@ -498,7 +459,6 @@ export class Relayer extends IRelayer {
       name: this.core.name,
       elapsed: Date.now() - this.start,
     });
-    this.startPingTimeout();
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
