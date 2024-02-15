@@ -1,14 +1,7 @@
 /* eslint-disable no-console */
-import { PairingTypes, SessionTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
-import { expect, describe, it, afterAll, beforeAll } from "vitest";
-import {
-  testConnectMethod,
-  deleteClients,
-  Clients,
-  initTwoPairedClients,
-  throttle,
-} from "../../shared";
+import { expect, describe, it } from "vitest";
+import { deleteClients, initTwoPairedClients } from "../../shared";
 
 describe("Sign Client Integration", () => {
   it("should connect, ping, restart transport, ping & disconnect", async () => {

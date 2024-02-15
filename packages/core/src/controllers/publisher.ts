@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
@@ -14,7 +13,7 @@ import { EventEmitter } from "events";
 
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
 import { getBigIntRpcId } from "@walletconnect/jsonrpc-utils";
-import { ONE_MINUTE, toMiliseconds } from "@walletconnect/time";
+import { ONE_MINUTE, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
@@ -22,6 +21,7 @@ export class Publisher extends IPublisher {
   public queue = new Map<string, PublisherTypes.Params>();
 
   private publishTimeout = toMiliseconds(ONE_MINUTE);
+  private failedPublishTimeout = toMiliseconds(ONE_SECOND);
   private needsTransportRestart = false;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
@@ -38,61 +38,57 @@ export class Publisher extends IPublisher {
   public publish: IPublisher["publish"] = async (topic, message, opts) => {
     this.logger.debug(`Publishing Payload`);
     this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
+
+    const ttl = opts?.ttl || PUBLISHER_DEFAULT_TTL;
+    const relay = getRelayProtocolName(opts);
+    const prompt = opts?.prompt || false;
+    const tag = opts?.tag || 0;
+    const id = opts?.id || (getBigIntRpcId().toString() as any);
+    const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
+    const failedPublishMessage = `Failed to publish payload, please try again. id:${id} tag:${tag}`;
+    const startPublish = Date.now();
+    let result;
+    let attempts = 1;
+
     try {
-      const ttl = opts?.ttl || PUBLISHER_DEFAULT_TTL;
-      const relay = getRelayProtocolName(opts);
-      const prompt = opts?.prompt || false;
-      const tag = opts?.tag || 0;
-      const id = opts?.id || (getBigIntRpcId().toString() as any);
-      const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
-      const startPublish = Date.now();
-      let result;
-      let attempts = 1;
-      // try {
-      while (Date.now() - startPublish < this.publishTimeout && !result) {
-        console.log("attempt to publish...", {
-          name: this.relayer.core.name,
-          elapsed: Date.now() - startPublish,
-          attempts,
-          id,
-        });
+      /**
+       * Loop until the publish is successful or the timeout is reached
+       * The loop allows to retry to retry the publish in case of disconnect
+       */
+      while (result === undefined) {
+        if (Date.now() - startPublish > this.publishTimeout) {
+          throw new Error(failedPublishMessage);
+        }
+        this.logger.trace({ id, attempts }, "publisher.publish - attempt");
         const publish = await createExpiringPromise(
           this.rpcPublish(topic, message, ttl, relay, prompt, tag, id).catch((e) =>
-            console.error("@publisher publish error", e),
+            this.logger.warn(e),
           ),
           this.publishTimeout,
-          `Failed to publish payload, please try again. id:${id} tag:${tag}`,
+          failedPublishMessage,
         );
         result = await publish;
-        if (!result) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        } else {
-          console.log("publish done", {
-            name: this.relayer.core.name,
-            elapsed: Date.now() - startPublish,
-            attempts,
-            id,
-          });
-        }
         attempts++;
-      }
 
-      if (!result) {
-        throw new Error(`Failed to publish payload, please try again. id:${id} tag:${tag}`);
+        if (!result) {
+          // small buffer to allow transport to beging reconnecting
+          await new Promise((resolve) => setTimeout(resolve, this.failedPublishTimeout));
+        }
       }
       this.relayer.events.emit(RELAYER_EVENTS.publish, params);
-      // } catch (err) {
-      //   this.logger.debug(`Publishing Payload stalled`);
-      //   if (opts?.internal?.throwOnFailedPublish) {
-      //     throw err;
-      //   }
-      // }
       this.logger.debug(`Successfully Published Payload`);
-      this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
+      this.logger.trace({
+        type: "method",
+        method: "publish",
+        params: { id, topic, message, opts },
+      });
     } catch (e) {
       this.logger.debug(`Failed to Publish Payload`);
       this.logger.error(e as any);
-      throw e;
+      if (opts?.internal?.throwOnFailedPublish) {
+        throw e;
+      }
+      this.queue.set(id, params);
     }
   };
 

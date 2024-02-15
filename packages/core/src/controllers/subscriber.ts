@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
@@ -251,23 +250,11 @@ export class Subscriber extends ISubscriber {
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
-      const start = Date.now();
-      console.log("rpcBatchSubscribe sending..", {
-        name: this.relayer.core.name,
-        subscriptions: subscriptions.length,
-        elapsed: Date.now() - start,
-      });
       const subscribe = await createExpiringPromise(
         this.relayer.request(request).catch((e) => this.logger.error(e)),
         this.subscribeTimeout,
       );
-      const result = await subscribe;
-      console.log("rpcBatchSubscribe sent!", {
-        name: this.relayer.core.name,
-        subscriptions: subscriptions.length,
-        elapsed: Date.now() - start,
-      });
-      return result;
+      return await subscribe;
     } catch (err) {
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
     }

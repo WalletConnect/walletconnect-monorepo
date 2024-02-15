@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
@@ -20,7 +19,7 @@ import {
   Logger,
 } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { ONE_MINUTE, toMiliseconds } from "@walletconnect/time";
+import { ONE_MINUTE, ONE_SECOND, THIRTY_SECONDS, toMiliseconds } from "@walletconnect/time";
 import {
   ICore,
   IMessageTracker,
@@ -51,12 +50,10 @@ import {
   RELAYER_DEFAULT_RELAY_URL,
   RELAYER_FAILOVER_RELAY_URL,
   SUBSCRIBER_EVENTS,
-  // RELAYER_TRANSPORT_CUTOFF,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
 import { Subscriber } from "./subscriber";
-// import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 
 export class Relayer extends IRelayer {
   public protocol = "wc";
@@ -79,7 +76,7 @@ export class Relayer extends IRelayer {
   private projectId: string | undefined;
   private bundleId: string | undefined;
   private connectionStatusPollingInterval = 20;
-  private staleConnectionErrors = ["socket hang up", "socket stalled"];
+  private staleConnectionErrors = ["socket hang up", "socket stalled", "interrupted"];
   private hasExperiencedNetworkDisruption = false;
   private requestsInFlight = new Map<
     number,
@@ -90,6 +87,7 @@ export class Relayer extends IRelayer {
   >();
 
   private pingTimeout: NodeJS.Timeout | undefined;
+  private heartBeatTimeout = toMiliseconds(THIRTY_SECONDS + ONE_SECOND);
   private start = Date.now();
 
   constructor(opts: RelayerOptions) {
@@ -180,47 +178,44 @@ export class Relayer extends IRelayer {
     this.logger.debug(`Publishing Request Payload`);
     await this.toEstablishConnection();
     const id = request.id || (getBigIntRpcId().toString() as any);
-
     const requestPromise = this.provider.request(request);
     this.requestsInFlight.set(id, {
       promise: requestPromise,
       request,
     });
-    const reqStart = Date.now();
     try {
-      console.log("publishing message..", {
-        id,
-        method: request.method,
-        topic: request.params?.topic,
-        elapsed: Date.now() - reqStart,
-      });
+      this.logger.trace(
+        {
+          id,
+          method: request.method,
+          topic: request.params?.topic,
+        },
+        "relayer.request - attempt to publish...",
+      );
 
+      /**
+       * During publish, we must listen for any disconnect event and reject the promise, else the publish would hang indefinitely
+       */
       const result = await new Promise(async (resolve, reject) => {
         const onDisconnect = () => {
-          console.log("socket stalled", {
-            id,
-            method: request.method,
-            topic: request.params?.topic,
-            elapsed: Date.now() - reqStart,
-          });
-          reject(new Error(`Socket stalled - ${id}`));
+          reject(new Error(`relayer.request - publish interrupted, id: ${id}`));
         };
         this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
         const res = await requestPromise;
         this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
         resolve(res);
       });
-
-      console.log("message published", {
-        id,
-        method: request.method,
-        topic: request.params?.topic,
-        elapsed: Date.now() - reqStart,
-      });
-      return result as any;
+      this.logger.trace(
+        {
+          id,
+          method: request.method,
+          topic: request.params?.topic,
+        },
+        "relayer.request - published",
+      );
+      return result as JsonRpcPayload;
     } catch (e) {
-      this.logger.debug(`Failed to Publish Request`);
-      this.logger.error(e as any);
+      this.logger.debug(`Failed to Publish Request: ${id}`);
       throw e;
     } finally {
       this.requestsInFlight.delete(id);
@@ -283,54 +278,24 @@ export class Relayer extends IRelayer {
     this.connectionAttemptInProgress = true;
     this.transportExplicitlyClosed = false;
     try {
-      await Promise.all([
-        // new Promise<void>((resolve, reject) => {
-        //   // if (!this.initialized) resolve();
-        //   const onSubscribed = () => {
-        //     console.log("subscriber done", {
-        //       name: this.core.name,
-        //       elapsed: Date.now() - start,
-        //     });
-        //     this.subscriber.off(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
-        //     this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
-        //     resolve();
-        //   };
-        //   const onDisconnect = () => {
-        //     this.subscriber.off(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
-        //     this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
-        //     reject(new Error(`Socket stalled when trying to connect to ${this.relayUrl}`));
-        //   };
-        //   this.subscriber.once(SUBSCRIBER_EVENTS.resubscribed, onSubscribed);
-        //   this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
-        // }),
-        new Promise<void>(async (resolve, reject) => {
-          console.log("opening socket connection...", {
-            name: this.core.name,
-            elapsed: Date.now() - this.start,
-          });
+      await new Promise<void>(async (resolve, reject) => {
+        const onDisconnect = () => {
+          this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
+          reject(new Error(`Connection interrupted while trying to subscribe`));
+        };
+        this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
 
-          const onDisconnect = () => {
-            this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
-            reject(new Error(`Socket stalled when trying to connect to ${this.relayUrl}`));
-          };
-          this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
-
-          await createExpiringPromise(
-            this.provider.connect(),
-            toMiliseconds(ONE_MINUTE),
-            `Socket stalled when trying to connect to ${this.relayUrl}`,
-          ).catch((e) => {
-            reject(e);
-          });
-          await this.subscriber.start();
-          console.log("socket connection opened!", {
-            name: this.core.name,
-            elapsed: Date.now() - this.start,
-          });
-          this.hasExperiencedNetworkDisruption = false;
-          resolve();
-        }),
-      ]);
+        await createExpiringPromise(
+          this.provider.connect(),
+          toMiliseconds(ONE_MINUTE),
+          `Socket stalled when trying to connect to ${this.relayUrl}`,
+        ).catch((e) => {
+          reject(e);
+        });
+        await this.subscriber.start();
+        this.hasExperiencedNetworkDisruption = false;
+        resolve();
+      });
     } catch (e) {
       this.logger.error(e);
       const error = e as Error;
@@ -343,18 +308,7 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
-    console.log("restartTransport called", {
-      name: this.core.name,
-      elapsed: Date.now() - this.start,
-      connectionAttemptInProgress: this.connectionAttemptInProgress,
-    });
-    if (this.connectionAttemptInProgress) {
-      console.log("connection attempt in progress, ignoring restart request", {
-        name: this.core.name,
-        elapsed: Date.now() - this.start,
-      });
-      return;
-    }
+    if (this.connectionAttemptInProgress) return;
     this.relayUrl = relayUrl || this.relayUrl;
     await this.confirmOnlineStateOrThrow();
     await this.transportClose();
@@ -368,37 +322,40 @@ export class Relayer extends IRelayer {
   }
 
   // ---------- Private ----------------------------------------------- //
-
+  /*
+   * In Node, we must detect when the connection is stalled and terminate it.
+   * The logic is, if we don't receive ping from the relay within a certain time, we terminate the connection.
+   * The timer is refreshed on every message received from the relay.
+   *
+   * In the browser, ping/pong events are not exposed, so the above behaviour is handled by `subscribeToNetworkChange` and `isOnline` functions.
+   */
   private startPingTimeout() {
     if (!isNode()) return;
-    console.log("starting ping timeout..", {
-      name: this.core.name,
-    });
-
-    //@ts-ignore
-    if (this.provider?.connection?.socket) {
+    try {
       //@ts-ignore
-      this.provider?.connection?.socket?.once("ping", () => {
-        console.log("ping received, clearing timeout", {
-          name: this.core.name,
+      if (this.provider?.connection?.socket) {
+        //@ts-ignore
+        this.provider?.connection?.socket?.once("ping", () => {
+          this.heartbeat();
         });
-        this.heartbeat();
-      });
+      }
+      this.heartbeat();
+    } catch (e) {
+      this.logger.warn(e);
     }
-    this.heartbeat();
   }
 
   private heartbeat = () => {
-    clearTimeout(this.pingTimeout);
-
-    this.pingTimeout = setTimeout(() => {
-      console.log("ping timeout reached, terminating..", {
-        name: this.core.name,
-        requestsInFlight: this.requestsInFlight.size,
-      });
-      //@ts-ignore
-      this.provider?.connection?.socket?.terminate();
-    }, 30000 + 1000);
+    if (!isNode()) return;
+    try {
+      clearTimeout(this.pingTimeout);
+      this.pingTimeout = setTimeout(() => {
+        //@ts-ignore
+        this.provider?.connection?.socket?.terminate();
+      }, this.heartBeatTimeout);
+    } catch (e) {
+      this.logger.warn(e);
+    }
   };
 
   private isConnectionStalled(message: string) {
@@ -494,19 +451,11 @@ export class Relayer extends IRelayer {
   };
 
   private onConnectHandler = () => {
-    console.log("onConnectHandler", {
-      name: this.core.name,
-      elapsed: Date.now() - this.start,
-    });
     this.startPingTimeout();
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
   private onDisconnectHandler = () => {
-    console.log("onDisconnectHandler", {
-      name: this.core.name,
-      elapsed: Date.now() - this.start,
-    });
     this.onProviderDisconnect();
   };
 
@@ -522,13 +471,7 @@ export class Relayer extends IRelayer {
   private registerProviderListeners = () => {
     this.provider.on(RELAYER_PROVIDER_EVENTS.payload, this.onPayloadHandler);
     this.provider.on(RELAYER_PROVIDER_EVENTS.connect, this.onConnectHandler);
-    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, () => {
-      console.log("disconnect event received", {
-        name: this.core.name,
-        elapsed: Date.now() - this.start,
-      });
-      this.onDisconnectHandler();
-    });
+    this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, this.onDisconnectHandler);
     this.provider.on(RELAYER_PROVIDER_EVENTS.error, this.onProviderErrorHandler);
   };
 
@@ -540,18 +483,6 @@ export class Relayer extends IRelayer {
   }
 
   private async registerEventListeners() {
-    // this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
-    //   if (this.transportExplicitlyClosed) return;
-    //   if (this.hasExperiencedNetworkDisruption || !this.connected) {
-    //     await this.restartTransport().catch((e) => this.logger.error(e));
-    //   }
-    // });
-
-    // this.events.on(RELAYER_EVENTS.connection_stalled, () => {
-    //   if (this.connected) return;
-    //   this.restartTransport().catch((error) => this.logger.error(error));
-    // });
-
     let lastConnectedState = await isOnline();
     subscribeToNetworkChange(async (connected: boolean) => {
       // sometimes the network change event is triggered multiple times so avoid reacting to the samFe value
@@ -573,15 +504,11 @@ export class Relayer extends IRelayer {
     await this.subscriber.stop();
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.connectionAttemptInProgress = false;
-    if (this.transportExplicitlyClosed) {
-      console.log("transport explicitly closed, ignoring disconnect event", {
-        name: this.core.name,
-      });
-      return;
-    }
+    if (this.transportExplicitlyClosed) return;
+
     setTimeout(async () => {
       await this.transportOpen().catch((error) => this.logger.error(error));
-    }, 1000);
+    }, 1_000);
   }
 
   private isInitialized() {

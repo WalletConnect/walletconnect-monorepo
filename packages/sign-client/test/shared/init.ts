@@ -47,7 +47,6 @@ export async function initTwoPairedClients(
   let pairingA;
   let sessionA;
   let retries = 0;
-  console.log("initTwoPairedClients start");
   while (!pairingA) {
     if (retries > TESTS_CONNECT_RETRIES) {
       throw new Error("Could not pair clients");
@@ -57,13 +56,10 @@ export async function initTwoPairedClients(
         initTwoClients(clientOptsA, clientOptsB, sharedClientOpts),
         TESTS_CONNECT_TIMEOUT,
       )) as Clients;
-      console.log("initTwoPairedClients clients created");
-      console.log("initTwoPairedClients testConnectMethod start");
       const settled: any = await createExpiringPromise(
         testConnectMethod(clients),
         TESTS_CONNECT_TIMEOUT * 2,
       );
-      console.log("initTwoPairedClients testConnectMethod done");
       pairingA = settled.pairingA;
       sessionA = settled.sessionA;
     } catch (e) {
