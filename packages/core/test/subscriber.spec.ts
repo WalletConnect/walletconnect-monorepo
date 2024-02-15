@@ -117,7 +117,7 @@ describe("Subscriber", () => {
     let messageDeleteSpy: Sinon.SinonSpy;
 
     beforeEach(() => {
-      requestSpy = Sinon.spy();
+      requestSpy = Sinon.spy(() => "test-id");
       messageDeleteSpy = Sinon.spy();
       topic = generateRandomBytes32();
       subscriber.relayer.provider.request = requestSpy;

@@ -215,10 +215,10 @@ export class Subscriber extends ISubscriber {
 
   private async rpcSubscribe(topic: string, relay: RelayerTypes.ProtocolOptions) {
     const api = getRelayProtocolApi(relay.protocol);
-    const request: RequestArguments<RelayJsonRpc.BatchSubscribeParams> = {
-      method: api.batchSubscribe,
+    const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
+      method: api.subscribe,
       params: {
-        topics: [topic],
+        topic,
       },
     };
     this.logger.debug(`Outgoing Relay Payload`);
