@@ -88,7 +88,6 @@ export class Relayer extends IRelayer {
 
   private pingTimeout: NodeJS.Timeout | undefined;
   private heartBeatTimeout = toMiliseconds(THIRTY_SECONDS + ONE_SECOND);
-  private start = Date.now();
 
   constructor(opts: RelayerOptions) {
     super(opts);
