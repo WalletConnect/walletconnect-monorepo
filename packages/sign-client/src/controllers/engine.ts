@@ -993,6 +993,7 @@ export class Engine extends IEngine {
     // set the requestQueue state to idle if expirer has deleted a request as trying to respond to it would result in an exception
     if (expirerHasDeleted) {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
+      this.client.events.emit("session_request_expire", { id });
     }
   };
 
