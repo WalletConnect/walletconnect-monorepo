@@ -691,9 +691,8 @@ export class Engine extends IEngine {
         const valid = await verifySignature(walletAddress, reconstructed, signature);
 
         console.log("@dapp valid", valid ? "✅" : "🛑", valid);
-        const recaps = payload.resources?.filter(
-          (resource) => resource?.includes("urn:recap:") || [],
-        );
+        const recaps =
+          payload.resources?.filter((resource) => resource?.includes("urn:recap:")) || [];
 
         // make sure to only add methods from recaps for sign authenticated session
         if (recaps?.length !== 0) {
@@ -836,9 +835,8 @@ export class Engine extends IEngine {
           allValid = false;
         }
 
-        const recaps = payload.resources?.filter(
-          (resource) => resource?.includes("urn:recap:") || [],
-        );
+        const recaps =
+          payload.resources?.filter((resource) => resource?.includes("urn:recap:")) || [];
 
         // make sure to only add methods from recaps for sign authenticated session
         if (recaps?.length !== 0) {

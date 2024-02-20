@@ -4,9 +4,9 @@ import {
   buildNamespacesFromAuth,
   createEncodedRecap,
   createRecap,
+  decodeRecap,
   encodeRecap,
   formatMessage,
-  formatRecapFromNamespaces,
   formatStatementFromRecap,
   getChainsFromRecap,
   getCommonValuesInArrays,
@@ -59,12 +59,22 @@ describe("URI", () => {
     const recap = createRecap("eip155", "request", ["personal_sign", "eth_signTypedData_v4"]);
     isValidRecap(recap);
     console.log("recap", recap);
-    const statement = formatStatementFromRecap(recap, 1);
+    const statement = formatStatementFromRecap(
+      {
+        att: {
+          eip155: {
+            "request/personal_sign": [{}],
+            "request/eth_signTypedData_v4": [{}],
+          },
+        },
+      },
+      1,
+    );
     console.log("statement", statement);
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
 
-  it.only("should get methods from recap DONE", async () => {
+  it("should get methods from recap DONE", async () => {
     const recap = {
       att: {
         eip155: {
@@ -102,7 +112,7 @@ describe("URI", () => {
 
     const namespace = buildNamespacesFromAuth(methods, accounts);
   });
-  it("sort recap abilities alphabetically", async () => {
+  it.only("sort recap abilities alphabetically", async () => {
     // const recap = formatRecapFromNamespaces("https://example.com", "push", [
     //   "personal_sign",
     //   "eth_sendTransaction",
@@ -110,11 +120,23 @@ describe("URI", () => {
     // ]);
     const recap = {
       att: {
-        "https://example.com": { "push/messages": [{}], "push/notification": [{}] },
+        "https://notify.walletconnect.com/all-apps": {
+          "crud/notifications": [{}],
+          "crud/subscriptions": [{}],
+        },
       },
     };
-    const encoded = `urn:recap:${base64Encode(JSON.stringify(recap))}`;
+
+    const encoded = encodeRecap(recap);
+    const encodedExpected =
+      "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20vYWxsLWFwcHMiOnsiY3J1ZC9ub3RpZmljYXRpb25zIjpbe31dLCJjcnVkL3N1YnNjcmlwdGlvbnMiOlt7fV19fX0K";
     console.log("recap", encoded);
+    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    const decoded = decodeRecap(encodedExpected);
+    console.log("decoded", decoded);
+    expect(decoded).to.eql(recap);
+    expect(encoded).to.eql(encodedExpected);
+    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
   it("should find common values in two arrays", async () => {
     const arr1 = ["eip155:1", "eip155:2"];
@@ -172,7 +194,8 @@ describe("URI", () => {
     isValidRecap(recap);
 
     const approvedMethods = ["personal_sign"];
-    expect(getMethodsFromRecap(recap)).to.eql(approvedMethods);
+    console.log("recap", recap);
+    expect(getMethodsFromRecap(encodeRecap(recap))).to.eql(approvedMethods);
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
 
@@ -180,11 +203,12 @@ describe("URI", () => {
     const request = {
       type: "caip122",
       chains: ["eip155:1"],
-      aud: "aud",
+      aud: "https://example.com",
       domain: "http://localhost:3000",
       version: "1",
       nonce: "1",
       iat: "2024-02-19T09:29:21.394Z",
+      // statement: "Requesting access to your account",
       resources: [
         "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InJlcXVlc3QvZXRoX3NpZ25UeXBlZERhdGFfdjQiOlt7fV0sInJlcXVlc3QvcGVyc29uYWxfc2lnbiI6W3t9XX19fQ==",
         "https://example.com",
@@ -208,6 +232,10 @@ describe("URI", () => {
     expect(message).to.include("(4)");
     expect(message).to.include("(5)");
     expect(message).to.not.include("(6)");
+
+    expect(message).to.include("Version: 1");
+    expect(message).to.include("Nonce: 1");
+    expect(message).to.include(`URI: ${request.aud}`);
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
 });

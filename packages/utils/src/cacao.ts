@@ -33,7 +33,7 @@ export const getDidAddress = (iss: string) => {
 export const formatMessage = (cacao: AuthTypes.PayloadParams, iss: string) => {
   const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
   const walletAddress = getDidAddress(iss);
-  let statement = cacao.statement || "";
+  let statement = cacao.statement || undefined;
   const uri = `URI: ${cacao.aud}`;
   const version = `Version: ${cacao.version}`;
   const chainId = `Chain ID: ${getDidChainId(iss)}`;
@@ -50,10 +50,9 @@ export const formatMessage = (cacao: AuthTypes.PayloadParams, iss: string) => {
     cacao.resources.forEach((resource) => {
       if (resource.includes("urn:recap:")) {
         // console.log("urn:recap:", resource);
-        const parsed = resource.replace("urn:recap:", "");
-        const decoded = base64Decode(parsed);
+        const decoded = decodeRecap(resource);
         console.log("decoded", decoded);
-        const recap = formatStatementFromRecap(JSON.parse(decoded), totalUniqueAbilities);
+        const recap = formatStatementFromRecap(decoded, totalUniqueAbilities);
         console.log("recap statement", recap);
         recapStatemets.push(recap.statement);
         totalUniqueAbilities += recap.numUniqueAbilities;
@@ -62,9 +61,10 @@ export const formatMessage = (cacao: AuthTypes.PayloadParams, iss: string) => {
     });
     if (recapStatemets.length > 0) {
       const base =
-        " I further authorize the stated URI to perform the following actions on my behalf: ";
+        "I further authorize the stated URI to perform the following actions on my behalf: ";
       const recapStatement = `${base}${recapStatemets.join(" ")}`;
-      statement = `${statement}${recapStatement}`;
+      // add a space if there is a statement
+      statement = `${statement ? statement + " " : ""}${recapStatement}`;
     }
   }
 
@@ -163,7 +163,7 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams) {
   // remove all recaps from resources
   const filteredRecaps =
     authPayload?.resources?.filter((resource) => !resource.includes("urn:recap:")) || [];
-  // encode recaps and add to resources
+  // encode the new recaps and add to resources
   const encodedRecaps = recaps.map((recap) => encodeRecap(recap));
 
   return {
@@ -177,21 +177,14 @@ export function getDecodedRecapsFromResources(resources?: string[]) {
   if (!resources) return [];
   return resources
     .filter((resource) => resource.includes("urn:recap:"))
-    .map((resource) => {
-      const parsed = resource.replace("urn:recap:", "");
-      const decoded = base64Decode(parsed);
-      return JSON.parse(decoded);
-    });
+    .map((resource) => decodeRecap(resource));
 }
 
-export function recapHasResource(recap: { att: Record<string, unknown[]> }, resource: string) {
+export function recapHasResource(recap: any, resource: string) {
   return recap?.att?.hasOwnProperty(resource);
 }
 
-export function getRecapResource(
-  recap: { att: Record<string, unknown[]> },
-  resource: string,
-): any[] {
+export function getRecapResource(recap: any, resource: string): any[] {
   return recap?.att?.[resource] ? Object.keys(recap?.att?.[resource]) : [];
 }
 
@@ -203,12 +196,12 @@ export function getReCapActions(abilities: any[]) {
   return abilities?.map((ability) => ability.split("/")?.[1]) || [];
 }
 
-export function base64Encode(input: string): string {
-  return Buffer.from(input).toString("base64");
+export function base64Encode(input: unknown): string {
+  return Buffer.from(JSON.stringify(input)).toString("base64");
 }
 
 export function base64Decode(encodedString: string): string {
-  return Buffer.from(encodedString, "base64").toString("utf-8");
+  return JSON.parse(Buffer.from(encodedString, "base64").toString("utf-8"));
 }
 
 export function isValidRecap(recap: any) {
@@ -249,12 +242,15 @@ export function createRecap(resource: string, ability: string, actions: string[]
   };
 }
 
-export function addResourceToRecap(
-  recap: { att: unknown[] },
-  resource: string,
-  actions: unknown[],
-) {
-  recap.att[resource] = actions;
+type RecapType = {
+  att: {
+    [key: string]: Record<string, unknown>;
+  };
+};
+export function addResourceToRecap(recap: RecapType, resource: string, actions: unknown[]) {
+  recap.att[resource] = {
+    ...actions,
+  };
   const keys = Object.keys(recap.att)?.sort();
   const sorted = keys.reduce(
     (obj, key) => {
@@ -279,13 +275,13 @@ export function assignAbilityToActions(ability: string, actions: string[], limit
 
 export function encodeRecap(recap: any) {
   isValidRecap(recap);
-  return `urn:recap:${base64Encode(JSON.stringify(recap))}`;
+  return `urn:recap:${base64Encode(recap)}`;
 }
 
-export function decodeRecap(recap: any) {
-  const decoded = JSON.parse(base64Decode(recap.replace("urn:recap:", "")));
+export function decodeRecap(recap: any): RecapType {
+  const decoded = base64Decode(recap.replace("urn:recap:", ""));
   isValidRecap(decoded);
-  return decoded;
+  return decoded as unknown as RecapType;
 }
 
 export function createEncodedRecap(resource: string, ability: string, actions: string[]): string {
@@ -294,19 +290,20 @@ export function createEncodedRecap(resource: string, ability: string, actions: s
   return encodeRecap(recap);
 }
 
-export function formatStatementFromRecap(recap: any, startCounter: number) {
+export function formatStatementFromRecap(recap: RecapType, startCounter: number) {
   isValidRecap(recap);
   const statementForRecap: string[] = [];
   let numUniqueAbilities = 0;
   console.log("recap for statement", recap);
   Object.keys(recap.att).forEach((resource) => {
-    // const resource = Object.keys(recap.att)[0];
     const actions = Object.keys(recap.att[resource]).map((ability: any) => {
       return {
         ability: ability.split("/")[0],
         action: ability.split("/")[1],
       };
     });
+    //
+    actions.sort((a, b) => a.action.localeCompare(b.action));
     const uniqueAbilities = {};
     actions.forEach((action: any) => {
       if (!uniqueAbilities[action.ability]) {
@@ -321,8 +318,6 @@ export function formatStatementFromRecap(recap: any, startCounter: number) {
         "', '",
       )}' for '${resource}'.`;
     });
-
-    // console.log("abilities", abilities.join(", "));
     statementForRecap.push(abilities.join(", "));
   });
 
@@ -334,6 +329,7 @@ export function formatStatementFromRecap(recap: any, startCounter: number) {
 
 export function getMethodsFromRecap(recap: string) {
   const decoded = decodeRecap(recap);
+  console.log("getMethods decoded", decoded);
   isValidRecap(decoded);
   // methods are only available for eip155 as per the current implementation
   const resource = decoded.att?.eip155;
