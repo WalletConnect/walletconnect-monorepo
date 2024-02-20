@@ -74,10 +74,11 @@ import {
   getDidAddress,
   formatMessage,
   verifySignature,
-  formatRecapFromNamespaces,
   getMethodsFromRecap,
   buildNamespacesFromAuth,
   parseUri,
+  createEncodedRecap,
+  getChainsFromRecap,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -505,6 +506,22 @@ export class Engine extends IEngine {
       resources = [],
     } = params;
 
+    // ----- reject multi namespaces ----- //
+    const uniqueNamespaces = [...new Set(chains.map((chain) => chain.split(":")[0]))];
+    if (uniqueNamespaces.length > 1) {
+      throw new Error(
+        "Multi-namespace requests are not supported. Please request single namespace only.",
+      );
+    }
+
+    const namespace = chains[0].split(":")[0];
+    if (namespace !== "eip155") {
+      throw new Error(
+        "Only eip155 namespace is supported for authenticated sessions. Please use .connect() for non-eip155 chains.",
+      );
+    }
+    console.log("namespace", namespace);
+
     let { topic: pairingTopic, uri } = await this.client.core.pairing.create();
     uri = `${uri}&methods=wc_sessionAuthenticate`;
 
@@ -526,30 +543,23 @@ export class Engine extends IEngine {
     this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
     console.log("sending request to new pairing topic: ", pairingTopic);
 
-    // ----- reject multi namespaces ----- //
-    const uniqueNamespaces = [...new Set(chains.map((chain) => chain.split(":")[0]))];
-    if (uniqueNamespaces.length > 1) {
-      throw new Error(
-        "Multi-namespace requests are not supported. Please request single namespace only.",
-      );
-    }
-
-    const namespace = chains[0].split(":")[0];
-    console.log("namespace", namespace);
-
     // ----- build recaps ----- //
-    const namespaces = {};
-
-    chains.forEach((chain) => {
-      namespaces[chain] = {
+    const namespaces = {
+      eip155: {
+        chains,
         methods,
-      };
-    });
-    console.log("new namespaces", namespaces);
+        events: [],
+      },
+    };
 
-    const recap = formatRecapFromNamespaces(namespace, "request", methods);
-    resources.push(recap);
-    console.log("formatted recap", recap);
+    console.log("new namespaces", namespaces);
+    if (methods.length > 0) {
+      const recap = createEncodedRecap(namespace, "request", methods);
+      resources.push(recap);
+      console.log("formatted recap", recap);
+    } else {
+      console.log("no methods provided, skipping recap creation");
+    }
     const expiryTimestamp = calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
     const request = {
       authPayload: {
@@ -569,14 +579,6 @@ export class Engine extends IEngine {
       expiryTimestamp,
     };
 
-    // build optional namespaces for the proposal
-    chains.forEach((chain) => {
-      namespaces[chain] = {
-        methods,
-        events: [],
-      };
-    });
-
     const proposal = {
       requiredNamespaces: {},
       optionalNamespaces: namespaces,
@@ -587,6 +589,7 @@ export class Engine extends IEngine {
       },
       expiryTimestamp,
     };
+    console.log("proposal", proposal);
     // send both (main & fallback) requests
     const [id, fallbackId] = await Promise.all([
       this.sendRequest({
@@ -654,7 +657,8 @@ export class Engine extends IEngine {
         console.log("payload.error", payload.error);
         // ignore unsupported method error
         const error = getSdkError("WC_METHOD_UNSUPPORTED", "wc_sessionAuthenticate");
-        if (payload.error.message === error.message) return;
+        console.log("expected error", error.message);
+        if (payload.error.code === error.code) return;
         return reject(payload.error.message);
       }
       const accounts: string[] = [];
@@ -671,22 +675,47 @@ export class Engine extends IEngine {
         throw new Error(`Could not find pending auth request with id ${id}`);
       }
 
+      console.log("cacaos", cacaos);
+      const approvedMethods: string[] = [];
+      const approvedChains: string[] = [];
       cacaos.forEach(async (cacao) => {
         const { s: signature, p: payload } = cacao;
 
         console.log("pendingRequest");
         const reconstructed = this.formatAuthMessage({
-          request: pendingRequest.authPayload as any,
+          request: payload as any, //pendingRequest.authPayload as any,
           iss: payload.iss,
         });
         console.log("reconstructed", reconstructed);
         const walletAddress = getDidAddress(payload.iss) as string;
         const valid = await verifySignature(walletAddress, reconstructed, signature);
 
-        console.log("valid", valid ? "✅" : "🛑", valid);
+        console.log("@dapp valid", valid ? "✅" : "🛑", valid);
+        const recaps = payload.resources?.filter(
+          (resource) => resource?.includes("urn:recap:") || [],
+        );
+
+        // make sure to only add methods from recaps for sign authenticated session
+        if (recaps?.length !== 0) {
+          recaps?.forEach((recap) => {
+            const methodsfromRecap = getMethodsFromRecap(recap);
+            const chainsFromRecap = getChainsFromRecap(recap);
+            approvedMethods.push(...methodsfromRecap);
+            approvedChains.push(...chainsFromRecap);
+          });
+        }
+
+        if (!approvedChains.length) {
+          approvedChains.push(...pendingRequest.authPayload.chains);
+        }
+
         accounts.push(payload.iss);
       });
 
+      console.log("approved", {
+        approvedMethods,
+        approvedChains,
+      });
       console.log("dapp - getting shared key", {
         selfPublicKey: publicKey,
         peer: responder.publicKey,
@@ -698,32 +727,40 @@ export class Engine extends IEngine {
       console.log("sessionTopic", sessionTopic);
 
       //create session object
-      const session: SessionTypes.Struct = {
-        topic: sessionTopic,
-        acknowledged: true,
-        self: {
-          publicKey,
-          metadata: this.client.metadata,
-        },
-        peer: responder,
-        controller: responder.publicKey,
-        expiry: calcExpiry(SESSION_EXPIRY),
-        requiredNamespaces: {},
-        optionalNamespaces: {},
-        relay: { protocol: "irn" },
-        pairingTopic,
-        namespaces: buildNamespacesFromAuth(methods, accounts),
-      };
+      let session: SessionTypes.Struct | undefined;
 
-      await this.client.core.relayer.subscribe(sessionTopic);
-      await this.client.session.set(sessionTopic, session);
+      if (approvedMethods.length > 0) {
+        session = {
+          topic: sessionTopic,
+          acknowledged: true,
+          self: {
+            publicKey,
+            metadata: this.client.metadata,
+          },
+          peer: responder,
+          controller: responder.publicKey,
+          expiry: calcExpiry(SESSION_EXPIRY),
+          requiredNamespaces: {},
+          optionalNamespaces: {},
+          relay: { protocol: "irn" },
+          pairingTopic,
+          namespaces: buildNamespacesFromAuth(
+            [...new Set(approvedMethods)],
+            [...new Set(approvedChains.map((chain) => `${chain}:${accounts[0].split(":")[4]}`))],
+          ),
+        };
 
-      const sessionObject = this.client.session.get(sessionTopic);
+        console.log("approved session", session.namespaces);
 
-      console.log("dapp sessionObject", sessionObject);
+        await this.client.core.relayer.subscribe(sessionTopic);
+        await this.client.session.set(sessionTopic, session);
+
+        session = this.client.session.get(sessionTopic);
+        console.log("dapp sessionObject", session);
+      }
       resolve({
         auths: payload,
-        session: sessionObject,
+        session,
       });
     });
 
@@ -775,12 +812,16 @@ export class Engine extends IEngine {
       methods.push(...recapMethods);
     }
 
+    console.log("@approveSessionAuthenticate", methods, pendingRequest?.authPayload.resources);
+    const approvedMethods: string[] = [];
+    const approvedChains: string[] = [];
+
     await new Promise<void>((resolve) => {
       auths.forEach(async (cacao) => {
         const { s: signature, p: payload } = cacao;
         console.log("pendingRequest", payload);
         const reconstructed = this.formatAuthMessage({
-          request: pendingRequest.authPayload as any,
+          request: payload as any,
           iss: payload.iss,
         });
         console.log("reconstructed", reconstructed);
@@ -789,15 +830,35 @@ export class Engine extends IEngine {
         try {
           const valid = await verifySignature(walletAddress, reconstructed, signature);
           if (!valid) allValid = false;
-          console.log("wallet - valid", valid ? "✅" : "🛑", valid);
+          console.log("wallet - valid", valid ? "✅" : "🛑", valid, reconstructed);
         } catch (error) {
           console.log("error", error);
           allValid = false;
         }
+
+        const recaps = payload.resources?.filter(
+          (resource) => resource?.includes("urn:recap:") || [],
+        );
+
+        // make sure to only add methods from recaps for sign authenticated session
+        if (recaps?.length !== 0) {
+          recaps?.forEach((recap) => {
+            const methodsfromRecap = getMethodsFromRecap(recap);
+            const chainsFromRecap = getChainsFromRecap(recap);
+            approvedMethods.push(...methodsfromRecap);
+            approvedChains.push(...chainsFromRecap);
+          });
+        }
+
         accounts.push(payload.iss);
+        if (!approvedChains.length) {
+          approvedChains.push(...pendingRequest.authPayload.chains);
+        }
       });
       resolve();
     });
+
+    console.log("approvedMethods", approvedMethods);
 
     if (!allValid) {
       console.log("invalid signature");
@@ -833,35 +894,40 @@ export class Engine extends IEngine {
       methods,
     });
 
-    //TODO: create session object
-    const session: SessionTypes.Struct = {
-      topic: sessionTopic,
-      acknowledged: true,
-      self: {
-        publicKey: senderPublicKey,
-        metadata: this.client.metadata,
-      },
-      peer: {
-        publicKey: receiverPublicKey,
-        metadata: pendingRequest.requester.metadata,
-      },
-      controller: receiverPublicKey,
-      expiry: calcExpiry(SESSION_EXPIRY),
-      authentication: auths,
-      requiredNamespaces: {},
-      optionalNamespaces: {},
-      relay: { protocol: "irn" },
-      pairingTopic: "",
-      namespaces: buildNamespacesFromAuth(methods, accounts),
-    };
+    if (approvedMethods?.length > 0) {
+      //TODO: create session object
+      const session: SessionTypes.Struct = {
+        topic: sessionTopic,
+        acknowledged: true,
+        self: {
+          publicKey: senderPublicKey,
+          metadata: this.client.metadata,
+        },
+        peer: {
+          publicKey: receiverPublicKey,
+          metadata: pendingRequest.requester.metadata,
+        },
+        controller: receiverPublicKey,
+        expiry: calcExpiry(SESSION_EXPIRY),
+        authentication: auths,
+        requiredNamespaces: {},
+        optionalNamespaces: {},
+        relay: { protocol: "irn" },
+        pairingTopic: "",
+        namespaces: buildNamespacesFromAuth(
+          [...new Set(approvedMethods)],
+          [...new Set(approvedChains.map((chain) => `${chain}:${accounts[0].split(":")[4]}`))],
+        ),
+      };
 
-    console.log("wallet - subscribing to sessionTopic");
-    await this.client.core.relayer.subscribe(sessionTopic);
-    console.log("wallet - setting session");
-    await this.client.session.set(sessionTopic, session);
+      console.log("wallet - subscribing to sessionTopic");
+      await this.client.core.relayer.subscribe(sessionTopic);
+      console.log("wallet - setting session");
+      await this.client.session.set(sessionTopic, session);
 
-    const sessionObject = this.client.session.get(sessionTopic);
-    console.log("wallet sessionObject", sessionObject);
+      const sessionObject = this.client.session.get(sessionTopic);
+      console.log("wallet sessionObject", sessionObject);
+    }
 
     await this.sendResult<"wc_sessionAuthenticate">({
       topic: responseTopic,
@@ -1502,7 +1568,7 @@ export class Engine extends IEngine {
   private onSessionRequest: EnginePrivate["onSessionRequest"] = async (topic, payload) => {
     const { id, params } = payload;
     try {
-      this.isValidRequest({ topic, ...params });
+      await this.isValidRequest({ topic, ...params });
       const hash = hashMessage(
         JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
       );
@@ -1979,6 +2045,11 @@ export class Engine extends IEngine {
       );
       throw new Error(message);
     }
+    console.log("validation", {
+      namespaces,
+      chainId,
+      req: request.method,
+    });
     if (!isValidNamespacesRequest(namespaces, chainId, request.method)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",

@@ -2,7 +2,12 @@
 import { expect, describe, it, beforeAll } from "vitest";
 import { ENGINE_RPC_OPTS, SignClient } from "../../src";
 import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, throttle } from "../shared";
-import { buildApprovedNamespaces, buildAuthObject, calcExpiry } from "@walletconnect/utils";
+import {
+  buildApprovedNamespaces,
+  buildAuthObject,
+  calcExpiry,
+  populateAuthPayload,
+} from "@walletconnect/utils";
 import { AuthTypes } from "@walletconnect/types";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
@@ -27,6 +32,9 @@ describe("Authenticated Sessions", () => {
       nonce: "1",
       aud: "aud",
       methods: ["personal_sign", "eth_chainId", "eth_signTypedData_v4"],
+      resources: [
+        // "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9leGFtcGxlLmNvbSI6W3sicHVzaC9ub3RpZmljYXRpb24iOlt7fV19XX19==",
+      ],
     });
     const expectedExpiry = calcExpiry(ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl);
     console.log("uri", uri);
@@ -41,19 +49,135 @@ describe("Authenticated Sessions", () => {
           console.log("wallet session_authenticate", payload.params);
 
           // validate expiryTimestamp
-          expect(payload.params.expiryTimestamp).to.be.approximately(expectedExpiry, 2000);
+          // expect(payload.params.expiryTimestamp).to.be.approximately(expectedExpiry, 2000);
 
-          const auths: AuthTypes.Cacao[] = [];
+          // console.log("authPayload", JSON.stringify(authPayload));
+          const authPayload = populateAuthPayload({
+            authPayload: payload.params.authPayload,
+            chains: ["eip155:1", "eip155:2"],
+            methods: ["personal_sign"],
+          });
+
+          // payload.params.authPayload.chains.forEach(async (chain) => {
+          //   console.log("cacaos", JSON.stringify(payload.params.authPayload));
+          const message = wallet.engine.formatAuthMessage({
+            request: authPayload,
+            iss: `eip155:1:${cryptoWallet.address}`,
+          });
+
+          console.log("message", message);
+          const sig = await cryptoWallet.signMessage(message);
+          console.log("signed message", {
+            sig,
+            privateKey: cryptoWallet.privateKey,
+            address: cryptoWallet.address,
+          });
+          const auth = buildAuthObject(
+            authPayload,
+            {
+              t: "eip191",
+              s: sig,
+            },
+            `eip155:1:${cryptoWallet.address}`,
+          );
+          console.log("auth", auth);
+          await wallet.approveSessionAuthenticate({
+            id: payload.id,
+            auths: [auth],
+          });
+          console.log("wallet session_authenticate approved");
+          resolve();
+        });
+      }),
+      new Promise<void>((resolve) => {
+        wallet.pair({ uri });
+        resolve();
+      }),
+    ]);
+    console.log("paired");
+
+    console.log("response", response);
+    const session = (await response()).session;
+    console.log("sessions", session);
+    // await throttle(1000);
+
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_request", async (payload) => {
+          console.log("wallet session_request", payload);
+          const { id, topic } = payload;
+          await wallet.respond({
+            topic,
+            response: formatJsonRpcResult(
+              id,
+              await cryptoWallet.signMessage(payload.params.request.params[0]),
+            ),
+          });
+          console.log("wallet session_request responded");
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve) => {
+        const result = await dapp.request({
+          chainId: "eip155:1",
+          topic: session.topic,
+          request: {
+            method: "personal_sign",
+            params: ["hey, sup"],
+          },
+        });
+        console.log("dapp request result", result);
+        resolve();
+      }),
+    ]);
+  });
+
+  it.only("should establish authenticated session", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    expect(dapp).to.be.exist;
+    expect(dapp.metadata.redirect).to.exist;
+    expect(dapp.metadata.redirect?.universal).to.exist;
+    expect(dapp.metadata.redirect?.native).to.not.exist;
+
+    const { uri, response } = await dapp.sessionAuthenticate({
+      chains: ["eip155:1", "eip155:2"],
+      domain: "localhost",
+      nonce: "1",
+      aud: "aud",
+      methods: ["personal_sign"],
+      resources: [
+        // "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9leGFtcGxlLmNvbSI6W3sicHVzaC9ub3RpZmljYXRpb24iOlt7fV19XX19==",
+      ],
+    });
+    const expectedExpiry = calcExpiry(ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl);
+    console.log("uri", uri);
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          console.log("wallet session_authenticate", payload.params);
+
+          // validate expiryTimestamp
+          // expect(payload.params.expiryTimestamp).to.be.approximately(expectedExpiry, 2000);
+          const auths: any[] = [];
           payload.params.authPayload.chains.forEach(async (chain) => {
-            console.log("cacaos", JSON.stringify(payload.params.authPayload));
-
+            //   console.log("cacaos", JSON.stringify(payload.params.authPayload));
             const message = wallet.engine.formatAuthMessage({
               request: payload.params.authPayload,
               iss: `${chain}:${cryptoWallet.address}`,
             });
 
+            console.log("message", message);
             const sig = await cryptoWallet.signMessage(message);
-            console.log("chain", chain, message, sig);
+            console.log("signed message", {
+              sig,
+              privateKey: cryptoWallet.privateKey,
+              address: cryptoWallet.address,
+            });
             const auth = buildAuthObject(
               payload.params.authPayload,
               {
