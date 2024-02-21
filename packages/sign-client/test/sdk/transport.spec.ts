@@ -56,5 +56,31 @@ describe("Sign Client Transport Tests", () => {
       ]);
       await deleteClients(clients);
     });
+    it("should automatically start transport on request after being closed", async () => {
+      const clients = await initTwoClients();
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients);
+      await clients.A.core.relayer.transportClose();
+      await throttle(2000);
+      await Promise.all([
+        new Promise((resolve) => {
+          clients.B.on("session_ping", (event: any) => {
+            resolve(event);
+          });
+        }),
+        new Promise((resolve) => {
+          clients.A.on("session_ping", (event: any) => {
+            resolve(event);
+          });
+        }),
+        new Promise(async (resolve) => {
+          await clients.A.ping({ topic });
+          await clients.B.ping({ topic });
+          resolve(true);
+        }),
+      ]);
+      await deleteClients(clients);
+    });
   });
 });

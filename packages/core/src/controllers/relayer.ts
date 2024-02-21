@@ -50,6 +50,8 @@ import {
   RELAYER_DEFAULT_RELAY_URL,
   RELAYER_FAILOVER_RELAY_URL,
   SUBSCRIBER_EVENTS,
+  RELAYER_RECONNECT_TIMEOUT,
+  RELAYER_TRANSPORT_CUTOFF,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
@@ -122,6 +124,14 @@ export class Relayer extends IRelayer {
       await this.restartTransport(RELAYER_FAILOVER_RELAY_URL);
     }
     this.initialized = true;
+    setTimeout(async () => {
+      // @ts-ignore
+      if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
+        this.logger.info(`No topics subscribed to after init, closing transport`);
+        await this.transportClose();
+        this.transportExplicitlyClosed = false;
+      }
+    }, RELAYER_TRANSPORT_CUTOFF);
   }
 
   get context() {
@@ -507,7 +517,7 @@ export class Relayer extends IRelayer {
 
     setTimeout(async () => {
       await this.transportOpen().catch((error) => this.logger.error(error));
-    }, 1_000);
+    }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 
   private isInitialized() {
@@ -520,13 +530,16 @@ export class Relayer extends IRelayer {
   private async toEstablishConnection() {
     await this.confirmOnlineStateOrThrow();
     if (this.connected) return;
-    return await new Promise<void>((resolve) => {
-      const interval = setInterval(() => {
-        if (this.connected) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, this.connectionStatusPollingInterval);
-    });
+    if (this.connectionAttemptInProgress) {
+      await new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (this.connected) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, this.connectionStatusPollingInterval);
+      });
+    }
+    await this.transportOpen();
   }
 }
