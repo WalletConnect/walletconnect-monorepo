@@ -12,6 +12,7 @@ import {
 } from "../../shared";
 import { EngineTypes, PairingTypes, SessionTypes } from "@walletconnect/types";
 
+// skip tests as they are already testeed in integration.spec.ts
 describe.skip("Sign Client Events Validation", () => {
   let clients: Clients;
   let pairingA: PairingTypes.Struct;
