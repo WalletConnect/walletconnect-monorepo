@@ -201,7 +201,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
     try {
       const relay = getRelayProtocolName(opts);
-      this.rpcUnsubscribe(topic, id, relay);
+      await this.rpcUnsubscribe(topic, id, relay);
       const reason = getSdkError("USER_DISCONNECTED", `${this.name}, ${topic}`);
       await this.onUnsubscribe(topic, id, reason);
       this.logger.debug(`Successfully Unsubscribed Topic`);
@@ -225,7 +225,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subscribe = await createExpiringPromise(
-        this.relayer.request(request).catch((e) => this.logger.error(e)),
+        this.relayer.request(request).catch((e) => this.logger.warn(e)),
         this.subscribeTimeout,
       );
       const result = await subscribe;
@@ -251,7 +251,7 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subscribe = await createExpiringPromise(
-        this.relayer.request(request).catch((e) => this.logger.error(e)),
+        this.relayer.request(request).catch((e) => this.logger.warn(e)),
         this.subscribeTimeout,
       );
       return await subscribe;
@@ -420,12 +420,6 @@ export class Subscriber extends ISubscriber {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
       await this.checkPending();
     });
-    // this.relayer.on(RELAYER_EVENTS.connect, async () => {
-    //   await this.onConnect();
-    // });
-    // this.relayer.on(RELAYER_EVENTS.disconnect, () => {
-    //   this.onDisconnect();
-    // });
     this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
       const eventName = SUBSCRIBER_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);

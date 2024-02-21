@@ -1204,7 +1204,6 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidRequest({ topic, ...params });
-      // this.startSessionRequestActivityLog({ id, topic });
       const hash = hashMessage(
         JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
       );
