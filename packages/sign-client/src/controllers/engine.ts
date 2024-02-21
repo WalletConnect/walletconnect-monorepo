@@ -109,11 +109,13 @@ export class Engine extends IEngine {
 
   private requestQueueDelay = ONE_SECOND;
 
-  // temporary map to store recently deleted items
+  // Ephemeral (in-memory) map to store recently deleted items
   private recentlyDeletedMap = new Map<
     string | number,
     "pairing" | "session" | "proposal" | "request"
   >();
+
+  private recentlyDeletedLimit = 200;
 
   constructor(client: IEngine["client"]) {
     super(client);
@@ -604,7 +606,7 @@ export class Engine extends IEngine {
     // Await the unsubscribe first to avoid deleting the symKey too early below.
     await this.client.core.relayer.unsubscribe(topic);
     await this.client.session.delete(topic, getSdkError("USER_DISCONNECTED"));
-    this.recentlyDeletedMap.set(topic, "session");
+    this.addToRecentlyDeleted(topic, "session");
     if (this.client.core.crypto.keychain.has(self.publicKey)) {
       await this.client.core.crypto.deleteKeyPair(self.publicKey);
     }
@@ -630,7 +632,7 @@ export class Engine extends IEngine {
       this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED")),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
-    this.recentlyDeletedMap.set(id, "proposal");
+    this.addToRecentlyDeleted(id, "proposal");
   };
 
   private deletePendingSessionRequest: EnginePrivate["deletePendingSessionRequest"] = async (
@@ -642,7 +644,7 @@ export class Engine extends IEngine {
       this.client.pendingRequest.delete(id, reason),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
-    this.recentlyDeletedMap.set(id, "request");
+    this.addToRecentlyDeleted(id, "request");
     this.sessionRequestQueue.queue = this.sessionRequestQueue.queue.filter((r) => r.id !== id);
     // set the requestQueue state to idle if expirer has deleted a request as trying to respond to it would result in an exception
     if (expirerHasDeleted) {
@@ -1354,7 +1356,7 @@ export class Engine extends IEngine {
       this.onPairingCreated(pairing),
     );
     this.client.core.pairing.events.on(PAIRING_EVENTS.delete, (pairing: PairingTypes.Struct) => {
-      this.recentlyDeletedMap.set(pairing.topic, "pairing");
+      this.addToRecentlyDeleted(pairing.topic, "pairing");
     });
   }
 
@@ -1773,8 +1775,29 @@ export class Engine extends IEngine {
     });
   };
 
+  private addToRecentlyDeleted = (
+    id: string | number,
+    type: "pairing" | "session" | "proposal" | "request",
+  ) => {
+    this.recentlyDeletedMap.set(id, type);
+    // remove first half of the map if it exceeds the limit
+    if (this.recentlyDeletedMap.size >= this.recentlyDeletedLimit) {
+      let i = 0;
+      const numItemsToDelete = this.recentlyDeletedLimit / 2;
+      for (const k of this.recentlyDeletedMap.keys()) {
+        if (i++ >= numItemsToDelete) {
+          break;
+        }
+        this.recentlyDeletedMap.delete(k);
+      }
+    }
+  };
+
   private checkRecentlyDeleted = (id: string | number) => {
     const deletedRecord = this.recentlyDeletedMap.get(id);
+    if (this.recentlyDeletedMap.size > 200) {
+      this.recentlyDeletedMap.clear();
+    }
     if (deletedRecord) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
