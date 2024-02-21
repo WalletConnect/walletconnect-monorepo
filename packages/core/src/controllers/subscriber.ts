@@ -231,6 +231,7 @@ export class Subscriber extends ISubscriber {
         this.subscribeTimeout,
       );
       const result = await subscribe;
+      // return null to indicate that the subscription failed
       return result ? hashMessage(topic + this.clientId) : null;
     } catch (err) {
       this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);

@@ -89,6 +89,10 @@ export class Relayer extends IRelayer {
   >();
 
   private pingTimeout: NodeJS.Timeout | undefined;
+  /**
+   * the relay pings the client 30 seconds after the last message was received
+   * meaning if we don't receive a message in 30 seconds, the connection can be considered dead
+   */
   private heartBeatTimeout = toMiliseconds(THIRTY_SECONDS + ONE_SECOND);
 
   constructor(opts: RelayerOptions) {
