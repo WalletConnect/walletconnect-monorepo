@@ -72,8 +72,8 @@ export class Publisher extends IPublisher {
         attempts++;
 
         if (!result) {
-          // transport will be restarted immediately after the disconnect
-          // but add small buffer to allow process to begin
+          // small delay before retrying so we can limit retry to max 1 time per second
+          // if the network is `rpcPublish` will throw immediately
           await new Promise((resolve) => setTimeout(resolve, this.failedPublishTimeout));
         }
       }
