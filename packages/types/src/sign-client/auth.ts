@@ -141,7 +141,7 @@ export declare namespace AuthTypes {
     error: ErrorResponse;
   }
 
-  type AuthResponse = SessionAuthenticateResponseParams | AuthErrorResponse;
+  type AuthResponse = SessionAuthenticateResponseParams["cacaos"]
 
   interface Participant {
     publicKey: string;
