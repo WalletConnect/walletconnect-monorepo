@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 // @ts-nocheck
 import { expect, describe, it, beforeAll, afterAll } from "vitest";
 import {

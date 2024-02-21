@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import {
   ICore,
