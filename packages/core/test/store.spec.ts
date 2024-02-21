@@ -161,6 +161,30 @@ describe("Store", () => {
         );
       }
     });
+    it("should cleanup recentlyDeleted when size limit is reached", async () => {
+      //@ts-ignore
+      const itemsToDelete = store.recentlyDeletedLimit - 1;
+      // populate recentlyDeleted just below the limit
+      for (let i = 0; i < itemsToDelete; i++) {
+        const key = `key${i}`;
+        const value = `value${i}`;
+        await store.set(key, value);
+        await store.delete(key, { code: 0, message: "reason" });
+      }
+      //@ts-ignore
+      expect(store.recentlyDeleted?.length).to.be.greaterThan(1);
+      //@ts-ignore
+      expect(store.recentlyDeleted?.length).to.equal(itemsToDelete);
+      // add one more to reach the limit
+      await store.set("test", "test");
+      await store.delete("test", { code: 0, message: "reason" });
+
+      // check that the recentlyDeleted list has been halved
+      //@ts-ignore
+      expect(store.recentlyDeleted?.length).to.be.greaterThan(1);
+      //@ts-ignore
+      expect(store.recentlyDeleted?.length).to.equal(store.recentlyDeletedLimit / 2);
+    });
   });
 
   describe("getAll", () => {

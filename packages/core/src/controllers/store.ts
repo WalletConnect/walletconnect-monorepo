@@ -25,6 +25,7 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
 
   // stores recently deleted key to return different rejection message when key is not found
   private recentlyDeleted: unknown[] = [];
+  private recentlyDeletedLimit = 200;
 
   /**
    * @param {ICore} core Core
@@ -133,11 +134,19 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
     this.logger.debug(`Deleting value`);
     this.logger.trace({ type: "method", method: "delete", key, reason });
     this.map.delete(key);
-    this.recentlyDeleted.push(key);
+    this.addToRecentlyDeleted(key);
     await this.persist();
   };
 
   // ---------- Private ----------------------------------------------- //
+
+  private addToRecentlyDeleted(key: Key) {
+    this.recentlyDeleted.push(key);
+    // limit the size of the recentlyDeleted array
+    if (this.recentlyDeleted.length >= this.recentlyDeletedLimit) {
+      this.recentlyDeleted.splice(0, this.recentlyDeletedLimit / 2);
+    }
+  }
 
   private async setDataStore(value: Data[]) {
     await this.core.storage.setItem<Data[]>(this.storageKey, value);
