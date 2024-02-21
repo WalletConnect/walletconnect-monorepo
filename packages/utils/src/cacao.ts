@@ -39,10 +39,11 @@ export const formatMessage = (cacao: AuthTypes.PayloadParams, iss: string) => {
   const chainId = `Chain ID: ${getDidChainId(iss)}`;
   const nonce = `Nonce: ${cacao.nonce}`;
   const issuedAt = `Issued At: ${cacao.iat}`;
-  const resources =
-    cacao.resources && cacao.resources.length > 0
-      ? `Resources:\n${cacao.resources.map((resource) => `- ${resource}`).join("\n")}`
-      : undefined;
+  const resources = `Resources:${
+    cacao.resources && cacao.resources?.length > 0
+      ? `\n${cacao.resources.map((resource) => `- ${resource}`).join("\n")}`
+      : ""
+  }`;
 
   if (cacao.resources && cacao.resources.length) {
     const recapStatemets: string[] = [];
