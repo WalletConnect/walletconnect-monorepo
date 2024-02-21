@@ -60,7 +60,8 @@ export class Publisher extends IPublisher {
         if (Date.now() - startPublish > this.publishTimeout) {
           throw new Error(failedPublishMessage);
         }
-        this.logger.trace({ id, attempts }, "publisher.publish - attempt");
+
+        this.logger.trace({ id, attempts }, `publisher.publish - attempt ${attempts}`);
         const publish = await createExpiringPromise(
           this.rpcPublish(topic, message, ttl, relay, prompt, tag, id).catch((e) =>
             this.logger.warn(e),
