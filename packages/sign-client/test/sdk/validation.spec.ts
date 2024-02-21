@@ -751,7 +751,7 @@ describe("Sign Client Validation", () => {
   describe("miscellaneous", () => {
     it("should cleanup recentlyDeletedMap when size limit is reached", async () => {
       const client = clients.A.engine;
-
+      client.recentlyDeletedMap.clear();
       const itemsToDelete = client.recentlyDeletedLimit - 1;
       // populate recentlyDeleted just below the limit
       for (let i = 0; i < itemsToDelete; i++) {
