@@ -18,7 +18,6 @@ describe("Authenticated Sessions", () => {
   beforeAll(() => {
     cryptoWallet = CryptoWallet.createRandom();
   });
-
   it("should establish authenticated session", async () => {
     const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
     expect(dapp).to.be.exist;
@@ -131,8 +130,7 @@ describe("Authenticated Sessions", () => {
       }),
     ]);
   });
-
-  it.only("should establish authenticated session", async () => {
+  it("should establish authenticated session", async () => {
     const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
     expect(dapp).to.be.exist;
     expect(dapp.metadata.redirect).to.exist;
@@ -329,5 +327,79 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+  });
+
+  it.only("should perform siwe", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    expect(dapp).to.be.exist;
+    expect(dapp.metadata.redirect).to.exist;
+    expect(dapp.metadata.redirect?.universal).to.exist;
+    expect(dapp.metadata.redirect?.native).to.not.exist;
+
+    const { uri, response } = await dapp.sessionAuthenticate({
+      chains: ["eip155:1"],
+      domain: "localhost",
+      nonce: "1",
+      aud: "aud",
+    });
+    console.log("uri", uri);
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+
+    const result = await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          console.log("wallet session_authenticate", payload.params);
+          // validate expiryTimestamp
+          // expect(payload.params.expiryTimestamp).to.be.approximately(expectedExpiry, 2000);
+          const auths: any[] = [];
+          payload.params.authPayload.chains.forEach(async (chain) => {
+            //   console.log("cacaos", JSON.stringify(payload.params.authPayload));
+            const message = wallet.engine.formatAuthMessage({
+              request: payload.params.authPayload,
+              iss: `${chain}:${cryptoWallet.address}`,
+            });
+
+            console.log("message", message);
+            const sig = await cryptoWallet.signMessage(message);
+            console.log("signed message", {
+              sig,
+              privateKey: cryptoWallet.privateKey,
+              address: cryptoWallet.address,
+            });
+            const auth = buildAuthObject(
+              payload.params.authPayload,
+              {
+                t: "eip191",
+                s: sig,
+              },
+              `${chain}:${cryptoWallet.address}`,
+            );
+            console.log("auth", auth);
+            auths.push(auth);
+          });
+          await wallet.approveSessionAuthenticate({
+            id: payload.id,
+            auths,
+          });
+          console.log("wallet session_authenticate approved");
+          resolve();
+        });
+      }),
+      new Promise<void>((resolve) => {
+        wallet.pair({ uri });
+        resolve();
+      }),
+      response(),
+    ]).then((res) => res[2]);
+    expect(result).to.exist;
+    // its siwe request so session should be undefined
+    expect(result.session).to.be.undefined;
+    expect(result.auths).to.exist;
+    expect(result.auths).to.have.length(1);
+    await throttle(1000);
   });
 });

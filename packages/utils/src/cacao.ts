@@ -124,7 +124,7 @@ type PopulateAuthPayloadParams = {
   chains: string[];
   methods: string[];
 };
-export function populateAuthPayload(params: PopulateAuthPayloadParams) {
+export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthTypes.PayloadParams {
   const { authPayload, chains, methods } = params;
 
   if (!chains?.length) return authPayload;
@@ -132,7 +132,7 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams) {
   const requested = authPayload.chains;
   const supported = chains;
 
-  const supportedChains = getCommonValuesInArrays(requested, supported);
+  const supportedChains = getCommonValuesInArrays(requested, supported) as string[];
   if (!supportedChains?.length) {
     throw new Error("No supported chains");
   }

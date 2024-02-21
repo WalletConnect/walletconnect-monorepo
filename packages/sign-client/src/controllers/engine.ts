@@ -758,7 +758,7 @@ export class Engine extends IEngine {
         console.log("dapp sessionObject", session);
       }
       resolve({
-        auths: payload,
+        auths: cacaos,
         session,
       });
     });
