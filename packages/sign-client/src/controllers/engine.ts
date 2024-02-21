@@ -166,6 +166,7 @@ export class Engine extends IEngine {
       topic = newTopic;
       uri = newUri;
     }
+    // safety check to ensure pairing topic is available
     if (!topic) {
       const { message } = getInternalError("NO_MATCHING_KEY", `connect() pairing topic: ${topic}`);
       throw new Error(message);
@@ -692,7 +693,7 @@ export class Engine extends IEngine {
       message = await this.client.core.crypto.encode(topic, payload);
     } catch (error) {
       await this.cleanup();
-      this.client.logger.error(`sendRequest() -> encode(${topic}) failed`);
+      this.client.logger.error(`sendRequest() -> core.crypto.encode() for topic ${topic} failed`);
       throw error;
     }
     const opts = ENGINE_RPC_OPTS[method].req;
@@ -720,8 +721,9 @@ export class Engine extends IEngine {
     try {
       message = await this.client.core.crypto.encode(topic, payload);
     } catch (error) {
+      // if encoding fails e.g. due to missing keychain, we want to cleanup all related data as its unusable
       await this.cleanup();
-      this.client.logger.error(`sendResult() -> encode(${topic}) failed`);
+      this.client.logger.error(`sendResult() -> core.crypto.encode() for topic ${topic} failed`);
       throw error;
     }
     let record;
@@ -753,7 +755,7 @@ export class Engine extends IEngine {
       message = await this.client.core.crypto.encode(topic, payload);
     } catch (error) {
       await this.cleanup();
-      this.client.logger.error(`sendError() -> encode(${topic}) failed`);
+      this.client.logger.error(`sendError() -> core.crypto.encode() for topic ${topic} failed`);
       throw error;
     }
     let record;
@@ -1416,9 +1418,8 @@ export class Engine extends IEngine {
       );
       throw new Error(message);
     }
-
-    this.checkRecentlyDeleted(topic);
     // Store will throw custom message if topic was recently deleted
+    this.checkRecentlyDeleted(topic);
     if (!this.client.session.keys.includes(topic)) {
       const { message } = getInternalError(
         "NO_MATCHING_KEY",
