@@ -98,9 +98,11 @@ export class Subscriber extends ISubscriber {
       const params = { topic, relay };
       this.pending.set(topic, params);
       const id = await this.rpcSubscribe(topic, relay);
-      this.onSubscribe(id, params);
-      this.logger.debug(`Successfully Subscribed Topic`);
-      this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
+      if (typeof id === "string") {
+        this.onSubscribe(id, params);
+        this.logger.debug(`Successfully Subscribed Topic`);
+        this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
+      }
       return id;
     } catch (e) {
       this.logger.debug(`Failed to Subscribe Topic`);
@@ -229,12 +231,12 @@ export class Subscriber extends ISubscriber {
         this.subscribeTimeout,
       );
       const result = await subscribe;
-      return result ? hashMessage(topic + this.clientId) : "";
+      return result ? hashMessage(topic + this.clientId) : null;
     } catch (err) {
       this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
     }
-    return "";
+    return null;
   }
 
   private async rpcBatchSubscribe(subscriptions: SubscriberTypes.Params[]) {
@@ -275,7 +277,6 @@ export class Subscriber extends ISubscriber {
   }
 
   private onSubscribe(id: string, params: SubscriberTypes.Params) {
-    if (!id) return;
     this.setSubscription(id, { ...params, id });
     this.pending.delete(params.topic);
   }

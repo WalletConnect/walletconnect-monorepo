@@ -125,7 +125,6 @@ export class Relayer extends IRelayer {
     }
     this.initialized = true;
     setTimeout(async () => {
-      // @ts-ignore
       if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
         this.logger.info(`No topics subscribed to after init, closing transport`);
         await this.transportClose();
@@ -139,13 +138,13 @@ export class Relayer extends IRelayer {
   }
 
   get connected() {
-    // @ts-ignore
-    return this.provider?.connection?.socket?.readyState === 1;
+    // @ts-expect-error
+    return this.provider?.connection?.socket?.readyState === 1 ?? false;
   }
 
   get connecting() {
-    // @ts-ignore
-    return this.provider?.connection?.socket?.readyState === 0;
+    // @ts-expect-error
+    return this.provider?.connection?.socket?.readyState === 0 ?? false;
   }
 
   public async publish(topic: string, message: string, opts?: RelayerTypes.PublishOptions) {
@@ -176,7 +175,8 @@ export class Relayer extends IRelayer {
         this.subscriber.on(SUBSCRIBER_EVENTS.created, onSubCreated);
       }),
       new Promise<void>(async (resolve) => {
-        id = await this.subscriber.subscribe(topic, opts);
+        const result = await this.subscriber.subscribe(topic, opts);
+        id = result || id;
         resolve();
       }),
     ]);
@@ -263,7 +263,7 @@ export class Relayer extends IRelayer {
       }
     }
 
-    if (this.connected) {
+    if (this.hasExperiencedNetworkDisruption || this.connected) {
       await createExpiringPromise(this.provider.disconnect(), 2000, "provider.disconnect()").catch(
         () => this.onProviderDisconnect(),
       );

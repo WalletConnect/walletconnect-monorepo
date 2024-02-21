@@ -45,6 +45,8 @@ export abstract class ISubscriber extends IEvents {
 
   public abstract topicMap: ISubscriberTopicMap;
 
+  public abstract pending: Map<string, SubscriberTypes.Params>;
+
   public abstract readonly length: number;
 
   public abstract readonly ids: string[];
@@ -63,7 +65,7 @@ export abstract class ISubscriber extends IEvents {
 
   public abstract init(): Promise<void>;
 
-  public abstract subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string>;
+  public abstract subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string | null>;
 
   public abstract unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void>;
 

@@ -56,6 +56,7 @@ export class Publisher extends IPublisher {
        * The loop allows to retry to retry the publish in case of disconnect
        */
       while (result === undefined) {
+        // Terminate the publishing attempts if publisTimeout has been exceeded
         if (Date.now() - startPublish > this.publishTimeout) {
           throw new Error(failedPublishMessage);
         }
@@ -71,7 +72,8 @@ export class Publisher extends IPublisher {
         attempts++;
 
         if (!result) {
-          // small buffer to allow transport to beging reconnecting
+          // transport will be restarted immediately after the disconnect
+          // but add small buffer to allow process to begin
           await new Promise((resolve) => setTimeout(resolve, this.failedPublishTimeout));
         }
       }

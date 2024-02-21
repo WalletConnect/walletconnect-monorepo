@@ -24,7 +24,7 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
   private storagePrefix = CORE_STORAGE_PREFIX;
 
   // stores recently deleted key to return different rejection message when key is not found
-  private recentlyDeleted: unknown[] = [];
+  private recentlyDeleted: Key[] = [];
   private recentlyDeletedLimit = 200;
 
   /**
@@ -142,7 +142,7 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
 
   private addToRecentlyDeleted(key: Key) {
     this.recentlyDeleted.push(key);
-    // limit the size of the recentlyDeleted array
+    // limit the size of the recentlyDeleted array, truncate the 100 oldest entries.
     if (this.recentlyDeleted.length >= this.recentlyDeletedLimit) {
       this.recentlyDeleted.splice(0, this.recentlyDeletedLimit / 2);
     }
