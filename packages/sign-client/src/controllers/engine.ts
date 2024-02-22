@@ -1796,9 +1796,6 @@ export class Engine extends IEngine {
 
   private checkRecentlyDeleted = (id: string | number) => {
     const deletedRecord = this.recentlyDeletedMap.get(id);
-    if (this.recentlyDeletedMap.size > 200) {
-      this.recentlyDeletedMap.clear();
-    }
     if (deletedRecord) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
