@@ -189,14 +189,14 @@ export class Relayer extends IRelayer {
 
   public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
     this.logger.debug(`Publishing Request Payload`);
-    await this.toEstablishConnection();
     const id = request.id || (getBigIntRpcId().toString() as any);
-    const requestPromise = this.provider.request(request);
-    this.requestsInFlight.set(id, {
-      promise: requestPromise,
-      request,
-    });
+    await this.toEstablishConnection();
     try {
+      const requestPromise = this.provider.request(request);
+      this.requestsInFlight.set(id, {
+        promise: requestPromise,
+        request,
+      });
       this.logger.trace(
         {
           id,
