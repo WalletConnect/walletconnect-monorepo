@@ -238,28 +238,81 @@ describe("URI", () => {
     expect(message).to.include(`URI: ${request.aud}`);
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
-  it.only("should add resources to siwe message even when missing from request DONE", async () => {
-    const request = {
-      type: "caip122",
-      chains: ["eip155:1"],
-      aud: "https://example.com",
-      domain: "http://localhost:3000",
-      version: "1",
-      nonce: "1",
-      iat: "2024-02-19T09:29:21.394Z",
-      statement: "Requesting access to your account",
-    };
+  describe("resurces", () => {
+    it("should not add resources to siwe message when missing from request DONE", async () => {
+      const request = {
+        type: "caip122",
+        chains: ["eip155:1"],
+        aud: "https://example.com",
+        domain: "http://localhost:3000",
+        version: "1",
+        nonce: "1",
+        iat: "2024-02-19T09:29:21.394Z",
+        statement: "Requesting access to your account",
+      };
 
-    const message = formatMessage(
-      request as any,
-      "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
-    );
-    console.log("message", message);
+      const message = formatMessage(
+        request as any,
+        "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
+      );
+      console.log("message", message);
 
-    expect(message).to.include("Version: 1");
-    expect(message).to.include("Nonce: 1");
-    expect(message).to.include(`URI: ${request.aud}`);
-    expect(message).to.include(`Resources:`);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+      expect(message).to.include("Version: 1");
+      expect(message).to.include("Nonce: 1");
+      expect(message).to.include(`URI: ${request.aud}`);
+      expect(message).to.not.include(`Resources:`);
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    });
+    it("should add resources to siwe message when is empty array DONE", async () => {
+      const request = {
+        type: "caip122",
+        chains: ["eip155:1"],
+        aud: "https://example.com",
+        domain: "http://localhost:3000",
+        version: "1",
+        nonce: "1",
+        iat: "2024-02-19T09:29:21.394Z",
+        statement: "Requesting access to your account",
+        resources: [],
+      };
+
+      const message = formatMessage(
+        request as any,
+        "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
+      );
+      console.log("message", message);
+
+      expect(message).to.include("Version: 1");
+      expect(message).to.include("Nonce: 1");
+      expect(message).to.include(`URI: ${request.aud}`);
+      expect(message).to.include(`Resources:`);
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    });
+    it("should add resources items to siwe message DONE", async () => {
+      const request = {
+        type: "caip122",
+        chains: ["eip155:1"],
+        aud: "https://example.com",
+        domain: "http://localhost:3000",
+        version: "1",
+        nonce: "1",
+        iat: "2024-02-19T09:29:21.394Z",
+        statement: "Requesting access to your account",
+        resources: ["https://example.com"],
+      };
+
+      const message = formatMessage(
+        request as any,
+        "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
+      );
+      console.log("message", message);
+
+      expect(message).to.include("Version: 1");
+      expect(message).to.include("Nonce: 1");
+      expect(message).to.include(`URI: ${request.aud}`);
+      expect(message).to.include(`Resources:`);
+      expect(message).to.include(request.resources[0]);
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    });
   });
 });
