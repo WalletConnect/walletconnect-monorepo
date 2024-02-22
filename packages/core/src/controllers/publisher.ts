@@ -74,7 +74,7 @@ export class Publisher extends IPublisher {
 
         if (!result) {
           // small delay before retrying so we can limit retry to max 1 time per second
-          // if the network is `rpcPublish` will throw immediately
+          // if network is down `rpcPublish` will throw immediately
           await new Promise((resolve) => setTimeout(resolve, this.failedPublishTimeout));
         }
       }
