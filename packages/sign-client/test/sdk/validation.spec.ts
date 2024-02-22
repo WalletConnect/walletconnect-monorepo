@@ -759,17 +759,17 @@ describe("Sign Client Validation", () => {
         const value = `session`;
         await client.addToRecentlyDeleted(key, value);
       }
-      //@ts-ignore
+      //@ts-expect-error
       expect(client.recentlyDeletedMap.size).to.be.greaterThan(1);
-      //@ts-ignore
+      //@ts-expect-error
       expect(client.recentlyDeletedMap.size).to.equal(itemsToDelete);
       // add one more to reach the limit
       await client.addToRecentlyDeleted("test", "session");
 
       // check that the recentlyDeleted list has been halved
-      //@ts-ignore
+      //@ts-expect-error
       expect(client.recentlyDeletedMap.size).to.be.greaterThan(1);
-      //@ts-ignore
+      //@ts-expect-error
       expect(client.recentlyDeletedMap.size).to.equal(client.recentlyDeletedLimit / 2);
     });
   });

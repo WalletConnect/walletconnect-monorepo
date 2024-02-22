@@ -345,25 +345,25 @@ export class Relayer extends IRelayer {
   private startPingTimeout() {
     if (!isNode()) return;
     try {
-      //@ts-ignore
+      //@ts-expect-error - Types are divergent between the node and browser WS API
       if (this.provider?.connection?.socket) {
-        //@ts-ignore
+        //@ts-expect-error
         this.provider?.connection?.socket?.once("ping", () => {
-          this.heartbeat();
+          this.resetPingTimeout();
         });
       }
-      this.heartbeat();
+      this.resetPingTimeout();
     } catch (e) {
       this.logger.warn(e);
     }
   }
 
-  private heartbeat = () => {
+  private resetPingTimeout = () => {
     if (!isNode()) return;
     try {
       clearTimeout(this.pingTimeout);
       this.pingTimeout = setTimeout(() => {
-        //@ts-ignore
+        //@ts-expect-error
         this.provider?.connection?.socket?.terminate();
       }, this.heartBeatTimeout);
     } catch (e) {
@@ -460,7 +460,7 @@ export class Relayer extends IRelayer {
   // ---------- Events Handlers ----------------------------------------------- //
   private onPayloadHandler = (payload: JsonRpcPayload) => {
     this.onProviderPayload(payload);
-    this.heartbeat();
+    this.resetPingTimeout();
   };
 
   private onConnectHandler = () => {

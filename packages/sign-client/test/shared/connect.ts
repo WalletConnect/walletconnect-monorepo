@@ -162,7 +162,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   expect(sessionA.namespaces).to.eql(approveParams.namespaces);
   expect(sessionA.namespaces).to.eql(sessionB.namespaces);
   expect(sessionA.sessionProperties).to.eql(TEST_SESSION_PROPERTIES_APPROVE);
-  // testing expiry is not reliable as on slow networks take longer to settle
+  // testing expiry is not reliable as on slow networks we take longer to settle
   // expect(Math.abs(sessionA.expiry - sessionB.expiry)).to.be.lessThanOrEqual(5);
   // participants
   expect(sessionA.self).to.eql(sessionB.peer);
