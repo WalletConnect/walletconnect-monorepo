@@ -40,7 +40,7 @@ export const formatMessage = (cacao: AuthTypes.PayloadParams, iss: string) => {
   const nonce = `Nonce: ${cacao.nonce}`;
   const issuedAt = `Issued At: ${cacao.iat}`;
   const resources = cacao.resources
-    ? `Resources:\n${cacao.resources.map((resource) => `- ${resource}`).join("\n")}`
+    ? `Resources:${cacao.resources.map((resource) => `\n- ${resource}`).join("\n")}`
     : undefined;
 
   if (cacao.resources && cacao.resources.length) {
