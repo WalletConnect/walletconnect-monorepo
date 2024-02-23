@@ -79,6 +79,7 @@ import {
   parseUri,
   createEncodedRecap,
   getChainsFromRecap,
+  getDidChainId,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -688,7 +689,13 @@ export class Engine extends IEngine {
         });
         console.log("reconstructed", reconstructed);
         const walletAddress = getDidAddress(payload.iss) as string;
-        const valid = await verifySignature(walletAddress, reconstructed, signature);
+        const valid = await verifySignature(
+          walletAddress,
+          reconstructed,
+          signature,
+          getDidChainId(payload.iss) as string,
+          this.client.core.projectId as string,
+        );
 
         console.log("@dapp valid", valid ? "✅" : "🛑", valid);
         const recaps =
@@ -827,7 +834,13 @@ export class Engine extends IEngine {
         const walletAddress = getDidAddress(payload.iss) as string;
         console.log("walletAddress", payload.iss);
         try {
-          const valid = await verifySignature(walletAddress, reconstructed, signature);
+          const valid = await verifySignature(
+            walletAddress,
+            reconstructed,
+            signature,
+            getDidChainId(payload.iss) as string,
+            this.client.core.projectId as string,
+          );
           if (!valid) allValid = false;
           console.log("wallet - valid", valid ? "✅" : "🛑", valid, reconstructed);
         } catch (error) {
