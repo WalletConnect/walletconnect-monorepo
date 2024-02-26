@@ -8,6 +8,7 @@ export async function deleteClients(clients: {
   await throttle(500);
   for (const client of [clients.A, clients.B]) {
     if (!client) continue;
+    await disconnectSocket(client.core);
     client.core.events.removeAllListeners();
     client.core.relayer.events.removeAllListeners();
     client.core.heartbeat.stop();
@@ -15,7 +16,6 @@ export async function deleteClients(clients: {
     client.core.relayer.subscriber.events.removeAllListeners();
     client.core.relayer.provider.connection.events.removeAllListeners();
     client.events.removeAllListeners();
-    await disconnectSocket(client.core);
   }
   delete clients.A;
   delete clients.B;

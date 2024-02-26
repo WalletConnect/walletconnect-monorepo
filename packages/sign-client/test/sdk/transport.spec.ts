@@ -8,7 +8,6 @@ describe("Sign Client Transport Tests", () => {
       const {
         sessionA: { topic },
       } = await testConnectMethod(clients);
-
       await clients.A.core.relayer.restartTransport();
       await clients.B.core.relayer.restartTransport();
       await Promise.all([

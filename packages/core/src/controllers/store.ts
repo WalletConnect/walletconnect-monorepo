@@ -23,6 +23,10 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
 
   private storagePrefix = CORE_STORAGE_PREFIX;
 
+  // stores recently deleted key to return different rejection message when key is not found
+  private recentlyDeleted: Key[] = [];
+  private recentlyDeletedLimit = 200;
+
   /**
    * @param {ICore} core Core
    * @param {Logger} logger Logger
@@ -130,10 +134,19 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
     this.logger.debug(`Deleting value`);
     this.logger.trace({ type: "method", method: "delete", key, reason });
     this.map.delete(key);
+    this.addToRecentlyDeleted(key);
     await this.persist();
   };
 
   // ---------- Private ----------------------------------------------- //
+
+  private addToRecentlyDeleted(key: Key) {
+    this.recentlyDeleted.push(key);
+    // limit the size of the recentlyDeleted array, truncate the 100 oldest entries.
+    if (this.recentlyDeleted.length >= this.recentlyDeletedLimit) {
+      this.recentlyDeleted.splice(0, this.recentlyDeletedLimit / 2);
+    }
+  }
 
   private async setDataStore(value: Data[]) {
     await this.core.storage.setItem<Data[]>(this.storageKey, value);
@@ -147,6 +160,15 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
   private getData(key: Key) {
     const value = this.map.get(key);
     if (!value) {
+      if (this.recentlyDeleted.includes(key)) {
+        const { message } = getInternalError(
+          "MISSING_OR_INVALID",
+          `Record was recently deleted - ${this.name}: ${key}`,
+        );
+        this.logger.error(message);
+        throw new Error(message);
+      }
+
       const { message } = getInternalError("NO_MATCHING_KEY", `${this.name}: ${key}`);
       this.logger.error(message);
       throw new Error(message);

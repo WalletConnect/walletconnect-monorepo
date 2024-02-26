@@ -1,4 +1,4 @@
-import { FIVE_MINUTES, ONE_DAY, SEVEN_DAYS, THIRTY_SECONDS } from "@walletconnect/time";
+import { FIVE_MINUTES, ONE_DAY, SEVEN_DAYS } from "@walletconnect/time";
 import { EngineTypes } from "@walletconnect/types";
 
 export const ENGINE_CONTEXT = "engine";
@@ -91,12 +91,12 @@ export const ENGINE_RPC_OPTS: EngineTypes.RpcOptsMap = {
   },
   wc_sessionPing: {
     req: {
-      ttl: THIRTY_SECONDS,
+      ttl: ONE_DAY,
       prompt: false,
       tag: 1114,
     },
     res: {
-      ttl: THIRTY_SECONDS,
+      ttl: ONE_DAY,
       prompt: false,
       tag: 1115,
     },
