@@ -172,10 +172,13 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
   // encode the new recaps and add to resources
   const encodedRecaps = recaps.map((recap) => encodeRecap(recap));
 
+  console.log("filteredRecaps", filteredRecaps);
+  console.log("encodedRecaps", encodedRecaps);
+  const updatedResources = [...filteredRecaps, ...encodedRecaps];
   return {
     ...authPayload,
     chains: supportedChains,
-    resources: [...filteredRecaps, ...encodedRecaps],
+    resources: authPayload?.resources || updatedResources.length > 0 ? updatedResources : undefined,
   };
 }
 

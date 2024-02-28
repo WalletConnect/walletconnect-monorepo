@@ -77,7 +77,6 @@ import {
   verifySignature,
   getMethodsFromRecap,
   buildNamespacesFromAuth,
-  parseUri,
   createEncodedRecap,
   getChainsFromRecap,
   getDidChainId,
@@ -758,6 +757,7 @@ export class Engine extends IEngine {
         }
       },
     );
+    let allValid = true;
     // handle session authenticate response
     this.events.once(engineEvent("session_request", id), async (payload: any) => {
       if (payload.error) {
@@ -804,6 +804,11 @@ export class Engine extends IEngine {
         );
 
         console.log("@dapp valid", valid ? "✅" : "🛑", valid);
+        if (!valid) {
+          reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
+          return;
+        }
+        allValid = valid;
         const recaps =
           payload.resources?.filter((resource) => resource?.includes("urn:recap:")) || [];
 
@@ -979,7 +984,7 @@ export class Engine extends IEngine {
 
     if (!allValid) {
       console.log("invalid signature");
-      const invalidErr = getSdkError("SESSION_SETTLEMENT_FAILED", "Invalid signature");
+      const invalidErr = getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed");
 
       console.log("sending error");
       await this.sendError({
