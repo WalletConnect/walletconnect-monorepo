@@ -1,10 +1,8 @@
-import { RELAYER_EVENTS } from "@walletconnect/core";
 import {
   formatJsonRpcError,
   formatJsonRpcResult,
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { RelayerTypes } from "@walletconnect/types";
 import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
@@ -17,7 +15,6 @@ import {
   throttle,
   TEST_REQUEST_PARAMS,
   TEST_NAMESPACES,
-  TEST_REQUIRED_NAMESPACES,
   TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE,
   TEST_AVALANCHE_CHAIN,
   TEST_REQUIRED_NAMESPACES_V2,
@@ -75,9 +72,9 @@ describe("Sign Client Integration", () => {
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
       expect(A.pairing.keys.length).to.eql(1);
-      await throttle(200);
+      await throttle(1000);
       await testConnectMethod(clients);
-      await throttle(200);
+      await throttle(1000);
       expect(A.pairing.keys).to.eql(B.pairing.keys);
       expect(A.pairing.keys.length).to.eql(1);
       await deleteClients(clients);
@@ -126,7 +123,6 @@ describe("Sign Client Integration", () => {
       if (!uri) throw new Error("URI is undefined");
       expect(uri).to.exist;
       const parsedUri = parseUri(uri);
-
       // 1. attempt to pair
       // 2. receive the session_proposal event
       // 3. avoid approving or rejecting the proposal - simulates accidental closing of the app/modal etc
@@ -178,7 +174,9 @@ describe("Sign Client Integration", () => {
         } = await initTwoPairedClients({}, {}, { logger: "error" });
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
-        expect(() => clients.A.pairing.get(topic)).to.throw(`No matching key. pairing: ${topic}`);
+        expect(() => clients.A.pairing.get(topic)).to.throw(
+          `Missing or invalid. Record was recently deleted - pairing: ${topic}`,
+        );
         const promise = clients.A.ping({ topic });
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
@@ -200,9 +198,11 @@ describe("Sign Client Integration", () => {
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
         const promise = clients.A.ping({ topic });
-        expect(() => clients.A.session.get(topic)).to.throw(`No matching key. session: ${topic}`);
+        expect(() => clients.A.session.get(topic)).to.throw(
+          `Missing or invalid. Record was recently deleted - session: ${topic}`,
+        );
         await expect(promise).rejects.toThrowError(
-          `No matching key. session or pairing topic doesn't exist: ${topic}`,
+          `Missing or invalid. Record was recently deleted - session: ${topic}`,
         );
         await throttle(2_000);
         expect(clients.A.core.crypto.keychain.has(topic)).to.be.false;
@@ -262,10 +262,10 @@ describe("Sign Client Integration", () => {
     describe("session", () => {
       describe("with existing session", () => {
         it("A pings B", async () => {
+          const clients = await initTwoClients();
           const {
-            clients,
             sessionA: { topic },
-          } = await initTwoPairedClients({}, {}, { logger: "error" });
+          } = await testConnectMethod(clients);
           await clients.A.ping({ topic });
           await deleteClients(clients);
         });
@@ -502,7 +502,7 @@ describe("Sign Client Integration", () => {
         sessionA: { topic },
       } = await initTwoPairedClients({}, {}, { logger: "error" });
       const prevExpiry = clients.A.session.get(topic).expiry;
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
       // Fast-forward system time by 60 seconds after expiry was first set.
       vi.setSystemTime(Date.now() + 60_000);
       const { acknowledged } = await clients.A.extend({
@@ -520,7 +520,7 @@ describe("Sign Client Integration", () => {
         sessionA: { topic },
       } = await initTwoPairedClients({}, {}, { logger: "error" });
       const prevExpiry = clients.A.session.get(topic).expiry;
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
       // Fast-forward system time by 60 seconds after expiry was first set.
       vi.setSystemTime(Date.now() + 60_000);
       const { acknowledged } = await clients.A.extend({

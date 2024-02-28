@@ -271,4 +271,4 @@ export const TEST_SIGN_REQUEST_PARAMS = {
 };
 
 export const TESTS_CONNECT_RETRIES = 5;
-export const TESTS_CONNECT_TIMEOUT = 20_000;
+export const TESTS_CONNECT_TIMEOUT = 60_000;

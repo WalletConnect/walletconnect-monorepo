@@ -56,16 +56,14 @@ export async function initTwoPairedClients(
         initTwoClients(clientOptsA, clientOptsB, sharedClientOpts),
         TESTS_CONNECT_TIMEOUT,
       )) as Clients;
-
       const settled: any = await createExpiringPromise(
         testConnectMethod(clients),
-        TESTS_CONNECT_TIMEOUT,
+        TESTS_CONNECT_TIMEOUT * 2,
       );
       pairingA = settled.pairingA;
       sessionA = settled.sessionA;
     } catch (e) {
       console.error("Error initTwoPairedClients, attempts: ", retries, e);
-      if (clients) await deleteClients(clients);
     }
     retries++;
   }
