@@ -757,7 +757,6 @@ export class Engine extends IEngine {
         }
       },
     );
-    let allValid = true;
     // handle session authenticate response
     this.events.once(engineEvent("session_request", id), async (payload: any) => {
       if (payload.error) {
@@ -808,7 +807,6 @@ export class Engine extends IEngine {
           reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
           return;
         }
-        allValid = valid;
         const recaps =
           payload.resources?.filter((resource) => resource?.includes("urn:recap:")) || [];
 
