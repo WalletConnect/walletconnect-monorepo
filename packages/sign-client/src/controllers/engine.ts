@@ -889,7 +889,7 @@ export class Engine extends IEngine {
 
     const { id, auths } = sessionAuthenticateResponseParams;
 
-    const pendingRequest = this.getPendingRequest(id);
+    const pendingRequest = this.getPendingAuthRequest(id);
 
     if (!pendingRequest) {
       throw new Error(`Could not find pending auth request with id ${id}`);
@@ -1068,7 +1068,7 @@ export class Engine extends IEngine {
 
     const { id, reason } = params;
 
-    const pendingRequest = this.getPendingRequest(id);
+    const pendingRequest = this.getPendingAuthRequest(id);
 
     if (!pendingRequest) {
       throw new Error(`Could not find pending auth request with id ${id}`);
@@ -2413,7 +2413,7 @@ export class Engine extends IEngine {
   //     .filter((value) => typeof value === "object") as unknown as AuthTypes.PendingRequest[];
   // };
 
-  private getPendingRequest = (id: number) => {
+  private getPendingAuthRequest = (id: number) => {
     const request = this.client.auth.requests.get(id);
     return typeof request === "object" ? request : undefined;
   };

@@ -102,15 +102,22 @@ export function buildAuthObject(
     iss,
     chainId,
   });
-
   const authObject: AuthTypes.Cacao = {
     h: {
       t: "caip122",
     },
     p: {
-      ...requestPayload,
-      chainId,
       iss,
+      domain: requestPayload.domain,
+      aud: requestPayload.aud,
+      version: requestPayload.version,
+      nonce: requestPayload.nonce,
+      iat: requestPayload.iat,
+      statement: requestPayload.statement,
+      requestId: requestPayload.requestId,
+      resources: requestPayload.resources,
+      nbf: requestPayload.nbf,
+      exp: requestPayload.exp,
     },
     s: signature,
   };
