@@ -79,7 +79,8 @@ export declare namespace AuthTypes {
   type SessionAuthenticateParams = {
     pairingTopic?: string;
     methods?: string[];
-  } & RequestParams;
+    uri: string;
+  } & Omit<RequestParams, "aud">;
 
   type PayloadParams = {
     version: string;
@@ -141,7 +142,7 @@ export declare namespace AuthTypes {
     error: ErrorResponse;
   }
 
-  type AuthResponse = SessionAuthenticateResponseParams["cacaos"]
+  type AuthResponse = SessionAuthenticateResponseParams["cacaos"];
 
   interface Participant {
     publicKey: string;

@@ -29,7 +29,7 @@ describe("Authenticated Sessions", () => {
       chains: ["eip155:1", "eip155:2"],
       domain: "localhost",
       nonce: "1",
-      aud: "aud",
+      uri: "aud",
       methods: ["personal_sign", "eth_chainId", "eth_signTypedData_v4"],
       resources: [
         // "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9leGFtcGxlLmNvbSI6W3sicHVzaC9ub3RpZmljYXRpb24iOlt7fV19XX19==",
@@ -141,7 +141,7 @@ describe("Authenticated Sessions", () => {
       chains: ["eip155:1", "eip155:2"],
       domain: "localhost",
       nonce: "1",
-      aud: "aud",
+      uri: "aud",
       methods: ["personal_sign"],
       resources: [
         // "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9leGFtcGxlLmNvbSI6W3sicHVzaC9ub3RpZmljYXRpb24iOlt7fV19XX19==",
@@ -250,7 +250,7 @@ describe("Authenticated Sessions", () => {
       chains: ["eip155:1", "eip155:2"],
       domain: "localhost",
       nonce: "1",
-      aud: "aud",
+      uri: "aud",
       methods: ["personal_sign", "eth_signTypedData_v4"],
     });
     console.log("uri", uri);
@@ -340,7 +340,7 @@ describe("Authenticated Sessions", () => {
       chains: ["eip155:1"],
       domain: "localhost",
       nonce: "1",
-      aud: "aud",
+      uri: "aud",
     });
     console.log("uri", uri);
     const wallet = await SignClient.init({

@@ -602,7 +602,7 @@ export class Engine extends IEngine {
     const {
       chains,
       statement,
-      aud,
+      uri,
       domain,
       nonce,
       type,
@@ -628,8 +628,8 @@ export class Engine extends IEngine {
     }
     console.log("namespace", namespace);
 
-    let { topic: pairingTopic, uri } = await this.client.core.pairing.create();
-    uri = `${uri}&methods=wc_sessionAuthenticate`;
+    let { topic: pairingTopic, uri: connectionUri } = await this.client.core.pairing.create();
+    connectionUri = `${uri}&methods=wc_sessionAuthenticate`;
 
     this.client.logger.info({
       message: "Generated new pairing",
@@ -672,7 +672,7 @@ export class Engine extends IEngine {
         type: type ?? "caip122",
         chains,
         statement,
-        aud,
+        aud: uri,
         domain,
         version: "1",
         nonce,
@@ -880,7 +880,7 @@ export class Engine extends IEngine {
     });
 
     return {
-      uri,
+      uri: connectionUri,
       response: done,
     } as EngineTypes.SessionAuthenticateResponsePromise;
   };
