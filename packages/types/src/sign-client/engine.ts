@@ -367,7 +367,7 @@ export abstract class IEngine {
 
   public abstract getPendingSessionRequests: () => PendingRequestTypes.Struct[];
 
-  public abstract sessionAuthenticate: (params: AuthTypes.SessionAuthenticateParams) => Promise<EngineTypes.SessionAuthenticateResponsePromise>
+  public abstract authenticate: (params: AuthTypes.SessionAuthenticateParams) => Promise<EngineTypes.SessionAuthenticateResponsePromise>
 
   public abstract approveSessionAuthenticate: (
     params: AuthTypes.ApproveSessionAuthenticateParams,

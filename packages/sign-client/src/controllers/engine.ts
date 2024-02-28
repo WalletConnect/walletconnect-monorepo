@@ -593,7 +593,7 @@ export class Engine extends IEngine {
 
   // ---------- Auth ------------------------------------------------ //
 
-  public sessionAuthenticate: IEngine["sessionAuthenticate"] = async (params) => {
+  public authenticate: IEngine["authenticate"] = async (params) => {
     this.isInitialized();
 
     // if (!isValidRequest(params)) {

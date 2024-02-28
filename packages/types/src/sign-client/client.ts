@@ -131,7 +131,7 @@ export abstract class ISignClient {
   public abstract disconnect: IEngine["disconnect"];
   public abstract find: IEngine["find"];
   public abstract getPendingSessionRequests: IEngine["getPendingSessionRequests"];
-  public abstract sessionAuthenticate: IEngine["sessionAuthenticate"];
+  public abstract authenticate: IEngine["authenticate"];
   public abstract formatAuthMessage: IEngine["formatAuthMessage"];
   public abstract approveSessionAuthenticate: IEngine["approveSessionAuthenticate"];
   public abstract rejectSessionAuthenticate: IEngine["rejectSessionAuthenticate"];

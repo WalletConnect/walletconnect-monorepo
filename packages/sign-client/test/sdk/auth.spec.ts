@@ -25,7 +25,7 @@ describe("Authenticated Sessions", () => {
     expect(dapp.metadata.redirect?.universal).to.exist;
     expect(dapp.metadata.redirect?.native).to.not.exist;
 
-    const { uri, response } = await dapp.sessionAuthenticate({
+    const { uri, response } = await dapp.authenticate({
       chains: ["eip155:1", "eip155:2"],
       domain: "localhost",
       nonce: "1",
@@ -137,7 +137,7 @@ describe("Authenticated Sessions", () => {
     expect(dapp.metadata.redirect?.universal).to.exist;
     expect(dapp.metadata.redirect?.native).to.not.exist;
 
-    const { uri, response } = await dapp.sessionAuthenticate({
+    const { uri, response } = await dapp.authenticate({
       chains: ["eip155:1", "eip155:2"],
       domain: "localhost",
       nonce: "1",
@@ -246,7 +246,7 @@ describe("Authenticated Sessions", () => {
     expect(dapp.metadata.redirect?.universal).to.exist;
     expect(dapp.metadata.redirect?.native).to.not.exist;
 
-    const { uri, response } = await dapp.sessionAuthenticate({
+    const { uri, response } = await dapp.authenticate({
       chains: ["eip155:1", "eip155:2"],
       domain: "localhost",
       nonce: "1",
@@ -336,7 +336,7 @@ describe("Authenticated Sessions", () => {
     expect(dapp.metadata.redirect?.universal).to.exist;
     expect(dapp.metadata.redirect?.native).to.not.exist;
 
-    const { uri, response } = await dapp.sessionAuthenticate({
+    const { uri, response } = await dapp.authenticate({
       chains: ["eip155:1"],
       domain: "localhost",
       nonce: "1",

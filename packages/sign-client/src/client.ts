@@ -230,9 +230,9 @@ export class SignClient extends ISignClient {
     }
   };
 
-  public sessionAuthenticate: ISignClient["sessionAuthenticate"] = async (params) => {
+  public authenticate: ISignClient["authenticate"] = async (params) => {
     try {
-      return await this.engine.sessionAuthenticate(params);
+      return await this.engine.authenticate(params);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
