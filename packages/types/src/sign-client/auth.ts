@@ -6,6 +6,7 @@ import {
   JsonRpcResult,
 } from "@walletconnect/jsonrpc-types";
 import { CoreTypes, ICore, IStore, Verify } from "../core";
+import { SessionTypes } from "./session";
 
 export declare namespace AuthTypes {
   type Event = "session_authenticate";
@@ -154,6 +155,12 @@ export declare namespace AuthTypes {
     authPayload: PayloadParams;
     expiryTimestamp: number;
   }
+
+  type AuthenticateResponseResult = {
+    auths?: AuthTypes.AuthResponse;
+    session: SessionTypes.Struct;
+  };
+
 }
 
 export type IAuth = {

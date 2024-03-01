@@ -237,6 +237,7 @@ export function buildNamespacesFromAuth(methods: string[], accounts: string[]) {
   const namespaceObj = {
     [namespace]: {
       accounts,
+      chains: accounts.map((account) => `${account.split(":")[0]}:${account.split(":")[1]}`),
       methods,
       events: [],
     },

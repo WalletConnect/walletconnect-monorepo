@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import SignClient, { PROPOSAL_EXPIRY_MESSAGE } from "@walletconnect/sign-client";
 import { SessionTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
@@ -31,6 +32,7 @@ import {
   NamespaceConfig,
   PairingsCleanupOpts,
   ProviderAccounts,
+  AuthenticateParams,
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS } from "./constants";
@@ -136,6 +138,32 @@ export class UniversalProvider implements IUniversalProvider {
     if (opts.skipPairing) return;
 
     return await this.pair(opts.pairingTopic);
+  }
+
+  public async authenticate(opts: AuthenticateParams) {
+    console.log("UP authenticate", opts);
+    if (!this.client) {
+      throw new Error("Sign Client not initialized");
+    }
+    this.setNamespaces(opts);
+    await this.cleanupPendingPairings();
+
+    const { uri, response } = await this.client.authenticate({
+      ...opts,
+    });
+    console.log("UP authenticate uri", uri);
+    if (uri) {
+      this.uri = uri;
+      this.events.emit("display_uri", uri);
+    }
+    const result = await response();
+    this.session = result.session;
+    // assign namespaces from session if not already defined
+    const approved = populateNamespacesChains(this.session.namespaces) as NamespaceConfig;
+    this.namespaces = mergeRequiredOptionalNamespaces(this.namespaces, approved);
+    this.persist("namespaces", this.namespaces);
+    this.onConnect();
+    return result;
   }
 
   public on(event: any, listener: any): void {

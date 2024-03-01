@@ -629,7 +629,7 @@ export class Engine extends IEngine {
     console.log("namespace", namespace);
 
     let { topic: pairingTopic, uri: connectionUri } = await this.client.core.pairing.create();
-    connectionUri = `${uri}&methods=wc_sessionAuthenticate`;
+    connectionUri = `${connectionUri}&methods=wc_sessionAuthenticate`;
 
     this.client.logger.info({
       message: "Generated new pairing",
