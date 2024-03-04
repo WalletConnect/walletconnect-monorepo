@@ -6,7 +6,13 @@ import { Logger } from "@walletconnect/logger";
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
 export declare namespace Web3WalletTypes {
-  type Event = "session_proposal" | "session_request" | "session_delete" | "auth_request";
+  type Event =
+    | "session_proposal"
+    | "session_request"
+    | "session_delete"
+    | "auth_request"
+    | "proposal_expire"
+    | "session_request_expire";
 
   interface BaseEventArgs<T = unknown> {
     id: number;
@@ -29,11 +35,17 @@ export declare namespace Web3WalletTypes {
 
   type SessionDelete = Omit<BaseEventArgs, "params">;
 
+  type ProposalExpire = { id: number };
+
+  type SessionRequestExpire = { id: number };
+
   interface EventArguments {
     session_proposal: SessionProposal;
     session_request: SessionRequest;
     session_delete: Omit<BaseEventArgs, "params">;
     auth_request: AuthRequest;
+    proposal_expire: ProposalExpire;
+    session_request_expire: SessionRequestExpire;
   }
 
   interface Options {

@@ -18,7 +18,8 @@ export declare namespace SignClientTypes {
     | "session_request"
     | "session_request_sent"
     | "session_event"
-    | "proposal_expire";
+    | "proposal_expire"
+    | "session_request_expire";
 
   interface BaseEventArgs<T = unknown> {
     id: number;
@@ -37,7 +38,7 @@ export declare namespace SignClientTypes {
     session_request: {
       verifyContext: Verify.Context;
     } & BaseEventArgs<{
-      request: { method: string; params: any };
+      request: { method: string; params: any; expiryTimestamp?: number };
       chainId: string;
     }>;
     session_request_sent: {
@@ -51,6 +52,7 @@ export declare namespace SignClientTypes {
       chainId: string;
     }>;
     proposal_expire: { id: number };
+    session_request_expire: { id: number };
   }
 
   type Metadata = CoreTypes.Metadata;

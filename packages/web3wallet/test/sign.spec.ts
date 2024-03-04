@@ -4,9 +4,10 @@ import {
   formatJsonRpcResult,
   isJsonRpcRequest,
 } from "@walletconnect/jsonrpc-utils";
-import { SignClient } from "@walletconnect/sign-client";
+import { SignClient, ENGINE_RPC_OPTS } from "@walletconnect/sign-client";
 import { CoreTypes, ICore, ISignClient, SessionTypes } from "@walletconnect/types";
 import { getSdkError } from "@walletconnect/utils";
+import { toMiliseconds } from "@walletconnect/time";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
 import { expect, describe, it, beforeEach, vi, beforeAll, afterAll } from "vitest";
@@ -381,6 +382,106 @@ describe("Sign Integration", () => {
       }),
       wallet.pair({ uri: uriString }),
     ]);
+  });
+
+  it.skip("receive proposal_expire event", async () => {
+    const { uri: uriString } = await dapp.connect({ requiredNamespaces: TEST_REQUIRED_NAMESPACES });
+
+    // first pair and approve session
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.once("session_proposal", () => {
+          vi.useFakeTimers({
+            shouldAdvanceTime: true,
+          });
+          // Fast-forward system time by 4 min 58 seconds after expiry was first set.
+          vi.setSystemTime(
+            Date.now() + toMiliseconds(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl - 2),
+          );
+        });
+        wallet.on("session_proposal", async (event) => {
+          const { id } = event;
+          const startTimer = Date.now();
+          await new Promise<void>((resolve) => {
+            wallet.on("proposal_expire", (event) => {
+              const { id: expiredId } = event;
+              if (id === expiredId) {
+                expect(startTimer).to.be.approximately(Date.now(), 5000); // 5 seconds delta for heartbeat
+                resolve();
+              }
+            });
+          });
+          resolve();
+        });
+      }),
+      wallet.pair({ uri: uriString! }),
+    ]);
+    vi.useRealTimers();
+  });
+  it.skip("receive session_request_expire event", async () => {
+    vi.useRealTimers();
+    // first pair and approve session
+    await Promise.all([
+      new Promise((resolve) => {
+        wallet.on("session_proposal", async (sessionProposal) => {
+          const { id, params } = sessionProposal;
+          session = await wallet.approveSession({
+            id,
+            namespaces: {
+              eip155: {
+                ...TEST_NAMESPACES.eip155,
+                accounts: [`${TEST_ETHEREUM_CHAIN}:${cryptoWallet.address}`],
+              },
+            },
+          });
+          expect(params.requiredNamespaces).to.toMatchObject(TEST_REQUIRED_NAMESPACES);
+          resolve(session);
+        });
+      }),
+      sessionApproval(),
+      wallet.pair({ uri: uriString }),
+    ]);
+    // first pair and approve session
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.once("session_request", () => {
+          vi.useFakeTimers({
+            shouldAdvanceTime: true,
+          });
+          // Fast-forward system time by 4 min 50 seconds after expiry was first set.
+          vi.setSystemTime(
+            Date.now() + toMiliseconds(ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl - 10),
+          );
+        });
+        wallet.on("session_request", async (event) => {
+          const { id } = event;
+          const startTimer = Date.now();
+          await new Promise<void>((resolve) => {
+            wallet.on("session_request_expire", (event) => {
+              const { id: expiredId } = event;
+              if (id === expiredId) {
+                expect(startTimer).to.be.approximately(Date.now(), 15000); // 15 seconds delta for heartbeat
+                resolve();
+              }
+            });
+          });
+          await wallet.respondSessionRequest({
+            topic: session.topic,
+            response: formatJsonRpcResult(id, "0x"),
+          });
+          resolve();
+        });
+      }),
+      dapp.request({
+        topic: session.topic,
+        request: {
+          method: "eth_signTransaction",
+          params: ["0xdeadbeef", cryptoWallet.address],
+        },
+        chainId: TEST_ETHEREUM_CHAIN,
+      }),
+    ]);
+    vi.useRealTimers();
   });
 
   it("should get pending session requests", async () => {

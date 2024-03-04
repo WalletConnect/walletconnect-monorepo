@@ -1,11 +1,9 @@
-import { RELAYER_EVENTS } from "@walletconnect/core";
 import {
   formatJsonRpcError,
   formatJsonRpcResult,
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { RelayerTypes } from "@walletconnect/types";
-import { getSdkError, parseUri } from "@walletconnect/utils";
+import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 
@@ -17,7 +15,6 @@ import {
   throttle,
   TEST_REQUEST_PARAMS,
   TEST_NAMESPACES,
-  TEST_REQUIRED_NAMESPACES,
   TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE,
   TEST_AVALANCHE_CHAIN,
   TEST_REQUIRED_NAMESPACES_V2,
@@ -75,9 +72,9 @@ describe("Sign Client Integration", () => {
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
       expect(A.pairing.keys.length).to.eql(1);
-      await throttle(200);
+      await throttle(1000);
       await testConnectMethod(clients);
-      await throttle(200);
+      await throttle(1000);
       expect(A.pairing.keys).to.eql(B.pairing.keys);
       expect(A.pairing.keys.length).to.eql(1);
       await deleteClients(clients);
@@ -126,7 +123,6 @@ describe("Sign Client Integration", () => {
       if (!uri) throw new Error("URI is undefined");
       expect(uri).to.exist;
       const parsedUri = parseUri(uri);
-
       // 1. attempt to pair
       // 2. receive the session_proposal event
       // 3. avoid approving or rejecting the proposal - simulates accidental closing of the app/modal etc
@@ -165,7 +161,6 @@ describe("Sign Client Integration", () => {
       // 7. attempt to pair again with the same URI
       // 8. should receive an error the pairing already exists
       await expect(wallet.pair({ uri })).rejects.toThrowError();
-
       await deleteClients({ A: dapp, B: wallet });
     });
   });
@@ -179,7 +174,9 @@ describe("Sign Client Integration", () => {
         } = await initTwoPairedClients({}, {}, { logger: "error" });
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
-        expect(() => clients.A.pairing.get(topic)).to.throw(`No matching key. pairing: ${topic}`);
+        expect(() => clients.A.pairing.get(topic)).to.throw(
+          `Missing or invalid. Record was recently deleted - pairing: ${topic}`,
+        );
         const promise = clients.A.ping({ topic });
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
@@ -201,9 +198,11 @@ describe("Sign Client Integration", () => {
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
         const promise = clients.A.ping({ topic });
-        expect(() => clients.A.session.get(topic)).to.throw(`No matching key. session: ${topic}`);
+        expect(() => clients.A.session.get(topic)).to.throw(
+          `Missing or invalid. Record was recently deleted - session: ${topic}`,
+        );
         await expect(promise).rejects.toThrowError(
-          `No matching key. session or pairing topic doesn't exist: ${topic}`,
+          `Missing or invalid. Record was recently deleted - session: ${topic}`,
         );
         await throttle(2_000);
         expect(clients.A.core.crypto.keychain.has(topic)).to.be.false;
@@ -263,10 +262,10 @@ describe("Sign Client Integration", () => {
     describe("session", () => {
       describe("with existing session", () => {
         it("A pings B", async () => {
+          const clients = await initTwoClients();
           const {
-            clients,
             sessionA: { topic },
-          } = await initTwoPairedClients({}, {}, { logger: "error" });
+          } = await testConnectMethod(clients);
           await clients.A.ping({ topic });
           await deleteClients(clients);
         });
@@ -336,11 +335,12 @@ describe("Sign Client Integration", () => {
                 if (receivedRequests >= expectedRequests) resolve();
               });
             }),
-            Array.from(Array(expectedRequests).keys()).map(() =>
-              clients.A.request({
-                topic,
-                ...TEST_REQUEST_PARAMS,
-              }),
+            Array.from(Array(expectedRequests).keys()).map(
+              async () =>
+                await clients.A.request({
+                  topic,
+                  ...TEST_REQUEST_PARAMS,
+                }),
             ),
           ]);
           await throttle(1000);
@@ -408,22 +408,26 @@ describe("Sign Client Integration", () => {
                   // eslint-disable-next-line no-console
                   console.log("respond error", err);
                 });
-                if (receivedRequests >= expectedRequests) resolve();
+                if (receivedRequests > expectedRequests) resolve();
               });
             }),
-            new Promise<void>((resolve) => {
-              clients.A.request({
-                topic: topicB,
-                ...TEST_REQUEST_PARAMS,
-              });
+            new Promise<void>(async (resolve) => {
+              await Promise.all([
+                ...Array.from(Array(expectedRequests).keys()).map(
+                  async () =>
+                    await clients.A.request({
+                      topic: topicA,
+                      ...TEST_REQUEST_PARAMS,
+                    }),
+                ),
+                clients.A.request({
+                  topic: topicB,
+                  ...TEST_REQUEST_PARAMS,
+                  // eslint-disable-next-line no-console
+                }).catch((e) => console.error(e)), // capture the error from the session disconnect
+              ]);
               resolve();
             }),
-            Array.from(Array(expectedRequests).keys()).map(() =>
-              clients.A.request({
-                topic: topicA,
-                ...TEST_REQUEST_PARAMS,
-              }),
-            ),
           ]);
           await throttle(1000);
           await deleteClients(clients);
@@ -437,7 +441,6 @@ describe("Sign Client Integration", () => {
           const sessions = dapp.session.getAll();
           expect(sessions.length).to.eq(1);
           await dapp.core.crypto.keychain.del(topic);
-
           await Promise.all([
             new Promise<void>((resolve) => {
               dapp.on("session_delete", async (args) => {
@@ -499,7 +502,7 @@ describe("Sign Client Integration", () => {
         sessionA: { topic },
       } = await initTwoPairedClients({}, {}, { logger: "error" });
       const prevExpiry = clients.A.session.get(topic).expiry;
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
       // Fast-forward system time by 60 seconds after expiry was first set.
       vi.setSystemTime(Date.now() + 60_000);
       const { acknowledged } = await clients.A.extend({
@@ -517,7 +520,7 @@ describe("Sign Client Integration", () => {
         sessionA: { topic },
       } = await initTwoPairedClients({}, {}, { logger: "error" });
       const prevExpiry = clients.A.session.get(topic).expiry;
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
       // Fast-forward system time by 60 seconds after expiry was first set.
       vi.setSystemTime(Date.now() + 60_000);
       const { acknowledged } = await clients.A.extend({
@@ -552,21 +555,24 @@ describe("Sign Client Integration", () => {
         clients,
         sessionA: { topic },
       } = await initTwoPairedClients({}, {}, { logger: "error" });
-      const expiry = 5000;
+      const expiry = 600; // 10 minutes in seconds
 
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.A.core.relayer.once(
-            RELAYER_EVENTS.publish,
-            (payload: RelayerTypes.PublishPayload) => {
-              // ttl of the request should match the expiry
-              // expect(payload?.opts?.ttl).toEqual(expiry);
-              resolve();
-            },
-          );
+          (clients.B as SignClient).once("session_request", async (payload) => {
+            expect(payload.params.request.expiryTimestamp).to.be.approximately(
+              calcExpiry(expiry),
+              1000,
+            );
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
+            resolve();
+          });
         }),
-        new Promise<void>((resolve) => {
-          clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...TEST_REQUEST_PARAMS, topic, expiry });
           resolve();
         }),
       ]);
@@ -610,7 +616,7 @@ describe("Sign Client Integration", () => {
       };
       await Promise.all([
         new Promise<void>((resolve) => {
-          clients.B.once("session_request", (payload) => {
+          clients.B.once("session_request", async (payload) => {
             const { params } = payload;
             const session = clients.B.session.get(payload.topic);
             expect(params).toMatchObject(testRequestProps);
@@ -620,11 +626,15 @@ describe("Sign Client Integration", () => {
               ),
             ).to.exist;
             expect(session.requiredNamespaces[TEST_AVALANCHE_CHAIN]).to.exist;
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
             resolve();
           });
         }),
-        new Promise<void>((resolve) => {
-          clients.A.request({ ...testRequestProps, topic });
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...testRequestProps, topic });
           resolve();
         }),
       ]);

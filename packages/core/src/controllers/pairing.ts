@@ -34,7 +34,7 @@ import {
   isJsonRpcResult,
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES, THIRTY_DAYS } from "@walletconnect/time";
+import { FIVE_MINUTES, THIRTY_DAYS, toMiliseconds } from "@walletconnect/time";
 import EventEmitter from "events";
 import {
   PAIRING_CONTEXT,
@@ -99,6 +99,7 @@ export class Pairing implements IPairing {
       topic,
       symKey,
       relay,
+      expiryTimestamp: expiry,
     });
     await this.pairings.set(topic, pairing);
     await this.core.relayer.subscribe(topic);
@@ -110,7 +111,7 @@ export class Pairing implements IPairing {
   public pair: IPairing["pair"] = async (params) => {
     this.isInitialized();
     this.isValidPair(params);
-    const { topic, symKey, relay } = parseUri(params.uri);
+    const { topic, symKey, relay, expiryTimestamp } = parseUri(params.uri);
     let existingPairing;
     if (this.pairings.keys.includes(topic)) {
       existingPairing = this.pairings.get(topic);
@@ -121,7 +122,7 @@ export class Pairing implements IPairing {
       }
     }
 
-    const expiry = calcExpiry(FIVE_MINUTES);
+    const expiry = expiryTimestamp || calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false };
     await this.pairings.set(topic, pairing);
     this.core.expirer.set(topic, expiry);
@@ -135,9 +136,8 @@ export class Pairing implements IPairing {
     // avoid overwriting keychain pairing already exists
     if (!this.core.crypto.keychain.has(topic)) {
       await this.core.crypto.setSymKey(symKey, topic);
-      await this.core.relayer.subscribe(topic, { relay });
     }
-
+    await this.core.relayer.subscribe(topic, { relay });
     return pairing;
   };
 
@@ -396,6 +396,16 @@ export class Pairing implements IPairing {
     if (!uri?.symKey) {
       const { message } = getInternalError("MISSING_OR_INVALID", `pair() uri#symKey`);
       throw new Error(message);
+    }
+    if (uri?.expiryTimestamp) {
+      const expiration = toMiliseconds(uri?.expiryTimestamp);
+      if (expiration < Date.now()) {
+        const { message } = getInternalError(
+          "EXPIRED",
+          `pair() URI has expired. Please try again with a new connection URI.`,
+        );
+        throw new Error(message);
+      }
     }
   };
 

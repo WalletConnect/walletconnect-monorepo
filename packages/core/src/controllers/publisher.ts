@@ -13,14 +13,15 @@ import { EventEmitter } from "events";
 
 import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants";
 import { getBigIntRpcId } from "@walletconnect/jsonrpc-utils";
-import { TEN_SECONDS, toMiliseconds } from "@walletconnect/time";
+import { ONE_MINUTE, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
 export class Publisher extends IPublisher {
   public events = new EventEmitter();
   public name = PUBLISHER_CONTEXT;
   public queue = new Map<string, PublisherTypes.Params>();
 
-  private publishTimeout = toMiliseconds(TEN_SECONDS);
+  private publishTimeout = toMiliseconds(ONE_MINUTE);
+  private failedPublishTimeout = toMiliseconds(ONE_SECOND);
   private needsTransportRestart = false;
 
   constructor(public relayer: IRelayer, public logger: Logger) {
@@ -37,42 +38,60 @@ export class Publisher extends IPublisher {
   public publish: IPublisher["publish"] = async (topic, message, opts) => {
     this.logger.debug(`Publishing Payload`);
     this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
+
+    const ttl = opts?.ttl || PUBLISHER_DEFAULT_TTL;
+    const relay = getRelayProtocolName(opts);
+    const prompt = opts?.prompt || false;
+    const tag = opts?.tag || 0;
+    const id = opts?.id || (getBigIntRpcId().toString() as any);
+    const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
+    const failedPublishMessage = `Failed to publish payload, please try again. id:${id} tag:${tag}`;
+    const startPublish = Date.now();
+    let result;
+    let attempts = 1;
+
     try {
-      const ttl = opts?.ttl || PUBLISHER_DEFAULT_TTL;
-      const relay = getRelayProtocolName(opts);
-      const prompt = opts?.prompt || false;
-      const tag = opts?.tag || 0;
-      const id = opts?.id || (getBigIntRpcId().toString() as any);
-      const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
-      // delay adding to queue to avoid cases where heartbeat might pulse right after publish resulting in duplicate publish
-      const queueTimeout = setTimeout(() => this.queue.set(id, params), this.publishTimeout);
-      try {
-        const publish = await createExpiringPromise(
-          this.rpcPublish(topic, message, ttl, relay, prompt, tag, id),
-          this.publishTimeout,
-          "Failed to publish payload, please try again.",
-        );
-        await publish;
-        this.removeRequestFromQueue(id);
-        this.relayer.events.emit(RELAYER_EVENTS.publish, params);
-      } catch (err) {
-        this.logger.debug(`Publishing Payload stalled`);
-        this.needsTransportRestart = true;
-        if (opts?.internal?.throwOnFailedPublish) {
-          // remove the request from the queue so it's not retried automatically
-          this.removeRequestFromQueue(id);
-          throw err;
+      /**
+       * Loop until the publish is successful or the timeout is reached
+       * The loop allows to retry to retry the publish in case of disconnect
+       */
+      while (result === undefined) {
+        // Terminate the publishing attempts if publisTimeout has been exceeded
+        if (Date.now() - startPublish > this.publishTimeout) {
+          throw new Error(failedPublishMessage);
         }
-        return;
-      } finally {
-        clearTimeout(queueTimeout);
+
+        this.logger.trace({ id, attempts }, `publisher.publish - attempt ${attempts}`);
+        const publish = await createExpiringPromise(
+          this.rpcPublish(topic, message, ttl, relay, prompt, tag, id).catch((e) =>
+            this.logger.warn(e),
+          ),
+          this.publishTimeout,
+          failedPublishMessage,
+        );
+        result = await publish;
+        attempts++;
+
+        if (!result) {
+          // small delay before retrying so we can limit retry to max 1 time per second
+          // if network is down `rpcPublish` will throw immediately
+          await new Promise((resolve) => setTimeout(resolve, this.failedPublishTimeout));
+        }
       }
+      this.relayer.events.emit(RELAYER_EVENTS.publish, params);
       this.logger.debug(`Successfully Published Payload`);
-      this.logger.trace({ type: "method", method: "publish", params: { topic, message, opts } });
+      this.logger.trace({
+        type: "method",
+        method: "publish",
+        params: { id, topic, message, opts },
+      });
     } catch (e) {
       this.logger.debug(`Failed to Publish Payload`);
       this.logger.error(e as any);
-      throw e;
+      if (opts?.internal?.throwOnFailedPublish) {
+        throw e;
+      }
+      this.queue.set(id, params);
     }
   };
 
