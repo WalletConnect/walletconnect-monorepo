@@ -129,16 +129,19 @@ export class Verify extends IVerify {
     let iframeOnLoadResolve: () => void;
     const onMessage = (event: MessageEvent) => {
       if (event.data === "verify_ready") {
-        this.initialized = true;
-        this.processQueue();
+        this.onInit();
         window.removeEventListener("message", onMessage);
         iframeOnLoadResolve();
       }
     };
     await Promise.race([
       new Promise<void>((resolve) => {
-        const exists = document.getElementById(VERIFY_CONTEXT);
-        if (exists) return resolve();
+        const existingIframe = document.getElementById(VERIFY_CONTEXT);
+        if (existingIframe) {
+          this.iframe = existingIframe as HTMLIFrameElement;
+          this.onInit();
+          return resolve();
+        }
 
         window.addEventListener("message", onMessage);
         const iframe = document.createElement("iframe");
@@ -156,6 +159,11 @@ export class Verify extends IVerify {
         }, toMiliseconds(FIVE_SECONDS)),
       ),
     ]);
+  };
+
+  private onInit = () => {
+    this.initialized = true;
+    this.processQueue();
   };
 
   private startAbortTimer(timer: number) {
