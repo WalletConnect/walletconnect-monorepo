@@ -232,14 +232,14 @@ export function normalizeNamespaces(
 export function buildNamespacesFromAuth(methods: string[], accounts: string[]) {
   accounts = accounts.map((account) => account.replace("did:pkh:", ""));
 
-  const namespace = [...new Set(accounts.map((account) => account.split(":")[0]).flat())][0];
+  const namespace = accounts[0].split(":")[0];
 
   const namespaceObj = {
     [namespace]: {
       accounts,
       chains: accounts.map((account) => `${account.split(":")[0]}:${account.split(":")[1]}`),
       methods,
-      events: [],
+      events: ["chainChanged", "accountsChanged"],
     },
   };
   return namespaceObj;
