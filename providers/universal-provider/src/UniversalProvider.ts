@@ -158,11 +158,13 @@ export class UniversalProvider implements IUniversalProvider {
     }
     const result = await response();
     this.session = result.session;
-    // assign namespaces from session if not already defined
-    const approved = populateNamespacesChains(this.session.namespaces) as NamespaceConfig;
-    this.namespaces = mergeRequiredOptionalNamespaces(this.namespaces, approved);
-    this.persist("namespaces", this.namespaces);
-    this.onConnect();
+    if (this.session) {
+      // assign namespaces from session if not already defined
+      const approved = populateNamespacesChains(this.session.namespaces) as NamespaceConfig;
+      this.namespaces = mergeRequiredOptionalNamespaces(this.namespaces, approved);
+      this.persist("namespaces", this.namespaces);
+      this.onConnect();
+    }
     return result;
   }
 

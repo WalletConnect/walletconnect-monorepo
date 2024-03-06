@@ -30,7 +30,7 @@ export const getDidAddress = (iss: string) => {
   return undefined;
 };
 
-export const formatMessage = (cacao: AuthTypes.PayloadParams, iss: string) => {
+export const formatMessage = (cacao: AuthTypes.BaseAuthRequestParams, iss: string) => {
   const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
   const walletAddress = getDidAddress(iss);
   let statement = cacao.statement || undefined;

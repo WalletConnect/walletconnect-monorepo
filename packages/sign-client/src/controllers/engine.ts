@@ -774,7 +774,7 @@ export class Engine extends IEngine {
       }: {
         cacaos: AuthTypes.SessionAuthenticateResponseParams["cacaos"];
         responder: AuthTypes.SessionAuthenticateResponseParams["responder"];
-      } = payload.result as any;
+      } = payload.result;
 
       const pendingRequest = this.client.auth.requests.get(id);
       if (!pendingRequest) {
@@ -789,7 +789,7 @@ export class Engine extends IEngine {
 
         console.log("pendingRequest");
         const reconstructed = this.formatAuthMessage({
-          request: payload as any, //pendingRequest.authPayload as any,
+          request: payload,
           iss: payload.iss,
         });
         console.log("reconstructed", reconstructed);
@@ -936,7 +936,7 @@ export class Engine extends IEngine {
         const { s: signature, p: payload } = cacao;
         console.log("pendingRequest", payload);
         const reconstructed = this.formatAuthMessage({
-          request: payload as any,
+          request: payload,
           iss: payload.iss,
         });
         console.log("reconstructed", reconstructed);
@@ -1343,9 +1343,9 @@ export class Engine extends IEngine {
           ? this.client.auth.authKeys.get(AUTH_PUBLIC_KEY_NAME)
           : ({ responseTopic: undefined, publicKey: undefined } as any);
 
-        const payload = (await this.client.core.crypto.decode(topic, message, {
+        const payload = await this.client.core.crypto.decode(topic, message, {
           receiverPublicKey: publicKey,
-        })) as any;
+        });
 
         try {
           if (isJsonRpcRequest(payload)) {

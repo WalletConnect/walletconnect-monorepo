@@ -39,9 +39,12 @@ describe("URI", () => {
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
 
-  it("shoud create a recap with given resource DONW", async () => {
-    const recap = createRecap("eip155", "request", ["personal_sign", "eth_signTypedData_v4"]);
+  it.only("shoud create a recap with given resource DONW", async () => {
+    const recap = createRecap("https://web3inbox.com", "push", ["notifications", "alerts"]);
     isValidRecap(recap);
+
+    const encoded = encodeRecap(recap);
+    console.log("encoded", encoded);
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
 

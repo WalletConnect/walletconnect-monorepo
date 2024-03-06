@@ -373,7 +373,7 @@ export abstract class IEngine {
   ) => Promise<void>;
 
   public abstract formatAuthMessage: (params: {
-    request: AuthTypes.PayloadParams;
+    request: AuthTypes.BaseAuthRequestParams;
     iss: string;
   }) => string;
 

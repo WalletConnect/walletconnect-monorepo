@@ -62,20 +62,25 @@ export declare namespace AuthTypes {
     payload: T;
   }
 
-  // https://github.com/ChainAgnostic/CAIPs/pull/74
-  interface RequestParams {
-    chains: string[];
+  interface BaseAuthRequestParams {
     domain: string;
-    nonce: string;
     aud: string;
-    type?: CacaoHeader["t"];
+    nonce: string;
+    version?: string;
+    iat?: string;
     nbf?: string;
     exp?: string;
+    chainId?: string;
     statement?: string;
     requestId?: string;
     resources?: string[];
     expiry?: number;
+    type?: string;
   }
+  // https://github.com/ChainAgnostic/CAIPs/pull/74
+  type RequestParams = {
+    chains: string[];
+  } & BaseAuthRequestParams;
 
   type SessionAuthenticateParams = {
     pairingTopic?: string;
@@ -88,20 +93,9 @@ export declare namespace AuthTypes {
     iat: string;
   } & RequestParams;
 
-  interface CacaoPayload {
+  type CacaoPayload = {
     iss: string;
-    domain: string;
-    aud: string;
-    version: string;
-    nonce: string;
-    iat: string;
-    nbf?: string;
-    exp?: string;
-    chainId?: string;
-    statement?: string;
-    requestId?: string;
-    resources?: string[];
-  }
+  } & BaseAuthRequestParams;
 
   interface CacaoHeader {
     t: "caip122";
@@ -160,7 +154,6 @@ export declare namespace AuthTypes {
     auths?: AuthTypes.AuthResponse;
     session: SessionTypes.Struct;
   };
-
 }
 
 export type IAuth = {

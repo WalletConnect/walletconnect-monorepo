@@ -302,7 +302,7 @@ export class EthereumProvider implements IEthereumProvider {
               }),
               pairingTopic: opts?.pairingTopic,
             })
-            .then((session) => {
+            .then((session: SessionTypes.Struct) => {
               resolve(session);
             })
             .catch((error: Error) => {
@@ -353,7 +353,7 @@ export class EthereumProvider implements IEthereumProvider {
               ...params,
               chains: params.chains?.map((chain) => this.formatChainId(chain)) || [],
             })
-            .then((result) => {
+            .then((result: AuthTypes.AuthenticateResponseResult) => {
               resolve(result);
             })
             .catch((error: Error) => {
@@ -364,11 +364,13 @@ export class EthereumProvider implements IEthereumProvider {
       console.log("ethereum-provider/src/EthereumProvider.ts: 271: result:", result);
       if (!result) return;
       const session = result.session;
-      const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
-      // if no required chains are set, use the approved accounts to fetch chainIds
-      this.setChainIds(this.rpc.chains.length ? this.rpc.chains : accounts);
-      this.setAccounts(accounts);
-      this.events.emit("connect", { chainId: toHexChainId(this.chainId) });
+      if (session) {
+        const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
+        // if no required chains are set, use the approved accounts to fetch chainIds
+        this.setChainIds(this.rpc.chains.length ? this.rpc.chains : accounts);
+        this.setAccounts(accounts);
+        this.events.emit("connect", { chainId: toHexChainId(this.chainId) });
+      }
       return result;
     } catch (error) {
       this.signer.logger.error(error);
