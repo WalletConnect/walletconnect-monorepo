@@ -30,11 +30,16 @@ export const getDidAddress = (iss: string) => {
   return undefined;
 };
 
-export const formatMessage = (cacao: AuthTypes.BaseAuthRequestParams, iss: string) => {
+export const formatMessage = (cacao: AuthTypes.FormatMessageParams, iss: string) => {
   const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
   const walletAddress = getDidAddress(iss);
+
+  if (!cacao.aud && !cacao.uri) {
+    throw new Error("Either `aud` or `uri` is required to construct the message");
+  }
+
   let statement = cacao.statement || undefined;
-  const uri = `URI: ${cacao.aud}`;
+  const uri = `URI: ${cacao.aud || cacao.uri}`;
   const version = `Version: ${cacao.version}`;
   const chainId = `Chain ID: ${getDidChainId(iss)}`;
   const nonce = `Nonce: ${cacao.nonce}`;

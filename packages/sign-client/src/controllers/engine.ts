@@ -599,18 +599,9 @@ export class Engine extends IEngine {
     //   throw new Error("Invalid request");
     // }
 
-    const {
-      chains,
-      statement,
-      uri,
-      domain,
-      nonce,
-      type,
-      exp,
-      nbf,
-      methods = [],
-      resources = [],
-    } = params;
+    const { chains, statement, uri, domain, nonce, type, exp, nbf, methods = [] } = params;
+    // reassign resources to remove reference as the array is modified and might cause side effects
+    const resources = [...(params.resources || [])];
 
     // ----- reject multi namespaces ----- //
     const uniqueNamespaces = [...new Set(chains.map((chain) => chain.split(":")[0]))];

@@ -302,7 +302,7 @@ export class EthereumProvider implements IEthereumProvider {
               }),
               pairingTopic: opts?.pairingTopic,
             })
-            .then((session: SessionTypes.Struct) => {
+            .then((session?: SessionTypes.Struct) => {
               resolve(session);
             })
             .catch((error: Error) => {
@@ -351,7 +351,7 @@ export class EthereumProvider implements IEthereumProvider {
           await this.signer
             .authenticate({
               ...params,
-              chains: params.chains?.map((chain) => this.formatChainId(chain)) || [],
+              chains: this.rpc.chains,
             })
             .then((result: AuthTypes.AuthenticateResponseResult) => {
               resolve(result);

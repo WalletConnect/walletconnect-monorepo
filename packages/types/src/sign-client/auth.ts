@@ -62,6 +62,16 @@ export declare namespace AuthTypes {
     payload: T;
   }
 
+  /**
+   * `aud` is used in protocol request
+   * `uri` is more descriptive and is used in client APIs
+   * formatMessageParams should accept either `aud` or `uri` as a parameter to construct the message
+   */
+  type FormatMessageParams = {
+    aud?: string;
+    uri?: string;
+  } & Omit<BaseAuthRequestParams, "aud" | "chainId">;
+
   interface BaseAuthRequestParams {
     domain: string;
     aud: string;
@@ -77,6 +87,7 @@ export declare namespace AuthTypes {
     expiry?: number;
     type?: string;
   }
+
   // https://github.com/ChainAgnostic/CAIPs/pull/74
   type RequestParams = {
     chains: string[];
