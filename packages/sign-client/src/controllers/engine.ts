@@ -80,6 +80,8 @@ import {
   createEncodedRecap,
   getChainsFromRecap,
   getDidChainId,
+  mergeEncodedRecaps,
+  getRecapFromResources,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -599,7 +601,7 @@ export class Engine extends IEngine {
     //   throw new Error("Invalid request");
     // }
 
-    const { chains, statement, uri, domain, nonce, type, exp, nbf, methods = [] } = params;
+    const { chains, statement = "", uri, domain, nonce, type, exp, nbf, methods = [] } = params;
     // reassign resources to remove reference as the array is modified and might cause side effects
     const resources = [...(params.resources || [])];
 
@@ -651,12 +653,20 @@ export class Engine extends IEngine {
 
     console.log("new namespaces", namespaces);
     if (methods.length > 0) {
-      const recap = createEncodedRecap(namespace, "request", methods);
+      let recap = createEncodedRecap(namespace, "request", methods);
+      // per Recaps spec, recap should occupy the last position in the resources array
+      const existingRecap = getRecapFromResources(resources);
+      if (existingRecap) {
+        // using .pop to remove the element given we already checked it's a recap
+        const mergedRecap = mergeEncodedRecaps(recap, resources.pop() as string);
+        recap = mergedRecap;
+      }
       resources.push(recap);
       console.log("formatted recap", recap);
     } else {
       console.log("no methods provided, skipping recap creation");
     }
+
     const expiryTimestamp = calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
     const request = {
       authPayload: {

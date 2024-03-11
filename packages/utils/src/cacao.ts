@@ -47,29 +47,12 @@ export const formatMessage = (cacao: AuthTypes.FormatMessageParams, iss: string)
   const resources = cacao.resources
     ? `Resources:${cacao.resources.map((resource) => `\n- ${resource}`).join("")}`
     : undefined;
-
-  if (cacao.resources && cacao.resources.length) {
-    const recapStatemets: string[] = [];
-    let totalUniqueAbilities = 1;
-    cacao.resources.forEach((resource) => {
-      if (resource.includes("urn:recap:")) {
-        // console.log("urn:recap:", resource);
-        const decoded = decodeRecap(resource);
-        console.log("decoded", decoded);
-        const recap = formatStatementFromRecap(decoded, totalUniqueAbilities);
-        console.log("recap statement", recap);
-        recapStatemets.push(recap.statement);
-        totalUniqueAbilities += recap.numUniqueAbilities;
-        console.log("totalUniqueAbilities", totalUniqueAbilities);
-      }
-    });
-    if (recapStatemets.length > 0) {
-      const base =
-        "I further authorize the stated URI to perform the following actions on my behalf: ";
-      const recapStatement = `${base}${recapStatemets.join(" ")}`;
-      // add a space if there is a statement
-      statement = `${statement ? statement + " " : ""}${recapStatement}`;
-    }
+  const recap = getRecapFromResources(cacao.resources);
+  if (recap) {
+    console.log("recap", recap);
+    const decoded = decodeRecap(recap);
+    statement = formatStatementFromRecap(statement, decoded);
+    console.log("statement after recap", statement);
   }
 
   const message = [
@@ -136,6 +119,7 @@ type PopulateAuthPayloadParams = {
 };
 export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthTypes.PayloadParams {
   const { authPayload, chains, methods } = params;
+  const statement = authPayload.statement || "";
 
   if (!chains?.length) return authPayload;
 
@@ -148,12 +132,15 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
   }
 
   const requestedRecaps = getDecodedRecapsFromResources(authPayload.resources);
+  if (!requestedRecaps) return authPayload;
 
-  const recaps = requestedRecaps.map((recap) => {
-    isValidRecap(recap);
-    const resource = getRecapResource(recap, "eip155");
-    console.log("resource", resource);
-    if (!resource?.length) return recap;
+  isValidRecap(requestedRecaps);
+  const resource = getRecapResource(requestedRecaps, "eip155");
+  console.log("resource", resource);
+  // remove all recaps from resources
+  const updatedResources = authPayload?.resources?.filter((resource) => !isRecap(resource)) || [];
+
+  if (resource?.length) {
     const actions = getReCapActions(resource);
     const supportedActions = getCommonValuesInArrays(actions, methods);
     if (!supportedActions?.length) {
@@ -166,32 +153,24 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
     const formattedActions = assignAbilityToActions("request", supportedActions as string[], {
       chains: supportedChains,
     });
-    const updatedRecap = addResourceToRecap(recap, "eip155", formattedActions);
+    const updatedRecap = addResourceToRecap(requestedRecaps, "eip155", formattedActions);
     console.log("updatedRecap", updatedRecap);
-    return updatedRecap;
-  });
+    updatedResources.push(encodeRecap(updatedRecap));
+  }
 
-  // remove all recaps from resources
-  const filteredRecaps =
-    authPayload?.resources?.filter((resource) => !resource.includes("urn:recap:")) || [];
-  // encode the new recaps and add to resources
-  const encodedRecaps = recaps.map((recap) => encodeRecap(recap));
-
-  console.log("filteredRecaps", filteredRecaps);
-  console.log("encodedRecaps", encodedRecaps);
-  const updatedResources = [...filteredRecaps, ...encodedRecaps];
   return {
     ...authPayload,
+    statement: buildRecapStatement(statement, getRecapFromResources(updatedResources)),
     chains: supportedChains,
     resources: authPayload?.resources || updatedResources.length > 0 ? updatedResources : undefined,
   };
 }
 
 export function getDecodedRecapsFromResources(resources?: string[]) {
-  if (!resources) return [];
-  return resources
-    .filter((resource) => resource.includes("urn:recap:"))
-    .map((resource) => decodeRecap(resource));
+  if (!resources) return;
+  const resource = resources?.[resources.length - 1];
+  if (!isRecap(resource)) return;
+  return decodeRecap(resource);
 }
 
 export function recapHasResource(recap: any, resource: string) {
@@ -265,7 +244,7 @@ export function addResourceToRecap(recap: RecapType, resource: string, actions: 
   recap.att[resource] = {
     ...actions,
   };
-  const keys = Object.keys(recap.att)?.sort();
+  const keys = Object.keys(recap.att)?.sort((a, b) => a.localeCompare(b));
   const sorted = keys.reduce(
     (obj, key) => {
       obj.att[key] = recap.att[key];
@@ -289,10 +268,12 @@ export function assignAbilityToActions(ability: string, actions: string[], limit
 
 export function encodeRecap(recap: any) {
   isValidRecap(recap);
-  return `urn:recap:${base64Encode(recap)}`;
+  // remove the padding from the base64 string as per recap spec
+  return `urn:recap:${base64Encode(recap).replace(/=/g, "")}`;
 }
 
 export function decodeRecap(recap: any): RecapType {
+  // base64Decode adds padding internally so don't need to add it back if it was removed
   const decoded = base64Decode(recap.replace("urn:recap:", ""));
   isValidRecap(decoded);
   return decoded as unknown as RecapType;
@@ -300,14 +281,53 @@ export function decodeRecap(recap: any): RecapType {
 
 export function createEncodedRecap(resource: string, ability: string, actions: string[]): string {
   const recap = createRecap(resource, ability, actions);
-  console.log("formatRecapFromNamespaces", recap);
+  console.log("createEncodedRecap", recap);
   return encodeRecap(recap);
 }
 
-export function formatStatementFromRecap(recap: RecapType, startCounter: number) {
+export function isRecap(resource: string) {
+  return resource && resource.includes("urn:recap:");
+}
+
+export function mergeEncodedRecaps(recap1: string, recap2: string) {
+  const decoded1 = decodeRecap(recap1);
+  console.log("decoded1", decoded1);
+  const decoded2 = decodeRecap(recap2);
+  console.log("decoded2", decoded2);
+  const merged = mergeRecaps(decoded1, decoded2);
+  return encodeRecap(merged);
+}
+
+export function mergeRecaps(recap1: RecapType, recap2: RecapType) {
+  isValidRecap(recap1);
+  isValidRecap(recap2);
+  const keys = Object.keys(recap1.att)
+    .concat(Object.keys(recap2.att))
+    .sort((a, b) => a.localeCompare(b));
+  console.log("keys", keys);
+  const mergedRecap = { att: {} };
+  keys.forEach((key) => {
+    const actions = Object.keys(recap1.att?.[key] || {})
+      .concat(Object.keys(recap2.att?.[key] || {}))
+      .sort((a, b) => a.localeCompare(b));
+    actions.forEach((action) => {
+      mergedRecap.att[key] = {
+        ...mergedRecap.att[key],
+        [action]: recap1.att[key]?.[action] || recap2.att[key]?.[action],
+      };
+    });
+  });
+  return mergedRecap;
+}
+
+export function formatStatementFromRecap(statement = "", recap: RecapType) {
   isValidRecap(recap);
+  const base = "I further authorize the stated URI to perform the following actions on my behalf: ";
+
+  if (statement.includes(base)) return statement;
+
   const statementForRecap: string[] = [];
-  let numUniqueAbilities = 0;
+  let currentCounter = 0;
   console.log("recap for statement", recap);
   Object.keys(recap.att).forEach((resource) => {
     const actions = Object.keys(recap.att[resource]).map((ability: any) => {
@@ -325,20 +345,21 @@ export function formatStatementFromRecap(recap: RecapType, startCounter: number)
       }
       uniqueAbilities[action.ability].push(action.action);
     });
-    numUniqueAbilities += Object.keys(uniqueAbilities).length;
-    const abilities = Object.keys(uniqueAbilities).map((ability, i) => {
-      const counter = i + startCounter;
-      return `(${counter}) '${ability}': '${uniqueAbilities[ability].join(
+    const abilities = Object.keys(uniqueAbilities).map((ability) => {
+      currentCounter++;
+      console.log("currentCounter", currentCounter);
+      return `(${currentCounter}) '${ability}': '${uniqueAbilities[ability].join(
         "', '",
       )}' for '${resource}'.`;
     });
-    statementForRecap.push(abilities.join(", "));
+    statementForRecap.push(abilities.join(", ").replace(".,", "."));
   });
 
-  return {
-    numUniqueAbilities,
-    statement: statementForRecap.join(" "),
-  };
+  const recapStatemet = statementForRecap.join(" ");
+  console.log("recap statement", recapStatemet);
+  const recapStatement = `${base}${recapStatemet}`;
+  // add a space if there is a statement
+  return `${statement ? statement + " " : ""}${recapStatement}`;
 }
 
 export function getMethodsFromRecap(recap: string) {
@@ -366,4 +387,18 @@ export function getChainsFromRecap(recap: string) {
     });
   });
   return [...new Set(chains.flat())];
+}
+
+export function buildRecapStatement(statement: string, recap: unknown) {
+  if (!recap) return statement;
+  const decoded = decodeRecap(recap);
+  isValidRecap(decoded);
+  return formatStatementFromRecap(statement, decoded);
+}
+
+export function getRecapFromResources(resources?: string[]) {
+  if (!resources) return;
+  // per spec, recap is always the last resource
+  const resource = resources?.[resources.length - 1];
+  return isRecap(resource) ? resource : undefined;
 }

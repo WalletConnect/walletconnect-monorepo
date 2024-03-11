@@ -32,10 +32,9 @@ describe("Authenticated Sessions", () => {
       uri: "aud",
       methods: ["personal_sign", "eth_chainId", "eth_signTypedData_v4"],
       resources: [
-        // "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9leGFtcGxlLmNvbSI6W3sicHVzaC9ub3RpZmljYXRpb24iOlt7fV19XX19==",
+        "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
       ],
     });
-    const expectedExpiry = calcExpiry(ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl);
     console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
@@ -329,7 +328,7 @@ describe("Authenticated Sessions", () => {
     ]);
   });
 
-  it.only("should perform siwe", async () => {
+  it("should perform siwe", async () => {
     const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
     expect(dapp).to.be.exist;
     expect(dapp.metadata.redirect).to.exist;

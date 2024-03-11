@@ -13,6 +13,7 @@ import {
   getDecodedRecapsFromResources,
   getMethodsFromRecap,
   isValidRecap,
+  mergeRecaps,
   populateAuthPayload,
 } from "../src";
 
@@ -39,13 +40,93 @@ describe("URI", () => {
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
 
-  it.only("shoud create a recap with given resource DONW", async () => {
-    const recap = createRecap("https://web3inbox.com", "push", ["notifications", "alerts"]);
-    isValidRecap(recap);
+  describe("merge recaps", () => {
+    it("shoud merge recaps", async () => {
+      const recap2 = {
+        att: {
+          eip155: {
+            "request/eth_chainId": [{}],
+            "request/eth_signTypedData_v4": [{}],
+            "request/personal_sign": [{}],
+          },
+        },
+      };
+      const recap1 = {
+        att: {
+          "https://notify.walletconnect.com": { "manage/all-apps-notifications": [{}] },
+        },
+      };
+      const recap = mergeRecaps(recap1, recap2);
+      console.log("recap", recap);
 
-    const encoded = encodeRecap(recap);
-    console.log("encoded", encoded);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    });
+    it("shoud merge recaps with different keys", async () => {
+      const recap1 = createRecap("https://web3inbox.com", "push", ["notifications", "alerts"]);
+      const recap2 = createRecap("eip155", "request", ["personal_sign", "eth_sendTransaction"]);
+      console.log("recap1", recap1);
+      console.log("recap2", recap2);
+      const merged = {
+        att: {
+          eip155: {
+            "request/eth_sendTransaction": [{}],
+            "request/personal_sign": [{}],
+          },
+          "https://web3inbox.com": {
+            "push/alerts": [{}],
+            "push/notifications": [{}],
+          },
+        },
+      };
+      const mergedRecap = mergeRecaps(recap1, recap2);
+      console.log("mergedRecap", mergedRecap);
+      expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(merged));
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    });
+    it("shoud merge recaps with same resource", async () => {
+      const recap1 = createRecap("eip155", "push", ["notifications", "alerts"]);
+      const recap2 = createRecap("eip155", "request", ["personal_sign", "eth_sendTransaction"]);
+      console.log("recap1", recap1);
+      console.log("encoded", encodeRecap(recap1));
+      console.log("recap2", recap2);
+      const merged = {
+        att: {
+          eip155: {
+            "push/alerts": [{}],
+            "push/notifications": [{}],
+            "request/eth_sendTransaction": [{}],
+            "request/personal_sign": [{}],
+          },
+        },
+      };
+      const mergedRecap = mergeRecaps(recap1, recap2);
+      console.log("mergedRecap", mergedRecap);
+      expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(merged));
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    });
+    it("shoud merge recaps with same resource & actions", async () => {
+      const recap1 = createRecap("eip155", "request", ["personal_sign", "notifications"]);
+      const recap2 = createRecap("eip155", "request", ["alerts", "eth_sendTransaction"]);
+      console.log("recap1", recap1);
+      console.log("recap2", recap2);
+      const merged = {
+        att: {
+          eip155: {
+            "request/alerts": [{}],
+            "request/eth_sendTransaction": [{}],
+            "request/notifications": [{}],
+            "request/personal_sign": [{}],
+          },
+        },
+      };
+      const mergedRecap = mergeRecaps(recap1, recap2);
+      console.log("mergedRecap", mergedRecap);
+      expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(merged));
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    });
   });
 
   it("shoud encode recap DONE", async () => {
@@ -141,6 +222,15 @@ describe("URI", () => {
     expect(encoded).to.eql(encodedExpected);
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
+
+  it("should encode recap with multiple chains", async () => {
+    const recap =
+      "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InJlcXVlc3QvZXRoX3NpZ25UeXBlZERhdGFfdjQiOlt7fV0sInJlcXVlc3QvcGVyc29uYWxfc2lnbiI6W3t9XX19fQ";
+    const decoded = decodeRecap(recap);
+    console.log("decoded", decoded);
+    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+  });
+
   it("should find common values in two arrays", async () => {
     const arr1 = ["eip155:1", "eip155:2"];
     const arr2 = ["eip155:1", "eip155:3"];
@@ -159,7 +249,7 @@ describe("URI", () => {
     console.log("res", JSON.stringify(res));
     await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
-  it("should populate authPayload with supported chains/methods", async () => {
+  it.only("should populate authPayload with supported chains/methods", async () => {
     const encoded = createEncodedRecap("eip155", "request", [
       "personal_sign",
       "eth_signTypedData_v4",
@@ -178,7 +268,7 @@ describe("URI", () => {
       version: "1",
       nonce: "1",
       iat: "2023-12-14T08:48:37.902Z",
-      resources: [encoded, "https://example.com"],
+      resources: ["https://example.com", encoded],
     };
 
     const suppportedChains = ["eip155:2", "eip155:3"];
@@ -191,9 +281,8 @@ describe("URI", () => {
 
     const approvedChains = ["eip155:2"];
     expect(updatedAuthPayload.chains).to.eql(approvedChains);
-    const recaps = getDecodedRecapsFromResources(updatedAuthPayload.resources);
-    expect(recaps.length).to.eql(1);
-    const recap = recaps[0];
+    const recap = getDecodedRecapsFromResources(updatedAuthPayload.resources);
+    expect(recap).to.exist;
     isValidRecap(recap);
 
     const approvedMethods = ["personal_sign"];
@@ -292,6 +381,23 @@ describe("URI", () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 1000));
     });
     it("should add resources items to siwe message DONE", async () => {
+      const recap = {
+        att: {
+          eip155: {
+            "request/eth_chainId": [{}],
+            "request/eth_signTypedData_v4": [{}],
+            "push/personal_sign": [{}],
+          },
+          "https://notify.walletconnect.com": {
+            "manage/all-apps-notifications": [{}],
+            "emit/alerts": [{}],
+          },
+        },
+      };
+      console.log("recap", encodeRecap(recap));
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    });
+    it("should add resources items to siwe message DONE", async () => {
       const request = {
         type: "caip122",
         chains: ["eip155:1"],
@@ -301,7 +407,10 @@ describe("URI", () => {
         nonce: "1",
         iat: "2024-02-19T09:29:21.394Z",
         statement: "Requesting access to your account",
-        resources: ["https://example.com"],
+        resources: [
+          "https://example.com",
+          "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InJlcXVlc3QvZXRoX2NoYWluSWQiOlt7fV0sInJlcXVlc3QvZXRoX3NpZ25UeXBlZERhdGFfdjQiOlt7fV0sInB1c2gvcGVyc29uYWxfc2lnbiI6W3t9XX0sImh0dHBzOi8vbm90aWZ5LndhbGxldGNvbm5lY3QuY29tIjp7Im1hbmFnZS9hbGwtYXBwcy1ub3RpZmljYXRpb25zIjpbe31dLCJlbWl0L2FsZXJ0cyI6W3t9XX19fQ",
+        ],
       };
 
       const message = formatMessage(
