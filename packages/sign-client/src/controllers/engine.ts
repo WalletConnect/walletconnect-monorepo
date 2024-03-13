@@ -642,16 +642,6 @@ export class Engine extends IEngine {
     this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
     console.log("sending request to new pairing topic: ", pairingTopic);
 
-    // ----- build recaps ----- //
-    const namespaces = {
-      eip155: {
-        chains,
-        methods,
-        events: ["chainChanged", "accountsChanged"],
-      },
-    };
-
-    console.log("new namespaces", namespaces);
     if (methods.length > 0) {
       let recap = createEncodedRecap(namespace, "request", methods);
       // per Recaps spec, recap should occupy the last position in the resources array
@@ -686,6 +676,17 @@ export class Engine extends IEngine {
       expiryTimestamp,
     };
 
+    // ----- build recaps ----- //
+    const namespaces = {
+      eip155: {
+        chains,
+        // request `personal_sign` method by default to allow for fallback siwe
+        methods: [...new Set(["personal_sign", ...methods])],
+        events: ["chainChanged", "accountsChanged"],
+      },
+    };
+
+    console.log("new namespaces", namespaces);
     const proposal = {
       requiredNamespaces: {},
       optionalNamespaces: namespaces,

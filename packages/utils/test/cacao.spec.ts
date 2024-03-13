@@ -191,6 +191,40 @@ describe("URI", () => {
     expect(getMethodsFromRecap(encodeRecap(recap))).to.eql(approvedMethods);
   });
 
+  it("should populate authPayload with supported chains/methods for siwe", () => {
+    const requestedChains = ["eip155:1", "eip155:2"];
+    const authPayload = {
+      chains: requestedChains,
+      aud: "aud",
+      domain: "localhost",
+      version: "1",
+      nonce: "1",
+      iat: "2023-12-14T08:48:37.902Z",
+      resources: [
+        "https://example.com",
+        "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
+      ],
+    };
+
+    const suppportedChains = ["eip155:2", "eip155:3"];
+    const supportedMethods = ["personal_sign", "eth_signTypedData"];
+    const updatedAuthPayload = populateAuthPayload({
+      authPayload,
+      chains: suppportedChains,
+      methods: supportedMethods,
+    });
+
+    const approvedChains = ["eip155:2"];
+    expect(updatedAuthPayload.chains).to.eql(approvedChains);
+    const recap = getDecodedRecapsFromResources(updatedAuthPayload.resources);
+    expect(recap).to.exist;
+    isValidRecap(recap);
+
+    // it's siwe so no methods should be added
+    const approvedMethods = [];
+    expect(getMethodsFromRecap(encodeRecap(recap))).to.eql(approvedMethods);
+  });
+
   it("should numerate unique recap abilities correctly", () => {
     const request = {
       type: "caip122",

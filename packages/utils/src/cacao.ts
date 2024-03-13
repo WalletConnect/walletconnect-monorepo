@@ -136,9 +136,8 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
 
   isValidRecap(requestedRecaps);
   const resource = getRecapResource(requestedRecaps, "eip155");
-  console.log("resource", resource);
-  // remove all recaps from resources
-  const updatedResources = authPayload?.resources?.filter((resource) => !isRecap(resource)) || [];
+  console.log("authenticatedSessionResource", resource);
+  let updatedResources = authPayload?.resources || [];
 
   if (resource?.length) {
     const actions = getReCapActions(resource);
@@ -155,6 +154,8 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
     });
     const updatedRecap = addResourceToRecap(requestedRecaps, "eip155", formattedActions);
     console.log("updatedRecap", updatedRecap);
+    // remove recap from resources as we will add the updated one
+    updatedResources = authPayload?.resources?.slice(0, -1) || [];
     updatedResources.push(encodeRecap(updatedRecap));
   }
 
