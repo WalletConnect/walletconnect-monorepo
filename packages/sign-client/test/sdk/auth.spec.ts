@@ -444,6 +444,457 @@ describe("Authenticated Sessions", () => {
     ]);
   });
 
+  // this test simulates the scenario where the wallet supports all the requested chains and methods
+  it("should establish authenticated session with multiple signatures. Case 1", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    expect(dapp).to.be.exist;
+    expect(dapp.metadata.redirect).to.exist;
+    expect(dapp.metadata.redirect?.universal).to.exist;
+    expect(dapp.metadata.redirect?.native).to.not.exist;
+
+    const requestedChains = ["eip155:1", "eip155:2"];
+    const requestedMethods = ["personal_sign", "eth_chainId", "eth_signTypedData_v4"];
+    const { uri, response } = await dapp.authenticate({
+      chains: requestedChains,
+      domain: "localhost",
+      nonce: "1",
+      uri: "aud",
+      methods: requestedMethods,
+      resources: [
+        "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
+      ],
+    });
+    console.log("uri", uri);
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          console.log("wallet session_authenticate", payload.params);
+          const authPayload = populateAuthPayload({
+            authPayload: payload.params.authPayload,
+            chains: requestedChains,
+            methods: requestedMethods,
+          });
+
+          const auths: AuthTypes.Cacao[] = [];
+          authPayload.chains.forEach(async (chain) => {
+            const iss = `${chain}:${cryptoWallet.address}`;
+            const message = wallet.engine.formatAuthMessage({
+              request: authPayload,
+              iss,
+            });
+
+            console.log("message", message);
+            const sig = await cryptoWallet.signMessage(message);
+            console.log("signed message", {
+              sig,
+              privateKey: cryptoWallet.privateKey,
+              address: cryptoWallet.address,
+            });
+            const auth = buildAuthObject(
+              authPayload,
+              {
+                t: "eip191",
+                s: sig,
+              },
+              iss,
+            );
+
+            console.log("auth", auth);
+            auths.push(auth);
+          });
+
+          await wallet.approveSessionAuthenticate({
+            id: payload.id,
+            auths,
+          });
+          console.log("wallet session_authenticate approved");
+          resolve();
+        });
+      }),
+      new Promise<void>((resolve) => {
+        wallet.pair({ uri });
+        resolve();
+      }),
+    ]);
+    const { session, auths } = await response();
+    const walletSession = wallet.session.get(session.topic);
+    // approved namespaces on both sides must be equal
+    expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
+    expect(auths?.length).to.eq(requestedChains.length);
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_request", async (payload) => {
+          console.log("wallet session_request", payload);
+          const { id, topic } = payload;
+          await wallet.respond({
+            topic,
+            response: formatJsonRpcResult(
+              id,
+              await cryptoWallet.signMessage(payload.params.request.params[0]),
+            ),
+          });
+          console.log("wallet session_request responded");
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve) => {
+        const result = await dapp.request({
+          chainId: "eip155:1",
+          topic: session.topic,
+          request: {
+            method: "personal_sign",
+            params: ["hey, sup"],
+          },
+        });
+        console.log("dapp request result", result);
+        resolve();
+      }),
+    ]);
+  });
+  // this test simulates the scenario where the wallet supports subset of the requested chains and all methods
+  it("should establish authenticated session with multiple signatures. Case 2", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    expect(dapp).to.be.exist;
+    expect(dapp.metadata.redirect).to.exist;
+    expect(dapp.metadata.redirect?.universal).to.exist;
+    expect(dapp.metadata.redirect?.native).to.not.exist;
+
+    const requestedChains = ["eip155:1", "eip155:2"];
+    const supportedChains = [requestedChains[1]];
+    const requestedMethods = ["personal_sign", "eth_chainId", "eth_signTypedData_v4"];
+    const { uri, response } = await dapp.authenticate({
+      chains: requestedChains,
+      domain: "localhost",
+      nonce: "1",
+      uri: "aud",
+      methods: requestedMethods,
+      resources: [
+        "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
+      ],
+    });
+    console.log("uri", uri);
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          console.log("wallet session_authenticate", payload.params);
+          const authPayload = populateAuthPayload({
+            authPayload: payload.params.authPayload,
+            chains: supportedChains,
+            methods: requestedMethods,
+          });
+
+          const auths: AuthTypes.Cacao[] = [];
+          authPayload.chains.forEach(async (chain) => {
+            const iss = `${chain}:${cryptoWallet.address}`;
+            const message = wallet.engine.formatAuthMessage({
+              request: authPayload,
+              iss,
+            });
+
+            console.log("message", message);
+            const sig = await cryptoWallet.signMessage(message);
+            console.log("signed message", {
+              sig,
+              privateKey: cryptoWallet.privateKey,
+              address: cryptoWallet.address,
+            });
+            const auth = buildAuthObject(
+              authPayload,
+              {
+                t: "eip191",
+                s: sig,
+              },
+              iss,
+            );
+
+            console.log("auth", auth);
+            auths.push(auth);
+          });
+
+          await wallet.approveSessionAuthenticate({
+            id: payload.id,
+            auths,
+          });
+          console.log("wallet session_authenticate approved");
+          resolve();
+        });
+      }),
+      new Promise<void>((resolve) => {
+        wallet.pair({ uri });
+        resolve();
+      }),
+    ]);
+    const { session, auths } = await response();
+    const walletSession = wallet.session.get(session.topic);
+    expect(auths?.length).to.eq(supportedChains.length);
+    // approved namespaces on both sides must be equal
+    expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_request", async (payload) => {
+          console.log("wallet session_request", payload);
+          const { id, topic } = payload;
+          await wallet.respond({
+            topic,
+            response: formatJsonRpcResult(
+              id,
+              await cryptoWallet.signMessage(payload.params.request.params[0]),
+            ),
+          });
+          console.log("wallet session_request responded");
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve) => {
+        const result = await dapp.request({
+          chainId: supportedChains[0],
+          topic: session.topic,
+          request: {
+            method: "personal_sign",
+            params: ["hey, sup"],
+          },
+        });
+        console.log("dapp request result", result);
+        resolve();
+      }),
+    ]);
+  });
+  // this test simulates the scenario where the wallet supports subset of the requested chains and methods
+  it("should establish authenticated session with multiple signatures. Case 3", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    expect(dapp).to.be.exist;
+    expect(dapp.metadata.redirect).to.exist;
+    expect(dapp.metadata.redirect?.universal).to.exist;
+    expect(dapp.metadata.redirect?.native).to.not.exist;
+
+    const requestedChains = ["eip155:1", "eip155:2"];
+    const supportedChains = [requestedChains[1]];
+    const requestedMethods = ["personal_sign", "eth_chainId", "eth_signTypedData_v4"];
+    const supportedMethods = [requestedMethods[0]];
+    const { uri, response } = await dapp.authenticate({
+      chains: requestedChains,
+      domain: "localhost",
+      nonce: "1",
+      uri: "aud",
+      methods: requestedMethods,
+      resources: [
+        "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
+      ],
+    });
+    console.log("uri", uri);
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          console.log("wallet session_authenticate", payload.params);
+          const authPayload = populateAuthPayload({
+            authPayload: payload.params.authPayload,
+            chains: supportedChains,
+            methods: supportedMethods,
+          });
+          const auths: AuthTypes.Cacao[] = [];
+          authPayload.chains.forEach(async (chain) => {
+            const iss = `${chain}:${cryptoWallet.address}`;
+            const message = wallet.engine.formatAuthMessage({
+              request: authPayload,
+              iss,
+            });
+
+            console.log("message", message);
+            const sig = await cryptoWallet.signMessage(message);
+            console.log("signed message", {
+              sig,
+              privateKey: cryptoWallet.privateKey,
+              address: cryptoWallet.address,
+            });
+            const auth = buildAuthObject(
+              authPayload,
+              {
+                t: "eip191",
+                s: sig,
+              },
+              iss,
+            );
+
+            console.log("auth", auth);
+            auths.push(auth);
+          });
+
+          await wallet.approveSessionAuthenticate({
+            id: payload.id,
+            auths,
+          });
+          console.log("wallet session_authenticate approved");
+          resolve();
+        });
+      }),
+      new Promise<void>((resolve) => {
+        wallet.pair({ uri });
+        resolve();
+      }),
+    ]);
+    const { session, auths } = await response();
+    const walletSession = wallet.session.get(session.topic);
+    expect(auths?.length).to.eq(supportedChains.length);
+    // approved namespaces on both sides must be equal
+    expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_request", async (payload) => {
+          console.log("wallet session_request", payload);
+          const { id, topic } = payload;
+          await wallet.respond({
+            topic,
+            response: formatJsonRpcResult(
+              id,
+              await cryptoWallet.signMessage(payload.params.request.params[0]),
+            ),
+          });
+          console.log("wallet session_request responded");
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve) => {
+        const result = await dapp.request({
+          chainId: supportedChains[0],
+          topic: session.topic,
+          request: {
+            method: "personal_sign",
+            params: ["hey, sup"],
+          },
+        });
+        console.log("dapp request result", result);
+        resolve();
+      }),
+    ]);
+  });
+  // this test simulates the scenario where the wallet supports all requested chains and subset of methods
+  it("should establish authenticated session with multiple signatures. Case 4", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    expect(dapp).to.be.exist;
+    expect(dapp.metadata.redirect).to.exist;
+    expect(dapp.metadata.redirect?.universal).to.exist;
+    expect(dapp.metadata.redirect?.native).to.not.exist;
+
+    const requestedChains = ["eip155:1", "eip155:2"];
+    const supportedChains = requestedChains;
+    const requestedMethods = ["personal_sign", "eth_chainId", "eth_signTypedData_v4"];
+    const supportedMethods = [requestedMethods[0]];
+    const { uri, response } = await dapp.authenticate({
+      chains: requestedChains,
+      domain: "localhost",
+      nonce: "1",
+      uri: "aud",
+      methods: requestedMethods,
+      resources: [
+        "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
+      ],
+    });
+    console.log("uri", uri);
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          console.log("wallet session_authenticate", payload.params);
+          const authPayload = populateAuthPayload({
+            authPayload: payload.params.authPayload,
+            chains: supportedChains,
+            methods: supportedMethods,
+          });
+
+          const auths: AuthTypes.Cacao[] = [];
+          authPayload.chains.forEach(async (chain) => {
+            const iss = `${chain}:${cryptoWallet.address}`;
+            const message = wallet.engine.formatAuthMessage({
+              request: authPayload,
+              iss,
+            });
+            console.log("message", message);
+            const sig = await cryptoWallet.signMessage(message);
+            console.log("signed message", {
+              sig,
+              privateKey: cryptoWallet.privateKey,
+              address: cryptoWallet.address,
+            });
+            const auth = buildAuthObject(
+              authPayload,
+              {
+                t: "eip191",
+                s: sig,
+              },
+              iss,
+            );
+            console.log("auth", auth);
+            auths.push(auth);
+          });
+
+          await wallet.approveSessionAuthenticate({
+            id: payload.id,
+            auths,
+          });
+
+          console.log("wallet session_authenticate approved");
+          resolve();
+        });
+      }),
+      new Promise<void>((resolve) => {
+        wallet.pair({ uri });
+        resolve();
+      }),
+    ]);
+    const { session, auths } = await response();
+    const walletSession = wallet.session.get(session.topic);
+    expect(auths?.length).to.eq(supportedChains.length);
+    // approved namespaces on both sides must be equal
+    expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_request", async (payload) => {
+          console.log("wallet session_request", payload);
+          const { id, topic } = payload;
+          await wallet.respond({
+            topic,
+            response: formatJsonRpcResult(
+              id,
+              await cryptoWallet.signMessage(payload.params.request.params[0]),
+            ),
+          });
+          console.log("wallet session_request responded");
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve) => {
+        const result = await dapp.request({
+          chainId: supportedChains[1],
+          topic: session.topic,
+          request: {
+            method: "personal_sign",
+            params: ["hey, sup"],
+          },
+        });
+        console.log("dapp request result", result);
+        resolve();
+      }),
+    ]);
+  });
   it("should establish authenticated session", async () => {
     const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
     expect(dapp).to.be.exist;
