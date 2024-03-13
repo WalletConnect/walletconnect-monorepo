@@ -647,7 +647,7 @@ export class Engine extends IEngine {
       eip155: {
         chains,
         methods,
-        events: [],
+        events: ["chainChanged", "accountsChanged"],
       },
     };
 
@@ -862,6 +862,7 @@ export class Engine extends IEngine {
           pairingTopic,
           namespaces: buildNamespacesFromAuth(
             [...new Set(approvedMethods)],
+            // TODO: use the approved account for the chain
             [...new Set(approvedChains.map((chain) => `${chain}:${accounts[0].split(":")[4]}`))],
           ),
         };
