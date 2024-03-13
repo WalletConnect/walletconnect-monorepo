@@ -18,30 +18,13 @@ import {
 } from "../src";
 
 describe("URI", () => {
-  it("formatStatementFromRecap", async () => {
-    const payload = {
-      chains: ["eip155:1", "eip155:2"],
-      aud: "aud",
-      domain: "localhost",
-      version: "1",
-      nonce: "1",
-      iat: "2024-02-16T10:37:48.988Z",
-      resources: [
-        "urn:recap:eyJhdHQiOnsiZWlwMTU1IjpbeyJyZXF1ZXN0L2V0aF9jaGFpbklkIjpbe31dfSx7InJlcXVlc3QvZXRoX3NpZ25UeXBlZERhdGFfdjQiOlt7fV19LHsicmVxdWVzdC9wZXJzb25hbF9zaWduIjpbe31dfV19fQ==",
-        "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9leGFtcGxlLmNvbSI6W3sicHVzaC9ub3RpZmljYXRpb24iOlt7fV19XX19",
-      ],
-    };
-    const statement = formatMessage(
-      payload,
-      "did:pkh:eip155:1:0x1234567890123456789012345678901234567890",
-    );
-    console.log("statement", statement);
-
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-  });
-
   describe("merge recaps", () => {
-    it("shoud merge recaps", async () => {
+    it("shoud merge recaps", () => {
+      const recap1 = {
+        att: {
+          "https://notify.walletconnect.com": { "manage/all-apps-notifications": [{}] },
+        },
+      };
       const recap2 = {
         att: {
           eip155: {
@@ -51,22 +34,24 @@ describe("URI", () => {
           },
         },
       };
-      const recap1 = {
+      const recap = mergeRecaps(recap1, recap2);
+
+      const expected = {
         att: {
+          eip155: {
+            "request/eth_chainId": [{}],
+            "request/eth_signTypedData_v4": [{}],
+            "request/personal_sign": [{}],
+          },
           "https://notify.walletconnect.com": { "manage/all-apps-notifications": [{}] },
         },
       };
-      const recap = mergeRecaps(recap1, recap2);
-      console.log("recap", recap);
-
-      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+      expect(JSON.stringify(recap)).to.eql(JSON.stringify(expected));
     });
-    it("shoud merge recaps with different keys", async () => {
+    it("shoud merge recaps with different keys", () => {
       const recap1 = createRecap("https://web3inbox.com", "push", ["notifications", "alerts"]);
       const recap2 = createRecap("eip155", "request", ["personal_sign", "eth_sendTransaction"]);
-      console.log("recap1", recap1);
-      console.log("recap2", recap2);
-      const merged = {
+      const expected = {
         att: {
           eip155: {
             "request/eth_sendTransaction": [{}],
@@ -79,18 +64,12 @@ describe("URI", () => {
         },
       };
       const mergedRecap = mergeRecaps(recap1, recap2);
-      console.log("mergedRecap", mergedRecap);
-      expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(merged));
-
-      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+      expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(expected));
     });
-    it("shoud merge recaps with same resource", async () => {
+    it("shoud merge recaps with same resource", () => {
       const recap1 = createRecap("eip155", "push", ["notifications", "alerts"]);
       const recap2 = createRecap("eip155", "request", ["personal_sign", "eth_sendTransaction"]);
-      console.log("recap1", recap1);
-      console.log("encoded", encodeRecap(recap1));
-      console.log("recap2", recap2);
-      const merged = {
+      const expected = {
         att: {
           eip155: {
             "push/alerts": [{}],
@@ -101,17 +80,12 @@ describe("URI", () => {
         },
       };
       const mergedRecap = mergeRecaps(recap1, recap2);
-      console.log("mergedRecap", mergedRecap);
-      expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(merged));
-
-      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+      expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(expected));
     });
-    it("shoud merge recaps with same resource & actions", async () => {
+    it("shoud merge recaps with same resource & actions", () => {
       const recap1 = createRecap("eip155", "request", ["personal_sign", "notifications"]);
       const recap2 = createRecap("eip155", "request", ["alerts", "eth_sendTransaction"]);
-      console.log("recap1", recap1);
-      console.log("recap2", recap2);
-      const merged = {
+      const expected = {
         att: {
           eip155: {
             "request/alerts": [{}],
@@ -122,43 +96,21 @@ describe("URI", () => {
         },
       };
       const mergedRecap = mergeRecaps(recap1, recap2);
-      console.log("mergedRecap", mergedRecap);
-      expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(merged));
-
-      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+      expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(expected));
     });
   });
 
-  it("shoud encode recap DONE", async () => {
+  it("shoud encode recap", () => {
     const recap = createRecap("eip155", "request", ["personal_sign", "eth_signTypedData_v4"]);
     isValidRecap(recap);
     const encoded = encodeRecap(recap);
     expect(encoded).to.be.a("string");
     expect(encoded).to.include("urn:recap:");
-    console.log("encoded", encoded);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    const decoded = decodeRecap(encoded);
+    expect(decoded).to.eql(recap);
   });
 
-  it("should build recap statement from encoded recap DONE", async () => {
-    const recap = createRecap("eip155", "request", ["personal_sign", "eth_signTypedData_v4"]);
-    isValidRecap(recap);
-    console.log("recap", recap);
-    const statement = formatStatementFromRecap(
-      {
-        att: {
-          eip155: {
-            "request/personal_sign": [{}],
-            "request/eth_signTypedData_v4": [{}],
-          },
-        },
-      },
-      1,
-    );
-    console.log("statement", statement);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-  });
-
-  it("should get methods from recap DONE", async () => {
+  it("should get methods from recap DONE", () => {
     const recap = {
       att: {
         eip155: {
@@ -170,10 +122,9 @@ describe("URI", () => {
 
     const methods = getMethodsFromRecap(encodeRecap(recap));
     expect(methods).to.eql(["eth_signTypedData", "personal_sign"]);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
 
-  it("should get chains from recap", async () => {
+  it("should get chains from recap", () => {
     const recap = {
       att: {
         eip155: {
@@ -183,82 +134,33 @@ describe("URI", () => {
       },
     };
     const chains = getChainsFromRecap(encodeRecap(recap));
-    console.log("chains", chains);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    expect(chains).to.eql(["eip155:1", "eip155:2", "eip155:3"]);
   });
 
-  it("should build namespaces from auth", async () => {
-    const accounts = [
-      "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
-      "did:pkh:eip155:2:0x3613699A6c5D8BC97a08805876c8005543125F09",
-    ];
-    const methods = ["personal_sign", "eth_signTypedData_v4"];
-
-    const namespace = buildNamespacesFromAuth(methods, accounts);
-  });
-  it("sort recap abilities alphabetically", async () => {
-    // const recap = formatRecapFromNamespaces("https://example.com", "push", [
-    //   "personal_sign",
-    //   "eth_sendTransaction",
-    //   "eth_signTypedData_v4",
-    // ]);
-    const recap = {
-      att: {
-        "https://notify.walletconnect.com/all-apps": {
-          "crud/notifications": [{}],
-          "crud/subscriptions": [{}],
-        },
-      },
-    };
-
-    const encoded = encodeRecap(recap);
-    const encodedExpected =
-      "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20vYWxsLWFwcHMiOnsiY3J1ZC9ub3RpZmljYXRpb25zIjpbe31dLCJjcnVkL3N1YnNjcmlwdGlvbnMiOlt7fV19fX0K";
-    console.log("recap", encoded);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-    const decoded = decodeRecap(encodedExpected);
-    console.log("decoded", decoded);
-    expect(decoded).to.eql(recap);
-    expect(encoded).to.eql(encodedExpected);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-  });
-
-  it("should encode recap with multiple chains", async () => {
-    const recap =
-      "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InJlcXVlc3QvZXRoX3NpZ25UeXBlZERhdGFfdjQiOlt7fV0sInJlcXVlc3QvcGVyc29uYWxfc2lnbiI6W3t9XX19fQ";
-    const decoded = decodeRecap(recap);
-    console.log("decoded", decoded);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-  });
-
-  it("should find common values in two arrays", async () => {
+  it("should find common values in two arrays", () => {
     const arr1 = ["eip155:1", "eip155:2"];
     const arr2 = ["eip155:1", "eip155:3"];
-    const res = getCommonValuesInArrays(arr1, arr2);
-    console.log("res", res);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    const result = getCommonValuesInArrays(arr1, arr2);
+    expect(result).to.eql(["eip155:1"]);
   });
-  it("should get decoded recaps from resources", async () => {
+  it("should get recap from resources", () => {
     const resources = [
-      "urn:recap:eyJhdHQiOnsiZWlwMTU1IjpbeyJyZXF1ZXN0L3BlcnNvbmFsX3NpZ24iOltdfSx7InJlcXVlc3QvZXRoX3NpZ25UeXBlZERhdGFfdjQiOltdfV19fQ==",
       "https://example.com",
+      "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InJlcXVlc3QvZXRoX2NoYWluSWQiOlt7fV0sInJlcXVlc3QvZXRoX3NpZ25UeXBlZERhdGFfdjQiOlt7fV0sInB1c2gvcGVyc29uYWxfc2lnbiI6W3t9XX0sImh0dHBzOi8vbm90aWZ5LndhbGxldGNvbm5lY3QuY29tIjp7Im1hbmFnZS9hbGwtYXBwcy1ub3RpZmljYXRpb25zIjpbe31dLCJlbWl0L2FsZXJ0cyI6W3t9XX19fQ==",
     ];
+    const result = getDecodedRecapsFromResources(resources);
+    expect(result).to.exist;
+    expect(result).to.be.an("object");
 
-    const res = getDecodedRecapsFromResources(resources);
-
-    console.log("res", JSON.stringify(res));
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    const expectFail = ["https://example.com"];
+    const resFail = getDecodedRecapsFromResources(expectFail);
+    expect(resFail).to.eql(undefined);
   });
-  it.only("should populate authPayload with supported chains/methods", async () => {
+  it("should populate authPayload with supported chains/methods", () => {
     const encoded = createEncodedRecap("eip155", "request", [
       "personal_sign",
       "eth_signTypedData_v4",
     ]);
-    console.log("encoded1", encoded);
-    const encoded2 = createEncodedRecap("eip155", "push", ["messages", "notification"]);
-    console.log("encoded2", encoded2);
-    const encoded3 = createEncodedRecap("eip155", "receive", ["messages", "notification"]);
-    console.log("encoded3", encoded3);
 
     const requestedChains = ["eip155:1", "eip155:2"];
     const authPayload = {
@@ -286,52 +188,42 @@ describe("URI", () => {
     isValidRecap(recap);
 
     const approvedMethods = ["personal_sign"];
-    console.log("recap", recap);
     expect(getMethodsFromRecap(encodeRecap(recap))).to.eql(approvedMethods);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
 
-  it("should numerate unique recap abilities correctly DONE", async () => {
+  it("should numerate unique recap abilities correctly", () => {
     const request = {
       type: "caip122",
       chains: ["eip155:1"],
-      aud: "https://example.com",
-      domain: "http://localhost:3000",
+      statement: "I accept the ServiceOrg Terms of Service: https://app.web3inbox.com/tos",
+      aud: "https://app.web3inbox.com/login",
+      domain: "app.web3inbox",
       version: "1",
-      nonce: "1",
-      iat: "2024-02-19T09:29:21.394Z",
-      // statement: "Requesting access to your account",
+      nonce: "32891756",
+      iat: "2024-03-13T09:00:43.888Z",
       resources: [
-        "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InJlcXVlc3QvZXRoX3NpZ25UeXBlZERhdGFfdjQiOlt7fV0sInJlcXVlc3QvcGVyc29uYWxfc2lnbiI6W3t9XX19fQ==",
-        "https://example.com",
-        "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InB1c2gvbWVzc2FnZXMiOlt7fV0sInB1c2gvbm90aWZpY2F0aW9uIjpbe31dfX19",
-        "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InB1c2gvbWVzc2FnZXMiOlt7fV0sInB1c2gvbm90aWZpY2F0aW9uIjpbe31dfX19",
-        "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InB1c2gvbWVzc2FnZXMiOlt7fV0sInB1c2gvbm90aWZpY2F0aW9uIjpbe31dfX19",
-        "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InJlY2VpdmUvbWVzc2FnZXMiOlt7fV0sInJlY2VpdmUvbm90aWZpY2F0aW9uIjpbe31dfX19",
+        "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InJlcXVlc3QvZXRoX3NlbmRUcmFuc2FjdGlvbiI6W3t9XSwicmVxdWVzdC9wZXJzb25hbF9zaWduIjpbe31dfSwiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
       ],
     };
 
     const message = formatMessage(
-      request as any,
+      request,
       "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
     );
-    console.log("message", message);
 
-    // the above resources[] should produce 5 capability statements
+    // the above resources[] should produce 2 capability statements
     expect(message).to.include("(1)");
     expect(message).to.include("(2)");
-    expect(message).to.include("(3)");
-    expect(message).to.include("(4)");
-    expect(message).to.include("(5)");
-    expect(message).to.not.include("(6)");
+    expect(message).to.include(
+      "I further authorize the stated URI to perform the following actions on my behalf: (1) 'request': 'eth_sendTransaction', 'personal_sign' for 'eip155'. (2) 'manage': 'all-apps-notifications' for 'https://notify.walletconnect.com'.",
+    );
 
     expect(message).to.include("Version: 1");
-    expect(message).to.include("Nonce: 1");
+    expect(message).to.include("Nonce: 32891756");
     expect(message).to.include(`URI: ${request.aud}`);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   });
   describe("resurces", () => {
-    it("should not add resources to siwe message when missing from request DONE", async () => {
+    it("should not add resources to siwe message when missing from request", () => {
       const request = {
         type: "caip122",
         chains: ["eip155:1"],
@@ -347,15 +239,13 @@ describe("URI", () => {
         request as any,
         "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
       );
-      console.log("message", message);
 
       expect(message).to.include("Version: 1");
       expect(message).to.include("Nonce: 1");
       expect(message).to.include(`URI: ${request.aud}`);
       expect(message).to.not.include(`Resources:`);
-      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
     });
-    it("should add resources to siwe message when is empty array DONE", async () => {
+    it("should add resources to siwe message when is empty array DONE", () => {
       const request = {
         type: "caip122",
         chains: ["eip155:1"],
@@ -372,32 +262,14 @@ describe("URI", () => {
         request as any,
         "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
       );
-      console.log("message", message);
 
       expect(message).to.include("Version: 1");
       expect(message).to.include("Nonce: 1");
       expect(message).to.include(`URI: ${request.aud}`);
       expect(message).to.include(`Resources:`);
-      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
     });
-    it("should add resources items to siwe message DONE", async () => {
-      const recap = {
-        att: {
-          eip155: {
-            "request/eth_chainId": [{}],
-            "request/eth_signTypedData_v4": [{}],
-            "push/personal_sign": [{}],
-          },
-          "https://notify.walletconnect.com": {
-            "manage/all-apps-notifications": [{}],
-            "emit/alerts": [{}],
-          },
-        },
-      };
-      console.log("recap", encodeRecap(recap));
-      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-    });
-    it("should add resources items to siwe message DONE", async () => {
+
+    it("should add resources items to siwe message DONE", () => {
       const request = {
         type: "caip122",
         chains: ["eip155:1"],
@@ -417,14 +289,12 @@ describe("URI", () => {
         request as any,
         "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
       );
-      console.log("message", message);
 
       expect(message).to.include("Version: 1");
       expect(message).to.include("Nonce: 1");
       expect(message).to.include(`URI: ${request.aud}`);
       expect(message).to.include(`Resources:`);
       expect(message).to.include(request.resources[0]);
-      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
     });
   });
 });
