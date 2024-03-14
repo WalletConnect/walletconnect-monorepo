@@ -86,7 +86,7 @@ export class Pairing implements IPairing {
     this.registeredMethods = [...new Set([...this.registeredMethods, ...methods])];
   };
 
-  public create: IPairing["create"] = async () => {
+  public create: IPairing["create"] = async (params) => {
     this.isInitialized();
     const symKey = generateRandomBytes32();
     const topic = await this.core.crypto.setSymKey(symKey);
@@ -100,6 +100,7 @@ export class Pairing implements IPairing {
       symKey,
       relay,
       expiryTimestamp: expiry,
+      methods: params?.methods,
     });
     await this.pairings.set(topic, pairing);
     await this.core.relayer.subscribe(topic);

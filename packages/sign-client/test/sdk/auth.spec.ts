@@ -46,44 +46,51 @@ describe("Authenticated Sessions", () => {
       metadata: TEST_APP_METADATA_B,
     });
     await Promise.all([
-      new Promise<void>((resolve) => {
-        wallet.on("session_authenticate", async (payload) => {
-          console.log("wallet session_authenticate", payload.params);
-          const authPayload = populateAuthPayload({
-            authPayload: payload.params.authPayload,
-            chains: requestedChains,
-            methods: requestedMethods,
-          });
-          const iss = `${requestedChains[0]}:${cryptoWallet.address}`;
-          const message = wallet.engine.formatAuthMessage({
-            request: authPayload,
-            iss,
-          });
+      Promise.race<void>([
+        new Promise((resolve) => {
+          wallet.on("session_authenticate", async (payload) => {
+            console.log("wallet session_authenticate", payload.params);
+            const authPayload = populateAuthPayload({
+              authPayload: payload.params.authPayload,
+              chains: requestedChains,
+              methods: requestedMethods,
+            });
+            const iss = `${requestedChains[0]}:${cryptoWallet.address}`;
+            const message = wallet.engine.formatAuthMessage({
+              request: authPayload,
+              iss,
+            });
 
-          console.log("message", message);
-          const sig = await cryptoWallet.signMessage(message);
-          console.log("signed message", {
-            sig,
-            privateKey: cryptoWallet.privateKey,
-            address: cryptoWallet.address,
+            console.log("message", message);
+            const sig = await cryptoWallet.signMessage(message);
+            console.log("signed message", {
+              sig,
+              privateKey: cryptoWallet.privateKey,
+              address: cryptoWallet.address,
+            });
+            const auth = buildAuthObject(
+              authPayload,
+              {
+                t: "eip191",
+                s: sig,
+              },
+              iss,
+            );
+            console.log("auth", auth);
+            await wallet.approveSessionAuthenticate({
+              id: payload.id,
+              auths: [auth],
+            });
+            console.log("wallet session_authenticate approved");
+            resolve();
           });
-          const auth = buildAuthObject(
-            authPayload,
-            {
-              t: "eip191",
-              s: sig,
-            },
-            iss,
-          );
-          console.log("auth", auth);
-          await wallet.approveSessionAuthenticate({
-            id: payload.id,
-            auths: [auth],
+        }),
+        new Promise((_, reject) => {
+          wallet.on("session_proposal", () => {
+            reject(new Error("wallet should not emit session_proposal"));
           });
-          console.log("wallet session_authenticate approved");
-          resolve();
-        });
-      }),
+        }),
+      ]),
       new Promise<void>((resolve) => {
         wallet.pair({ uri });
         resolve();
@@ -1011,7 +1018,11 @@ describe("Authenticated Sessions", () => {
       uri: "aud",
       methods: ["personal_sign", "eth_signTypedData_v4"],
     });
+
     console.log("uri", uri);
+    expect(uri).to.exist;
+    expect(uri).to.include("wc_sessionAuthenticate");
+
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",

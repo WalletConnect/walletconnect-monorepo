@@ -28,13 +28,14 @@ export function parseUri(str: string): EngineTypes.UriParameters {
   const requiredValues = path.split("@");
   const queryString: string = typeof pathEnd !== "undefined" ? str.substring(pathEnd) : "";
   const queryParams = qs.parse(queryString);
+  const methods = queryParams.methods ? (queryParams.methods as string).split(",") : undefined;
   const result = {
     protocol,
     topic: parseTopic(requiredValues[0]),
     version: parseInt(requiredValues[1], 10),
     symKey: queryParams.symKey as string,
     relay: parseRelayParams(queryParams),
-    methods: queryParams.methods as string,
+    methods,
     expiryTimestamp: queryParams.expiryTimestamp
       ? parseInt(queryParams.expiryTimestamp as string, 10)
       : undefined,
@@ -65,6 +66,7 @@ export function formatUri(params: EngineTypes.UriParameters): string {
       symKey: params.symKey,
       ...formatRelayParams(params.relay),
       expiryTimestamp: params.expiryTimestamp,
+      ...(params.methods ? { methods: params.methods.join(",") } : {}),
     })
   );
 }

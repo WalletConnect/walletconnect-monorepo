@@ -122,7 +122,7 @@ export class Engine extends IEngine {
 
   private requestQueueDelay = ONE_SECOND;
 
-  private expectedPairingMethodMap: Map<string, string> = new Map();
+  private expectedPairingMethodMap: Map<string, string[]> = new Map();
 
   // Ephemeral (in-memory) map to store recently deleted items
   private recentlyDeletedMap = new Map<
@@ -596,33 +596,15 @@ export class Engine extends IEngine {
 
   public authenticate: IEngine["authenticate"] = async (params) => {
     this.isInitialized();
-
-    // if (!isValidRequest(params)) {
-    //   throw new Error("Invalid request");
-    // }
+    this.isValidAuthenticate(params);
 
     const { chains, statement = "", uri, domain, nonce, type, exp, nbf, methods = [] } = params;
     // reassign resources to remove reference as the array is modified and might cause side effects
     const resources = [...(params.resources || [])];
 
-    // ----- reject multi namespaces ----- //
-    const uniqueNamespaces = [...new Set(chains.map((chain) => chain.split(":")[0]))];
-    if (uniqueNamespaces.length > 1) {
-      throw new Error(
-        "Multi-namespace requests are not supported. Please request single namespace only.",
-      );
-    }
-
-    const namespace = chains[0].split(":")[0];
-    if (namespace !== "eip155") {
-      throw new Error(
-        "Only eip155 namespace is supported for authenticated sessions. Please use .connect() for non-eip155 chains.",
-      );
-    }
-    console.log("namespace", namespace);
-
-    let { topic: pairingTopic, uri: connectionUri } = await this.client.core.pairing.create();
-    connectionUri = `${connectionUri}&methods=wc_sessionAuthenticate`;
+    const { topic: pairingTopic, uri: connectionUri } = await this.client.core.pairing.create({
+      methods: ["wc_sessionAuthenticate", "test"],
+    });
 
     this.client.logger.info({
       message: "Generated new pairing",
@@ -643,6 +625,7 @@ export class Engine extends IEngine {
     console.log("sending request to new pairing topic: ", pairingTopic);
 
     if (methods.length > 0) {
+      const namespace = chains[0].split(":")[0];
       let recap = createEncodedRecap(namespace, "request", methods);
       // per Recaps spec, recap should occupy the last position in the resources array
       const existingRecap = getRecapFromResources(resources);
@@ -1404,6 +1387,7 @@ export class Engine extends IEngine {
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
     const expectedMethod = this.expectedPairingMethodMap.get(topic);
+    console.log("expectedMethod", expectedMethod);
     if (expectedMethod && !expectedMethod.includes(reqMethod)) {
       console.log(
         "expected pairing topic/method",
@@ -1996,6 +1980,7 @@ export class Engine extends IEngine {
    * It allows QR/URI to be scanned multiple times without having to create new pairing.
    */
   private onPairingCreated = (pairing: PairingTypes.Struct) => {
+    console.log("onPairingCreated", pairing);
     if (pairing.methods) {
       this.expectedPairingMethodMap.set(pairing.topic, pairing.methods);
     }
@@ -2371,6 +2356,41 @@ export class Engine extends IEngine {
     }
     const { topic } = params;
     await this.isValidSessionOrPairingTopic(topic);
+  };
+
+  private isValidAuthenticate = (params: AuthTypes.SessionAuthenticateParams) => {
+    const { chains, uri, domain, nonce } = params;
+
+    // ----- validate params ----- //
+    if (!Array.isArray(chains) || chains.length === 0) {
+      throw new Error("chains is required and must be a non-empty array");
+    }
+    if (!isValidString(uri, false)) {
+      throw new Error("uri is required parameter");
+    }
+    if (!isValidString(domain, false)) {
+      throw new Error("domain is required parameter");
+    }
+    if (!isValidString(nonce, false)) {
+      throw new Error("nonce is required parameter");
+    }
+
+    // ----- reject multi namespaces ----- //
+    const uniqueNamespaces = [...new Set(chains.map((chain) => chain.split(":")[0]))];
+    if (uniqueNamespaces.length > 1) {
+      throw new Error(
+        "Multi-namespace requests are not supported. Please request single namespace only.",
+      );
+    }
+
+    const namespace = chains[0].split(":")[0];
+    if (namespace !== "eip155") {
+      throw new Error(
+        "Only eip155 namespace is supported for authenticated sessions. Please use .connect() for non-eip155 chains.",
+      );
+    }
+
+    console.log("namespace", namespace);
   };
 
   private getVerifyContext = async (hash: string, metadata: CoreTypes.Metadata) => {
