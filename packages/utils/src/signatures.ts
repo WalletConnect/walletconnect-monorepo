@@ -32,7 +32,11 @@ export async function verifySignature(
   }
 }
 
-export function isValidEip191Signature(address: string, message: string, signature: string): boolean {
+export function isValidEip191Signature(
+  address: string,
+  message: string,
+  signature: string,
+): boolean {
   const recoveredAddress = recoverAddress(hashMessage(message), signature);
   return recoveredAddress.toLowerCase() === address.toLowerCase();
 }
