@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import SignClient, { PROPOSAL_EXPIRY_MESSAGE } from "@walletconnect/sign-client";
 import { SessionTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
@@ -141,7 +140,6 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   public async authenticate(opts: AuthenticateParams) {
-    console.log("UP authenticate", opts);
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
@@ -151,7 +149,6 @@ export class UniversalProvider implements IUniversalProvider {
     const { uri, response } = await this.client.authenticate({
       ...opts,
     });
-    console.log("UP authenticate uri", uri);
     if (uri) {
       this.uri = uri;
       this.events.emit("display_uri", uri);

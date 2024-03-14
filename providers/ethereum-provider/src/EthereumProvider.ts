@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { getAccountsFromNamespaces, getSdkError, isValidArray } from "@walletconnect/utils";
 import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
@@ -361,7 +360,6 @@ export class EthereumProvider implements IEthereumProvider {
             });
         },
       );
-      console.log("ethereum-provider/src/EthereumProvider.ts: 271: result:", result);
       if (!result) return;
       const session = result.session;
       if (session) {
