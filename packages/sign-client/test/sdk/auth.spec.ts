@@ -204,6 +204,8 @@ describe("Authenticated Sessions", () => {
     ]);
     const session = (await response()).session;
     const walletSession = wallet.session.get(session.topic);
+    console.log("sessionA", session.namespaces);
+    console.log("walletSessionA", walletSession.namespaces);
     // approved namespaces on both sides must be equal
     expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
     await Promise.all([
@@ -968,10 +970,11 @@ describe("Authenticated Sessions", () => {
     ]);
     console.log("paired");
 
-    console.log("response", response);
-    const session = (await response()).session;
-    console.log("sessions", session);
-    // await throttle(1000);
+    const { session, auths } = await response();
+    const walletSession = wallet.session.get(session.topic);
+    // approved namespaces on both sides must be equal
+    expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
+    console.log("session", walletSession.namespaces.eip155);
 
     await Promise.all([
       new Promise<void>((resolve) => {

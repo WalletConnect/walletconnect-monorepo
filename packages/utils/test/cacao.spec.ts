@@ -10,7 +10,7 @@ import {
   formatStatementFromRecap,
   getChainsFromRecap,
   getCommonValuesInArrays,
-  getDecodedRecapsFromResources,
+  getDecodedRecapFromResources,
   getMethodsFromRecap,
   isValidRecap,
   mergeRecaps,
@@ -148,12 +148,12 @@ describe("URI", () => {
       "https://example.com",
       "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InJlcXVlc3QvZXRoX2NoYWluSWQiOlt7fV0sInJlcXVlc3QvZXRoX3NpZ25UeXBlZERhdGFfdjQiOlt7fV0sInB1c2gvcGVyc29uYWxfc2lnbiI6W3t9XX0sImh0dHBzOi8vbm90aWZ5LndhbGxldGNvbm5lY3QuY29tIjp7Im1hbmFnZS9hbGwtYXBwcy1ub3RpZmljYXRpb25zIjpbe31dLCJlbWl0L2FsZXJ0cyI6W3t9XX19fQ==",
     ];
-    const result = getDecodedRecapsFromResources(resources);
+    const result = getDecodedRecapFromResources(resources);
     expect(result).to.exist;
     expect(result).to.be.an("object");
 
     const expectFail = ["https://example.com"];
-    const resFail = getDecodedRecapsFromResources(expectFail);
+    const resFail = getDecodedRecapFromResources(expectFail);
     expect(resFail).to.eql(undefined);
   });
   it("should populate authPayload with supported chains/methods", () => {
@@ -183,7 +183,7 @@ describe("URI", () => {
 
     const approvedChains = ["eip155:2"];
     expect(updatedAuthPayload.chains).to.eql(approvedChains);
-    const recap = getDecodedRecapsFromResources(updatedAuthPayload.resources);
+    const recap = getDecodedRecapFromResources(updatedAuthPayload.resources);
     expect(recap).to.exist;
     isValidRecap(recap);
 
@@ -216,7 +216,7 @@ describe("URI", () => {
 
     const approvedChains = ["eip155:2"];
     expect(updatedAuthPayload.chains).to.eql(approvedChains);
-    const recap = getDecodedRecapsFromResources(updatedAuthPayload.resources);
+    const recap = getDecodedRecapFromResources(updatedAuthPayload.resources);
     expect(recap).to.exist;
     isValidRecap(recap);
 

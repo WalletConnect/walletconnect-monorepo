@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { AuthTypes } from "@walletconnect/types";
 import { getCommonValuesInArrays } from "./misc";
+import { verifySignature } from "./signatures";
 const didPrefix = "did:pkh:";
 export const getDidAddressSegments = (iss: string) => {
   return iss?.split(":");
@@ -29,6 +30,22 @@ export const getDidAddress = (iss: string) => {
   }
   return undefined;
 };
+
+export async function validateSignedCacao(params: { cacao: AuthTypes.Cacao; projectId?: string }) {
+  const { cacao, projectId } = params;
+  const { s: signature, p: payload } = cacao;
+  const reconstructed = formatMessage(payload, payload.iss);
+  const walletAddress = getDidAddress(payload.iss) as string;
+  const isValid = await verifySignature(
+    walletAddress,
+    reconstructed,
+    signature,
+    getDidChainId(payload.iss) as string,
+    projectId as string,
+  );
+
+  return isValid;
+}
 
 export const formatMessage = (cacao: AuthTypes.FormatMessageParams, iss: string) => {
   const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
@@ -131,7 +148,7 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
     throw new Error("No supported chains");
   }
 
-  const requestedRecaps = getDecodedRecapsFromResources(authPayload.resources);
+  const requestedRecaps = getDecodedRecapFromResources(authPayload.resources);
   if (!requestedRecaps) return authPayload;
 
   isValidRecap(requestedRecaps);
@@ -167,9 +184,9 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
   };
 }
 
-export function getDecodedRecapsFromResources(resources?: string[]) {
-  if (!resources) return;
-  const resource = resources?.[resources.length - 1];
+export function getDecodedRecapFromResources(resources?: string[]) {
+  const resource = getRecapFromResources(resources);
+  if (!resource) return;
   if (!isRecap(resource)) return;
   return decodeRecap(resource);
 }

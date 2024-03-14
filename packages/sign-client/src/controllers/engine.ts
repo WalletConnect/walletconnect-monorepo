@@ -82,6 +82,8 @@ import {
   getDidChainId,
   mergeEncodedRecaps,
   getRecapFromResources,
+  validateSignedCacao,
+  getNamespacedDidChainId,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -722,7 +724,6 @@ export class Engine extends IEngine {
         if (payload.error.code === error.code) return;
         return reject(payload.error.message);
       }
-      const accounts: string[] = [];
       const {
         cacaos,
         responder,
@@ -738,53 +739,38 @@ export class Engine extends IEngine {
 
       console.log("cacaos", cacaos);
       const approvedMethods: string[] = [];
-      const approvedChains: string[] = [];
-      cacaos.forEach(async (cacao) => {
-        const { s: signature, p: payload } = cacao;
-
-        console.log("pendingRequest");
-        const reconstructed = this.formatAuthMessage({
-          request: payload,
-          iss: payload.iss,
-        });
-        console.log("reconstructed", reconstructed);
-        const walletAddress = getDidAddress(payload.iss) as string;
-        const valid = await verifySignature(
-          walletAddress,
-          reconstructed,
-          signature,
-          getDidChainId(payload.iss) as string,
-          this.client.core.projectId as string,
-        );
-
-        console.log("@dapp valid", valid ? "✅" : "🛑", valid);
-        if (!valid) {
+      const approvedAccounts: string[] = [];
+      for (const cacao of cacaos) {
+        const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
+        console.log("@dapp valid", isValid ? "✅" : "🛑", isValid);
+        if (!isValid) {
+          this.client.logger.error(cacao);
           reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
-          return;
-        }
-        const recaps =
-          payload.resources?.filter((resource) => resource?.includes("urn:recap:")) || [];
-
-        // make sure to only add methods from recaps for sign authenticated session
-        if (recaps?.length !== 0) {
-          recaps?.forEach((recap) => {
-            const methodsfromRecap = getMethodsFromRecap(recap);
-            const chainsFromRecap = getChainsFromRecap(recap);
-            approvedMethods.push(...methodsfromRecap);
-            approvedChains.push(...chainsFromRecap);
-          });
         }
 
-        if (!approvedChains.length) {
-          approvedChains.push(...pendingRequest.authPayload.chains);
+        const { p: payload } = cacao;
+        const recap = getRecapFromResources(payload.resources);
+
+        const approvedChains: string[] = [getNamespacedDidChainId(payload.iss) as string];
+        const parsedAddress = getDidAddress(payload.iss) as string;
+
+        console.log("approved - chains/accs", approvedAccounts);
+
+        if (recap) {
+          const methodsfromRecap = getMethodsFromRecap(recap);
+          const chainsFromRecap = getChainsFromRecap(recap);
+          console.log("chainsFromRecap", chainsFromRecap);
+          approvedMethods.push(...methodsfromRecap);
+          approvedChains.push(...chainsFromRecap);
         }
 
-        accounts.push(payload.iss);
-      });
+        approvedAccounts.push(...approvedChains.map((chain) => `${chain}:${parsedAddress}`));
+      }
+      console.log("approved all", approvedAccounts);
 
       console.log("approved", {
         approvedMethods,
-        approvedChains,
+        approvedAccounts,
       });
       console.log("dapp - getting shared key", {
         selfPublicKey: publicKey,
@@ -816,8 +802,7 @@ export class Engine extends IEngine {
           pairingTopic,
           namespaces: buildNamespacesFromAuth(
             [...new Set(approvedMethods)],
-            // TODO: use the approved account for the chain
-            [...new Set(approvedChains.map((chain) => `${chain}:${accounts[0].split(":")[4]}`))],
+            [...new Set(approvedAccounts)],
           ),
         };
 
@@ -920,87 +905,49 @@ export class Engine extends IEngine {
       id,
     });
 
-    let allValid = true;
-    const accounts: string[] = [];
-    const methods = [];
-
-    const recap = pendingRequest?.authPayload.resources?.find((resource: string) =>
-      resource.includes("urn:recap:"),
-    );
-    if (recap?.length) {
-      console.log("recap", recap);
-      const recapMethods = getMethodsFromRecap(recap);
-      methods.push(...recapMethods);
-    }
-
-    console.log("@approveSessionAuthenticate", methods, pendingRequest?.authPayload.resources);
     const approvedMethods: string[] = [];
-    const approvedChains: string[] = [];
+    const approvedAccounts: string[] = [];
+    for (const cacao of auths) {
+      const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
+      console.log("@wallet valid", isValid ? "✅" : "🛑", isValid);
+      if (!isValid) {
+        const invalidErr = getSdkError(
+          "SESSION_SETTLEMENT_FAILED",
+          "Signature verification failed",
+        );
 
-    await new Promise<void>((resolve) => {
-      auths.forEach(async (cacao) => {
-        const { s: signature, p: payload } = cacao;
-        console.log("pendingRequest", payload);
-        const reconstructed = this.formatAuthMessage({
-          request: payload,
-          iss: payload.iss,
+        console.log("sending error");
+        await this.sendError({
+          id,
+          topic: responseTopic,
+          error: invalidErr,
+          encodeOpts,
         });
-        console.log("reconstructed", reconstructed);
-        const walletAddress = getDidAddress(payload.iss) as string;
-        console.log("walletAddress", payload.iss);
-        try {
-          const valid = await verifySignature(
-            walletAddress,
-            reconstructed,
-            signature,
-            getDidChainId(payload.iss) as string,
-            this.client.core.projectId as string,
-          );
-          if (!valid) allValid = false;
-          console.log("wallet - valid", valid ? "✅" : "🛑", valid, reconstructed);
-        } catch (error) {
-          console.log("error", error);
-          allValid = false;
-        }
 
-        const recaps =
-          payload.resources?.filter((resource) => resource?.includes("urn:recap:")) || [];
+        console.log("throwing error");
+        throw new Error(invalidErr.message);
+      }
 
-        // make sure to only add methods from recaps for sign authenticated session
-        if (recaps?.length !== 0) {
-          recaps?.forEach((recap) => {
-            const methodsfromRecap = getMethodsFromRecap(recap);
-            const chainsFromRecap = getChainsFromRecap(recap);
-            approvedMethods.push(...methodsfromRecap);
-            approvedChains.push(...chainsFromRecap);
-          });
-        }
+      const { p: payload } = cacao;
+      const recap = getRecapFromResources(payload.resources);
 
-        accounts.push(payload.iss);
-        if (!approvedChains.length) {
-          approvedChains.push(...pendingRequest.authPayload.chains);
-        }
-      });
-      resolve();
-    });
+      const approvedChains: string[] = [getNamespacedDidChainId(payload.iss) as string];
+      const parsedAddress = getDidAddress(payload.iss) as string;
+
+      console.log("approved - chains/accs", approvedAccounts);
+
+      if (recap) {
+        const methodsfromRecap = getMethodsFromRecap(recap);
+        const chainsFromRecap = getChainsFromRecap(recap);
+        console.log("chainsFromRecap", chainsFromRecap);
+        approvedMethods.push(...methodsfromRecap);
+        approvedChains.push(...chainsFromRecap);
+      }
+
+      approvedAccounts.push(...approvedChains.map((chain) => `${chain}:${parsedAddress}`));
+    }
 
     console.log("approvedMethods", approvedMethods);
-
-    if (!allValid) {
-      console.log("invalid signature");
-      const invalidErr = getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed");
-
-      console.log("sending error");
-      await this.sendError({
-        id,
-        topic: responseTopic,
-        error: invalidErr,
-        encodeOpts,
-      });
-
-      console.log("throwing error");
-      throw new Error(invalidErr.message);
-    }
 
     console.log("wallet - getting shared key", senderPublicKey, receiverPublicKey);
     const sessionTopic = await this.client.core.crypto.generateSharedKey(
@@ -1015,13 +962,7 @@ export class Engine extends IEngine {
 
     console.log("wallet - sessionTopic", sessionTopic);
 
-    console.log("wallet - creating session object", {
-      accounts,
-      methods,
-    });
-
     if (approvedMethods?.length > 0) {
-      //TODO: create session object
       const session: SessionTypes.Struct = {
         topic: sessionTopic,
         acknowledged: true,
@@ -1042,7 +983,7 @@ export class Engine extends IEngine {
         pairingTopic: "",
         namespaces: buildNamespacesFromAuth(
           [...new Set(approvedMethods)],
-          [...new Set(approvedChains.map((chain) => `${chain}:${accounts[0].split(":")[4]}`))],
+          [...new Set(approvedAccounts)],
         ),
       };
 
@@ -1069,6 +1010,7 @@ export class Engine extends IEngine {
       throwOnFailedPublish: true,
     });
     console.log("sent response");
+    await this.client.auth.requests.delete(id, { message: "fullfilled", code: 0 });
     await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
   };
 
@@ -1105,8 +1047,6 @@ export class Engine extends IEngine {
   public formatAuthMessage: IEngine["formatAuthMessage"] = (params) => {
     this.isInitialized();
     const { request, iss } = params;
-    //TODO: validate params
-
     return formatMessage(request, iss);
   };
 
