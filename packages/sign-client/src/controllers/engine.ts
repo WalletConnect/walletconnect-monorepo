@@ -1730,7 +1730,12 @@ export class Engine extends IEngine {
     payload,
   ) => {
     const { id } = payload;
-
+    this.client.logger.trace({
+      type: "method",
+      method: "onSessionAuthenticateResponse",
+      topic,
+      payload,
+    });
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_request", id), { result: payload.result });
     } else if (isJsonRpcError(payload)) {
