@@ -603,12 +603,12 @@ export class Engine extends IEngine {
     const resources = [...(params.resources || [])];
 
     const { topic: pairingTopic, uri: connectionUri } = await this.client.core.pairing.create({
-      methods: ["wc_sessionAuthenticate", "test"],
+      methods: ["wc_sessionAuthenticate"],
     });
 
     this.client.logger.info({
       message: "Generated new pairing",
-      pairing: { topic: pairingTopic, uri },
+      pairing: { topic: pairingTopic, uri: connectionUri },
     });
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
@@ -627,10 +627,10 @@ export class Engine extends IEngine {
     if (methods.length > 0) {
       const namespace = chains[0].split(":")[0];
       let recap = createEncodedRecap(namespace, "request", methods);
-      // per Recaps spec, recap should occupy the last position in the resources array
       const existingRecap = getRecapFromResources(resources);
       if (existingRecap) {
-        // using .pop to remove the element given we already checked it's a recap
+        // per Recaps spec, recap must occupy the last position in the resources array
+        // using .pop to remove the element given we already checked it's a recap and will replace it
         const mergedRecap = mergeEncodedRecaps(recap, resources.pop() as string);
         recap = mergedRecap;
       }
@@ -659,7 +659,7 @@ export class Engine extends IEngine {
       expiryTimestamp,
     };
 
-    // ----- build recaps ----- //
+    // ----- build namespaces for fallback session proposal ----- //
     const namespaces = {
       eip155: {
         chains,
@@ -681,38 +681,6 @@ export class Engine extends IEngine {
       expiryTimestamp,
     };
     console.log("proposal", proposal);
-    // send both (main & fallback) requests
-    const [id, fallbackId] = await Promise.all([
-      this.sendRequest({
-        topic: pairingTopic,
-        method: "wc_sessionAuthenticate",
-        params: request,
-        expiry: params.expiry,
-        throwOnFailedPublish: true,
-      }),
-      this.sendRequest({
-        topic: pairingTopic,
-        method: "wc_sessionPropose",
-        params: proposal,
-        expiry: ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl,
-        throwOnFailedPublish: true,
-      }),
-    ]);
-    console.log("ids", {
-      id,
-      fallbackId,
-    });
-
-    await this.setProposal(fallbackId, { id: fallbackId, ...proposal });
-
-    await this.client.auth.requests.set(id, {
-      authPayload: request.authPayload,
-      requester: request.requester,
-      expiryTimestamp,
-      id,
-      pairingTopic,
-      verifyContext: {} as any,
-    });
 
     const { done, resolve, reject } = createDelayedPromise(
       ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl,
@@ -720,30 +688,32 @@ export class Engine extends IEngine {
     );
 
     // handle fallback session proposal response
-    this.events.once<"session_connect">(
-      engineEvent("session_connect"),
-      async ({ error, session }) => {
-        console.log("wc_sessionPropose, session", session);
-        if (error) reject(error);
-        else if (session) {
-          session.self.publicKey = publicKey;
-          await this.client.session.set(session.topic, session);
-          await this.setExpiry(session.topic, session.expiry);
-          if (pairingTopic) {
-            await this.client.core.pairing.updateMetadata({
-              topic: pairingTopic,
-              metadata: session.peer.metadata,
-            });
-          }
-          const sessionObject = this.client.session.get(session.topic);
-          resolve({
-            session: sessionObject,
+    const onSessionConnect = async ({ error, session }: any) => {
+      console.log("wc_sessionPropose, session", session);
+      // cleanup listener for authenticate response
+      this.events.off(engineEvent("session_request", id), onAuthenticate);
+      if (error) reject(error);
+      else if (session) {
+        session.self.publicKey = publicKey;
+        await this.client.session.set(session.topic, session);
+        await this.setExpiry(session.topic, session.expiry);
+        if (pairingTopic) {
+          await this.client.core.pairing.updateMetadata({
+            topic: pairingTopic,
+            metadata: session.peer.metadata,
           });
         }
-      },
-    );
+        const sessionObject = this.client.session.get(session.topic);
+        resolve({
+          session: sessionObject,
+        });
+      }
+    };
     // handle session authenticate response
-    this.events.once(engineEvent("session_request", id), async (payload: any) => {
+    const onAuthenticate = async (payload: any) => {
+      // remove cleanup for fallback response
+      this.events.off(engineEvent("session_connect"), onSessionConnect);
+
       if (payload.error) {
         console.log("payload.error", payload.error);
         // ignore unsupported method error
@@ -863,6 +833,56 @@ export class Engine extends IEngine {
         auths: cacaos,
         session,
       });
+    };
+
+    // set the ids for both requests
+    const id = payloadId();
+    const fallbackId = payloadId();
+
+    // subscribe to response events
+    this.events.once<"session_connect">(engineEvent("session_connect"), onSessionConnect);
+    this.events.once(engineEvent("session_request", id), onAuthenticate);
+
+    try {
+      // send both (main & fallback) requests
+      await Promise.all([
+        this.sendRequest({
+          topic: pairingTopic,
+          method: "wc_sessionAuthenticate",
+          params: request,
+          expiry: params.expiry,
+          throwOnFailedPublish: true,
+          clientRpcId: id,
+        }),
+        this.sendRequest({
+          topic: pairingTopic,
+          method: "wc_sessionPropose",
+          params: proposal,
+          expiry: ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl,
+          throwOnFailedPublish: true,
+          clientRpcId: fallbackId,
+        }),
+      ]);
+    } catch (error) {
+      // cleanup listeners on failed publish
+      this.events.off(engineEvent("session_connect"), onSessionConnect);
+      this.events.off(engineEvent("session_request", id), onAuthenticate);
+      throw error;
+    }
+    console.log("ids", {
+      id,
+      fallbackId,
+    });
+
+    await this.setProposal(fallbackId, { id: fallbackId, ...proposal });
+
+    await this.client.auth.requests.set(id, {
+      authPayload: request.authPayload,
+      requester: request.requester,
+      expiryTimestamp,
+      id,
+      pairingTopic,
+      verifyContext: {} as any,
     });
 
     return {
