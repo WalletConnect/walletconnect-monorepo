@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import {
   EXPIRER_EVENTS,
   PAIRING_EVENTS,
@@ -621,10 +620,8 @@ export class Engine extends IEngine {
 
     // Subscribe to response topic
     await this.client.core.relayer.subscribe(responseTopic);
-    console.log("subscribed to response topic", responseTopic);
 
     this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
-    console.log("sending request to new pairing topic: ", pairingTopic);
 
     if (methods.length > 0) {
       const namespace = chains[0].split(":")[0];
@@ -637,9 +634,6 @@ export class Engine extends IEngine {
         recap = mergedRecap;
       }
       resources.push(recap);
-      console.log("formatted recap", recap);
-    } else {
-      console.log("no methods provided, skipping recap creation");
     }
 
     const expiryTimestamp = calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
@@ -671,7 +665,6 @@ export class Engine extends IEngine {
       },
     };
 
-    console.log("new namespaces", namespaces);
     const proposal = {
       requiredNamespaces: {},
       optionalNamespaces: namespaces,
@@ -682,7 +675,6 @@ export class Engine extends IEngine {
       },
       expiryTimestamp,
     };
-    console.log("proposal", proposal);
 
     const { done, resolve, reject } = createDelayedPromise(
       ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl,
@@ -691,7 +683,6 @@ export class Engine extends IEngine {
 
     // handle fallback session proposal response
     const onSessionConnect = async ({ error, session }: any) => {
-      console.log("wc_sessionPropose, session", session);
       // cleanup listener for authenticate response
       this.events.off(engineEvent("session_request", id), onAuthenticate);
       if (error) reject(error);
@@ -715,12 +706,9 @@ export class Engine extends IEngine {
     const onAuthenticate = async (payload: any) => {
       // remove cleanup for fallback response
       this.events.off(engineEvent("session_connect"), onSessionConnect);
-
       if (payload.error) {
-        console.log("payload.error", payload.error);
         // ignore unsupported method error
         const error = getSdkError("WC_METHOD_UNSUPPORTED", "wc_sessionAuthenticate");
-        console.log("expected error", error.message);
         if (payload.error.code === error.code) return;
         return reject(payload.error.message);
       }
@@ -737,12 +725,10 @@ export class Engine extends IEngine {
         throw new Error(`Could not find pending auth request with id ${id}`);
       }
 
-      console.log("cacaos", cacaos);
       const approvedMethods: string[] = [];
       const approvedAccounts: string[] = [];
       for (const cacao of cacaos) {
         const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
-        console.log("@dapp valid", isValid ? "✅" : "🛑", isValid);
         if (!isValid) {
           this.client.logger.error(cacao);
           reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
@@ -754,33 +740,19 @@ export class Engine extends IEngine {
         const approvedChains: string[] = [getNamespacedDidChainId(payload.iss) as string];
         const parsedAddress = getDidAddress(payload.iss) as string;
 
-        console.log("approved - chains/accs", approvedAccounts);
-
         if (recap) {
           const methodsfromRecap = getMethodsFromRecap(recap);
           const chainsFromRecap = getChainsFromRecap(recap);
-          console.log("chainsFromRecap", chainsFromRecap);
           approvedMethods.push(...methodsfromRecap);
           approvedChains.push(...chainsFromRecap);
         }
 
         approvedAccounts.push(...approvedChains.map((chain) => `${chain}:${parsedAddress}`));
       }
-      console.log("approved all", approvedAccounts);
-
-      console.log("approved", {
-        approvedMethods,
-        approvedAccounts,
-      });
-      console.log("dapp - getting shared key", {
-        selfPublicKey: publicKey,
-        peer: responder.publicKey,
-      });
       const sessionTopic = await this.client.core.crypto.generateSharedKey(
         publicKey,
         responder.publicKey,
       );
-      console.log("sessionTopic", sessionTopic);
 
       //create session object
       let session: SessionTypes.Struct | undefined;
@@ -806,13 +778,10 @@ export class Engine extends IEngine {
           ),
         };
 
-        console.log("approved session", session.namespaces);
-
         await this.client.core.relayer.subscribe(sessionTopic);
         await this.client.session.set(sessionTopic, session);
 
         session = this.client.session.get(sessionTopic);
-        console.log("dapp sessionObject", session);
       }
       resolve({
         auths: cacaos,
@@ -854,10 +823,6 @@ export class Engine extends IEngine {
       this.events.off(engineEvent("session_request", id), onAuthenticate);
       throw error;
     }
-    console.log("ids", {
-      id,
-      fallbackId,
-    });
 
     await this.setProposal(fallbackId, { id: fallbackId, ...proposal });
 
@@ -899,24 +864,16 @@ export class Engine extends IEngine {
       senderPublicKey,
     };
 
-    console.log("sending response", {
-      responseTopic,
-      receiverPublicKey,
-      id,
-    });
-
     const approvedMethods: string[] = [];
     const approvedAccounts: string[] = [];
     for (const cacao of auths) {
       const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
-      console.log("@wallet valid", isValid ? "✅" : "🛑", isValid);
       if (!isValid) {
         const invalidErr = getSdkError(
           "SESSION_SETTLEMENT_FAILED",
           "Signature verification failed",
         );
 
-        console.log("sending error");
         await this.sendError({
           id,
           topic: responseTopic,
@@ -924,7 +881,6 @@ export class Engine extends IEngine {
           encodeOpts,
         });
 
-        console.log("throwing error");
         throw new Error(invalidErr.message);
       }
 
@@ -934,12 +890,9 @@ export class Engine extends IEngine {
       const approvedChains: string[] = [getNamespacedDidChainId(payload.iss) as string];
       const parsedAddress = getDidAddress(payload.iss) as string;
 
-      console.log("approved - chains/accs", approvedAccounts);
-
       if (recap) {
         const methodsfromRecap = getMethodsFromRecap(recap);
         const chainsFromRecap = getChainsFromRecap(recap);
-        console.log("chainsFromRecap", chainsFromRecap);
         approvedMethods.push(...methodsfromRecap);
         approvedChains.push(...chainsFromRecap);
       }
@@ -947,20 +900,10 @@ export class Engine extends IEngine {
       approvedAccounts.push(...approvedChains.map((chain) => `${chain}:${parsedAddress}`));
     }
 
-    console.log("approvedMethods", approvedMethods);
-
-    console.log("wallet - getting shared key", senderPublicKey, receiverPublicKey);
     const sessionTopic = await this.client.core.crypto.generateSharedKey(
       senderPublicKey,
       receiverPublicKey,
     );
-
-    console.log("wallet - keys", {
-      selfPublicKey: senderPublicKey,
-      peer: receiverPublicKey,
-    });
-
-    console.log("wallet - sessionTopic", sessionTopic);
 
     if (approvedMethods?.length > 0) {
       const session: SessionTypes.Struct = {
@@ -987,13 +930,8 @@ export class Engine extends IEngine {
         ),
       };
 
-      console.log("wallet - subscribing to sessionTopic");
       await this.client.core.relayer.subscribe(sessionTopic);
-      console.log("wallet - setting session");
       await this.client.session.set(sessionTopic, session);
-
-      const sessionObject = this.client.session.get(sessionTopic);
-      console.log("wallet sessionObject", sessionObject);
     }
 
     await this.sendResult<"wc_sessionAuthenticate">({
@@ -1009,7 +947,6 @@ export class Engine extends IEngine {
       encodeOpts,
       throwOnFailedPublish: true,
     });
-    console.log("sent response");
     await this.client.auth.requests.delete(id, { message: "fullfilled", code: 0 });
     await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
   };
@@ -1347,16 +1284,7 @@ export class Engine extends IEngine {
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
     const expectedMethod = this.expectedPairingMethodMap.get(topic);
-    console.log("expectedMethod", expectedMethod);
     if (expectedMethod && !expectedMethod.includes(reqMethod)) {
-      console.log(
-        "expected pairing topic/method",
-        this.expectedPairingMethodMap.get(topic),
-        topic,
-        payload,
-      );
-      console.log("expected method", expectedMethod, payload.method);
-      console.log("ignoring...");
       return;
     }
 
@@ -1803,11 +1731,9 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    console.log("onSessionAuthenticateResponse", topic, payload);
     const { id } = payload;
 
     if (isJsonRpcResult(payload)) {
-      console.log("emitting", engineEvent("session_request", id));
       this.events.emit(engineEvent("session_request", id), { result: payload.result });
     } else if (isJsonRpcError(payload)) {
       this.events.emit(engineEvent("session_request", id), { error: payload.error });
@@ -1818,7 +1744,6 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    console.log("onSessionAuthenticateRequest", topic, payload);
     const { requester, authPayload, expiryTimestamp } = payload.params;
     const hash = hashMessage(JSON.stringify(payload));
     const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
@@ -1832,8 +1757,6 @@ export class Engine extends IEngine {
     };
 
     await this.client.auth.requests.set(payload.id, pendingRequest);
-
-    console.log("emitting session_authenticate", payload.id);
 
     this.client.events.emit("session_authenticate", {
       topic,
@@ -1940,7 +1863,6 @@ export class Engine extends IEngine {
    * It allows QR/URI to be scanned multiple times without having to create new pairing.
    */
   private onPairingCreated = (pairing: PairingTypes.Struct) => {
-    console.log("onPairingCreated", pairing);
     if (pairing.methods) {
       this.expectedPairingMethodMap.set(pairing.topic, pairing.methods);
     }
@@ -2217,7 +2139,6 @@ export class Engine extends IEngine {
     this.checkRecentlyDeleted(topic);
     await this.isValidSessionTopic(topic);
     const { namespaces } = this.client.session.get(topic);
-    console.log("namespaces", namespaces, chainId);
     if (!isValidNamespacesChainId(namespaces, chainId)) {
       const { message } = getInternalError("MISSING_OR_INVALID", `request() chainId: ${chainId}`);
       throw new Error(message);
@@ -2229,11 +2150,6 @@ export class Engine extends IEngine {
       );
       throw new Error(message);
     }
-    console.log("validation", {
-      namespaces,
-      chainId,
-      req: request.method,
-    });
     if (!isValidNamespacesRequest(namespaces, chainId, request.method)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
@@ -2349,8 +2265,6 @@ export class Engine extends IEngine {
         "Only eip155 namespace is supported for authenticated sessions. Please use .connect() for non-eip155 chains.",
       );
     }
-
-    console.log("namespace", namespace);
   };
 
   private getVerifyContext = async (hash: string, metadata: CoreTypes.Metadata) => {

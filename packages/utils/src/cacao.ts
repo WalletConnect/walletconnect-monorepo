@@ -66,10 +66,8 @@ export const formatMessage = (cacao: AuthTypes.FormatMessageParams, iss: string)
     : undefined;
   const recap = getRecapFromResources(cacao.resources);
   if (recap) {
-    console.log("recap", recap);
     const decoded = decodeRecap(recap);
     statement = formatStatementFromRecap(statement, decoded);
-    console.log("statement after recap", statement);
   }
 
   const message = [
@@ -99,14 +97,7 @@ export function buildAuthObject(
   if (!iss.includes("did:pkh:")) {
     iss = `did:pkh:${iss}`;
   }
-  const chainId = getNamespacedDidChainId(iss);
 
-  console.log("buildAuthObject", {
-    requestPayload,
-    signature,
-    iss,
-    chainId,
-  });
   const authObject: AuthTypes.Cacao = {
     h: {
       t: "caip122",
@@ -126,7 +117,6 @@ export function buildAuthObject(
     },
     s: signature,
   };
-  console.log("authObject", authObject);
   return authObject;
 }
 type PopulateAuthPayloadParams = {
@@ -153,7 +143,6 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
 
   isValidRecap(requestedRecaps);
   const resource = getRecapResource(requestedRecaps, "eip155");
-  console.log("authenticatedSessionResource", resource);
   let updatedResources = authPayload?.resources || [];
 
   if (resource?.length) {
@@ -170,7 +159,6 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
       chains: supportedChains,
     });
     const updatedRecap = addResourceToRecap(requestedRecaps, "eip155", formattedActions);
-    console.log("updatedRecap", updatedRecap);
     // remove recap from resources as we will add the updated one
     updatedResources = authPayload?.resources?.slice(0, -1) || [];
     updatedResources.push(encodeRecap(updatedRecap));
@@ -222,7 +210,6 @@ export function isValidRecap(recap: any) {
   if (!resources?.length) throw new Error("No resources found in `att` property");
   resources.forEach((resource) => {
     const resourceAbilities = recap.att[resource];
-    console.log("resourceAbilities", resourceAbilities);
     if (Array.isArray(resourceAbilities))
       throw new Error(`Resource must be an object: ${resource}`);
     if (typeof resourceAbilities !== "object")
@@ -299,7 +286,6 @@ export function decodeRecap(recap: any): RecapType {
 
 export function createEncodedRecap(resource: string, ability: string, actions: string[]): string {
   const recap = createRecap(resource, ability, actions);
-  console.log("createEncodedRecap", recap);
   return encodeRecap(recap);
 }
 
@@ -309,9 +295,7 @@ export function isRecap(resource: string) {
 
 export function mergeEncodedRecaps(recap1: string, recap2: string) {
   const decoded1 = decodeRecap(recap1);
-  console.log("decoded1", decoded1);
   const decoded2 = decodeRecap(recap2);
-  console.log("decoded2", decoded2);
   const merged = mergeRecaps(decoded1, decoded2);
   return encodeRecap(merged);
 }
@@ -322,7 +306,6 @@ export function mergeRecaps(recap1: RecapType, recap2: RecapType) {
   const keys = Object.keys(recap1.att)
     .concat(Object.keys(recap2.att))
     .sort((a, b) => a.localeCompare(b));
-  console.log("keys", keys);
   const mergedRecap = { att: {} };
   keys.forEach((key) => {
     const actions = Object.keys(recap1.att?.[key] || {})
@@ -346,7 +329,6 @@ export function formatStatementFromRecap(statement = "", recap: RecapType) {
 
   const statementForRecap: string[] = [];
   let currentCounter = 0;
-  console.log("recap for statement", recap);
   Object.keys(recap.att).forEach((resource) => {
     const actions = Object.keys(recap.att[resource]).map((ability: any) => {
       return {
@@ -365,7 +347,6 @@ export function formatStatementFromRecap(statement = "", recap: RecapType) {
     });
     const abilities = Object.keys(uniqueAbilities).map((ability) => {
       currentCounter++;
-      console.log("currentCounter", currentCounter);
       return `(${currentCounter}) '${ability}': '${uniqueAbilities[ability].join(
         "', '",
       )}' for '${resource}'.`;
@@ -374,7 +355,6 @@ export function formatStatementFromRecap(statement = "", recap: RecapType) {
   });
 
   const recapStatemet = statementForRecap.join(" ");
-  console.log("recap statement", recapStatemet);
   const recapStatement = `${base}${recapStatemet}`;
   // add a space if there is a statement
   return `${statement ? statement + " " : ""}${recapStatement}`;
@@ -382,7 +362,6 @@ export function formatStatementFromRecap(statement = "", recap: RecapType) {
 
 export function getMethodsFromRecap(recap: string) {
   const decoded = decodeRecap(recap);
-  console.log("getMethods decoded", decoded);
   isValidRecap(decoded);
   // methods are only available for eip155 as per the current implementation
   const resource = decoded.att?.eip155;
@@ -396,9 +375,7 @@ export function getChainsFromRecap(recap: string) {
   const chains: string[] = [];
 
   Object.values(decoded.att).forEach((resource: any) => {
-    console.log("namespace", resource);
     Object.values(resource).forEach((ability: any) => {
-      console.log("ability", ability);
       if (ability?.[0]?.chains) {
         chains.push(ability[0].chains);
       }

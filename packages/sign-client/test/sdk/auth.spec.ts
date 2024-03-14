@@ -39,7 +39,6 @@ describe("Authenticated Sessions", () => {
         "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
       ],
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -49,7 +48,6 @@ describe("Authenticated Sessions", () => {
       Promise.race<void>([
         new Promise((resolve) => {
           wallet.on("session_authenticate", async (payload) => {
-            console.log("wallet session_authenticate", payload.params);
             const authPayload = populateAuthPayload({
               authPayload: payload.params.authPayload,
               chains: requestedChains,
@@ -60,14 +58,7 @@ describe("Authenticated Sessions", () => {
               request: authPayload,
               iss,
             });
-
-            console.log("message", message);
             const sig = await cryptoWallet.signMessage(message);
-            console.log("signed message", {
-              sig,
-              privateKey: cryptoWallet.privateKey,
-              address: cryptoWallet.address,
-            });
             const auth = buildAuthObject(
               authPayload,
               {
@@ -76,12 +67,10 @@ describe("Authenticated Sessions", () => {
               },
               iss,
             );
-            console.log("auth", auth);
             await wallet.approveSessionAuthenticate({
               id: payload.id,
               auths: [auth],
             });
-            console.log("wallet session_authenticate approved");
             resolve();
           });
         }),
@@ -103,7 +92,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -112,7 +100,6 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
@@ -125,7 +112,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
@@ -152,7 +138,6 @@ describe("Authenticated Sessions", () => {
         "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
       ],
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -161,7 +146,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
-          console.log("wallet session_authenticate", payload.params);
           const authPayload = populateAuthPayload({
             authPayload: payload.params.authPayload,
             chains: supportedChains,
@@ -172,14 +156,7 @@ describe("Authenticated Sessions", () => {
             request: authPayload,
             iss,
           });
-
-          console.log("message", message);
           const sig = await cryptoWallet.signMessage(message);
-          console.log("signed message", {
-            sig,
-            privateKey: cryptoWallet.privateKey,
-            address: cryptoWallet.address,
-          });
           const auth = buildAuthObject(
             authPayload,
             {
@@ -188,12 +165,10 @@ describe("Authenticated Sessions", () => {
             },
             iss,
           );
-          console.log("auth", auth);
           await wallet.approveSessionAuthenticate({
             id: payload.id,
             auths: [auth],
           });
-          console.log("wallet session_authenticate approved");
           resolve();
         });
       }),
@@ -204,14 +179,11 @@ describe("Authenticated Sessions", () => {
     ]);
     const session = (await response()).session;
     const walletSession = wallet.session.get(session.topic);
-    console.log("sessionA", session.namespaces);
-    console.log("walletSessionA", walletSession.namespaces);
     // approved namespaces on both sides must be equal
     expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -220,7 +192,6 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
@@ -233,7 +204,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
@@ -261,7 +231,6 @@ describe("Authenticated Sessions", () => {
         "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
       ],
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -270,7 +239,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
-          console.log("wallet session_authenticate", payload.params);
           const authPayload = populateAuthPayload({
             authPayload: payload.params.authPayload,
             chains: supportedChains,
@@ -281,14 +249,7 @@ describe("Authenticated Sessions", () => {
             request: authPayload,
             iss,
           });
-
-          console.log("message", message);
           const sig = await cryptoWallet.signMessage(message);
-          console.log("signed message", {
-            sig,
-            privateKey: cryptoWallet.privateKey,
-            address: cryptoWallet.address,
-          });
           const auth = buildAuthObject(
             authPayload,
             {
@@ -297,12 +258,10 @@ describe("Authenticated Sessions", () => {
             },
             iss,
           );
-          console.log("auth", auth);
           await wallet.approveSessionAuthenticate({
             id: payload.id,
             auths: [auth],
           });
-          console.log("wallet session_authenticate approved");
           resolve();
         });
       }),
@@ -318,7 +277,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -327,7 +285,6 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
@@ -340,7 +297,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
@@ -368,7 +324,6 @@ describe("Authenticated Sessions", () => {
         "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
       ],
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -377,7 +332,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
-          console.log("wallet session_authenticate", payload.params);
           const authPayload = populateAuthPayload({
             authPayload: payload.params.authPayload,
             chains: supportedChains,
@@ -388,14 +342,7 @@ describe("Authenticated Sessions", () => {
             request: authPayload,
             iss,
           });
-
-          console.log("message", message);
           const sig = await cryptoWallet.signMessage(message);
-          console.log("signed message", {
-            sig,
-            privateKey: cryptoWallet.privateKey,
-            address: cryptoWallet.address,
-          });
           const auth = buildAuthObject(
             authPayload,
             {
@@ -404,12 +351,10 @@ describe("Authenticated Sessions", () => {
             },
             iss,
           );
-          console.log("auth", auth);
           await wallet.approveSessionAuthenticate({
             id: payload.id,
             auths: [auth],
           });
-          console.log("wallet session_authenticate approved");
           resolve();
         });
       }),
@@ -425,7 +370,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -434,12 +378,11 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
       new Promise<void>(async (resolve) => {
-        const result = await dapp.request({
+        await dapp.request({
           chainId: supportedChains[1],
           topic: session.topic,
           request: {
@@ -447,7 +390,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
@@ -473,7 +415,6 @@ describe("Authenticated Sessions", () => {
         "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
       ],
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -482,7 +423,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
-          console.log("wallet session_authenticate", payload.params);
           const authPayload = populateAuthPayload({
             authPayload: payload.params.authPayload,
             chains: requestedChains,
@@ -496,14 +436,7 @@ describe("Authenticated Sessions", () => {
               request: authPayload,
               iss,
             });
-
-            console.log("message", message);
             const sig = await cryptoWallet.signMessage(message);
-            console.log("signed message", {
-              sig,
-              privateKey: cryptoWallet.privateKey,
-              address: cryptoWallet.address,
-            });
             const auth = buildAuthObject(
               authPayload,
               {
@@ -512,8 +445,6 @@ describe("Authenticated Sessions", () => {
               },
               iss,
             );
-
-            console.log("auth", auth);
             auths.push(auth);
           });
 
@@ -521,7 +452,6 @@ describe("Authenticated Sessions", () => {
             id: payload.id,
             auths,
           });
-          console.log("wallet session_authenticate approved");
           resolve();
         });
       }),
@@ -538,7 +468,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -547,7 +476,6 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
@@ -560,7 +488,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
@@ -586,7 +513,6 @@ describe("Authenticated Sessions", () => {
         "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
       ],
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -595,7 +521,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
-          console.log("wallet session_authenticate", payload.params);
           const authPayload = populateAuthPayload({
             authPayload: payload.params.authPayload,
             chains: supportedChains,
@@ -609,14 +534,7 @@ describe("Authenticated Sessions", () => {
               request: authPayload,
               iss,
             });
-
-            console.log("message", message);
             const sig = await cryptoWallet.signMessage(message);
-            console.log("signed message", {
-              sig,
-              privateKey: cryptoWallet.privateKey,
-              address: cryptoWallet.address,
-            });
             const auth = buildAuthObject(
               authPayload,
               {
@@ -625,8 +543,6 @@ describe("Authenticated Sessions", () => {
               },
               iss,
             );
-
-            console.log("auth", auth);
             auths.push(auth);
           });
 
@@ -634,7 +550,6 @@ describe("Authenticated Sessions", () => {
             id: payload.id,
             auths,
           });
-          console.log("wallet session_authenticate approved");
           resolve();
         });
       }),
@@ -651,7 +566,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -660,7 +574,6 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
@@ -673,7 +586,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
@@ -700,7 +612,6 @@ describe("Authenticated Sessions", () => {
         "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
       ],
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -709,7 +620,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
-          console.log("wallet session_authenticate", payload.params);
           const authPayload = populateAuthPayload({
             authPayload: payload.params.authPayload,
             chains: supportedChains,
@@ -722,14 +632,7 @@ describe("Authenticated Sessions", () => {
               request: authPayload,
               iss,
             });
-
-            console.log("message", message);
             const sig = await cryptoWallet.signMessage(message);
-            console.log("signed message", {
-              sig,
-              privateKey: cryptoWallet.privateKey,
-              address: cryptoWallet.address,
-            });
             const auth = buildAuthObject(
               authPayload,
               {
@@ -738,8 +641,6 @@ describe("Authenticated Sessions", () => {
               },
               iss,
             );
-
-            console.log("auth", auth);
             auths.push(auth);
           });
 
@@ -747,7 +648,6 @@ describe("Authenticated Sessions", () => {
             id: payload.id,
             auths,
           });
-          console.log("wallet session_authenticate approved");
           resolve();
         });
       }),
@@ -764,7 +664,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -773,7 +672,6 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
@@ -786,7 +684,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
@@ -813,7 +710,6 @@ describe("Authenticated Sessions", () => {
         "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
       ],
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -822,7 +718,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
-          console.log("wallet session_authenticate", payload.params);
           const authPayload = populateAuthPayload({
             authPayload: payload.params.authPayload,
             chains: supportedChains,
@@ -836,13 +731,7 @@ describe("Authenticated Sessions", () => {
               request: authPayload,
               iss,
             });
-            console.log("message", message);
             const sig = await cryptoWallet.signMessage(message);
-            console.log("signed message", {
-              sig,
-              privateKey: cryptoWallet.privateKey,
-              address: cryptoWallet.address,
-            });
             const auth = buildAuthObject(
               authPayload,
               {
@@ -851,7 +740,6 @@ describe("Authenticated Sessions", () => {
               },
               iss,
             );
-            console.log("auth", auth);
             auths.push(auth);
           });
 
@@ -859,8 +747,6 @@ describe("Authenticated Sessions", () => {
             id: payload.id,
             auths,
           });
-
-          console.log("wallet session_authenticate approved");
           resolve();
         });
       }),
@@ -877,7 +763,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -886,12 +771,11 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
       new Promise<void>(async (resolve) => {
-        const result = await dapp.request({
+        await dapp.request({
           chainId: supportedChains[1],
           topic: session.topic,
           request: {
@@ -899,7 +783,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
@@ -919,7 +802,6 @@ describe("Authenticated Sessions", () => {
       methods: ["personal_sign"],
       resources: [],
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -928,21 +810,13 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
-          console.log("wallet session_authenticate", payload.params);
           const auths: any[] = [];
           payload.params.authPayload.chains.forEach(async (chain) => {
             const message = wallet.engine.formatAuthMessage({
               request: payload.params.authPayload,
               iss: `${chain}:${cryptoWallet.address}`,
             });
-
-            console.log("message", message);
             const sig = await cryptoWallet.signMessage(message);
-            console.log("signed message", {
-              sig,
-              privateKey: cryptoWallet.privateKey,
-              address: cryptoWallet.address,
-            });
             const auth = buildAuthObject(
               payload.params.authPayload,
               {
@@ -951,7 +825,6 @@ describe("Authenticated Sessions", () => {
               },
               `${chain}:${cryptoWallet.address}`,
             );
-            console.log("auth", auth);
             auths.push(auth);
           });
 
@@ -959,7 +832,6 @@ describe("Authenticated Sessions", () => {
             id: payload.id,
             auths,
           });
-          console.log("wallet session_authenticate approved");
           resolve();
         });
       }),
@@ -968,18 +840,13 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
-    console.log("paired");
-
     const { session, auths } = await response();
     const walletSession = wallet.session.get(session.topic);
     // approved namespaces on both sides must be equal
     expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
-    console.log("session", walletSession.namespaces.eip155);
-
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -988,12 +855,11 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
       new Promise<void>(async (resolve) => {
-        const result = await dapp.request({
+        await dapp.request({
           chainId: "eip155:1",
           topic: session.topic,
           request: {
@@ -1001,7 +867,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
@@ -1022,7 +887,6 @@ describe("Authenticated Sessions", () => {
       methods: ["personal_sign", "eth_signTypedData_v4"],
     });
 
-    console.log("uri", uri);
     expect(uri).to.exist;
     expect(uri).to.include("wc_sessionAuthenticate");
 
@@ -1034,7 +898,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
-          console.log("wallet session_proposal", payload.id);
           const approved = buildApprovedNamespaces({
             supportedNamespaces: {
               eip155: {
@@ -1050,7 +913,6 @@ describe("Authenticated Sessions", () => {
             },
             proposal: payload.params,
           });
-          console.log("wallet session_proposal approved", approved);
           await wallet.approve({
             id: payload.id,
             namespaces: approved,
@@ -1063,17 +925,14 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
-    console.log("paired");
 
     const res = await response();
     const session = res.session;
-    console.log("response", res);
     await throttle(1000);
 
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -1082,7 +941,6 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
@@ -1095,7 +953,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
@@ -1114,7 +971,6 @@ describe("Authenticated Sessions", () => {
       nonce: "1",
       uri: "aud",
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -1124,24 +980,13 @@ describe("Authenticated Sessions", () => {
     const result = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
-          console.log("wallet session_authenticate", payload.params);
-          // validate expiryTimestamp
-          // expect(payload.params.expiryTimestamp).to.be.approximately(expectedExpiry, 2000);
           const auths: any[] = [];
           payload.params.authPayload.chains.forEach(async (chain) => {
-            //   console.log("cacaos", JSON.stringify(payload.params.authPayload));
             const message = wallet.engine.formatAuthMessage({
               request: payload.params.authPayload,
               iss: `${chain}:${cryptoWallet.address}`,
             });
-
-            console.log("message", message);
             const sig = await cryptoWallet.signMessage(message);
-            console.log("signed message", {
-              sig,
-              privateKey: cryptoWallet.privateKey,
-              address: cryptoWallet.address,
-            });
             const auth = buildAuthObject(
               payload.params.authPayload,
               {
@@ -1150,14 +995,12 @@ describe("Authenticated Sessions", () => {
               },
               `${chain}:${cryptoWallet.address}`,
             );
-            console.log("auth", auth);
             auths.push(auth);
           });
           await wallet.approveSessionAuthenticate({
             id: payload.id,
             auths,
           });
-          console.log("wallet session_authenticate approved");
           resolve();
         });
       }),
@@ -1187,7 +1030,6 @@ describe("Authenticated Sessions", () => {
       nonce: "1",
       uri: "aud",
     });
-    console.log("uri", uri);
     const wallet = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
       name: "wallet",
@@ -1197,8 +1039,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
-          console.log("wallet session_proposal", payload.params.optionalNamespaces);
-          console.log("wallet buildApprovedNamespaces");
           try {
             const approved = buildApprovedNamespaces({
               supportedNamespaces: {
@@ -1211,7 +1051,6 @@ describe("Authenticated Sessions", () => {
               },
               proposal: payload.params,
             });
-            console.log("wallet session_proposal approved", approved);
             await wallet.approve({
               id: payload.id,
               namespaces: approved,
@@ -1238,7 +1077,6 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
-          console.log("wallet session_request", payload);
           const { id, topic } = payload;
           await wallet.respond({
             topic,
@@ -1247,7 +1085,6 @@ describe("Authenticated Sessions", () => {
               await cryptoWallet.signMessage(payload.params.request.params[0]),
             ),
           });
-          console.log("wallet session_request responded");
           resolve();
         });
       }),
@@ -1260,7 +1097,6 @@ describe("Authenticated Sessions", () => {
             params: ["hey, sup"],
           },
         });
-        console.log("dapp request result", result);
         resolve();
       }),
     ]);
