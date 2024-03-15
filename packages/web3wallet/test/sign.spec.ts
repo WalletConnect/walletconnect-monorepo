@@ -873,8 +873,7 @@ describe("Sign Integration", () => {
         }),
       ]);
     });
-
-    it("should fallback to session_proposal when no listener for `session_authenticate` exists", async () => {
+    it.only("should fallback to session_proposal when no listener for `session_authenticate` exists", async () => {
       const dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp" });
       expect(dapp).to.be.exist;
       const { uri, response } = await dapp.authenticate({
@@ -890,10 +889,11 @@ describe("Sign Integration", () => {
         core: new Core(TEST_CORE_OPTIONS),
         metadata: {} as any,
       });
-
+      console.log("clients initialized");
       await Promise.all([
         new Promise<void>((resolve) => {
           web3Wallet.on("session_proposal", async (payload) => {
+            console.log("on session_proposal");
             const approved = buildApprovedNamespaces({
               supportedNamespaces: {
                 eip155: {
@@ -909,15 +909,19 @@ describe("Sign Integration", () => {
               },
               proposal: payload.params,
             });
+            console.log("approving...");
             await web3Wallet.approveSession({
               id: payload.id,
               namespaces: approved,
             });
+            console.log("approved");
             resolve();
           });
         }),
-        new Promise<void>((resolve) => {
-          web3Wallet.pair({ uri });
+        new Promise<void>(async (resolve) => {
+          console.log("pairing");
+          await web3Wallet.pair({ uri });
+          console.log("paired");
           resolve();
         }),
       ]);
@@ -935,6 +939,7 @@ describe("Sign Integration", () => {
         new Promise<void>((resolve) => {
           web3Wallet.on("session_request", async (payload) => {
             const { id, topic } = payload;
+            console.log("on session_request");
             await web3Wallet.respondSessionRequest({
               topic,
               response: formatJsonRpcResult(
@@ -942,10 +947,12 @@ describe("Sign Integration", () => {
                 await cryptoWallet.signMessage(payload.params.request.params[0]),
               ),
             });
+            console.log("responded");
             resolve();
           });
         }),
         new Promise<void>(async (resolve) => {
+          console.log("requesting");
           await dapp.request({
             chainId: "eip155:1",
             topic: session.topic,
@@ -954,9 +961,11 @@ describe("Sign Integration", () => {
               params: ["hey, sup"],
             },
           });
+          console.log("requesting done");
           resolve();
         }),
       ]);
+      console.log("done");
     });
   });
 });
