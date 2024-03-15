@@ -873,7 +873,7 @@ describe("Sign Integration", () => {
         }),
       ]);
     });
-    it.only("should fallback to session_proposal when no listener for `session_authenticate` exists", async () => {
+    it("should fallback to session_proposal when no listener for `session_authenticate` exists", async () => {
       const dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp" });
       expect(dapp).to.be.exist;
       const { uri, response } = await dapp.authenticate({
