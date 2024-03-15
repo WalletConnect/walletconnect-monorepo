@@ -827,11 +827,11 @@ describe("Authenticated Sessions", () => {
             );
             auths.push(auth);
           });
-
-          await wallet.approveSessionAuthenticate({
+          const result = await wallet.approveSessionAuthenticate({
             id: payload.id,
             auths,
           });
+          expect(result.session).to.exist;
           resolve();
         });
       }),
@@ -958,6 +958,92 @@ describe("Authenticated Sessions", () => {
     ]);
   });
 
+  it("should establish normal sign session when wallet hasn't subscribed to session_authenticate", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    expect(dapp).to.be.exist;
+    expect(dapp.metadata.redirect).to.exist;
+    expect(dapp.metadata.redirect?.universal).to.exist;
+    expect(dapp.metadata.redirect?.native).to.not.exist;
+
+    const { uri, response } = await dapp.authenticate({
+      chains: ["eip155:1", "eip155:2"],
+      domain: "localhost",
+      nonce: "1",
+      uri: "aud",
+      methods: ["personal_sign", "eth_signTypedData_v4"],
+    });
+
+    expect(uri).to.exist;
+    expect(uri).to.include("wc_sessionAuthenticate");
+
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_proposal", async (payload) => {
+          const approved = buildApprovedNamespaces({
+            supportedNamespaces: {
+              eip155: {
+                methods: ["personal_sign", "eth_signTransaction", "eth_signTypedData_v4"],
+                chains: ["eip155:1", "eip155:2", "eip155:3"],
+                accounts: [
+                  "eip155:1:" + cryptoWallet.address,
+                  "eip155:2:" + cryptoWallet.address,
+                  "eip155:3:" + cryptoWallet.address,
+                ],
+                events: [],
+              },
+            },
+            proposal: payload.params,
+          });
+          await wallet.approve({
+            id: payload.id,
+            namespaces: approved,
+          });
+          resolve();
+        });
+      }),
+      new Promise<void>((resolve) => {
+        wallet.pair({ uri });
+        resolve();
+      }),
+    ]);
+
+    const res = await response();
+    const session = res.session;
+    await throttle(1000);
+
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_request", async (payload) => {
+          const { id, topic } = payload;
+          await wallet.respond({
+            topic,
+            response: formatJsonRpcResult(
+              id,
+              await cryptoWallet.signMessage(payload.params.request.params[0]),
+            ),
+          });
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve) => {
+        const result = await dapp.request({
+          chainId: "eip155:1",
+          topic: session.topic,
+          request: {
+            method: "personal_sign",
+            params: ["hey, sup"],
+          },
+        });
+        resolve();
+      }),
+    ]);
+  });
+
   it("should perform siwe", async () => {
     const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
     expect(dapp).to.be.exist;
@@ -997,10 +1083,12 @@ describe("Authenticated Sessions", () => {
             );
             auths.push(auth);
           });
-          await wallet.approveSessionAuthenticate({
+          const result = await wallet.approveSessionAuthenticate({
             id: payload.id,
             auths,
           });
+          // we expect `session` to be undefined as this is a siwe request
+          expect(result.session).to.not.exist;
           resolve();
         });
       }),

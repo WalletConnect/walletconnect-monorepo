@@ -370,7 +370,7 @@ export abstract class IEngine {
 
   public abstract approveSessionAuthenticate: (
     params: AuthTypes.ApproveSessionAuthenticateParams,
-  ) => Promise<void>;
+  ) => Promise<{ session: SessionTypes.Struct | undefined}>;
 
   public abstract formatAuthMessage: (params: {
     request: AuthTypes.BaseAuthRequestParams;

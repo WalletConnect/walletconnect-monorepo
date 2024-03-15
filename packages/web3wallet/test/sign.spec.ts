@@ -6,7 +6,7 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { SignClient, ENGINE_RPC_OPTS } from "@walletconnect/sign-client";
 import { CoreTypes, ICore, ISignClient, SessionTypes } from "@walletconnect/types";
-import { getSdkError } from "@walletconnect/utils";
+import { buildApprovedNamespaces, buildAuthObject, getSdkError } from "@walletconnect/utils";
 import { toMiliseconds } from "@walletconnect/time";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
@@ -781,6 +781,182 @@ describe("Sign Integration", () => {
       expect(decrypted).to.be.exist;
       expect(decrypted).to.be.a("object");
       expect(decrypted).to.toMatchObject(decryptedMessage);
+    });
+  });
+
+  describe("Sign 2.5", () => {
+    it("should establish authenticated session", async () => {
+      const dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp" });
+      expect(dapp).to.be.exist;
+      const { uri, response } = await dapp.authenticate({
+        chains: ["eip155:1", "eip155:2"],
+        domain: "localhost",
+        nonce: "1",
+        uri: "aud",
+        methods: ["personal_sign"],
+        resources: [],
+      });
+      const web3Wallet = await Web3Wallet.init({
+        name: "wallet",
+        core: new Core(TEST_CORE_OPTIONS),
+        metadata: {} as any,
+      });
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          web3Wallet.on("session_authenticate", async (payload) => {
+            const auths: any[] = [];
+            for (const chain of payload.params.authPayload.chains) {
+              const message = web3Wallet.formatAuthMessage({
+                request: payload.params.authPayload,
+                iss: `${chain}:${cryptoWallet.address}`,
+              });
+              const sig = await cryptoWallet.signMessage(message);
+              const auth = buildAuthObject(
+                payload.params.authPayload,
+                {
+                  t: "eip191",
+                  s: sig,
+                },
+                `${chain}:${cryptoWallet.address}`,
+              );
+              auths.push(auth);
+            }
+
+            const result = await web3Wallet.approveSessionAuthenticate({
+              id: payload.id,
+              auths,
+            });
+            const { session } = result;
+            expect(session).to.exist;
+            resolve();
+          });
+        }),
+        new Promise<void>(async (resolve) => {
+          await web3Wallet.pair({ uri });
+          resolve();
+        }),
+      ]);
+      const { session, auths } = await response();
+      expect(auths).to.exist;
+      expect(auths).to.be.an("array");
+      const walletSessions = web3Wallet.getActiveSessions();
+      expect(walletSessions).to.exist;
+      expect(walletSessions).to.be.an("object");
+      const walletSession = walletSessions[session.topic];
+      // approved namespaces on both sides must be equal
+      expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
+      expect(session.topic).to.eq(walletSession.topic);
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          web3Wallet.on("session_request", async (payload) => {
+            const { id, topic } = payload;
+            await web3Wallet.respondSessionRequest({
+              topic,
+              response: formatJsonRpcResult(
+                id,
+                await cryptoWallet.signMessage(payload.params.request.params[0]),
+              ),
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>(async (resolve) => {
+          await dapp.request({
+            chainId: "eip155:1",
+            topic: session.topic,
+            request: {
+              method: "personal_sign",
+              params: ["hey, sup"],
+            },
+          });
+          resolve();
+        }),
+      ]);
+    });
+
+    it("should fallback to session_proposal when no listener for `session_authenticate` exists", async () => {
+      const dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp" });
+      expect(dapp).to.be.exist;
+      const { uri, response } = await dapp.authenticate({
+        chains: ["eip155:1", "eip155:2"],
+        domain: "localhost",
+        nonce: "1",
+        uri: "aud",
+        methods: ["personal_sign"],
+        resources: [],
+      });
+      const web3Wallet = await Web3Wallet.init({
+        name: "wallet",
+        core: new Core(TEST_CORE_OPTIONS),
+        metadata: {} as any,
+      });
+
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          web3Wallet.on("session_proposal", async (payload) => {
+            const approved = buildApprovedNamespaces({
+              supportedNamespaces: {
+                eip155: {
+                  methods: ["personal_sign", "eth_signTransaction", "eth_signTypedData_v4"],
+                  chains: ["eip155:1", "eip155:2", "eip155:3"],
+                  accounts: [
+                    "eip155:1:" + cryptoWallet.address,
+                    "eip155:2:" + cryptoWallet.address,
+                    "eip155:3:" + cryptoWallet.address,
+                  ],
+                  events: [],
+                },
+              },
+              proposal: payload.params,
+            });
+            await web3Wallet.approveSession({
+              id: payload.id,
+              namespaces: approved,
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          web3Wallet.pair({ uri });
+          resolve();
+        }),
+      ]);
+
+      const { session, auths } = await response();
+      expect(auths).to.be.undefined;
+      const walletSessions = web3Wallet.getActiveSessions();
+      expect(walletSessions).to.exist;
+      expect(walletSessions).to.be.an("object");
+      const walletSession = walletSessions[session.topic];
+      // approved namespaces on both sides must be equal
+      expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
+      expect(session.topic).to.eq(walletSession.topic);
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          web3Wallet.on("session_request", async (payload) => {
+            const { id, topic } = payload;
+            await web3Wallet.respondSessionRequest({
+              topic,
+              response: formatJsonRpcResult(
+                id,
+                await cryptoWallet.signMessage(payload.params.request.params[0]),
+              ),
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>(async (resolve) => {
+          await dapp.request({
+            chainId: "eip155:1",
+            topic: session.topic,
+            request: {
+              method: "personal_sign",
+              params: ["hey, sup"],
+            },
+          });
+          resolve();
+        }),
+      ]);
     });
   });
 });

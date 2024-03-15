@@ -902,9 +902,9 @@ export class Engine extends IEngine {
       senderPublicKey,
       receiverPublicKey,
     );
-
+    let session: SessionTypes.Struct | undefined;
     if (approvedMethods?.length > 0) {
-      const session: SessionTypes.Struct = {
+      session = {
         topic: sessionTopic,
         acknowledged: true,
         self: {
@@ -947,6 +947,7 @@ export class Engine extends IEngine {
     });
     await this.client.auth.requests.delete(id, { message: "fullfilled", code: 0 });
     await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
+    return { session };
   };
 
   public rejectSessionAuthenticate: IEngine["rejectSessionAuthenticate"] = async (params) => {
@@ -976,6 +977,7 @@ export class Engine extends IEngine {
       error: reason,
       encodeOpts,
     });
+    await this.client.auth.requests.delete(id, { message: "rejected", code: 0 });
     await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
   };
 
@@ -1281,8 +1283,7 @@ export class Engine extends IEngine {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
-    const expectedMethod = this.expectedPairingMethodMap.get(topic);
-    if (expectedMethod && !expectedMethod.includes(reqMethod)) {
+    if (this.shouldIgnorePairingRequest({ topic, requestMethod: reqMethod })) {
       return;
     }
 
@@ -1341,6 +1342,25 @@ export class Engine extends IEngine {
       `Decoded payload on topic ${topic} is not identifiable as a JSON-RPC request or a response.`,
     );
     throw new Error(message);
+  };
+
+  private shouldIgnorePairingRequest = (params: { topic: string; requestMethod: string }) => {
+    const { topic, requestMethod } = params;
+    const expectedMethods = this.expectedPairingMethodMap.get(topic);
+    // check if the request method matches the expected method
+    if (!expectedMethods) return false;
+    if (expectedMethods.includes(requestMethod)) return false;
+
+    /**
+     * we want to make sure fallback session proposal is ignored only if there are subscribers
+     * for the `session_authenticate` event, otherwise this would result in no-op for the user
+     */
+    if (expectedMethods.includes("wc_sessionAuthenticate")) {
+      if (this.client.events.listenerCount("session_authenticate") > 0) {
+        return true;
+      }
+    }
+    return false;
   };
 
   // ---------- Relay Events Handlers --------------------------------- //
