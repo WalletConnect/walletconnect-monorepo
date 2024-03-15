@@ -910,7 +910,7 @@ describe("Sign Integration", () => {
               proposal: payload.params,
             });
             console.log("approving...");
-            await web3Wallet.approveSession({
+            web3Wallet.approveSession({
               id: payload.id,
               namespaces: approved,
             });
@@ -925,7 +925,6 @@ describe("Sign Integration", () => {
           resolve();
         }),
       ]);
-
       const { session, auths } = await response();
       expect(auths).to.be.undefined;
       const walletSessions = web3Wallet.getActiveSessions();
