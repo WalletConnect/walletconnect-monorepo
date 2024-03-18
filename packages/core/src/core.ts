@@ -6,7 +6,8 @@ import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
-  pino,
+  generateClientLogger,
+  generateServerLogger
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
@@ -65,10 +66,16 @@ export class Core extends ICore {
     this.projectId = opts?.projectId;
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
     this.customStoragePrefix = opts?.customStoragePrefix ? `:${opts.customStoragePrefix}` : "";
+
+    const loggerOptions = getDefaultLoggerOptions({ level: opts?.logger || CORE_DEFAULT.logger });
+
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
-        : pino(getDefaultLoggerOptions({ level: opts?.logger || CORE_DEFAULT.logger }));
+        : typeof window !== 'undefined'?
+	  generateServerLogger(loggerOptions) :
+	  generateClientLogger(loggerOptions);
+
     this.logger = generateChildLogger(logger, this.name);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
