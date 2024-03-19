@@ -20,6 +20,10 @@ import {
   OPTIONAL_EVENTS,
 } from "./constants";
 
+import type { UserOperation } from "permissionless";
+import { createBundlerClient, ENTRYPOINT_ADDRESS_V06, deepHexlify } from "permissionless";
+import { concat, Hex, http } from "viem";
+
 export type RpcMethod =
   | "personal_sign"
   | "eth_sendTransaction"
@@ -93,6 +97,35 @@ export function getEthereumChainId(chains: string[]): number {
 
 export function toHexChainId(chainId: number): string {
   return `0x${chainId.toString(16)}`;
+}
+
+export async function constructUserOperation(
+  userOperationConstructorAddress: string,
+  signer: InstanceType<typeof UniversalProvider>,
+): Promise<
+  Omit<UserOperation<"v0.6">, "preVerificationGas" | "verificationGasLimit" | "callGasLimit">
+> {
+  console.log("userOperationConstructorAddress", userOperationConstructorAddress);
+
+  const hasInitCode = signer.sessionProperties?.factory && signer.sessionProperties?.factoryData;
+  const userOperation = {
+    sender: "0x4aA1887EE11B418e88661B6D747DCFc6B0017D7C" as Hex,
+    nonce: BigInt(0),
+    initCode: hasInitCode
+      ? concat([
+          signer.sessionProperties?.factory as Hex,
+          signer.sessionProperties?.factoryData as Hex,
+        ])
+      : ("0x" as Hex),
+    callData:
+      "0x0000189a000000000000000000000000ab5801a7d398351b8be11c439e05c5b3259aec9b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000021230000000000000000000000000000000000000000000000000000000000000" as Hex,
+    maxFeePerGas: BigInt(100_000),
+    maxPriorityFeePerGas: BigInt(100_000),
+    paymasterAndData: "0x" as Hex,
+    signature: "0x" as Hex,
+  };
+
+  return userOperation;
 }
 
 export type NamespacesParams = {
@@ -191,6 +224,16 @@ export type ChainsProps =
       optionalChains: ArrayOneOrMore<number>;
     };
 
+export type SmartAccountOptions = {
+  smartAccountConfig?: {
+    bundlerUrl: string;
+    paymasterMiddleware?: (
+      entrypoint: Hex,
+      rawUserOperation: Partial<UserOperation<"v0.6">>,
+    ) => UserOperation<"v0.6">;
+  };
+};
+
 export type EthereumProviderOptions = {
   projectId: string;
   /**
@@ -211,7 +254,8 @@ export type EthereumProviderOptions = {
   disableProviderPing?: boolean;
   relayUrl?: string;
   storageOptions?: KeyValueStorageOptions;
-} & ChainsProps;
+} & ChainsProps &
+  SmartAccountOptions;
 
 export class EthereumProvider implements IEthereumProvider {
   public events = new EventEmitter();
@@ -220,6 +264,7 @@ export class EthereumProvider implements IEthereumProvider {
   public signer: InstanceType<typeof UniversalProvider>;
   public chainId = 1;
   public modal?: any;
+  public smartAccountConfig?: SmartAccountOptions["smartAccountConfig"];
 
   protected rpc: EthereumRpcConfig;
   protected readonly STORAGE_KEY = STORAGE_KEY;
@@ -237,6 +282,63 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   public async request<T = unknown>(args: RequestArguments, expiry?: number): Promise<T> {
+    if (
+      args.method === "eth_sendTransaction" &&
+      this.smartAccountConfig &&
+      this.signer.sessionProperties &&
+      this.signer.sessionProperties.smartAccountAddress &&
+      this.signer.sessionProperties.userOperationConstructorAddress
+    ) {
+      const { userOperationConstructorAddress } = this.signer.sessionProperties;
+      let userOperation: any = await constructUserOperation(
+        userOperationConstructorAddress,
+        this.signer,
+      );
+
+      if (userOperation && this.smartAccountConfig?.paymasterMiddleware) {
+        const { paymasterMiddleware } = this.smartAccountConfig;
+        userOperation = await paymasterMiddleware(
+          this.signer.sessionProperties.entrypointAddress as Hex,
+          userOperation,
+        );
+      }
+
+      const bundlerClient = createBundlerClient({
+        transport: http(this.smartAccountConfig.bundlerUrl),
+        entryPoint: this.signer.sessionProperties
+          .entrypointAddress as typeof ENTRYPOINT_ADDRESS_V06,
+      });
+
+      if (
+        !userOperation.preVerificationGas ||
+        !userOperation.verificationGasLimit ||
+        !userOperation.callGasLimit
+      ) {
+        // Estimate userop gas price
+        const gasLimits = await bundlerClient.estimateUserOperationGas({ userOperation });
+        userOperation = { ...userOperation, ...gasLimits } as UserOperation<"v0.6">;
+      }
+
+      const signature = await this.signer.request(
+        {
+          method: "eth_signUserOperation",
+          params: [deepHexlify(userOperation), this.signer.sessionProperties?.entryPointAddress],
+        },
+        this.formatChainId(this.chainId),
+        expiry,
+      );
+
+      userOperation.signature = signature as Hex;
+
+      const userOpHash = await bundlerClient.sendUserOperation({
+        userOperation: userOperation as UserOperation<"v0.6">,
+      });
+
+      const userOpReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+
+      return userOpReceipt.receipt.transactionHash as T;
+    }
+
     return await this.signer.request(args, this.formatChainId(this.chainId), expiry);
   }
 
@@ -508,6 +610,7 @@ export class EthereumProvider implements IEthereumProvider {
       storageOptions: opts.storageOptions,
     });
     this.registerEventListeners();
+    this.smartAccountConfig = opts.smartAccountConfig;
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
       let WalletConnectModalClass;
