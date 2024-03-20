@@ -369,11 +369,13 @@ export class Engine extends IEngine {
     this.events.once(engineEvent("session_update", clientRpcId), async ({ error }: any) => {
       if (error) reject(error);
       else {
-        await this.client.session.update(topic, { namespaces });
         resolve();
       }
     });
-
+    // update the session with the new namespaces, if the publish fails, revert to the old
+    // this allows the client to use the updated session like emitting events
+    // without waiting for the peer to acknowledge
+    await this.client.session.update(topic, { namespaces });
     this.sendRequest({
       topic,
       method: "wc_sessionUpdate",

@@ -133,6 +133,89 @@ describe("Sign Integration", () => {
       wallet.updateSession({ topic: session.topic, namespaces: TEST_UPDATED_NAMESPACES }),
     ]);
   });
+
+  it("should update session while peer is offline", async () => {
+    // first pair and approve session
+    await Promise.all([
+      new Promise((resolve) => {
+        wallet.on("session_proposal", async (sessionProposal) => {
+          const { id, params, verifyContext } = sessionProposal;
+          expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+          session = await wallet.approveSession({
+            id,
+            namespaces: TEST_NAMESPACES,
+          });
+          expect(params.requiredNamespaces).to.toMatchObject(TEST_REQUIRED_NAMESPACES);
+          resolve(session);
+        });
+      }),
+      sessionApproval(),
+      wallet.pair({ uri: uriString }),
+    ]);
+
+    expect(TEST_NAMESPACES).not.toMatchObject(TEST_UPDATED_NAMESPACES);
+    // close the transport to simulate peer being offline
+    await dapp.core.relayer.transportClose();
+    const updatedChain = "eip155:55";
+    const updatedAddress = `${updatedChain}:${cryptoWallet.address}`;
+    // update the session
+    await new Promise<void>(async (resolve) => {
+      await wallet.updateSession({
+        topic: session.topic,
+        namespaces: {
+          eip155: {
+            ...TEST_UPDATED_NAMESPACES.eip155,
+            accounts: [...TEST_UPDATED_NAMESPACES.eip155.accounts, updatedAddress],
+          },
+        },
+      });
+      await wallet.emitSessionEvent({
+        topic: session.topic,
+        event: {
+          name: "chainChanged",
+          data: updatedChain,
+        },
+        chainId: updatedChain,
+      });
+      await wallet.emitSessionEvent({
+        topic: session.topic,
+        event: {
+          name: "accountsChanged",
+          data: [updatedAddress],
+        },
+        chainId: updatedChain,
+      });
+      resolve();
+    });
+    await Promise.all([
+      new Promise((resolve) => {
+        dapp.events.on("session_update", (session) => {
+          resolve(session);
+        });
+      }),
+      new Promise((resolve) => {
+        dapp.events.on("session_event", (event) => {
+          const { params } = event;
+          if (params.event.name === "chainChanged") {
+            expect(params.event.data).to.equal(updatedChain);
+            resolve(event);
+          }
+        });
+      }),
+      new Promise((resolve) => {
+        dapp.events.on("session_event", (event) => {
+          const { params } = event;
+          if (params.event.name === "accountsChanged") {
+            console;
+            expect(params.event.data[0]).to.equal(updatedAddress);
+            resolve(event);
+          }
+        });
+      }),
+      dapp.core.relayer.transportOpen(),
+    ]);
+  });
+
   it("should extend session", async () => {
     // first pair and approve session
     await Promise.all([
