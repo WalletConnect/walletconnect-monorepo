@@ -205,11 +205,13 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       this.persist();
     });
 
-    this.events.on(HISTORY_EVENTS.deleted, (record: JsonRpcRecord) => {
+    this.events.on(HISTORY_EVENTS.deleted, (record: JsonRpcRecord, persist = true) => {
       const eventName = HISTORY_EVENTS.deleted;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, record });
-      this.persist();
+      if (persist) {
+        this.persist();
+      }
     });
 
     this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
@@ -219,13 +221,18 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   private cleanup() {
     try {
+      let cleaned = false;
       this.records.forEach((record: JsonRpcRecord) => {
         const msToExpiry = toMiliseconds(record.expiry || 0) - Date.now();
         if (msToExpiry <= 0) {
           this.logger.info(`Deleting expired history log: ${record.id}`);
-          this.delete(record.topic, record.id);
+          this.records.delete(record.id);
+          this.events.emit(HISTORY_EVENTS.deleted, record, false);
         }
       });
+      if (cleaned) {
+        this.persist();
+      }
     } catch (e) {
       this.logger.warn(e);
     }
