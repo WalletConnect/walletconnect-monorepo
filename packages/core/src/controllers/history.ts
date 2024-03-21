@@ -85,6 +85,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       expiry: calcExpiry(THIRTY_DAYS),
     };
     this.records.set(record.id, record);
+    this.persist();
     this.events.emit(HISTORY_EVENTS.created, record);
   };
 
@@ -99,6 +100,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       ? { error: response.error }
       : { result: response.result };
     this.records.set(record.id, record);
+    this.persist();
     this.events.emit(HISTORY_EVENTS.updated, record);
   };
 
@@ -121,6 +123,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
         this.events.emit(HISTORY_EVENTS.deleted, record);
       }
     });
+    this.persist();
   };
 
   public exists: IJsonRpcHistory["exists"] = async (topic, id) => {
@@ -196,22 +199,17 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       const eventName = HISTORY_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, record });
-      this.persist();
     });
     this.events.on(HISTORY_EVENTS.updated, (record: JsonRpcRecord) => {
       const eventName = HISTORY_EVENTS.updated;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, record });
-      this.persist();
     });
 
-    this.events.on(HISTORY_EVENTS.deleted, (record: JsonRpcRecord, persist = true) => {
+    this.events.on(HISTORY_EVENTS.deleted, (record: JsonRpcRecord) => {
       const eventName = HISTORY_EVENTS.deleted;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, record });
-      if (persist) {
-        this.persist();
-      }
     });
 
     this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, () => {
