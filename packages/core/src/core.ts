@@ -6,9 +6,8 @@ import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
-  generateClientLogger,
-  generateServerLogger,
-  Logger,
+  generatePlatformLogger,
+  ChunkLoggerController,
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
@@ -52,6 +51,7 @@ export class Core extends ICore {
   public echoClient: ICore["echoClient"];
 
   private initialized = false;
+  private logChunkController:  ChunkLoggerController | null;
 
   static async init(opts?: CoreTypes.Options) {
     const core = new Core(opts);
@@ -72,22 +72,19 @@ export class Core extends ICore {
       level: typeof opts?.logger === "string" && opts.logger ? opts.logger : CORE_DEFAULT.logger,
     });
 
-    let logger: Logger<any>;
-    let chunkController: { logsToBlob: (extraMetadata: Record<string, any>) => void } | null = null;
-    if (typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string") {
-      logger = opts.logger;
-    } else {
-      if (typeof window !== "undefined") {
-        const { logger: serverLogger, chunkLoggerController: serverChunkLoggerController } =
-          generateServerLogger({ opts: loggerOptions, maxSizeInBytes: opts.maxLogBlobSizeInBytes });
-        chunkController = serverChunkLoggerController;
-        logger = serverLogger;
-      } else {
-        const { logger: clientLogger, chunkLoggerController: clientChunkLoggerController } =
-          generateClientLogger({ opts: loggerOptions, maxSizeInBytes: opts.maxLogBlobSizeInBytes });
-        chunkController = clientChunkLoggerController;
-        logger = clientLogger;
-      }
+    const {logger, chunkLoggerController} = generatePlatformLogger({
+      opts: loggerOptions,
+      maxSizeInBytes: opts?.maxLogBlobSizeInBytes,
+      loggerOverride: opts?.logger
+    })
+
+    this.logChunkController = chunkLoggerController
+
+    if(this.logChunkController?.downloadLogsBlobInBrowser) {
+      // @ts-ignore
+      window.downloadLogsBlobInBrowser = async () => this.logChunkController.downloadLogsBlobInBrowser({
+	clientId: await this.crypto.getClientId()
+      });
     }
 
     this.logger = generateChildLogger(logger, this.name);
@@ -118,6 +115,12 @@ export class Core extends ICore {
   public async start() {
     if (this.initialized) return;
     await this.initialize();
+  }
+
+  public async getLogsBlob() {
+    return this.logChunkController?.logsToBlob({
+      clientId: await this.crypto.getClientId(),
+    })
   }
 
   // ---------- Events ----------------------------------------------- //
