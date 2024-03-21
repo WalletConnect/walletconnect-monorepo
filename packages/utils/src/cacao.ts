@@ -133,7 +133,7 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
   const requested = authPayload.chains;
   const supported = chains;
 
-  const supportedChains = getCommonValuesInArrays(requested, supported) as string[];
+  const supportedChains = getCommonValuesInArrays<string>(requested, supported);
   if (!supportedChains?.length) {
     throw new Error("No supported chains");
   }
@@ -147,7 +147,7 @@ export function populateAuthPayload(params: PopulateAuthPayloadParams): AuthType
 
   if (resource?.length) {
     const actions = getReCapActions(resource);
-    const supportedActions = getCommonValuesInArrays(actions, methods);
+    const supportedActions = getCommonValuesInArrays<string>(actions, methods);
     if (!supportedActions?.length) {
       throw new Error(
         `Supported methods don't satisfy the requested: ${JSON.stringify(
