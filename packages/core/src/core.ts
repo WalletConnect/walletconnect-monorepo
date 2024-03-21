@@ -77,12 +77,12 @@ export class Core extends ICore {
     }
     else {
       if(typeof window !== 'undefined') {
-	const { logger: serverLogger, chunkLoggerController: serverChunkLoggerController } = generateServerLogger({ opts: loggerOptions})
+	const { logger: serverLogger, chunkLoggerController: serverChunkLoggerController } = generateServerLogger({ opts: loggerOptions, maxSizeInBytes: opts.maxLogBlobSizeInBytes})
 	chunkController = serverChunkLoggerController;
 	logger = serverLogger;
       }
       else {
-	const { logger: clientLogger, chunkLoggerController: clientChunkLoggerController } = generateClientLogger({ opts: loggerOptions});
+	const { logger: clientLogger, chunkLoggerController: clientChunkLoggerController } = generateClientLogger({ opts: loggerOptions, maxSizeInBytes: opts.maxLogBlobSizeInBytes});
 	chunkController = clientChunkLoggerController;
 	logger = clientLogger;
       }
