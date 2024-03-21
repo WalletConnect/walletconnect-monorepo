@@ -229,18 +229,36 @@ export function normalizeNamespaces(
   return normalizedNamespaces;
 }
 
+export function getNamespacesFromAccounts(accounts: string[]) {
+  const namespaces = {};
+  accounts?.forEach((account) => {
+    const [namespace, chainId] = account.split(":");
+    if (!namespaces[namespace]) {
+      namespaces[namespace] = {
+        accounts: [],
+        chains: [],
+        events: [],
+      };
+    }
+    namespaces[namespace].accounts.push(account);
+    namespaces[namespace].chains.push(`${namespace}:${chainId}`);
+  });
+
+  return namespaces;
+}
+
 export function buildNamespacesFromAuth(methods: string[], accounts: string[]) {
   accounts = accounts.map((account) => account.replace("did:pkh:", ""));
 
-  const namespace = accounts[0].split(":")[0];
+  const namespaces = getNamespacesFromAccounts(accounts);
 
-  const namespaceObj = {
-    [namespace]: {
-      accounts,
-      chains: accounts.map((account) => `${account.split(":")[0]}:${account.split(":")[1]}`),
-      methods,
-      events: ["chainChanged", "accountsChanged"],
-    },
-  };
-  return namespaceObj;
+  for (const [_, values] of Object.entries(namespaces) as [string, SessionTypes.Namespace][]) {
+    if (!values.methods) {
+      values.methods = methods;
+    } else {
+      values.methods = mergeArrays(values.methods, methods);
+    }
+    values.events = ["chainChanged", "accountsChanged"];
+  }
+  return namespaces;
 }
