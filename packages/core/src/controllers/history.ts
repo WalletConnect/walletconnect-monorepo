@@ -220,16 +220,17 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   private cleanup() {
     try {
       this.isInitialized();
-      let cleaned = false;
+      let deleted = false;
       this.records.forEach((record: JsonRpcRecord) => {
         const msToExpiry = toMiliseconds(record.expiry || 0) - Date.now();
         if (msToExpiry <= 0) {
           this.logger.info(`Deleting expired history log: ${record.id}`);
           this.records.delete(record.id);
           this.events.emit(HISTORY_EVENTS.deleted, record, false);
+          deleted = true;
         }
       });
-      if (cleaned) {
+      if (deleted) {
         this.persist();
       }
     } catch (e) {
