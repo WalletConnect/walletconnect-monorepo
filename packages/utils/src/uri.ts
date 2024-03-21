@@ -28,7 +28,8 @@ export function parseUri(str: string): EngineTypes.UriParameters {
   const requiredValues = path.split("@");
   const queryString: string = typeof pathEnd !== "undefined" ? str.substring(pathEnd) : "";
   const queryParams = qs.parse(queryString);
-  const methods = queryParams.methods ? (queryParams.methods as string).split(",") : undefined;
+  const methods =
+    typeof queryParams.methods === "string" ? queryParams.methods.split(",") : undefined;
   const result = {
     protocol,
     topic: parseTopic(requiredValues[0]),

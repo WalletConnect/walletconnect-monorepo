@@ -146,9 +146,7 @@ export class UniversalProvider implements IUniversalProvider {
     this.setNamespaces(opts);
     await this.cleanupPendingPairings();
 
-    const { uri, response } = await this.client.authenticate({
-      ...opts,
-    });
+    const { uri, response } = await this.client.authenticate(opts);
     if (uri) {
       this.uri = uri;
       this.events.emit("display_uri", uri);
