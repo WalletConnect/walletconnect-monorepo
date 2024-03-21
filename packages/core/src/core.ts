@@ -71,16 +71,19 @@ export class Core extends ICore {
     const loggerOptions = getDefaultLoggerOptions({ level: typeof opts?.logger === 'string' && opts.logger? opts.logger : CORE_DEFAULT.logger });
 
     let logger: Logger<any>;
+    let chunkController: { logsToBlob: (extraMetadata: Record<string, any>) => void } | null = null;
     if(typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string") {
       logger = opts.logger
     }
     else {
       if(typeof window !== 'undefined') {
-	const { logger: serverLogger } = generateServerLogger({ opts: loggerOptions})
+	const { logger: serverLogger, chunkLoggerController: serverChunkLoggerController } = generateServerLogger({ opts: loggerOptions})
+	chunkController = serverChunkLoggerController;
 	logger = serverLogger;
       }
       else {
-	const { logger: clientLogger } = generateClientLogger({ opts: loggerOptions});
+	const { logger: clientLogger, chunkLoggerController: clientChunkLoggerController } = generateClientLogger({ opts: loggerOptions});
+	chunkController = clientChunkLoggerController;
 	logger = clientLogger;
       }
     }
