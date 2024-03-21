@@ -8,7 +8,7 @@ import {
   getLoggerContext,
   generateClientLogger,
   generateServerLogger,
-  Logger
+  Logger,
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
@@ -68,23 +68,25 @@ export class Core extends ICore {
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
     this.customStoragePrefix = opts?.customStoragePrefix ? `:${opts.customStoragePrefix}` : "";
 
-    const loggerOptions = getDefaultLoggerOptions({ level: typeof opts?.logger === 'string' && opts.logger? opts.logger : CORE_DEFAULT.logger });
+    const loggerOptions = getDefaultLoggerOptions({
+      level: typeof opts?.logger === "string" && opts.logger ? opts.logger : CORE_DEFAULT.logger,
+    });
 
     let logger: Logger<any>;
     let chunkController: { logsToBlob: (extraMetadata: Record<string, any>) => void } | null = null;
-    if(typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string") {
-      logger = opts.logger
-    }
-    else {
-      if(typeof window !== 'undefined') {
-	const { logger: serverLogger, chunkLoggerController: serverChunkLoggerController } = generateServerLogger({ opts: loggerOptions, maxSizeInBytes: opts.maxLogBlobSizeInBytes})
-	chunkController = serverChunkLoggerController;
-	logger = serverLogger;
-      }
-      else {
-	const { logger: clientLogger, chunkLoggerController: clientChunkLoggerController } = generateClientLogger({ opts: loggerOptions, maxSizeInBytes: opts.maxLogBlobSizeInBytes});
-	chunkController = clientChunkLoggerController;
-	logger = clientLogger;
+    if (typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string") {
+      logger = opts.logger;
+    } else {
+      if (typeof window !== "undefined") {
+        const { logger: serverLogger, chunkLoggerController: serverChunkLoggerController } =
+          generateServerLogger({ opts: loggerOptions, maxSizeInBytes: opts.maxLogBlobSizeInBytes });
+        chunkController = serverChunkLoggerController;
+        logger = serverLogger;
+      } else {
+        const { logger: clientLogger, chunkLoggerController: clientChunkLoggerController } =
+          generateClientLogger({ opts: loggerOptions, maxSizeInBytes: opts.maxLogBlobSizeInBytes });
+        chunkController = clientChunkLoggerController;
+        logger = clientLogger;
       }
     }
 
