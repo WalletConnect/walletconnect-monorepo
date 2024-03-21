@@ -7,7 +7,8 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
   generateClientLogger,
-  generateServerLogger
+  generateServerLogger,
+  Logger
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
@@ -67,14 +68,22 @@ export class Core extends ICore {
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
     this.customStoragePrefix = opts?.customStoragePrefix ? `:${opts.customStoragePrefix}` : "";
 
-    const loggerOptions = getDefaultLoggerOptions({ level: opts?.logger || CORE_DEFAULT.logger });
+    const loggerOptions = getDefaultLoggerOptions({ level: typeof opts?.logger === 'string' && opts.logger? opts.logger : CORE_DEFAULT.logger });
 
-    const logger =
-      typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
-        ? opts.logger
-        : typeof window !== 'undefined'?
-	  generateServerLogger(loggerOptions) :
-	  generateClientLogger(loggerOptions);
+    let logger: Logger<any>;
+    if(typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string") {
+      logger = opts.logger
+    }
+    else {
+      if(typeof window !== 'undefined') {
+	const { logger: serverLogger } = generateServerLogger({ opts: loggerOptions})
+	logger = serverLogger;
+      }
+      else {
+	const { logger: clientLogger } = generateClientLogger({ opts: loggerOptions});
+	logger = clientLogger;
+      }
+    }
 
     this.logger = generateChildLogger(logger, this.name);
     this.heartbeat = new HeartBeat();
