@@ -219,6 +219,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
 
   private cleanup() {
     try {
+      this.isInitialized();
       let cleaned = false;
       this.records.forEach((record: JsonRpcRecord) => {
         const msToExpiry = toMiliseconds(record.expiry || 0) - Date.now();
