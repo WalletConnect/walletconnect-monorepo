@@ -366,7 +366,7 @@ export class Engine extends IEngine {
     const relayRpcId = getBigIntRpcId().toString() as any;
 
     const oldNamespaces = this.client.session.get(topic).namespaces;
-    this.events.once(engineEvent("session_update", clientRpcId), async ({ error }: any) => {
+    this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
       if (error) reject(error);
       else {
         resolve();
