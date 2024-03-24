@@ -22,7 +22,9 @@ import {
 
 import type { UserOperation } from "permissionless";
 import { createBundlerClient, ENTRYPOINT_ADDRESS_V06, deepHexlify } from "permissionless";
-import { concat, Hex, http } from "viem";
+import { Hex, http, createPublicClient, concat } from "viem";
+import { sepolia } from "viem/chains";
+import { abi } from "./constants/EntryPointABI";
 
 export type RpcMethod =
   | "personal_sign"
@@ -106,11 +108,28 @@ export async function constructUserOperation(
   Omit<UserOperation<"v0.6">, "preVerificationGas" | "verificationGasLimit" | "callGasLimit">
 > {
   console.log("userOperationConstructorAddress", userOperationConstructorAddress);
+  const publicClient = await createPublicClient({
+    transport: http(),
+    chain: sepolia,
+  });
 
+  console.log("GETTING NONCE");
+  const nonce = await publicClient.readContract({
+    abi,
+    functionName: "getNonce",
+    address: ENTRYPOINT_ADDRESS_V06,
+    args: ["0x4aA1887EE11B418e88661B6D747DCFc6B0017D7C", BigInt(0)],
+  });
+
+  console.log("FETCHED NONCE", nonce);
+  // const nonce = getNonceWithContext();
+  // const callData = requestCallDataWithContext();
   const hasInitCode = signer.sessionProperties?.factory && signer.sessionProperties?.factoryData;
+  const dummySig =
+    "0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000001c5b32f37f5bea87bdd5374eb2ac54ea8e00000000000000000000000000000000000000000000000000000000000000410946be644bd92962420dbcd291c36b93ed9e36747bbb1a06970197fb305333133e54ad1a5e79c835c3cf9a4bbd8abd2754c912fca79d111d36bc1c65002ab4391c00000000000000000000000000000000000000000000000000000000000000";
   const userOperation = {
     sender: "0x4aA1887EE11B418e88661B6D747DCFc6B0017D7C" as Hex,
-    nonce: BigInt(0),
+    nonce,
     initCode: hasInitCode
       ? concat([
           signer.sessionProperties?.factory as Hex,
@@ -119,13 +138,14 @@ export async function constructUserOperation(
       : ("0x" as Hex),
     callData:
       "0x0000189a000000000000000000000000ab5801a7d398351b8be11c439e05c5b3259aec9b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000021230000000000000000000000000000000000000000000000000000000000000" as Hex,
-    maxFeePerGas: BigInt(100_000),
-    maxPriorityFeePerGas: BigInt(100_000),
     paymasterAndData: "0x" as Hex,
-    signature: "0x" as Hex,
+    signature: dummySig as Hex,
   };
 
-  return userOperation;
+  return userOperation as Omit<
+    UserOperation<"v0.6">,
+    "preVerificationGas" | "verificationGasLimit" | "callGasLimit"
+  >;
 }
 
 export type NamespacesParams = {
@@ -230,7 +250,7 @@ export type SmartAccountOptions = {
     paymasterMiddleware?: (
       entrypoint: Hex,
       rawUserOperation: Partial<UserOperation<"v0.6">>,
-    ) => UserOperation<"v0.6">;
+    ) => Promise<UserOperation<"v0.6">>;
   };
 };
 
@@ -264,7 +284,9 @@ export class EthereumProvider implements IEthereumProvider {
   public signer: InstanceType<typeof UniversalProvider>;
   public chainId = 1;
   public modal?: any;
-  public smartAccountConfig?: SmartAccountOptions["smartAccountConfig"];
+  public smartAccountConfig?: SmartAccountOptions["smartAccountConfig"] = {
+    bundlerUrl: "https://api.pimlico.io/v1/sepolia/rpc?apikey=7fcebd0d-53e8-411c-9c88-5af50c9959bf",
+  };
 
   protected rpc: EthereumRpcConfig;
   protected readonly STORAGE_KEY = STORAGE_KEY;
@@ -282,32 +304,64 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   public async request<T = unknown>(args: RequestArguments, expiry?: number): Promise<T> {
+    console.log("-----------------------------");
+    console.log("INTERCEPTING REQUEST");
+    console.log("-----------------------------");
+    console.log("METHOD:", args.method);
+    console.log("SA Config", this.smartAccountConfig);
+    console.log("SESSION PROPERTIES", this.signer.session?.sessionProperties);
     if (
       args.method === "eth_sendTransaction" &&
       this.smartAccountConfig &&
-      this.signer.sessionProperties &&
-      this.signer.sessionProperties.smartAccountAddress &&
-      this.signer.sessionProperties.userOperationConstructorAddress
+      this.signer &&
+      this.signer.session &&
+      this.signer.session.sessionProperties &&
+      this.signer.session.sessionProperties.smartAccountAddress &&
+      this.signer.session.sessionProperties.userOperationConstructorAddress
     ) {
-      const { userOperationConstructorAddress } = this.signer.sessionProperties;
+      console.log("SMART ACCOUNT ETH_SENDTRANSACTION REQUEST");
+      const sessionProperties = this.signer.session.sessionProperties || {};
+      const { userOperationConstructorAddress } = sessionProperties;
       let userOperation: any = await constructUserOperation(
         userOperationConstructorAddress,
         this.signer,
       );
 
+      const bundlerClient = createBundlerClient({
+        transport: http(this.smartAccountConfig.bundlerUrl),
+        entryPoint: sessionProperties.entryPointAddress as typeof ENTRYPOINT_ADDRESS_V06,
+      });
+
+      const publicClient = await createPublicClient({
+        chain: sepolia,
+        transport: http(),
+      });
+
+      const gasPrice = await publicClient.estimateFeesPerGas();
+
+      userOperation = {
+        ...userOperation,
+        maxFeePerGas: gasPrice.maxFeePerGas,
+        maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas,
+      };
+
+      console.log("USER OPERATION", userOperation);
       if (userOperation && this.smartAccountConfig?.paymasterMiddleware) {
         const { paymasterMiddleware } = this.smartAccountConfig;
+        console.log("FILLING IN USER OPERATION");
+        console.log("SMART ACCOUNT CONFIG", this.smartAccountConfig);
+        console.log("SESSION PROPERTIES", sessionProperties);
         userOperation = await paymasterMiddleware(
-          this.signer.sessionProperties.entrypointAddress as Hex,
+          sessionProperties.entryPointAddress as Hex,
           userOperation,
         );
       }
 
-      const bundlerClient = createBundlerClient({
-        transport: http(this.smartAccountConfig.bundlerUrl),
-        entryPoint: this.signer.sessionProperties
-          .entrypointAddress as typeof ENTRYPOINT_ADDRESS_V06,
-      });
+      console.log(
+        "CREATING BUNDLER CLIENT",
+        this.smartAccountConfig.bundlerUrl,
+        sessionProperties.entryPointAddress,
+      );
 
       if (
         !userOperation.preVerificationGas ||
@@ -315,20 +369,41 @@ export class EthereumProvider implements IEthereumProvider {
         !userOperation.callGasLimit
       ) {
         // Estimate userop gas price
-        const gasLimits = await bundlerClient.estimateUserOperationGas({ userOperation });
+        console.log("ESTIMATING USEROP GAS LIMITS", userOperation);
+        // const gasLimits = await bundlerClient.estimateUserOperationGas({
+        //   userOperation: { ...userOperation },
+        // });
+        const gasLimits = {
+          preVerificationGas: BigInt(500_000),
+          verificationGasLimit: BigInt(500_000),
+          callGasLimit: BigInt(500_000),
+        };
+
         userOperation = { ...userOperation, ...gasLimits } as UserOperation<"v0.6">;
       }
 
+      console.log("REQUESTING SIGNATURE", userOperation);
+      console.log(
+        "REQUEST PARAMS",
+        deepHexlify(userOperation),
+        sessionProperties.entryPointAddress,
+        this.formatChainId(this.chainId),
+      );
       const signature = await this.signer.request(
         {
           method: "eth_signUserOperation",
-          params: [deepHexlify(userOperation), this.signer.sessionProperties?.entryPointAddress],
+          params: [deepHexlify(userOperation), sessionProperties.entryPointAddress],
         },
         this.formatChainId(this.chainId),
         expiry,
       );
 
       userOperation.signature = signature as Hex;
+      console.log("SIGNATURE", signature);
+
+      // const newSignature = getSignatureWithContext();
+
+      // userUpoeration.signature = newSignature;
 
       const userOpHash = await bundlerClient.sendUserOperation({
         userOperation: userOperation as UserOperation<"v0.6">,
@@ -610,7 +685,11 @@ export class EthereumProvider implements IEthereumProvider {
       storageOptions: opts.storageOptions,
     });
     this.registerEventListeners();
-    this.smartAccountConfig = opts.smartAccountConfig;
+    this.smartAccountConfig = opts.smartAccountConfig || {
+      bundlerUrl:
+        // "https://api.pimlico.io/v1/sepolia/rpc?apikey=7fcebd0d-53e8-411c-9c88-5af50c9959bf",
+        "https://api-staging.pimlico.io/v2/sepolia/rpc?apikey=a1ddf855-1258-438d-925b-903301301e2e",
+    };
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
       let WalletConnectModalClass;
