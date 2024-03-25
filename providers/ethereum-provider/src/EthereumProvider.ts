@@ -20,11 +20,11 @@ import {
   OPTIONAL_EVENTS,
 } from "./constants";
 
+import { UserOpBuilder } from "./utils/UserOpBuilder";
+
 import type { UserOperation } from "permissionless";
-import { createBundlerClient, ENTRYPOINT_ADDRESS_V06, deepHexlify } from "permissionless";
-import { Hex, http, createPublicClient, concat } from "viem";
-import { sepolia } from "viem/chains";
-import { abi } from "./constants/EntryPointABI";
+import { ENTRYPOINT_ADDRESS_V06, deepHexlify } from "permissionless";
+import { Hex } from "viem";
 
 export type RpcMethod =
   | "personal_sign"
@@ -99,53 +99,6 @@ export function getEthereumChainId(chains: string[]): number {
 
 export function toHexChainId(chainId: number): string {
   return `0x${chainId.toString(16)}`;
-}
-
-export async function constructUserOperation(
-  userOperationConstructorAddress: string,
-  signer: InstanceType<typeof UniversalProvider>,
-): Promise<
-  Omit<UserOperation<"v0.6">, "preVerificationGas" | "verificationGasLimit" | "callGasLimit">
-> {
-  console.log("userOperationConstructorAddress", userOperationConstructorAddress);
-  const publicClient = await createPublicClient({
-    transport: http(),
-    chain: sepolia,
-  });
-
-  console.log("GETTING NONCE");
-  const nonce = await publicClient.readContract({
-    abi,
-    functionName: "getNonce",
-    address: ENTRYPOINT_ADDRESS_V06,
-    args: ["0x4aA1887EE11B418e88661B6D747DCFc6B0017D7C", BigInt(0)],
-  });
-
-  console.log("FETCHED NONCE", nonce);
-  // const nonce = getNonceWithContext();
-  // const callData = requestCallDataWithContext();
-  const hasInitCode = signer.sessionProperties?.factory && signer.sessionProperties?.factoryData;
-  const dummySig =
-    "0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000001c5b32f37f5bea87bdd5374eb2ac54ea8e00000000000000000000000000000000000000000000000000000000000000410946be644bd92962420dbcd291c36b93ed9e36747bbb1a06970197fb305333133e54ad1a5e79c835c3cf9a4bbd8abd2754c912fca79d111d36bc1c65002ab4391c00000000000000000000000000000000000000000000000000000000000000";
-  const userOperation = {
-    sender: "0x4aA1887EE11B418e88661B6D747DCFc6B0017D7C" as Hex,
-    nonce,
-    initCode: hasInitCode
-      ? concat([
-          signer.sessionProperties?.factory as Hex,
-          signer.sessionProperties?.factoryData as Hex,
-        ])
-      : ("0x" as Hex),
-    callData:
-      "0x0000189a000000000000000000000000ab5801a7d398351b8be11c439e05c5b3259aec9b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000021230000000000000000000000000000000000000000000000000000000000000" as Hex,
-    paymasterAndData: "0x" as Hex,
-    signature: dummySig as Hex,
-  };
-
-  return userOperation as Omit<
-    UserOperation<"v0.6">,
-    "preVerificationGas" | "verificationGasLimit" | "callGasLimit"
-  >;
 }
 
 export type NamespacesParams = {
@@ -304,114 +257,37 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   public async request<T = unknown>(args: RequestArguments, expiry?: number): Promise<T> {
-    console.log("-----------------------------");
-    console.log("INTERCEPTING REQUEST");
-    console.log("-----------------------------");
-    console.log("METHOD:", args.method);
     console.log("SA Config", this.smartAccountConfig);
     console.log("SESSION PROPERTIES", this.signer.session?.sessionProperties);
+
+    const sessionProperties = this.signer?.session?.sessionProperties || {};
     if (
       args.method === "eth_sendTransaction" &&
       this.smartAccountConfig &&
-      this.signer &&
-      this.signer.session &&
-      this.signer.session.sessionProperties &&
-      this.signer.session.sessionProperties.smartAccountAddress &&
-      this.signer.session.sessionProperties.userOperationConstructorAddress
+      sessionProperties.smartAccountAddress &&
+      sessionProperties.userOperationConstructorAddress
     ) {
-      console.log("SMART ACCOUNT ETH_SENDTRANSACTION REQUEST");
-      const sessionProperties = this.signer.session.sessionProperties || {};
-      const { userOperationConstructorAddress } = sessionProperties;
-      let userOperation: any = await constructUserOperation(
-        userOperationConstructorAddress,
-        this.signer,
-      );
-
-      const bundlerClient = createBundlerClient({
-        transport: http(this.smartAccountConfig.bundlerUrl),
-        entryPoint: sessionProperties.entryPointAddress as typeof ENTRYPOINT_ADDRESS_V06,
+      const { smartAccountAddress, userOperationConstructorAddress } = sessionProperties;
+      const userOperationBuilder = new UserOpBuilder({
+        smartAccountAddress: smartAccountAddress as Hex,
+        userOperationBuilderAddress: userOperationConstructorAddress as Hex,
+        entryPointAddress: ENTRYPOINT_ADDRESS_V06,
+        signer: this.signer,
+        dappSmartAccountConfig: this.smartAccountConfig,
       });
 
-      const publicClient = await createPublicClient({
-        chain: sepolia,
-        transport: http(),
+      const userOperation = await userOperationBuilder.buildUserOp({
+        factoryAddress: sessionProperties.factory as Hex,
+        factoryData: sessionProperties.factoryData as Hex,
       });
-
-      const gasPrice = await publicClient.estimateFeesPerGas();
-
-      userOperation = {
-        ...userOperation,
-        maxFeePerGas: gasPrice.maxFeePerGas,
-        maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas,
-      };
 
       console.log("USER OPERATION", userOperation);
-      if (userOperation && this.smartAccountConfig?.paymasterMiddleware) {
-        const { paymasterMiddleware } = this.smartAccountConfig;
-        console.log("FILLING IN USER OPERATION");
-        console.log("SMART ACCOUNT CONFIG", this.smartAccountConfig);
-        console.log("SESSION PROPERTIES", sessionProperties);
-        userOperation = await paymasterMiddleware(
-          sessionProperties.entryPointAddress as Hex,
-          userOperation,
-        );
-      }
 
-      console.log(
-        "CREATING BUNDLER CLIENT",
-        this.smartAccountConfig.bundlerUrl,
-        sessionProperties.entryPointAddress,
-      );
-
-      if (
-        !userOperation.preVerificationGas ||
-        !userOperation.verificationGasLimit ||
-        !userOperation.callGasLimit
-      ) {
-        // Estimate userop gas price
-        console.log("ESTIMATING USEROP GAS LIMITS", userOperation);
-        // const gasLimits = await bundlerClient.estimateUserOperationGas({
-        //   userOperation: { ...userOperation },
-        // });
-        const gasLimits = {
-          preVerificationGas: BigInt(500_000),
-          verificationGasLimit: BigInt(500_000),
-          callGasLimit: BigInt(500_000),
-        };
-
-        userOperation = { ...userOperation, ...gasLimits } as UserOperation<"v0.6">;
-      }
-
-      console.log("REQUESTING SIGNATURE", userOperation);
-      console.log(
-        "REQUEST PARAMS",
-        deepHexlify(userOperation),
-        sessionProperties.entryPointAddress,
-        this.formatChainId(this.chainId),
-      );
-      const signature = await this.signer.request(
-        {
-          method: "eth_signUserOperation",
-          params: [deepHexlify(userOperation), sessionProperties.entryPointAddress],
-        },
-        this.formatChainId(this.chainId),
+      return (await userOperationBuilder.sendUserOperation({
+        userOperation: deepHexlify(userOperation),
+        caipChainId: this.formatChainId(this.chainId),
         expiry,
-      );
-
-      userOperation.signature = signature as Hex;
-      console.log("SIGNATURE", signature);
-
-      // const newSignature = getSignatureWithContext();
-
-      // userUpoeration.signature = newSignature;
-
-      const userOpHash = await bundlerClient.sendUserOperation({
-        userOperation: userOperation as UserOperation<"v0.6">,
-      });
-
-      const userOpReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
-
-      return userOpReceipt.receipt.transactionHash as T;
+      })) as T;
     }
 
     return await this.signer.request(args, this.formatChainId(this.chainId), expiry);
