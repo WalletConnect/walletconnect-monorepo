@@ -9,6 +9,7 @@ export const OPTIONAL_METHODS = [
   "eth_signTypedData_v3",
   "eth_signTypedData_v4",
   "eth_sendTransaction",
+  "eth_signUserOperation",
   "personal_sign",
   "wallet_switchEthereumChain",
   "wallet_addEthereumChain",

@@ -20,6 +20,12 @@ import {
   OPTIONAL_EVENTS,
 } from "./constants";
 
+import { UserOpBuilder } from "./utils/UserOpBuilder";
+
+import type { UserOperation } from "permissionless";
+import { ENTRYPOINT_ADDRESS_V06, deepHexlify } from "permissionless";
+import { Hex } from "viem";
+
 export type RpcMethod =
   | "personal_sign"
   | "eth_sendTransaction"
@@ -191,6 +197,16 @@ export type ChainsProps =
       optionalChains: ArrayOneOrMore<number>;
     };
 
+export type SmartAccountOptions = {
+  smartAccountConfig?: {
+    bundlerUrl: string;
+    paymasterMiddleware?: (
+      entrypoint: Hex,
+      rawUserOperation: Partial<UserOperation<"v0.6">>,
+    ) => Promise<UserOperation<"v0.6">>;
+  };
+};
+
 export type EthereumProviderOptions = {
   projectId: string;
   /**
@@ -211,7 +227,8 @@ export type EthereumProviderOptions = {
   disableProviderPing?: boolean;
   relayUrl?: string;
   storageOptions?: KeyValueStorageOptions;
-} & ChainsProps;
+} & ChainsProps &
+  SmartAccountOptions;
 
 export class EthereumProvider implements IEthereumProvider {
   public events = new EventEmitter();
@@ -220,6 +237,9 @@ export class EthereumProvider implements IEthereumProvider {
   public signer: InstanceType<typeof UniversalProvider>;
   public chainId = 1;
   public modal?: any;
+  public smartAccountConfig?: SmartAccountOptions["smartAccountConfig"] = {
+    bundlerUrl: "https://api.pimlico.io/v1/sepolia/rpc?apikey=7fcebd0d-53e8-411c-9c88-5af50c9959bf",
+  };
 
   protected rpc: EthereumRpcConfig;
   protected readonly STORAGE_KEY = STORAGE_KEY;
@@ -237,6 +257,39 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   public async request<T = unknown>(args: RequestArguments, expiry?: number): Promise<T> {
+    console.log("SA Config", this.smartAccountConfig);
+    console.log("SESSION PROPERTIES", this.signer.session?.sessionProperties);
+
+    const sessionProperties = this.signer?.session?.sessionProperties || {};
+    if (
+      args.method === "eth_sendTransaction" &&
+      this.smartAccountConfig &&
+      sessionProperties.smartAccountAddress &&
+      sessionProperties.userOperationConstructorAddress
+    ) {
+      const { smartAccountAddress, userOperationConstructorAddress } = sessionProperties;
+      const userOperationBuilder = new UserOpBuilder({
+        smartAccountAddress: smartAccountAddress as Hex,
+        userOperationBuilderAddress: userOperationConstructorAddress as Hex,
+        entryPointAddress: ENTRYPOINT_ADDRESS_V06,
+        signer: this.signer,
+        dappSmartAccountConfig: this.smartAccountConfig,
+      });
+
+      const userOperation = await userOperationBuilder.buildUserOp({
+        factoryAddress: sessionProperties.factory as Hex,
+        factoryData: sessionProperties.factoryData as Hex,
+      });
+
+      console.log("USER OPERATION", userOperation);
+
+      return (await userOperationBuilder.sendUserOperation({
+        userOperation: deepHexlify(userOperation),
+        caipChainId: this.formatChainId(this.chainId),
+        expiry,
+      })) as T;
+    }
+
     return await this.signer.request(args, this.formatChainId(this.chainId), expiry);
   }
 
@@ -508,6 +561,11 @@ export class EthereumProvider implements IEthereumProvider {
       storageOptions: opts.storageOptions,
     });
     this.registerEventListeners();
+    this.smartAccountConfig = opts.smartAccountConfig || {
+      bundlerUrl:
+        // "https://api.pimlico.io/v1/sepolia/rpc?apikey=7fcebd0d-53e8-411c-9c88-5af50c9959bf",
+        "https://api-staging.pimlico.io/v2/sepolia/rpc?apikey=a1ddf855-1258-438d-925b-903301301e2e",
+    };
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
       let WalletConnectModalClass;
