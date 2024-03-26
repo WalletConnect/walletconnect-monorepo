@@ -51,7 +51,7 @@ export class Core extends ICore {
   public echoClient: ICore["echoClient"];
 
   private initialized = false;
-  private logChunkController:  ChunkLoggerController | null;
+  private logChunkController: ChunkLoggerController | null;
 
   static async init(opts?: CoreTypes.Options) {
     const core = new Core(opts);
@@ -72,19 +72,20 @@ export class Core extends ICore {
       level: typeof opts?.logger === "string" && opts.logger ? opts.logger : CORE_DEFAULT.logger,
     });
 
-    const {logger, chunkLoggerController} = generatePlatformLogger({
+    const { logger, chunkLoggerController } = generatePlatformLogger({
       opts: loggerOptions,
       maxSizeInBytes: opts?.maxLogBlobSizeInBytes,
-      loggerOverride: opts?.logger
-    })
+      loggerOverride: opts?.logger,
+    });
 
-    this.logChunkController = chunkLoggerController
+    this.logChunkController = chunkLoggerController;
 
-    if(this.logChunkController?.downloadLogsBlobInBrowser) {
+    if (this.logChunkController?.downloadLogsBlobInBrowser) {
       // @ts-ignore
-      window.downloadLogsBlobInBrowser = async () => this.logChunkController.downloadLogsBlobInBrowser({
-	clientId: await this.crypto.getClientId()
-      });
+      window.downloadLogsBlobInBrowser = async () =>
+        this.logChunkController.downloadLogsBlobInBrowser({
+          clientId: await this.crypto.getClientId(),
+        });
     }
 
     this.logger = generateChildLogger(logger, this.name);
@@ -120,7 +121,7 @@ export class Core extends ICore {
   public async getLogsBlob() {
     return this.logChunkController?.logsToBlob({
       clientId: await this.crypto.getClientId(),
-    })
+    });
   }
 
   // ---------- Events ----------------------------------------------- //
