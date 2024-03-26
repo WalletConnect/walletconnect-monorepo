@@ -82,10 +82,15 @@ export class Core extends ICore {
 
     if (this.logChunkController?.downloadLogsBlobInBrowser) {
       // @ts-ignore
-      window.downloadLogsBlobInBrowser = async () =>
-        this.logChunkController.downloadLogsBlobInBrowser({
-          clientId: await this.crypto.getClientId(),
-        });
+      window.downloadLogsBlobInBrowser = async () => {
+        // Have to null check twice becquse there is no guarantee
+        // this.logChunkController.downloadLogsBlobInBrowser is always truthy
+        if (this.logChunkController?.downloadLogsBlobInBrowser) {
+          this.logChunkController?.downloadLogsBlobInBrowser({
+            clientId: await this.crypto.getClientId(),
+          });
+        }
+      };
     }
 
     this.logger = generateChildLogger(logger, this.name);
