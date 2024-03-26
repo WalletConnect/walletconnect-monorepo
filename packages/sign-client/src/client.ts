@@ -248,18 +248,18 @@ export class SignClient extends ISignClient {
     }
   };
 
-  public approveSessionAuthenticate: ISignClient["approveSessionAuthenticate"] = (params) => {
+  public approveSessionAuthenticate: ISignClient["approveSessionAuthenticate"] = async (params) => {
     try {
-      return this.engine.approveSessionAuthenticate(params);
+      return await this.engine.approveSessionAuthenticate(params);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public rejectSessionAuthenticate: ISignClient["rejectSessionAuthenticate"] = (params) => {
+  public rejectSessionAuthenticate: ISignClient["rejectSessionAuthenticate"] = async (params) => {
     try {
-      return this.engine.rejectSessionAuthenticate(params);
+      return await this.engine.rejectSessionAuthenticate(params);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;

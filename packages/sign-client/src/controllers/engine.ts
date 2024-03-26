@@ -81,6 +81,7 @@ import {
   getRecapFromResources,
   validateSignedCacao,
   getNamespacedDidChainId,
+  parseChainId,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -613,16 +614,17 @@ export class Engine extends IEngine {
     const publicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(publicKey);
 
-    await this.client.auth.authKeys.set(AUTH_PUBLIC_KEY_NAME, { responseTopic, publicKey });
-    await this.client.auth.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic });
-
+    await Promise.all([
+      this.client.auth.authKeys.set(AUTH_PUBLIC_KEY_NAME, { responseTopic, publicKey }),
+      this.client.auth.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic }),
+    ]);
     // Subscribe to response topic
     await this.client.core.relayer.subscribe(responseTopic);
 
     this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
 
     if (methods.length > 0) {
-      const namespace = chains[0].split(":")[0];
+      const { namespace } = parseChainId(chains[0]);
       let recap = createEncodedRecap(namespace, "request", methods);
       const existingRecap = getRecapFromResources(resources);
       if (existingRecap) {
@@ -745,7 +747,10 @@ export class Engine extends IEngine {
           approvedChains.push(...chainsFromRecap);
         }
 
-        approvedAccounts.push(...approvedChains.map((chain) => `${chain}:${parsedAddress}`));
+        // approvedAccounts.push(...approvedChains.map((chain) => `${chain}:${parsedAddress}`));
+        for (const chain of approvedChains) {
+          approvedAccounts.push(`${chain}:${parsedAddress}`);
+        }
       }
       const sessionTopic = await this.client.core.crypto.generateSharedKey(
         publicKey,
@@ -886,6 +891,7 @@ export class Engine extends IEngine {
       const recap = getRecapFromResources(payload.resources);
 
       const approvedChains: string[] = [getNamespacedDidChainId(payload.iss) as string];
+
       const parsedAddress = getDidAddress(payload.iss) as string;
 
       if (recap) {
@@ -894,8 +900,9 @@ export class Engine extends IEngine {
         approvedMethods.push(...methodsfromRecap);
         approvedChains.push(...chainsFromRecap);
       }
-
-      approvedAccounts.push(...approvedChains.map((chain) => `${chain}:${parsedAddress}`));
+      for (const chain of approvedChains) {
+        approvedAccounts.push(`${chain}:${parsedAddress}`);
+      }
     }
 
     const sessionTopic = await this.client.core.crypto.generateSharedKey(
@@ -2275,14 +2282,14 @@ export class Engine extends IEngine {
     }
 
     // ----- reject multi namespaces ----- //
-    const uniqueNamespaces = [...new Set(chains.map((chain) => chain.split(":")[0]))];
+    const uniqueNamespaces = [...new Set(chains.map((chain) => parseChainId(chain).namespace))];
     if (uniqueNamespaces.length > 1) {
       throw new Error(
         "Multi-namespace requests are not supported. Please request single namespace only.",
       );
     }
 
-    const namespace = chains[0].split(":")[0];
+    const { namespace } = parseChainId(chains[0]);
     if (namespace !== "eip155") {
       throw new Error(
         "Only eip155 namespace is supported for authenticated sessions. Please use .connect() for non-eip155 chains.",
