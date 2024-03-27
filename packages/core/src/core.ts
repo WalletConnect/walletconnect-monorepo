@@ -6,7 +6,8 @@ import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
-  pino,
+  generatePlatformLogger,
+  ChunkLoggerController,
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
@@ -50,6 +51,7 @@ export class Core extends ICore {
   public echoClient: ICore["echoClient"];
 
   private initialized = false;
+  private logChunkController: ChunkLoggerController | null;
 
   static async init(opts?: CoreTypes.Options) {
     const core = new Core(opts);
@@ -65,10 +67,32 @@ export class Core extends ICore {
     this.projectId = opts?.projectId;
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
     this.customStoragePrefix = opts?.customStoragePrefix ? `:${opts.customStoragePrefix}` : "";
-    const logger =
-      typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
-        ? opts.logger
-        : pino(getDefaultLoggerOptions({ level: opts?.logger || CORE_DEFAULT.logger }));
+
+    const loggerOptions = getDefaultLoggerOptions({
+      level: typeof opts?.logger === "string" && opts.logger ? opts.logger : CORE_DEFAULT.logger,
+    });
+
+    const { logger, chunkLoggerController } = generatePlatformLogger({
+      opts: loggerOptions,
+      maxSizeInBytes: opts?.maxLogBlobSizeInBytes,
+      loggerOverride: opts?.logger,
+    });
+
+    this.logChunkController = chunkLoggerController;
+
+    if (this.logChunkController?.downloadLogsBlobInBrowser) {
+      // @ts-ignore
+      window.downloadLogsBlobInBrowser = async () => {
+        // Have to null check twice becquse there is no guarantee
+        // this.logChunkController.downloadLogsBlobInBrowser is always truthy
+        if (this.logChunkController?.downloadLogsBlobInBrowser) {
+          this.logChunkController?.downloadLogsBlobInBrowser({
+            clientId: await this.crypto.getClientId(),
+          });
+        }
+      };
+    }
+
     this.logger = generateChildLogger(logger, this.name);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
@@ -97,6 +121,12 @@ export class Core extends ICore {
   public async start() {
     if (this.initialized) return;
     await this.initialize();
+  }
+
+  public async getLogsBlob() {
+    return this.logChunkController?.logsToBlob({
+      clientId: await this.crypto.getClientId(),
+    });
   }
 
   // ---------- Events ----------------------------------------------- //
