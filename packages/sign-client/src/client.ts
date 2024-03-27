@@ -1,27 +1,15 @@
-import { Core, Store } from "@walletconnect/core";
+import { Core } from "@walletconnect/core";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
   pino,
 } from "@walletconnect/logger";
-import {
-  SignClientTypes,
-  ISignClient,
-  ISignClientEvents,
-  EngineTypes,
-  AuthTypes,
-} from "@walletconnect/types";
+import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
 import { getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import {
-  AUTH_PUBLIC_KEY_NAME,
-  AUTH_STORAGE_PREFIX,
-  SIGN_CLIENT_DEFAULT,
-  SIGN_CLIENT_PROTOCOL,
-  SIGN_CLIENT_VERSION,
-} from "./constants";
-import { Engine, PendingRequest, Proposal, Session } from "./controllers";
+import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
+import { AuthStore, Engine, PendingRequest, Proposal, Session } from "./controllers";
 
 export class SignClient extends ISignClient {
   public readonly protocol = SIGN_CLIENT_PROTOCOL;
@@ -62,23 +50,7 @@ export class SignClient extends ISignClient {
     this.proposal = new Proposal(this.core, this.logger);
     this.pendingRequest = new PendingRequest(this.core, this.logger);
     this.engine = new Engine(this);
-    this.auth = {
-      authKeys: new Store(
-        this.core,
-        this.logger,
-        "authKeys",
-        AUTH_STORAGE_PREFIX,
-        () => AUTH_PUBLIC_KEY_NAME,
-      ),
-      pairingTopics: new Store(this.core, this.logger, "pairingTopics", AUTH_STORAGE_PREFIX),
-      requests: new Store(
-        this.core,
-        this.logger,
-        "requests",
-        AUTH_STORAGE_PREFIX,
-        (val: AuthTypes.PendingRequest) => val.id,
-      ),
-    };
+    this.auth = new AuthStore(this.core, this.logger);
   }
 
   get context() {

@@ -24,8 +24,6 @@ export class Engine extends IWeb3WalletEngine {
       projectId: "",
       metadata: this.client.metadata,
     });
-
-    // this.initializeEventListeners();
   };
 
   public pair: IWeb3WalletEngine["pair"] = async (params) => {
