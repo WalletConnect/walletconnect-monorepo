@@ -166,7 +166,6 @@ export class Engine extends IWeb3WalletEngine {
   };
 
   private onSessionRequestAuthenticate = (event: Web3WalletTypes.SessionAuthenticate) => {
-    // console.log("onSessionRequestAuthenticate", event);
     this.client.events.emit("session_authenticate", event);
   };
 
@@ -194,7 +193,6 @@ export class Engine extends IWeb3WalletEngine {
         this.signClient.events[action]("session_request_expire", this.onSessionRequestExpire);
         break;
       case "session_authenticate":
-        // console.log("session_authenticate", action);
         this.signClient.events[action]("session_authenticate", this.onSessionRequestAuthenticate);
         break;
     }
