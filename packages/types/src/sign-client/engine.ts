@@ -198,6 +198,8 @@ export interface EnginePrivate {
 
   onRelayEventUnknownPayload(event: EngineTypes.EventCallback<any>): Promise<void>;
 
+  shouldIgnorePairingRequest(params: { topic: string; requestMethod: string }): boolean;
+
   deleteSession(params: {
     topic: string;
     expirerHasDeleted?: boolean;

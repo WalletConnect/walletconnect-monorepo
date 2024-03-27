@@ -168,6 +168,7 @@ export declare namespace AuthTypes {
 }
 
 export type IAuth = {
+  init(): Promise<void>;
   authKeys: IStore<string, { responseTopic: string; publicKey: string }>;
   pairingTopics: IStore<string, { topic: string; pairingTopic: string }>;
   requests: IStore<number, AuthTypes.PendingRequest>;

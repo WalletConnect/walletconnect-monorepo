@@ -707,7 +707,8 @@ export class Engine extends IEngine {
       // remove cleanup for fallback response
       this.events.off(engineEvent("session_connect"), onSessionConnect);
       if (payload.error) {
-        // ignore unsupported method error
+        // wallets that do not support wc_sessionAuthenticate will return an error
+        // we should not reject the promise in this case as the fallback session proposal will be used
         const error = getSdkError("WC_METHOD_UNSUPPORTED", "wc_sessionAuthenticate");
         if (payload.error.code === error.code) return;
         return reject(payload.error.message);
@@ -720,17 +721,12 @@ export class Engine extends IEngine {
         responder: AuthTypes.SessionAuthenticateResponseParams["responder"];
       } = payload.result;
 
-      const pendingRequest = this.client.auth.requests.get(id);
-      if (!pendingRequest) {
-        throw new Error(`Could not find pending auth request with id ${id}`);
-      }
-
       const approvedMethods: string[] = [];
       const approvedAccounts: string[] = [];
       for (const cacao of cacaos) {
         const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
         if (!isValid) {
-          this.client.logger.error(cacao);
+          this.client.logger.error(cacao, "Signature verification failed");
           reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
         }
 
@@ -747,7 +743,6 @@ export class Engine extends IEngine {
           approvedChains.push(...chainsFromRecap);
         }
 
-        // approvedAccounts.push(...approvedChains.map((chain) => `${chain}:${parsedAddress}`));
         for (const chain of approvedChains) {
           approvedAccounts.push(`${chain}:${parsedAddress}`);
         }
@@ -1351,7 +1346,7 @@ export class Engine extends IEngine {
     throw new Error(message);
   };
 
-  private shouldIgnorePairingRequest = (params: { topic: string; requestMethod: string }) => {
+  private shouldIgnorePairingRequest: EnginePrivate["shouldIgnorePairingRequest"] = (params) => {
     const { topic, requestMethod } = params;
     const expectedMethods = this.expectedPairingMethodMap.get(topic);
     // check if the request method matches the expected method
@@ -2336,12 +2331,6 @@ export class Engine extends IEngine {
       }
     });
   };
-
-  // private getPendingAuthRequests = () => {
-  //   return this.client.auth.requests
-  //     .getAll()
-  //     .filter((value) => typeof value === "object") as unknown as AuthTypes.PendingRequest[];
-  // };
 
   private getPendingAuthRequest = (id: number) => {
     const request = this.client.auth.requests.get(id);
