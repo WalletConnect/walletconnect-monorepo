@@ -20,7 +20,7 @@ export declare namespace CoreTypes {
     keychain?: IKeyChain;
     storage?: IKeyValueStorage;
     storageOptions?: KeyValueStorageOptions;
-    maxLogBlobSizeInBytes?: number
+    maxLogBlobSizeInBytes?: number;
     customStoragePrefix?: string;
   }
 
