@@ -35,8 +35,11 @@ export class Engine extends IWeb3WalletEngine {
   // Sign //
   public approveSession: IWeb3WalletEngine["approveSession"] = async (sessionProposal) => {
     const { topic, acknowledged } = await this.signClient.approve({
+      ...sessionProposal,
       id: sessionProposal.id,
       namespaces: sessionProposal.namespaces,
+      sessionProperties: sessionProposal.sessionProperties,
+      sessionConfig: sessionProposal.sessionConfig,
     });
     await acknowledged();
     return this.signClient.session.get(topic);

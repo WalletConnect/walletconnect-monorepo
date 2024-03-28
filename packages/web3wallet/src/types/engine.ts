@@ -24,6 +24,8 @@ export abstract class IWeb3WalletEngine {
   public abstract approveSession(params: {
     id: number;
     namespaces: Record<string, SessionTypes.Namespace>;
+    sessionProperties?: ProposalTypes.SessionProperties;
+    sessionConfig?: SessionTypes.SessionConfig;
     relayProtocol?: string;
   }): Promise<SessionTypes.Struct>;
 
