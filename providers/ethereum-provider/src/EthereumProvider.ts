@@ -143,7 +143,7 @@ export function buildNamespaces(params: NamespacesParams): {
 
   /*
    * decides whether or not to include the required chains in the optional namespace
-   * use case: if there is a single chain as required but additonal methods/events as optional
+   * use case: if there is a single chain as required but additional methods/events as optional
    */
   const shouldIncludeRequiredChains =
     (eventsRequiringPermissions?.length && methodsRequiringPermissions?.length) || !optionalChains;
