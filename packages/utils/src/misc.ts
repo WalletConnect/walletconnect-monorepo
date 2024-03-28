@@ -379,7 +379,7 @@ export async function handleDeeplinkRedirect({
     const env = getEnvironment();
 
     if (env === ENV_MAP.browser) {
-      if (link.startsWith("https://")) {
+      if (link.startsWith("https://") || link.startsWith("http://")) {
         window.open(link, "_blank", "noreferrer noopener");
       } else {
         window.open(link, "_self", "noreferrer noopener");
