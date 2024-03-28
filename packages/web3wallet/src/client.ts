@@ -32,19 +32,19 @@ export class Web3Wallet extends IWeb3Wallet {
   // ---------- Events ----------------------------------------------- //
 
   public on: IWeb3Wallet["on"] = (name, listener) => {
-    return this.events.on(name, listener);
+    return this.engine.on(name, listener);
   };
 
   public once: IWeb3Wallet["once"] = (name, listener) => {
-    return this.events.once(name, listener);
+    return this.engine.once(name, listener);
   };
 
   public off: IWeb3Wallet["off"] = (name, listener) => {
-    return this.events.off(name, listener);
+    return this.engine.off(name, listener);
   };
 
   public removeListener: IWeb3Wallet["removeListener"] = (name, listener) => {
-    return this.events.removeListener(name, listener);
+    return this.engine.removeListener(name, listener);
   };
 
   // ---------- Engine ----------------------------------------------- //
@@ -178,6 +178,33 @@ export class Web3Wallet extends IWeb3Wallet {
   public registerDeviceToken: IWeb3Wallet["registerDeviceToken"] = (params) => {
     try {
       return this.engine.registerDeviceToken(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public approveSessionAuthenticate: IWeb3Wallet["approveSessionAuthenticate"] = (params) => {
+    try {
+      return this.engine.approveSessionAuthenticate(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public rejectSessionAuthenticate: IWeb3Wallet["rejectSessionAuthenticate"] = (params) => {
+    try {
+      return this.engine.rejectSessionAuthenticate(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public formatAuthMessage: IWeb3Wallet["formatAuthMessage"] = (params) => {
+    try {
+      return this.engine.formatAuthMessage(params);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;

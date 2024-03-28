@@ -2,6 +2,7 @@ import { RelayerTypes } from "../core/relayer";
 import { IStore } from "../core/store";
 import { SignClientTypes } from "./client";
 import { ProposalTypes } from "./proposal";
+import { AuthTypes } from "./auth";
 
 export declare namespace SessionTypes {
   type Expiry = number;
@@ -36,6 +37,7 @@ export declare namespace SessionTypes {
       publicKey: string;
       metadata: SignClientTypes.Metadata;
     };
+    authentication?: AuthTypes.Cacao[];
   }
 }
 

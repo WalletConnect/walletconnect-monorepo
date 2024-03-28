@@ -1,5 +1,5 @@
 import SignClient from "@walletconnect/sign-client";
-import { SignClientTypes, ProposalTypes } from "@walletconnect/types";
+import { SignClientTypes, ProposalTypes, AuthTypes } from "@walletconnect/types";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { KeyValueStorageOptions, IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 import { IEvents } from "@walletconnect/events";
@@ -57,6 +57,8 @@ export interface ConnectParams {
   pairingTopic?: string;
   skipPairing?: boolean;
 }
+
+export type AuthenticateParams = AuthTypes.SessionAuthenticateParams;
 
 export interface SubProviderOpts {
   namespace: Namespace;

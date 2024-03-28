@@ -9,7 +9,7 @@ import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@w
 import { getAppMetadata } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
-import { Engine, PendingRequest, Proposal, Session } from "./controllers";
+import { AuthStore, Engine, PendingRequest, Proposal, Session } from "./controllers";
 
 export class SignClient extends ISignClient {
   public readonly protocol = SIGN_CLIENT_PROTOCOL;
@@ -24,6 +24,7 @@ export class SignClient extends ISignClient {
   public session: ISignClient["session"];
   public proposal: ISignClient["proposal"];
   public pendingRequest: ISignClient["pendingRequest"];
+  public auth: ISignClient["auth"];
 
   static async init(opts?: SignClientTypes.Options) {
     const client = new SignClient(opts);
@@ -49,6 +50,7 @@ export class SignClient extends ISignClient {
     this.proposal = new Proposal(this.core, this.logger);
     this.pendingRequest = new PendingRequest(this.core, this.logger);
     this.engine = new Engine(this);
+    this.auth = new AuthStore(this.core, this.logger);
   }
 
   get context() {
@@ -200,6 +202,42 @@ export class SignClient extends ISignClient {
     }
   };
 
+  public authenticate: ISignClient["authenticate"] = async (params) => {
+    try {
+      return await this.engine.authenticate(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public formatAuthMessage: ISignClient["formatAuthMessage"] = (params) => {
+    try {
+      return this.engine.formatAuthMessage(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public approveSessionAuthenticate: ISignClient["approveSessionAuthenticate"] = async (params) => {
+    try {
+      return await this.engine.approveSessionAuthenticate(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public rejectSessionAuthenticate: ISignClient["rejectSessionAuthenticate"] = async (params) => {
+    try {
+      return await this.engine.rejectSessionAuthenticate(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {
@@ -210,6 +248,7 @@ export class SignClient extends ISignClient {
       await this.proposal.init();
       await this.pendingRequest.init();
       await this.engine.init();
+      await this.auth.init();
       this.core.verify.init({ verifyUrl: this.metadata.verifyUrl });
       this.logger.info(`SignClient Initialization Success`);
     } catch (error: any) {
