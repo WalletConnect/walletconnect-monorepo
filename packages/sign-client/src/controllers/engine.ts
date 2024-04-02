@@ -1009,7 +1009,6 @@ export class Engine extends IEngine {
         sessionConfig,
       } = payload.params;
       const session = {
-        ...payload.params,
         topic,
         relay,
         expiry,
