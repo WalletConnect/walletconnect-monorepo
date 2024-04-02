@@ -367,14 +367,16 @@ export class Engine extends IEngine {
     const relayRpcId = getBigIntRpcId().toString() as any;
 
     const oldNamespaces = this.client.session.get(topic).namespaces;
-    this.events.once(engineEvent("session_update", clientRpcId), async ({ error }: any) => {
+    this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
       if (error) reject(error);
       else {
-        await this.client.session.update(topic, { namespaces });
         resolve();
       }
     });
-
+    // Update the session with the new namespaces, if the publish fails, revert to the old.
+    // This allows the client to use the updated session like emitting events
+    // without waiting for the peer to acknowledge
+    await this.client.session.update(topic, { namespaces });
     this.sendRequest({
       topic,
       method: "wc_sessionUpdate",

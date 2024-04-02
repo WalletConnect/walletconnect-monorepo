@@ -50,11 +50,11 @@ export class Engine extends IWeb3WalletEngine {
   };
 
   public updateSession: IWeb3WalletEngine["updateSession"] = async (params) => {
-    return await (await this.signClient.update(params)).acknowledged();
+    return await this.signClient.update(params);
   };
 
   public extendSession: IWeb3WalletEngine["extendSession"] = async (params) => {
-    return await (await this.signClient.extend(params)).acknowledged();
+    return await this.signClient.extend(params);
   };
 
   public respondSessionRequest: IWeb3WalletEngine["respondSessionRequest"] = async (params) => {
