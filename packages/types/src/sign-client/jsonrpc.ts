@@ -41,6 +41,7 @@ export declare namespace JsonRpcTypes {
       relay: RelayerTypes.ProtocolOptions;
       namespaces: SessionTypes.Namespaces;
       sessionProperties?: ProposalTypes.SessionProperties;
+      sessionConfig?: SessionTypes.SessionConfig;
       pairingTopic: string;
       expiry: number;
       controller: {
