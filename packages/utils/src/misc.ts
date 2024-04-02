@@ -410,3 +410,7 @@ export async function getDeepLink(store: IKeyValueStorage, key: string) {
     console.error(err);
   }
 }
+
+export function getCommonValuesInArrays<T = string | number | boolean>(arr1: T[], arr2: T[]): T[] {
+  return arr1.filter((value) => arr2.includes(value));
+}

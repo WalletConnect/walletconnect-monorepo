@@ -34,6 +34,7 @@ import {
   RelayerTypes,
   SessionTypes,
   PairingTypes,
+  AuthTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -69,6 +70,18 @@ import {
   handleDeeplinkRedirect,
   MemoryStore,
   getDeepLink,
+  hashKey,
+  getDidAddress,
+  formatMessage,
+  getMethodsFromRecap,
+  buildNamespacesFromAuth,
+  createEncodedRecap,
+  getChainsFromRecap,
+  mergeEncodedRecaps,
+  getRecapFromResources,
+  validateSignedCacao,
+  getNamespacedDidChainId,
+  parseChainId,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -80,6 +93,7 @@ import {
   METHODS_TO_VERIFY,
   WALLETCONNECT_DEEPLINK_CHOICE,
   ENGINE_QUEUE_STATES,
+  AUTH_PUBLIC_KEY_NAME,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -87,7 +101,6 @@ export class Engine extends IEngine {
 
   private events: IEngineEvents = new EventEmmiter();
   private initialized = false;
-  private ignoredPayloadTypes = [TYPE_1];
 
   /**
    * Queue responsible for processing incoming requests such as session_update, session_event, session_ping etc
@@ -108,6 +121,8 @@ export class Engine extends IEngine {
   };
 
   private requestQueueDelay = ONE_SECOND;
+
+  private expectedPairingMethodMap: Map<string, string[]> = new Map();
 
   // Ephemeral (in-memory) map to store recently deleted items
   private recentlyDeletedMap = new Map<
@@ -347,7 +362,11 @@ export class Engine extends IEngine {
     }
 
     if (pairingTopic) {
-      await this.sendError(id, pairingTopic, reason);
+      await this.sendError({
+        id,
+        topic: pairingTopic,
+        error: reason,
+      });
       await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
     }
   };
@@ -494,7 +513,7 @@ export class Engine extends IEngine {
     if (isJsonRpcResult(response)) {
       await this.sendResult({ id, topic, result: response.result, throwOnFailedPublish: true });
     } else if (isJsonRpcError(response)) {
-      await this.sendError(id, topic, response.error);
+      await this.sendError({ id, topic, error: response.error });
     }
     this.cleanupAfterResponse(params);
   };
@@ -577,6 +596,403 @@ export class Engine extends IEngine {
 
   public getPendingSessionRequests: IEngine["getPendingSessionRequests"] = () => {
     return this.client.pendingRequest.getAll();
+  };
+
+  // ---------- Auth ------------------------------------------------ //
+
+  public authenticate: IEngine["authenticate"] = async (params) => {
+    this.isInitialized();
+    this.isValidAuthenticate(params);
+
+    const { chains, statement = "", uri, domain, nonce, type, exp, nbf, methods = [] } = params;
+    // reassign resources to remove reference as the array is modified and might cause side effects
+    const resources = [...(params.resources || [])];
+
+    const { topic: pairingTopic, uri: connectionUri } = await this.client.core.pairing.create({
+      methods: ["wc_sessionAuthenticate"],
+    });
+
+    this.client.logger.info({
+      message: "Generated new pairing",
+      pairing: { topic: pairingTopic, uri: connectionUri },
+    });
+
+    const publicKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(publicKey);
+
+    await Promise.all([
+      this.client.auth.authKeys.set(AUTH_PUBLIC_KEY_NAME, { responseTopic, publicKey }),
+      this.client.auth.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic }),
+    ]);
+    // Subscribe to response topic
+    await this.client.core.relayer.subscribe(responseTopic);
+
+    this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
+
+    if (methods.length > 0) {
+      const { namespace } = parseChainId(chains[0]);
+      let recap = createEncodedRecap(namespace, "request", methods);
+      const existingRecap = getRecapFromResources(resources);
+      if (existingRecap) {
+        // per Recaps spec, recap must occupy the last position in the resources array
+        // using .pop to remove the element given we already checked it's a recap and will replace it
+        const mergedRecap = mergeEncodedRecaps(recap, resources.pop() as string);
+        recap = mergedRecap;
+      }
+      resources.push(recap);
+    }
+
+    const expiryTimestamp = calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
+    const request = {
+      authPayload: {
+        type: type ?? "caip122",
+        chains,
+        statement,
+        aud: uri,
+        domain,
+        version: "1",
+        nonce,
+        iat: new Date().toISOString(),
+        exp,
+        nbf,
+        resources,
+      },
+      requester: { publicKey, metadata: this.client.metadata },
+      expiryTimestamp,
+    };
+
+    // ----- build namespaces for fallback session proposal ----- //
+    const namespaces = {
+      eip155: {
+        chains,
+        // request `personal_sign` method by default to allow for fallback siwe
+        methods: [...new Set(["personal_sign", ...methods])],
+        events: ["chainChanged", "accountsChanged"],
+      },
+    };
+
+    const proposal = {
+      requiredNamespaces: {},
+      optionalNamespaces: namespaces,
+      relays: [{ protocol: "irn" }],
+      proposer: {
+        publicKey,
+        metadata: this.client.metadata,
+      },
+      expiryTimestamp,
+    };
+
+    const { done, resolve, reject } = createDelayedPromise(
+      ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl,
+      "Request expired",
+    );
+
+    // handle fallback session proposal response
+    const onSessionConnect = async ({ error, session }: any) => {
+      // cleanup listener for authenticate response
+      this.events.off(engineEvent("session_request", id), onAuthenticate);
+      if (error) reject(error);
+      else if (session) {
+        session.self.publicKey = publicKey;
+        await this.client.session.set(session.topic, session);
+        await this.setExpiry(session.topic, session.expiry);
+        if (pairingTopic) {
+          await this.client.core.pairing.updateMetadata({
+            topic: pairingTopic,
+            metadata: session.peer.metadata,
+          });
+        }
+        const sessionObject = this.client.session.get(session.topic);
+        resolve({
+          session: sessionObject,
+        });
+      }
+    };
+    // handle session authenticate response
+    const onAuthenticate = async (payload: any) => {
+      // remove cleanup for fallback response
+      this.events.off(engineEvent("session_connect"), onSessionConnect);
+      if (payload.error) {
+        // wallets that do not support wc_sessionAuthenticate will return an error
+        // we should not reject the promise in this case as the fallback session proposal will be used
+        const error = getSdkError("WC_METHOD_UNSUPPORTED", "wc_sessionAuthenticate");
+        if (payload.error.code === error.code) return;
+        return reject(payload.error.message);
+      }
+      const {
+        cacaos,
+        responder,
+      }: {
+        cacaos: AuthTypes.SessionAuthenticateResponseParams["cacaos"];
+        responder: AuthTypes.SessionAuthenticateResponseParams["responder"];
+      } = payload.result;
+
+      const approvedMethods: string[] = [];
+      const approvedAccounts: string[] = [];
+      for (const cacao of cacaos) {
+        const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
+        if (!isValid) {
+          this.client.logger.error(cacao, "Signature verification failed");
+          reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
+        }
+
+        const { p: payload } = cacao;
+        const recap = getRecapFromResources(payload.resources);
+
+        const approvedChains: string[] = [getNamespacedDidChainId(payload.iss) as string];
+        const parsedAddress = getDidAddress(payload.iss) as string;
+
+        if (recap) {
+          const methodsfromRecap = getMethodsFromRecap(recap);
+          const chainsFromRecap = getChainsFromRecap(recap);
+          approvedMethods.push(...methodsfromRecap);
+          approvedChains.push(...chainsFromRecap);
+        }
+
+        for (const chain of approvedChains) {
+          approvedAccounts.push(`${chain}:${parsedAddress}`);
+        }
+      }
+      const sessionTopic = await this.client.core.crypto.generateSharedKey(
+        publicKey,
+        responder.publicKey,
+      );
+
+      //create session object
+      let session: SessionTypes.Struct | undefined;
+
+      if (approvedMethods.length > 0) {
+        session = {
+          topic: sessionTopic,
+          acknowledged: true,
+          self: {
+            publicKey,
+            metadata: this.client.metadata,
+          },
+          peer: responder,
+          controller: responder.publicKey,
+          expiry: calcExpiry(SESSION_EXPIRY),
+          requiredNamespaces: {},
+          optionalNamespaces: {},
+          relay: { protocol: "irn" },
+          pairingTopic,
+          namespaces: buildNamespacesFromAuth(
+            [...new Set(approvedMethods)],
+            [...new Set(approvedAccounts)],
+          ),
+        };
+
+        await this.client.core.relayer.subscribe(sessionTopic);
+        await this.client.session.set(sessionTopic, session);
+
+        session = this.client.session.get(sessionTopic);
+      }
+      resolve({
+        auths: cacaos,
+        session,
+      });
+    };
+
+    // set the ids for both requests
+    const id = payloadId();
+    const fallbackId = payloadId();
+
+    // subscribe to response events
+    this.events.once<"session_connect">(engineEvent("session_connect"), onSessionConnect);
+    this.events.once(engineEvent("session_request", id), onAuthenticate);
+
+    try {
+      // send both (main & fallback) requests
+      await Promise.all([
+        this.sendRequest({
+          topic: pairingTopic,
+          method: "wc_sessionAuthenticate",
+          params: request,
+          expiry: params.expiry,
+          throwOnFailedPublish: true,
+          clientRpcId: id,
+        }),
+        this.sendRequest({
+          topic: pairingTopic,
+          method: "wc_sessionPropose",
+          params: proposal,
+          expiry: ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl,
+          throwOnFailedPublish: true,
+          clientRpcId: fallbackId,
+        }),
+      ]);
+    } catch (error) {
+      // cleanup listeners on failed publish
+      this.events.off(engineEvent("session_connect"), onSessionConnect);
+      this.events.off(engineEvent("session_request", id), onAuthenticate);
+      throw error;
+    }
+
+    await this.setProposal(fallbackId, { id: fallbackId, ...proposal });
+
+    await this.client.auth.requests.set(id, {
+      authPayload: request.authPayload,
+      requester: request.requester,
+      expiryTimestamp,
+      id,
+      pairingTopic,
+      verifyContext: {} as any,
+    });
+
+    return {
+      uri: connectionUri,
+      response: done,
+    } as EngineTypes.SessionAuthenticateResponsePromise;
+  };
+
+  public approveSessionAuthenticate: IEngine["approveSessionAuthenticate"] = async (
+    sessionAuthenticateResponseParams,
+  ) => {
+    this.isInitialized();
+
+    const { id, auths } = sessionAuthenticateResponseParams;
+
+    const pendingRequest = this.getPendingAuthRequest(id);
+
+    if (!pendingRequest) {
+      throw new Error(`Could not find pending auth request with id ${id}`);
+    }
+
+    const receiverPublicKey = pendingRequest.requester.publicKey;
+    const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(receiverPublicKey);
+
+    const encodeOpts = {
+      type: TYPE_1,
+      receiverPublicKey,
+      senderPublicKey,
+    };
+
+    const approvedMethods: string[] = [];
+    const approvedAccounts: string[] = [];
+    for (const cacao of auths) {
+      const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
+      if (!isValid) {
+        const invalidErr = getSdkError(
+          "SESSION_SETTLEMENT_FAILED",
+          "Signature verification failed",
+        );
+
+        await this.sendError({
+          id,
+          topic: responseTopic,
+          error: invalidErr,
+          encodeOpts,
+        });
+
+        throw new Error(invalidErr.message);
+      }
+
+      const { p: payload } = cacao;
+      const recap = getRecapFromResources(payload.resources);
+
+      const approvedChains: string[] = [getNamespacedDidChainId(payload.iss) as string];
+
+      const parsedAddress = getDidAddress(payload.iss) as string;
+
+      if (recap) {
+        const methodsfromRecap = getMethodsFromRecap(recap);
+        const chainsFromRecap = getChainsFromRecap(recap);
+        approvedMethods.push(...methodsfromRecap);
+        approvedChains.push(...chainsFromRecap);
+      }
+      for (const chain of approvedChains) {
+        approvedAccounts.push(`${chain}:${parsedAddress}`);
+      }
+    }
+
+    const sessionTopic = await this.client.core.crypto.generateSharedKey(
+      senderPublicKey,
+      receiverPublicKey,
+    );
+    let session: SessionTypes.Struct | undefined;
+    if (approvedMethods?.length > 0) {
+      session = {
+        topic: sessionTopic,
+        acknowledged: true,
+        self: {
+          publicKey: senderPublicKey,
+          metadata: this.client.metadata,
+        },
+        peer: {
+          publicKey: receiverPublicKey,
+          metadata: pendingRequest.requester.metadata,
+        },
+        controller: receiverPublicKey,
+        expiry: calcExpiry(SESSION_EXPIRY),
+        authentication: auths,
+        requiredNamespaces: {},
+        optionalNamespaces: {},
+        relay: { protocol: "irn" },
+        pairingTopic: "",
+        namespaces: buildNamespacesFromAuth(
+          [...new Set(approvedMethods)],
+          [...new Set(approvedAccounts)],
+        ),
+      };
+
+      await this.client.core.relayer.subscribe(sessionTopic);
+      await this.client.session.set(sessionTopic, session);
+    }
+
+    await this.sendResult<"wc_sessionAuthenticate">({
+      topic: responseTopic,
+      id,
+      result: {
+        cacaos: auths,
+        responder: {
+          publicKey: senderPublicKey,
+          metadata: this.client.metadata,
+        },
+      },
+      encodeOpts,
+      throwOnFailedPublish: true,
+    });
+    await this.client.auth.requests.delete(id, { message: "fullfilled", code: 0 });
+    await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
+    return { session };
+  };
+
+  public rejectSessionAuthenticate: IEngine["rejectSessionAuthenticate"] = async (params) => {
+    await this.isInitialized();
+
+    const { id, reason } = params;
+
+    const pendingRequest = this.getPendingAuthRequest(id);
+
+    if (!pendingRequest) {
+      throw new Error(`Could not find pending auth request with id ${id}`);
+    }
+
+    const receiverPublicKey = pendingRequest.requester.publicKey;
+    const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(receiverPublicKey);
+
+    const encodeOpts = {
+      type: TYPE_1,
+      receiverPublicKey,
+      senderPublicKey,
+    };
+
+    await this.sendError({
+      id,
+      topic: responseTopic,
+      error: reason,
+      encodeOpts,
+    });
+    await this.client.auth.requests.delete(id, { message: "rejected", code: 0 });
+    await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
+  };
+
+  public formatAuthMessage: IEngine["formatAuthMessage"] = (params) => {
+    this.isInitialized();
+    const { request, iss } = params;
+    return formatMessage(request, iss);
   };
 
   // ---------- Private Helpers --------------------------------------- //
@@ -722,11 +1138,11 @@ export class Engine extends IEngine {
   };
 
   private sendResult: EnginePrivate["sendResult"] = async (args) => {
-    const { id, topic, result, throwOnFailedPublish } = args;
+    const { id, topic, result, throwOnFailedPublish, encodeOpts } = args;
     const payload = formatJsonRpcResult(id, result);
     let message;
     try {
-      message = await this.client.core.crypto.encode(topic, payload);
+      message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     } catch (error) {
       // if encoding fails e.g. due to missing keychain, we want to cleanup all related data as its unusable
       await this.cleanup();
@@ -755,11 +1171,12 @@ export class Engine extends IEngine {
     await this.client.core.history.resolve(payload);
   };
 
-  private sendError: EnginePrivate["sendError"] = async (id, topic, error) => {
+  private sendError: EnginePrivate["sendError"] = async (params) => {
+    const { id, topic, error, encodeOpts } = params;
     const payload = formatJsonRpcError(id, error);
     let message;
     try {
-      message = await this.client.core.crypto.encode(topic, payload);
+      message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     } catch (error) {
       await this.cleanup();
       this.client.logger.error(`sendError() -> core.crypto.encode() for topic ${topic} failed`);
@@ -812,12 +1229,15 @@ export class Engine extends IEngine {
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
 
-        // messages of certain types should be ignored as they are handled by their respective SDKs
-        if (this.ignoredPayloadTypes.includes(this.client.core.crypto.getPayloadType(message))) {
-          return;
-        }
+        // Retrieve the public key (if defined) to decrypt possible `auth_request` response
+        const { publicKey } = this.client.auth.authKeys.keys.includes(AUTH_PUBLIC_KEY_NAME)
+          ? this.client.auth.authKeys.get(AUTH_PUBLIC_KEY_NAME)
+          : ({ responseTopic: undefined, publicKey: undefined } as any);
 
-        const payload = await this.client.core.crypto.decode(topic, message);
+        const payload = await this.client.core.crypto.decode(topic, message, {
+          receiverPublicKey: publicKey,
+        });
+
         try {
           if (isJsonRpcRequest(payload)) {
             this.client.core.history.set(topic, payload);
@@ -870,6 +1290,11 @@ export class Engine extends IEngine {
   private processRequest: EnginePrivate["onRelayEventRequest"] = (event) => {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
+
+    if (this.shouldIgnorePairingRequest({ topic, requestMethod: reqMethod })) {
+      return;
+    }
+
     switch (reqMethod) {
       case "wc_sessionPropose":
         return this.onSessionProposeRequest(topic, payload);
@@ -887,6 +1312,8 @@ export class Engine extends IEngine {
         return this.onSessionRequest(topic, payload);
       case "wc_sessionEvent":
         return this.onSessionEventRequest(topic, payload);
+      case "wc_sessionAuthenticate":
+        return this.onSessionAuthenticateRequest(topic, payload);
       default:
         return this.client.logger.info(`Unsupported request method ${reqMethod}`);
     }
@@ -909,6 +1336,8 @@ export class Engine extends IEngine {
         return this.onSessionPingResponse(topic, payload);
       case "wc_sessionRequest":
         return this.onSessionRequestResponse(topic, payload);
+      case "wc_sessionAuthenticate":
+        return this.onSessionAuthenticateResponse(topic, payload);
       default:
         return this.client.logger.info(`Unsupported response method ${resMethod}`);
     }
@@ -921,6 +1350,25 @@ export class Engine extends IEngine {
       `Decoded payload on topic ${topic} is not identifiable as a JSON-RPC request or a response.`,
     );
     throw new Error(message);
+  };
+
+  private shouldIgnorePairingRequest: EnginePrivate["shouldIgnorePairingRequest"] = (params) => {
+    const { topic, requestMethod } = params;
+    const expectedMethods = this.expectedPairingMethodMap.get(topic);
+    // check if the request method matches the expected method
+    if (!expectedMethods) return false;
+    if (expectedMethods.includes(requestMethod)) return false;
+
+    /**
+     * we want to make sure fallback session proposal is ignored only if there are subscribers
+     * for the `session_authenticate` event, otherwise this would result in no-op for the user
+     */
+    if (expectedMethods.includes("wc_sessionAuthenticate")) {
+      if (this.client.events.listenerCount("session_authenticate") > 0) {
+        return true;
+      }
+    }
+    return false;
   };
 
   // ---------- Relay Events Handlers --------------------------------- //
@@ -940,7 +1388,11 @@ export class Engine extends IEngine {
       const verifyContext = await this.getVerifyContext(hash, proposal.proposer.metadata);
       this.client.events.emit("session_proposal", { id, params: proposal, verifyContext });
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -1045,7 +1497,11 @@ export class Engine extends IEngine {
       this.events.emit(engineEvent("session_connect"), { session });
       this.cleanupDuplicatePairings(session);
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -1077,7 +1533,7 @@ export class Engine extends IEngine {
 
       if (lastSessionUpdateId && this.isRequestOutOfSync(lastSessionUpdateId, id)) {
         this.client.logger.info(`Discarding out of sync request - ${id}`);
-        this.sendError(id, topic, getSdkError("INVALID_UPDATE_REQUEST"));
+        this.sendError({ id, topic, error: getSdkError("INVALID_UPDATE_REQUEST") });
         return;
       }
       this.isValidUpdate({ topic, ...params });
@@ -1096,7 +1552,11 @@ export class Engine extends IEngine {
       }
       this.client.events.emit("session_update", { id, topic, params });
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -1137,7 +1597,11 @@ export class Engine extends IEngine {
       });
       this.client.events.emit("session_extend", { id, topic });
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -1168,7 +1632,11 @@ export class Engine extends IEngine {
       });
       this.client.events.emit("session_ping", { id, topic });
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -1221,7 +1689,7 @@ export class Engine extends IEngine {
   private onSessionRequest: EnginePrivate["onSessionRequest"] = async (topic, payload) => {
     const { id, params } = payload;
     try {
-      this.isValidRequest({ topic, ...params });
+      await this.isValidRequest({ topic, ...params });
       const hash = hashMessage(
         JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
       );
@@ -1237,7 +1705,11 @@ export class Engine extends IEngine {
       this.addSessionRequestToSessionRequestQueue(request);
       this.processSessionRequestQueue();
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
   };
@@ -1280,9 +1752,56 @@ export class Engine extends IEngine {
       this.client.events.emit("session_event", { id, topic, params });
       MemoryStore.set(memoryKey, id);
     } catch (err: any) {
-      await this.sendError(id, topic, err);
+      await this.sendError({
+        id,
+        topic,
+        error: err,
+      });
       this.client.logger.error(err);
     }
+  };
+
+  private onSessionAuthenticateResponse: EnginePrivate["onSessionAuthenticateResponse"] = (
+    topic,
+    payload,
+  ) => {
+    const { id } = payload;
+    this.client.logger.trace({
+      type: "method",
+      method: "onSessionAuthenticateResponse",
+      topic,
+      payload,
+    });
+    if (isJsonRpcResult(payload)) {
+      this.events.emit(engineEvent("session_request", id), { result: payload.result });
+    } else if (isJsonRpcError(payload)) {
+      this.events.emit(engineEvent("session_request", id), { error: payload.error });
+    }
+  };
+
+  private onSessionAuthenticateRequest: EnginePrivate["onSessionAuthenticateRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    const { requester, authPayload, expiryTimestamp } = payload.params;
+    const hash = hashMessage(JSON.stringify(payload));
+    const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
+    const pendingRequest = {
+      requester,
+      pairingTopic: topic,
+      id: payload.id,
+      authPayload,
+      verifyContext,
+      expiryTimestamp,
+    };
+
+    await this.client.auth.requests.set(payload.id, pendingRequest);
+
+    this.client.events.emit("session_authenticate", {
+      topic,
+      params: payload.params,
+      id: payload.id,
+    });
   };
 
   private addSessionRequestToSessionRequestQueue = (request: PendingRequestTypes.Struct) => {
@@ -1383,6 +1902,9 @@ export class Engine extends IEngine {
    * It allows QR/URI to be scanned multiple times without having to create new pairing.
    */
   private onPairingCreated = (pairing: PairingTypes.Struct) => {
+    if (pairing.methods) {
+      this.expectedPairingMethodMap.set(pairing.topic, pairing.methods);
+    }
     if (pairing.active) return;
     const proposals = this.client.proposal.getAll();
     const proposal = proposals.find((p) => p.pairingTopic === pairing.topic);
@@ -1751,6 +2273,39 @@ export class Engine extends IEngine {
     await this.isValidSessionOrPairingTopic(topic);
   };
 
+  private isValidAuthenticate = (params: AuthTypes.SessionAuthenticateParams) => {
+    const { chains, uri, domain, nonce } = params;
+
+    // ----- validate params ----- //
+    if (!Array.isArray(chains) || chains.length === 0) {
+      throw new Error("chains is required and must be a non-empty array");
+    }
+    if (!isValidString(uri, false)) {
+      throw new Error("uri is required parameter");
+    }
+    if (!isValidString(domain, false)) {
+      throw new Error("domain is required parameter");
+    }
+    if (!isValidString(nonce, false)) {
+      throw new Error("nonce is required parameter");
+    }
+
+    // ----- reject multi namespaces ----- //
+    const uniqueNamespaces = [...new Set(chains.map((chain) => parseChainId(chain).namespace))];
+    if (uniqueNamespaces.length > 1) {
+      throw new Error(
+        "Multi-namespace requests are not supported. Please request single namespace only.",
+      );
+    }
+
+    const { namespace } = parseChainId(chains[0]);
+    if (namespace !== "eip155") {
+      throw new Error(
+        "Only eip155 namespace is supported for authenticated sessions. Please use .connect() for non-eip155 chains.",
+      );
+    }
+  };
+
   private getVerifyContext = async (hash: string, metadata: CoreTypes.Metadata) => {
     const context: Verify.Context = {
       verified: {
@@ -1789,6 +2344,11 @@ export class Engine extends IEngine {
         throw new Error(message);
       }
     });
+  };
+
+  private getPendingAuthRequest = (id: number) => {
+    const request = this.client.auth.requests.get(id);
+    return typeof request === "object" ? request : undefined;
   };
 
   private addToRecentlyDeleted = (

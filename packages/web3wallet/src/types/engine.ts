@@ -6,8 +6,10 @@ import {
   ProposalTypes,
   SessionTypes,
   EchoClientTypes,
+  AuthTypes,
 } from "@walletconnect/types";
-import { IWeb3Wallet } from "./client";
+import { IWeb3Wallet, Web3WalletTypes } from "./client";
+import EventEmitter from "events";
 
 export abstract class IWeb3WalletEngine {
   public abstract signClient: ISignClient;
@@ -89,8 +91,45 @@ export abstract class IWeb3WalletEngine {
   // format payload to message string
   public abstract formatMessage(payload: AuthEngineTypes.CacaoRequestPayload, iss: string): string;
 
+  // ---------- Multi chain Auth ------------------------------------------------- //
+
+  public abstract approveSessionAuthenticate(
+    params: AuthTypes.ApproveSessionAuthenticateParams,
+  ): Promise<{ session: SessionTypes.Struct | undefined }>;
+
+  public abstract formatAuthMessage: (params: {
+    request: AuthTypes.BaseAuthRequestParams;
+    iss: string;
+  }) => string;
+
+  public abstract rejectSessionAuthenticate(params: {
+    id: number;
+    reason: ErrorResponse;
+  }): Promise<void>;
+
   // ---------- Push ------------------------------------------------- //
   public abstract registerDeviceToken(
     params: EchoClientTypes.RegisterDeviceTokenParams,
   ): Promise<void>;
+
+  // ---------- Event Handlers ----------------------------------------------- //
+  public abstract on: <E extends Web3WalletTypes.Event>(
+    event: E,
+    listener: (args: Web3WalletTypes.EventArguments[E]) => void,
+  ) => EventEmitter;
+
+  public abstract once: <E extends Web3WalletTypes.Event>(
+    event: E,
+    listener: (args: Web3WalletTypes.EventArguments[E]) => void,
+  ) => EventEmitter;
+
+  public abstract off: <E extends Web3WalletTypes.Event>(
+    event: E,
+    listener: (args: Web3WalletTypes.EventArguments[E]) => void,
+  ) => EventEmitter;
+
+  public abstract removeListener: <E extends Web3WalletTypes.Event>(
+    event: E,
+    listener: (args: Web3WalletTypes.EventArguments[E]) => void,
+  ) => EventEmitter;
 }

@@ -9,7 +9,7 @@ import {
   QrModalOptions,
 } from "./types";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
-import { SessionTypes, SignClientTypes } from "@walletconnect/types";
+import { AuthTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import {
   STORAGE_KEY,
@@ -74,6 +74,10 @@ export interface ConnectOps {
   rpcMap?: EthereumRpcMap;
   pairingTopic?: string;
 }
+
+export type AuthenticateParams = {
+  chains?: number[];
+} & Omit<AuthTypes.SessionAuthenticateParams, "chains">;
 
 export interface IEthereumProvider extends IProvider {
   connect(opts?: ConnectOps | undefined): Promise<void>;
@@ -297,7 +301,7 @@ export class EthereumProvider implements IEthereumProvider {
               }),
               pairingTopic: opts?.pairingTopic,
             })
-            .then((session) => {
+            .then((session?: SessionTypes.Struct) => {
               resolve(session);
             })
             .catch((error: Error) => {
@@ -312,6 +316,60 @@ export class EthereumProvider implements IEthereumProvider {
       this.setChainIds(this.rpc.chains.length ? this.rpc.chains : accounts);
       this.setAccounts(accounts);
       this.events.emit("connect", { chainId: toHexChainId(this.chainId) });
+    } catch (error) {
+      this.signer.logger.error(error);
+      throw error;
+    } finally {
+      if (this.modal) this.modal.closeModal();
+    }
+  }
+
+  public async authenticate(
+    params: AuthenticateParams,
+  ): Promise<AuthTypes.AuthenticateResponseResult | undefined> {
+    if (!this.signer.client) {
+      throw new Error("Provider not initialized. Call init() first");
+    }
+
+    this.loadConnectOpts({
+      chains: params?.chains,
+    });
+
+    try {
+      const result = await new Promise<AuthTypes.AuthenticateResponseResult>(
+        async (resolve, reject) => {
+          if (this.rpc.showQrModal) {
+            this.modal?.subscribeModal((state: { open: boolean }) => {
+              // the modal was closed so reject the promise
+              if (!state.open && !this.signer.session) {
+                this.signer.abortPairingAttempt();
+                reject(new Error("Connection request reset. Please try again."));
+              }
+            });
+          }
+          await this.signer
+            .authenticate({
+              ...params,
+              chains: this.rpc.chains,
+            })
+            .then((result: AuthTypes.AuthenticateResponseResult) => {
+              resolve(result);
+            })
+            .catch((error: Error) => {
+              reject(new Error(error.message));
+            });
+        },
+      );
+
+      const session = result.session;
+      if (session) {
+        const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
+        // if no required chains are set, use the approved accounts to fetch chainIds as both contain <namespace>:<chainId>
+        this.setChainIds(this.rpc.chains.length ? this.rpc.chains : accounts);
+        this.setAccounts(accounts);
+        this.events.emit("connect", { chainId: toHexChainId(this.chainId) });
+      }
+      return result;
     } catch (error) {
       this.signer.logger.error(error);
       throw error;

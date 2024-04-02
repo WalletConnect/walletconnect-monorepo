@@ -1,5 +1,5 @@
 import EventEmmiter, { EventEmitter } from "events";
-import { ICore, CoreTypes, ProposalTypes, Verify } from "@walletconnect/types";
+import { ICore, CoreTypes, ProposalTypes, Verify, AuthTypes } from "@walletconnect/types";
 import { AuthClientTypes } from "@walletconnect/auth-client";
 import { IWeb3WalletEngine } from "./engine";
 import { Logger } from "@walletconnect/logger";
@@ -12,7 +12,8 @@ export declare namespace Web3WalletTypes {
     | "session_delete"
     | "auth_request"
     | "proposal_expire"
-    | "session_request_expire";
+    | "session_request_expire"
+    | "session_authenticate";
 
   interface BaseEventArgs<T = unknown> {
     id: number;
@@ -39,6 +40,7 @@ export declare namespace Web3WalletTypes {
 
   type SessionRequestExpire = { id: number };
 
+  type SessionAuthenticate = BaseEventArgs<AuthTypes.AuthRequestEventArgs>;
   interface EventArguments {
     session_proposal: SessionProposal;
     session_request: SessionRequest;
@@ -46,6 +48,7 @@ export declare namespace Web3WalletTypes {
     auth_request: AuthRequest;
     proposal_expire: ProposalExpire;
     session_request_expire: SessionRequestExpire;
+    session_authenticate: SessionAuthenticate;
   }
 
   interface Options {
@@ -133,6 +136,10 @@ export abstract class IWeb3Wallet {
   public abstract formatMessage: IWeb3WalletEngine["formatMessage"];
   // push
   public abstract registerDeviceToken: IWeb3WalletEngine["registerDeviceToken"];
+  // multi chain auth //
+  public abstract approveSessionAuthenticate: IWeb3WalletEngine["approveSessionAuthenticate"];
+  public abstract formatAuthMessage: IWeb3WalletEngine["formatAuthMessage"];
+  public abstract rejectSessionAuthenticate: IWeb3WalletEngine["rejectSessionAuthenticate"];
 
   // ---------- Event Handlers ----------------------------------------------- //
   public abstract on: <E extends Web3WalletTypes.Event>(
