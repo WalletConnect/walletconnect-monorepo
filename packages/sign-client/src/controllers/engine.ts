@@ -268,7 +268,7 @@ export class Engine extends IEngine {
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
       ...(sessionProperties && { sessionProperties }),
-      sessionConfig,
+      ...(sessionConfig && { sessionConfig }),
     };
     await this.client.core.relayer.subscribe(sessionTopic);
     const session = {
@@ -1027,7 +1027,7 @@ export class Engine extends IEngine {
           metadata: controller.metadata,
         },
         ...(sessionProperties && { sessionProperties }),
-        sessionConfig,
+        ...(sessionConfig && { sessionConfig }),
       };
       await this.sendResult<"wc_sessionSettle">({
         id: payload.id,
