@@ -70,6 +70,7 @@ export declare namespace EngineTypes {
     id: number;
     namespaces: SessionTypes.Namespaces;
     sessionProperties?: ProposalTypes.SessionProperties;
+    sessionConfig?: SessionTypes.SessionConfig;
     relayProtocol?: string;
   }
 

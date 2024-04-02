@@ -33,8 +33,11 @@ export class Engine extends IWeb3WalletEngine {
   // Sign //
   public approveSession: IWeb3WalletEngine["approveSession"] = async (sessionProposal) => {
     const { topic, acknowledged } = await this.signClient.approve({
+      ...sessionProposal,
       id: sessionProposal.id,
       namespaces: sessionProposal.namespaces,
+      sessionProperties: sessionProposal.sessionProperties,
+      sessionConfig: sessionProposal.sessionConfig,
     });
     await acknowledged();
     return this.signClient.session.get(topic);
@@ -45,11 +48,11 @@ export class Engine extends IWeb3WalletEngine {
   };
 
   public updateSession: IWeb3WalletEngine["updateSession"] = async (params) => {
-    return await (await this.signClient.update(params)).acknowledged();
+    return await this.signClient.update(params);
   };
 
   public extendSession: IWeb3WalletEngine["extendSession"] = async (params) => {
-    return await (await this.signClient.extend(params)).acknowledged();
+    return await this.signClient.extend(params);
   };
 
   public respondSessionRequest: IWeb3WalletEngine["respondSessionRequest"] = async (params) => {

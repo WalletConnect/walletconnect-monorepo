@@ -258,7 +258,7 @@ export class Engine extends IEngine {
       this.client.logger.error("approve() -> isValidApprove() failed");
       throw error;
     }
-    const { id, relayProtocol, namespaces, sessionProperties } = params;
+    const { id, relayProtocol, namespaces, sessionProperties, sessionConfig } = params;
     let proposal;
     try {
       proposal = this.client.proposal.get(id);
@@ -283,6 +283,7 @@ export class Engine extends IEngine {
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
       ...(sessionProperties && { sessionProperties }),
+      ...(sessionConfig && { sessionConfig }),
     };
     await this.client.core.relayer.subscribe(sessionTopic);
     const session = {
@@ -385,14 +386,16 @@ export class Engine extends IEngine {
     const relayRpcId = getBigIntRpcId().toString() as any;
 
     const oldNamespaces = this.client.session.get(topic).namespaces;
-    this.events.once(engineEvent("session_update", clientRpcId), async ({ error }: any) => {
+    this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
       if (error) reject(error);
       else {
-        await this.client.session.update(topic, { namespaces });
         resolve();
       }
     });
-
+    // Update the session with the new namespaces, if the publish fails, revert to the old.
+    // This allows the client to use the updated session like emitting events
+    // without waiting for the peer to acknowledge
+    await this.client.session.update(topic, { namespaces });
     this.sendRequest({
       topic,
       method: "wc_sessionUpdate",
@@ -448,7 +451,7 @@ export class Engine extends IEngine {
       throw error;
     }
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
-
+    const session = this.client.session.get(topic);
     const clientRpcId = payloadId();
     const relayRpcId = getBigIntRpcId().toString() as any;
     const { done, resolve, reject } = createDelayedPromise<T>(
@@ -488,11 +491,14 @@ export class Engine extends IEngine {
         resolve();
       }),
       new Promise<void>(async (resolve) => {
-        const wcDeepLink = await getDeepLink(
-          this.client.core.storage,
-          WALLETCONNECT_DEEPLINK_CHOICE,
-        );
-        handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink });
+        // only attempt to handle deeplinks if they are not explicitly disabled in the session config
+        if (!session.sessionConfig?.disableDeepLink) {
+          const wcDeepLink = await getDeepLink(
+            this.client.core.storage,
+            WALLETCONNECT_DEEPLINK_CHOICE,
+          );
+          handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink });
+        }
         resolve();
       }),
       done(),
@@ -1447,8 +1453,15 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidSessionSettleRequest(params);
-      const { relay, controller, expiry, namespaces, sessionProperties, pairingTopic } =
-        payload.params;
+      const {
+        relay,
+        controller,
+        expiry,
+        namespaces,
+        sessionProperties,
+        pairingTopic,
+        sessionConfig,
+      } = payload.params;
       const session = {
         topic,
         relay,
@@ -1468,6 +1481,7 @@ export class Engine extends IEngine {
           metadata: controller.metadata,
         },
         ...(sessionProperties && { sessionProperties }),
+        ...(sessionConfig && { sessionConfig }),
       };
       await this.sendResult<"wc_sessionSettle">({
         id: payload.id,

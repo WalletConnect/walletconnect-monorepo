@@ -26,6 +26,8 @@ export abstract class IWeb3WalletEngine {
   public abstract approveSession(params: {
     id: number;
     namespaces: Record<string, SessionTypes.Namespace>;
+    sessionProperties?: ProposalTypes.SessionProperties;
+    sessionConfig?: SessionTypes.SessionConfig;
     relayProtocol?: string;
   }): Promise<SessionTypes.Struct>;
 
@@ -40,10 +42,12 @@ export abstract class IWeb3WalletEngine {
   public abstract updateSession(params: {
     topic: string;
     namespaces: SessionTypes.Namespaces;
-  }): Promise<void>;
+  }): Promise<{ acknowledged: () => Promise<void> }>;
 
   // update session expiry (SIGN)
-  public abstract extendSession(params: { topic: string }): Promise<void>;
+  public abstract extendSession(params: {
+    topic: string;
+  }): Promise<{ acknowledged: () => Promise<void> }>;
 
   // respond JSON-RPC request (SIGN)
   public abstract respondSessionRequest(params: {

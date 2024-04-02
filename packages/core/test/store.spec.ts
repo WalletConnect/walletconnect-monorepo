@@ -96,7 +96,7 @@ describe("Store", () => {
       expect(store.keys.includes(key)).to.be.true;
       expect(store.values.includes(value)).to.be.true;
     });
-    it("updates an existing entry for a a known key", async () => {
+    it("updates an existing entry for a known key", async () => {
       const key = "key";
       const value = {
         topic: "111",
