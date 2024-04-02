@@ -163,6 +163,49 @@ describe("Sign Client Integration", () => {
       await expect(wallet.pair({ uri })).rejects.toThrowError();
       await deleteClients({ A: dapp, B: wallet });
     });
+    it("should set `sessionConfig`", async () => {
+      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+      const wallet = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "wallet" });
+      const { uri, approval } = await dapp.connect(TEST_CONNECT_PARAMS);
+      if (!uri) throw new Error("URI is undefined");
+      expect(uri).to.exist;
+      const parsedUri = parseUri(uri);
+      const sessionConfig = {
+        disableDeepLink: true,
+      };
+      let sessionTopic = "";
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          wallet.once("session_proposal", async (params) => {
+            expect(params).to.exist;
+            expect(params.params.pairingTopic).to.eq(parsedUri.topic);
+            const { acknowledged } = await wallet.approve({
+              id: params.id,
+              namespaces: TEST_NAMESPACES,
+              sessionConfig,
+            });
+            sessionTopic = (await acknowledged()).topic;
+            resolve();
+          });
+        }),
+        new Promise<void>(async (resolve) => {
+          const session = await approval();
+          expect(session).to.exist;
+          expect(session.topic).to.exist;
+          expect(session.pairingTopic).to.eq(parsedUri.topic);
+          resolve();
+        }),
+        wallet.pair({ uri }),
+      ]);
+      const sessionDapp = dapp.session.get(sessionTopic);
+      const sessionWallet = wallet.session.get(sessionTopic);
+      expect(sessionDapp).to.exist;
+      expect(sessionWallet).to.exist;
+      expect(sessionDapp.sessionConfig).to.eql(sessionConfig);
+      expect(sessionWallet.sessionConfig).to.eql(sessionConfig);
+      expect(sessionWallet.sessionConfig).to.eql(sessionDapp.sessionConfig);
+      await deleteClients({ A: dapp, B: wallet });
+    });
   });
 
   describe("disconnect", () => {

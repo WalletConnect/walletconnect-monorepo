@@ -55,6 +55,7 @@ describe("Sign Integration", () => {
   });
 
   it("should approve session proposal", async () => {
+    const sessionConfig = { disableDeepLink: false };
     await Promise.all([
       new Promise((resolve) => {
         wallet.on("session_proposal", async (sessionProposal) => {
@@ -64,6 +65,7 @@ describe("Sign Integration", () => {
           session = await wallet.approveSession({
             id,
             namespaces: TEST_NAMESPACES,
+            sessionConfig,
           });
           expect(params.requiredNamespaces).to.toMatchObject(TEST_REQUIRED_NAMESPACES);
           resolve(session);
@@ -74,6 +76,9 @@ describe("Sign Integration", () => {
       }),
       wallet.pair({ uri: uriString }),
     ]);
+    expect(session).to.be.exist;
+    expect(session.topic).to.be.exist;
+    expect(session.sessionConfig).to.eql(sessionConfig);
   });
   it("should reject session proposal", async () => {
     const rejectionError = getSdkError("USER_REJECTED");
