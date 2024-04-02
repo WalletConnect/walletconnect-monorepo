@@ -373,7 +373,7 @@ export class Engine extends IEngine {
         resolve();
       }
     });
-    // update the session with the new namespaces, if the publish fails, revert to the old
+    // Update the session with the new namespaces, if the publish fails, revert to the old.
     // This allows the client to use the updated session like emitting events
     // without waiting for the peer to acknowledge
     await this.client.session.update(topic, { namespaces });
