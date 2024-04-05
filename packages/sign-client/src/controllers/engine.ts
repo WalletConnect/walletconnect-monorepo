@@ -710,8 +710,6 @@ export class Engine extends IEngine {
     };
     // handle session authenticate response
     const onAuthenticate = async (payload: any) => {
-      // remove cleanup for fallback response
-      this.events.off(engineEvent("session_connect"), onSessionConnect);
       if (payload.error) {
         // wallets that do not support wc_sessionAuthenticate will return an error
         // we should not reject the promise in this case as the fallback session proposal will be used
@@ -719,6 +717,10 @@ export class Engine extends IEngine {
         if (payload.error.code === error.code) return;
         return reject(payload.error.message);
       }
+
+      // cleanup listener for fallback response
+      this.events.off(engineEvent("session_connect"), onSessionConnect);
+
       const {
         cacaos,
         responder,
