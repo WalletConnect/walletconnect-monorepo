@@ -958,7 +958,7 @@ export class Engine extends IEngine {
       encodeOpts,
       throwOnFailedPublish: true,
     });
-    await this.client.auth.requests.delete(id, { message: "fullfilled", code: 0 });
+    await this.client.auth.requests.delete(id, { message: "fulfilled", code: 0 });
     await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
     return { session };
   };
