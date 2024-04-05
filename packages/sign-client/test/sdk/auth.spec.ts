@@ -1124,6 +1124,15 @@ describe("Authenticated Sessions", () => {
       metadata: TEST_APP_METADATA_B,
     });
 
+    // force wallet to not support `wc_sessionAuthenticate` by removing it from registered methods
+    const supportedMethods = ENGINE_RPC_OPTS;
+    const toRegisterMethods = Object.keys(supportedMethods).filter(
+      (method) => method !== "wc_sessionAuthenticate",
+    );
+    //@ts-expect-error
+    wallet.core.pairing.registeredMethods = [];
+    wallet.core.pairing.register({ methods: toRegisterMethods });
+
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
@@ -1151,7 +1160,7 @@ describe("Authenticated Sessions", () => {
         });
       }),
       new Promise<void>((resolve) => {
-        wallet.pair({ uri: uri.replace("methods", "") });
+        wallet.pair({ uri });
         resolve();
       }),
     ]);
