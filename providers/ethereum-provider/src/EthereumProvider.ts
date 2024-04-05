@@ -617,15 +617,21 @@ export class EthereumProvider implements IEthereumProvider {
 
   protected async loadPersistedSession() {
     if (!this.session) return;
-    const chainId = await this.signer.client.core.storage.getItem(`${this.STORAGE_KEY}/chainId`);
+    try {
+      const chainId = await this.signer.client.core.storage.getItem(`${this.STORAGE_KEY}/chainId`);
 
-    // cater to both inline & nested namespace formats
-    const namespace = this.session.namespaces[`${this.namespace}:${chainId}`]
-      ? this.session.namespaces[`${this.namespace}:${chainId}`]
-      : this.session.namespaces[this.namespace];
+      // cater to both inline & nested namespace formats
+      const namespace = this.session.namespaces[`${this.namespace}:${chainId}`]
+        ? this.session.namespaces[`${this.namespace}:${chainId}`]
+        : this.session.namespaces[this.namespace];
 
-    this.setChainIds(chainId ? [this.formatChainId(chainId)] : namespace?.accounts);
-    this.setAccounts(namespace?.accounts);
+      this.setChainIds(chainId ? [this.formatChainId(chainId)] : namespace?.accounts);
+      this.setAccounts(namespace?.accounts);
+    } catch (error) {
+      this.signer.logger.error("Failed to load persisted session, clearing state...");
+      this.signer.logger.error(error);
+      await this.disconnect().catch((error) => this.signer.logger.warn(error));
+    }
   }
 
   protected reset() {
