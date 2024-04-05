@@ -715,6 +715,9 @@ export class Engine extends IEngine {
         // we should not reject the promise in this case as the fallback session proposal will be used
         const error = getSdkError("WC_METHOD_UNSUPPORTED", "wc_sessionAuthenticate");
         if (payload.error.code === error.code) return;
+
+        // cleanup listener for fallback response
+        this.events.off(engineEvent("session_connect"), onSessionConnect);
         return reject(payload.error.message);
       }
 
