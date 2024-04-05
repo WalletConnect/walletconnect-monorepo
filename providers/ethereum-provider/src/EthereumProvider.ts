@@ -630,8 +630,7 @@ export class EthereumProvider implements IEthereumProvider {
     } catch (error) {
       this.signer.logger.error("Failed to load persisted session, clearing state...");
       this.signer.logger.error(error);
-      this.signer.disconnect().catch();
-      this.reset();
+      await this.disconnect().catch((error) => this.signer.logger.warn(error));
     }
   }
 
