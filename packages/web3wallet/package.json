@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/web3wallet",
   "description": "Web3Wallet for WalletConnect Protocol",
-  "private": false,
+  "private": true,
   "version": "1.11.1",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
