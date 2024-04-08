@@ -14,7 +14,7 @@ import { JsonRpcTypes } from "./jsonrpc";
 import { EventEmitter } from "events";
 import { PendingRequestTypes } from "./pendingRequest";
 import { AuthTypes } from "./auth";
-import { CryptoTypes } from "../core";
+import { CryptoTypes, Verify } from "../core";
 
 export declare namespace EngineTypes {
   type Event =
@@ -214,9 +214,28 @@ export interface EnginePrivate {
 
   setProposal(id: number, proposal: ProposalTypes.Struct): Promise<void>;
 
+  setAuthRequest(
+    id: number,
+    params: {
+      request: {
+        requester: AuthTypes.SessionAuthenticateRequestParams["requester"];
+        authPayload: AuthTypes.SessionAuthenticateRequestParams["authPayload"];
+        expiryTimestamp: AuthTypes.SessionAuthenticateRequestParams["expiryTimestamp"];
+        verifyContext: Verify.Context;
+      };
+      pairingTopic: string;
+    },
+  ): Promise<void>;
+
   setPendingSessionRequest(pendingRequest: PendingRequestTypes.Struct): Promise<void>;
 
   deletePendingSessionRequest(
+    id: number,
+    reason: ErrorResponse,
+    expirerHasDeleted?: boolean,
+  ): Promise<void>;
+
+  deletePendingAuthRequest(
     id: number,
     reason: ErrorResponse,
     expirerHasDeleted?: boolean,
