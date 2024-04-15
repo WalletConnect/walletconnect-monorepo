@@ -451,6 +451,12 @@ describe("Sign Client Integration", () => {
           // validate the first request is still pending
           expect(clients.B.pendingRequest.getAll().length).to.eq(1);
           expect(clients.B.pendingRequest.getAll()[0].id).to.eq(firstRequestId);
+
+          await clients.B.respond({
+            topic,
+            response: formatJsonRpcResult(firstRequestId, "ok"),
+          });
+
           await deleteClients(clients);
         });
         /**
