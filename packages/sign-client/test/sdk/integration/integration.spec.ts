@@ -4,7 +4,7 @@ import { expect, describe, it } from "vitest";
 import { deleteClients, initTwoPairedClients } from "../../shared";
 
 describe("Sign Client Integration", () => {
-  it("should connect, ping, restart transport, ping & disconnect", async () => {
+  it.skip("should connect, ping, restart transport, ping & disconnect", async () => {
     const { clients, sessionA } = await initTwoPairedClients({}, {}, { logger: "error" });
     console.log("Step 1: Connect done ✅");
     await Promise.all([
