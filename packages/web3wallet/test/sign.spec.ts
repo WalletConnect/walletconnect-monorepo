@@ -46,12 +46,19 @@ describe("Sign Integration", () => {
     });
     uriString = uri || "";
     sessionApproval = approval;
-    wallet = await Web3Wallet.init({ core, name: "wallet", metadata: {} as any });
+    const signConfig = { disableRequestQueue: true };
+    wallet = await Web3Wallet.init({
+      core,
+      name: "wallet",
+      metadata: {} as any,
+      signConfig,
+    });
     expect(wallet).to.be.exist;
     expect(dapp).to.be.exist;
     expect(core).to.be.exist;
     expect(wallet.metadata.redirect).to.not.exist;
     expect(dapp.metadata.redirect).to.not.exist;
+    expect(wallet.engine.signClient.signConfig).to.toMatchObject(signConfig);
   });
 
   it("should approve session proposal", async () => {
