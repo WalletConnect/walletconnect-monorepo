@@ -1100,13 +1100,13 @@ export class Engine extends IEngine {
     const { id, topic, params, verifyContext } = pendingRequest;
     const expiry =
       params.request.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl);
+    if (expiry) this.client.core.expirer.set(id, expiry);
     await this.client.pendingRequest.set(id, {
       id,
       topic,
       params,
       verifyContext,
     });
-    if (expiry) this.client.core.expirer.set(id, expiry);
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
@@ -1707,8 +1707,12 @@ export class Engine extends IEngine {
         verifyContext,
       };
       await this.setPendingSessionRequest(request);
-      this.addSessionRequestToSessionRequestQueue(request);
-      this.processSessionRequestQueue();
+      if (this.client.signConfig?.disableRequestQueue) {
+        this.emitSessionRequest(request);
+      } else {
+        this.addSessionRequestToSessionRequestQueue(request);
+        this.processSessionRequestQueue();
+      }
     } catch (err: any) {
       await this.sendError({
         id,
@@ -1864,10 +1868,14 @@ export class Engine extends IEngine {
 
     try {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.active;
-      this.client.events.emit("session_request", request);
+      this.emitSessionRequest(request);
     } catch (error) {
       this.client.logger.error(error);
     }
+  };
+
+  private emitSessionRequest = (request: PendingRequestTypes.Struct) => {
+    this.client.events.emit("session_request", request);
   };
 
   // ---------- Expirer Events ---------------------------------------- //
