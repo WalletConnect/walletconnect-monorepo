@@ -25,11 +25,17 @@ import {
 
 describe("Sign Client Integration", () => {
   it("init", async () => {
-    const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
+    const client = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "init",
+      signConfig: { disableRequestQueue: true },
+    });
     expect(client).to.be.exist;
     expect(client.metadata.redirect).to.exist;
     expect(client.metadata.redirect?.universal).to.exist;
     expect(client.metadata.redirect?.native).to.not.exist;
+    expect(client.signConfig).to.exist;
+    expect(client.signConfig?.disableRequestQueue).to.be.true;
     await deleteClients({ A: client, B: undefined });
   });
 
@@ -387,6 +393,64 @@ describe("Sign Client Integration", () => {
             ),
           ]);
           await throttle(1000);
+          await deleteClients(clients);
+        });
+        it("should disable requests queue via `signConfig`", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            { signConfig: { disableRequestQueue: true } },
+            { logger: "error" },
+          );
+          let firstRequestId;
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.once("session_request", (args) => {
+                const { id, topic } = args;
+                firstRequestId = id;
+                // validate that theres only one request pending (the one we just received)
+                const pendingRequests = clients.B.pendingRequest.getAll();
+                expect(pendingRequests.length).to.eq(1);
+                resolve();
+              });
+            }),
+            new Promise<void>((resolve) => {
+              clients.A.request({
+                topic,
+                ...TEST_REQUEST_PARAMS,
+              });
+              resolve();
+            }),
+          ]);
+          await throttle(1000);
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.once("session_request", async (args) => {
+                const { id, topic } = args;
+                const pendingRequests = clients.B.pendingRequest.getAll();
+                // validate that there are two requests pending
+                expect(pendingRequests.length).to.eq(2);
+                // validate the IDs are different even though we didn't respond to the first request
+                // if the queue was active, we would've received the first request again
+                expect(id).to.not.eq(firstRequestId);
+                // validate we can respond to the second request successfully
+                await clients.B.respond({
+                  topic,
+                  response: formatJsonRpcResult(id, "ok"),
+                });
+                resolve();
+              });
+            }),
+            clients.A.request({
+              topic,
+              ...TEST_REQUEST_PARAMS,
+            }),
+          ]);
+          // validate the first request is still pending
+          expect(clients.B.pendingRequest.getAll().length).to.eq(1);
+          expect(clients.B.pendingRequest.getAll()[0].id).to.eq(firstRequestId);
           await deleteClients(clients);
         });
         /**
