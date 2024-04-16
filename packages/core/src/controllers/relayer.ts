@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
@@ -473,6 +474,7 @@ export class Relayer extends IRelayer {
   };
 
   private onProviderErrorHandler = (error: Error) => {
+    console.log("onProviderErrorHandler", error);
     this.logger.error(error);
     this.events.emit(RELAYER_EVENTS.error, error);
     // close the transport when a fatal error is received as there's no way to recover from it
