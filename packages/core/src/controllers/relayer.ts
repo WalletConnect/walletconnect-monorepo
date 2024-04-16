@@ -79,7 +79,7 @@ export class Relayer extends IRelayer {
   private projectId: string | undefined;
   private bundleId: string | undefined;
   private connectionStatusPollingInterval = 20;
-  private staleConnectionErrors = ["socket hang up", "socket stalled", "interrupted"];
+  private staleConnectionErrors = ["socket hang up", "stalled", "interrupted"];
   private hasExperiencedNetworkDisruption = false;
   private requestsInFlight = new Map<
     number,
