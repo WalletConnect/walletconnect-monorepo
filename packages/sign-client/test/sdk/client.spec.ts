@@ -24,6 +24,10 @@ import {
 } from "../shared";
 
 describe("Sign Client Integration", () => {
+  process.on("unhandledRejection", (reason) => {
+    console.error("Unhandled Rejection:", reason);
+  });
+
   it("init", async () => {
     const client = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
