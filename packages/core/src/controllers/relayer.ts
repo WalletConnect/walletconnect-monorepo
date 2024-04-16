@@ -260,6 +260,10 @@ export class Relayer extends IRelayer {
   public async transportDisconnect() {
     if (!this.hasExperiencedNetworkDisruption && this.connected && this.requestsInFlight.size > 0) {
       try {
+        console.log(
+          "transportDisconnect, waiting for requests to complete",
+          this.requestsInFlight.size,
+        );
         await Promise.all(
           Array.from(this.requestsInFlight.values()).map((request) => request.promise),
         );
@@ -518,6 +522,7 @@ export class Relayer extends IRelayer {
 
   private async onProviderDisconnect() {
     await this.subscriber.stop();
+    this.requestsInFlight.clear();
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.connectionAttemptInProgress = false;
     if (this.transportExplicitlyClosed) return;
