@@ -311,6 +311,7 @@ export class Relayer extends IRelayer {
         resolve();
       });
     } catch (e) {
+      console.log("transportOpen error, isStalled", this.isConnectionStalled((e as Error).message));
       this.logger.error(e);
       const error = e as Error;
       if (!this.isConnectionStalled(error.message)) {
