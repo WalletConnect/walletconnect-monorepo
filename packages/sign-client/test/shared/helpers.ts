@@ -17,7 +17,9 @@ export async function deleteClients(clients: {
     client.core.relayer.provider.connection.events.removeAllListeners();
     client.events.removeAllListeners();
   }
+  console.log("Client A connected:", clients.A?.core.relayer.connected);
   delete clients.A;
+  console.log("Client B connected:", clients.B?.core.relayer.connected);
   delete clients.B;
 }
 
