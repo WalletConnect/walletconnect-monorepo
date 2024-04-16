@@ -235,13 +235,16 @@ describe("Sign Client Integration", () => {
         } = await initTwoPairedClients({}, {}, { logger: "error" });
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
+        console.log("Client A disconnected");
         expect(() => clients.A.pairing.get(topic)).to.throw(
           `Missing or invalid. Record was recently deleted - pairing: ${topic}`,
         );
+        console.log("Client A pinging...");
         const promise = clients.A.ping({ topic });
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
+        console.log("Client A pinged");
         await deleteClients(clients);
       });
     });

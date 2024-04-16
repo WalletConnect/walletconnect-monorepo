@@ -316,6 +316,10 @@ export class Relayer extends IRelayer {
       });
     } catch (e) {
       console.log("transportOpen error, isStalled", this.isConnectionStalled((e as Error).message));
+      const result = await (
+        await fetch("https://relay.walletconnect.com", { method: "GET" })
+      ).json();
+      console.log("ping result", result);
       this.logger.error(e);
       const error = e as Error;
       if (!this.isConnectionStalled(error.message)) {
