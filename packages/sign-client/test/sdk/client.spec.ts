@@ -4,7 +4,7 @@ import {
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
-import { expect, describe, it, vi } from "vitest";
+import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 
 import {
@@ -26,6 +26,14 @@ import {
 describe("Sign Client Integration", () => {
   process.on("unhandledRejection", (reason) => {
     console.error("Unhandled Rejection:", reason);
+  });
+
+  beforeEach((context) => {
+    console.log("test start ", context.meta.name);
+  });
+
+  afterEach((context) => {
+    console.log("test end ", context.meta.name);
   });
 
   it("init", async () => {
