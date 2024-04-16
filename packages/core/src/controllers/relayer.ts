@@ -319,7 +319,7 @@ export class Relayer extends IRelayer {
       console.time("sending ping");
       const result = await fetch("https://relay.walletconnect.com/hello", { method: "GET" });
       console.log("ping result", result?.status);
-      console.timeEnd("sending ping finished");
+      console.timeEnd("sending ping");
       this.logger.error(e);
       const error = e as Error;
       if (!this.isConnectionStalled(error.message)) {
