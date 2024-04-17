@@ -96,6 +96,7 @@ export class Relayer extends IRelayer {
    */
   private heartBeatTimeout = toMiliseconds(THIRTY_SECONDS + ONE_SECOND);
   private relayerId = Math.random().toString(36).substring(7);
+  private providerId = 0;
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -400,9 +401,11 @@ export class Relayer extends IRelayer {
     console.log("createProvider called", `ID: ${this.relayerId}`);
     if (this.provider.connection) {
       this.unregisterProviderListeners();
+      this.provider = undefined as any;
     }
     const auth = await this.core.crypto.signJWT(this.relayUrl);
-
+    this.providerId += 1;
+    console.log("createProvider", this.providerId, `ID: ${this.relayerId}`);
     this.provider = new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
