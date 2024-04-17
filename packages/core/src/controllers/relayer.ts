@@ -117,7 +117,7 @@ export class Relayer extends IRelayer {
   public async init() {
     this.logger.trace(`Initialized`);
     this.registerEventListeners();
-    await this.createProvider();
+    // await this.createProvider();
     await Promise.all([this.messages.init(), this.subscriber.init()]);
     try {
       await this.transportOpen();
@@ -291,8 +291,8 @@ export class Relayer extends IRelayer {
     if (relayUrl && relayUrl !== this.relayUrl) {
       this.relayUrl = relayUrl;
       await this.transportDisconnect();
-      await this.createProvider();
     }
+    await this.createProvider();
     this.connectionAttemptInProgress = true;
     this.transportExplicitlyClosed = false;
     try {
@@ -321,7 +321,6 @@ export class Relayer extends IRelayer {
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
-      this.onProviderDisconnect();
       console.log("reconnecting...");
     } finally {
       this.connectionAttemptInProgress = false;
@@ -334,7 +333,7 @@ export class Relayer extends IRelayer {
     this.relayUrl = relayUrl || this.relayUrl;
     await this.confirmOnlineStateOrThrow();
     await this.transportClose();
-    await this.createProvider();
+    // await this.createProvider();
     await this.transportOpen();
   }
 
@@ -535,7 +534,6 @@ export class Relayer extends IRelayer {
     if (this.transportExplicitlyClosed) return;
 
     setTimeout(async () => {
-      await this.createProvider();
       await this.transportOpen().catch((error) => this.logger.error(error));
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
