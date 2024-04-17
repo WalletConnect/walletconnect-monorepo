@@ -38,19 +38,19 @@
     "@walletconnect/jsonrpc-ws-connection": "1.0.14",
     "@walletconnect/keyvaluestorage": "1.1.1",
     "@walletconnect/logger": "2.1.2",
-    "@walletconnect/relay-api": "^1.0.9",
-    "@walletconnect/relay-auth": "^1.0.4",
-    "@walletconnect/safe-json": "^1.0.2",
-    "@walletconnect/time": "^1.0.2",
+    "@walletconnect/relay-api": "1.0.9",
+    "@walletconnect/relay-auth": "1.0.4",
+    "@walletconnect/safe-json": "1.0.2",
+    "@walletconnect/time": "1.0.2",
     "@walletconnect/types": "2.12.2",
     "@walletconnect/utils": "2.12.2",
-    "events": "^3.3.0",
+    "events": "3.3.0",
     "isomorphic-unfetch": "3.1.0",
     "lodash.isequal": "4.5.0",
-    "uint8arrays": "^3.1.0"
+    "uint8arrays": "3.1.0"
   },
   "devDependencies": {
     "@types/lodash.isequal": "4.5.6",
-    "node-fetch": "^3.3.0"
+    "node-fetch": "3.3.0"
   }
 }
