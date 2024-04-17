@@ -330,7 +330,7 @@ export class Relayer extends IRelayer {
         `ID: ${this.relayerId}`,
         `elapsed: ${performance.now() - this.start}ms`,
       );
-      this.logger.error(e);
+      this.logger.error(e, `ID: ${this.relayerId}`);
       const error = e as Error;
       if (!this.isConnectionStalled(error.message)) {
         throw e;
@@ -393,6 +393,7 @@ export class Relayer extends IRelayer {
           "pingTimeout called",
           `ID: ${this.relayerId}, elapsed: ${performance.now() - this.start}ms`,
         );
+        console.log("terminating connection", `ID: ${this.relayerId}`);
         //@ts-expect-error
         this.provider?.connection?.socket?.terminate();
       }, this.heartBeatTimeout);
@@ -529,6 +530,7 @@ export class Relayer extends IRelayer {
     this.provider.off(RELAYER_PROVIDER_EVENTS.connect, this.onConnectHandler);
     this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, this.onDisconnectHandler);
     this.provider.off(RELAYER_PROVIDER_EVENTS.error, this.onProviderErrorHandler);
+    // clearTimeout(this.pingTimeout);
   }
 
   private async registerEventListeners() {
