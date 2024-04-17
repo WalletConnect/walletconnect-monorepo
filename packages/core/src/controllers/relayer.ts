@@ -89,6 +89,7 @@ export class Relayer extends IRelayer {
     }
   >();
 
+  private start = performance.now();
   private pingTimeout: NodeJS.Timeout | undefined;
   /**
    * the relay pings the client 30 seconds after the last message was received
@@ -123,7 +124,9 @@ export class Relayer extends IRelayer {
     // await this.createProvider();
     await Promise.all([this.messages.init(), this.subscriber.init()]);
     try {
+      console.log("init called", `ID: ${this.relayerId}`);
       await this.transportOpen();
+      console.log("init completed", `ID: ${this.relayerId}`);
     } catch {
       this.logger.warn(
         `Connection via ${this.relayUrl} failed, attempting to connect via failover domain ${RELAYER_FAILOVER_RELAY_URL}...`,
@@ -131,13 +134,21 @@ export class Relayer extends IRelayer {
       await this.restartTransport(RELAYER_FAILOVER_RELAY_URL);
     }
     this.initialized = true;
-    setTimeout(async () => {
-      if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
-        this.logger.info(`No topics subscribed to after init, closing transport`);
-        await this.transportClose();
-        this.transportExplicitlyClosed = false;
-      }
-    }, RELAYER_TRANSPORT_CUTOFF);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    console.log("recreating transport", `ID: ${this.relayerId}`);
+    await this.transportOpen();
+
+    console.log("waiting for event...");
+    await new Promise((resolve) => setTimeout(resolve, 15000));
+    console.log("event received, closing transport", `ID: ${this.relayerId}`);
+
+    // setTimeout(async () => {
+    //   if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
+    //     this.logger.info(`No topics subscribed to after init, closing transport`);
+    //     await this.transportClose();
+    //     this.transportExplicitlyClosed = false;
+    //   }
+    // }, RELAYER_TRANSPORT_CUTOFF);
   }
 
   get context() {
@@ -326,12 +337,14 @@ export class Relayer extends IRelayer {
         "transportOpen error, isStalled",
         this.isConnectionStalled((e as Error).message),
         `ID: ${this.relayerId}`,
+        `elapsed: ${performance.now() - this.start}ms`,
       );
       this.logger.error(e);
       const error = e as Error;
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
+      this.hasExperiencedNetworkDisruption = true;
     } finally {
       this.connectionAttemptInProgress = false;
     }
@@ -385,6 +398,10 @@ export class Relayer extends IRelayer {
     try {
       clearTimeout(this.pingTimeout);
       this.pingTimeout = setTimeout(() => {
+        console.log(
+          "pingTimeout called",
+          `ID: ${this.relayerId}, elapsed: ${performance.now() - this.start}ms`,
+        );
         //@ts-expect-error
         this.provider?.connection?.socket?.terminate();
       }, this.heartBeatTimeout);
