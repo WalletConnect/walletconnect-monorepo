@@ -286,6 +286,7 @@ export class Relayer extends IRelayer {
   }
 
   public async transportOpen(relayUrl?: string) {
+    console.log("transportOpen called");
     await this.confirmOnlineStateOrThrow();
     if (relayUrl && relayUrl !== this.relayUrl) {
       this.relayUrl = relayUrl;
@@ -327,6 +328,7 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
+    console.log("restartTransport called", this.connectionAttemptInProgress);
     if (this.connectionAttemptInProgress) return;
     this.relayUrl = relayUrl || this.relayUrl;
     await this.confirmOnlineStateOrThrow();
@@ -382,6 +384,7 @@ export class Relayer extends IRelayer {
   }
 
   private async createProvider() {
+    console.log("createProvider called");
     if (this.provider.connection) {
       this.unregisterProviderListeners();
     }
@@ -470,11 +473,13 @@ export class Relayer extends IRelayer {
   };
 
   private onConnectHandler = () => {
+    console.log("onConnectHandler");
     this.startPingTimeout();
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
   private onDisconnectHandler = () => {
+    console.log("onDisconnectHandler");
     this.onProviderDisconnect();
   };
 
@@ -521,6 +526,7 @@ export class Relayer extends IRelayer {
   }
 
   private async onProviderDisconnect() {
+    console.log("onProviderDisconnect");
     await this.subscriber.stop();
     this.requestsInFlight.clear();
     this.events.emit(RELAYER_EVENTS.disconnect);
