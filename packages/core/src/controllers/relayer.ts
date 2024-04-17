@@ -321,6 +321,7 @@ export class Relayer extends IRelayer {
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
+      this.onProviderDisconnect();
       console.log("reconnecting...");
     } finally {
       this.connectionAttemptInProgress = false;
