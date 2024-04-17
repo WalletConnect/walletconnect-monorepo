@@ -10,7 +10,7 @@ import { buildApprovedNamespaces, buildAuthObject, getSdkError } from "@walletco
 import { toMiliseconds } from "@walletconnect/time";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
-import { expect, describe, it, beforeEach, vi, beforeAll, afterAll } from "vitest";
+import { expect, describe, it, beforeEach, vi, beforeAll, afterAll, afterEach } from "vitest";
 import { Web3Wallet, IWeb3Wallet } from "../src";
 import {
   disconnect,
@@ -34,7 +34,7 @@ describe("Sign Integration", () => {
     cryptoWallet = CryptoWallet.createRandom();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await disconnect(core);
   });
 

@@ -303,14 +303,16 @@ export class Relayer extends IRelayer {
       await new Promise<void>(async (resolve, reject) => {
         const onDisconnect = () => {
           this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
-          reject(new Error(`Connection interrupted while trying to subscribe`));
+          reject(
+            new Error(`Connection interrupted while trying to subscribe, ID: ${this.relayerId}`),
+          );
         };
         this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
 
         await createExpiringPromise(
           this.provider.connect(),
           toMiliseconds(ONE_MINUTE),
-          `Socket stalled when trying to connect to ${this.relayUrl}`,
+          `Socket stalled when trying to connect to ${this.relayUrl}, ID: ${this.relayerId}`,
         ).catch((e) => {
           reject(e);
         });
@@ -537,7 +539,7 @@ export class Relayer extends IRelayer {
   }
 
   private async onProviderDisconnect() {
-    console.log("onProviderDisconnect", this.transportExplicitlyClosed);
+    console.log("onProviderDisconnect", this.transportExplicitlyClosed, `ID: ${this.relayerId}`);
     await this.subscriber.stop();
     this.requestsInFlight.clear();
     this.events.emit(RELAYER_EVENTS.disconnect);
