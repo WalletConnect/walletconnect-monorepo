@@ -321,7 +321,6 @@ export class Relayer extends IRelayer {
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
-      console.log("reconnecting...");
     } finally {
       this.connectionAttemptInProgress = false;
     }
@@ -526,7 +525,7 @@ export class Relayer extends IRelayer {
   }
 
   private async onProviderDisconnect() {
-    console.log("onProviderDisconnect");
+    console.log("onProviderDisconnect", this.transportExplicitlyClosed);
     await this.subscriber.stop();
     this.requestsInFlight.clear();
     this.events.emit(RELAYER_EVENTS.disconnect);
@@ -534,6 +533,7 @@ export class Relayer extends IRelayer {
     if (this.transportExplicitlyClosed) return;
 
     setTimeout(async () => {
+      console.log("auto reconnecting...");
       await this.transportOpen().catch((error) => this.logger.error(error));
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
