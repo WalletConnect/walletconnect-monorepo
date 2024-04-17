@@ -95,9 +95,6 @@ export class Relayer extends IRelayer {
    * meaning if we don't receive a message in 30 seconds, the connection can be considered dead
    */
   private heartBeatTimeout = toMiliseconds(THIRTY_SECONDS + ONE_SECOND);
-
-  private reconnectionAttemptTimeout = 1000;
-
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -318,20 +315,11 @@ export class Relayer extends IRelayer {
       });
     } catch (e) {
       console.log("transportOpen error, isStalled", this.isConnectionStalled((e as Error).message));
-      console.time("sending ping");
-      const result = await fetch("https://relay.walletconnect.com/hello", { method: "GET" }).catch(
-        (e) => console.warn(e),
-      );
-      console.log("ping result", result?.status);
-      console.timeEnd("sending ping");
       this.logger.error(e);
       const error = e as Error;
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
-      this.reconnectionAttemptTimeout = this.reconnectionAttemptTimeout * 2;
-      console.log("reconnectionAttemptTimeout", this.reconnectionAttemptTimeout);
-      await new Promise<void>((resolve) => setTimeout(resolve, this.reconnectionAttemptTimeout));
       console.log("reconnecting...");
     } finally {
       this.connectionAttemptInProgress = false;
@@ -540,6 +528,7 @@ export class Relayer extends IRelayer {
     if (this.transportExplicitlyClosed) return;
 
     setTimeout(async () => {
+      await this.createProvider();
       await this.transportOpen().catch((error) => this.logger.error(error));
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
