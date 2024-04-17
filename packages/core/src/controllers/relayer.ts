@@ -530,7 +530,7 @@ export class Relayer extends IRelayer {
     this.provider.off(RELAYER_PROVIDER_EVENTS.connect, this.onConnectHandler);
     this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, this.onDisconnectHandler);
     this.provider.off(RELAYER_PROVIDER_EVENTS.error, this.onProviderErrorHandler);
-    // clearTimeout(this.pingTimeout);
+    clearTimeout(this.pingTimeout);
   }
 
   private async registerEventListeners() {
