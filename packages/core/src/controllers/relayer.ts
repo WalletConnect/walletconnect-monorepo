@@ -96,6 +96,8 @@ export class Relayer extends IRelayer {
    */
   private heartBeatTimeout = toMiliseconds(THIRTY_SECONDS + ONE_SECOND);
 
+  private reconnectionAttemptTimeout = 1000;
+
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -325,6 +327,11 @@ export class Relayer extends IRelayer {
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
+      this.provider.connection = undefined as any;
+      this.reconnectionAttemptTimeout = this.reconnectionAttemptTimeout * 2;
+      console.log("reconnectionAttemptTimeout", this.reconnectionAttemptTimeout);
+      await new Promise<void>((resolve) => setTimeout(resolve, this.reconnectionAttemptTimeout));
+      console.log("reconnecting...");
     } finally {
       this.connectionAttemptInProgress = false;
     }
