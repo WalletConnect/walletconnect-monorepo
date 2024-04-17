@@ -95,6 +95,8 @@ export class Relayer extends IRelayer {
    * meaning if we don't receive a message in 30 seconds, the connection can be considered dead
    */
   private heartBeatTimeout = toMiliseconds(THIRTY_SECONDS + ONE_SECOND);
+  private relayerId = Math.random().toString(36).substring(7);
+
   constructor(opts: RelayerOptions) {
     super(opts);
     this.core = opts.core;
@@ -262,6 +264,7 @@ export class Relayer extends IRelayer {
         console.log(
           "transportDisconnect, waiting for requests to complete",
           this.requestsInFlight.size,
+          `ID: ${this.relayerId}`,
         );
         await Promise.all(
           Array.from(this.requestsInFlight.values()).map((request) => request.promise),
@@ -281,12 +284,13 @@ export class Relayer extends IRelayer {
   }
 
   public async transportClose() {
+    console.log("transportClose called", `ID: ${this.relayerId}`);
     this.transportExplicitlyClosed = true;
     await this.transportDisconnect();
   }
 
   public async transportOpen(relayUrl?: string) {
-    console.log("transportOpen called");
+    console.log("transportOpen called", `ID: ${this.relayerId}`);
     await this.confirmOnlineStateOrThrow();
     if (relayUrl && relayUrl !== this.relayUrl) {
       this.relayUrl = relayUrl;
@@ -315,7 +319,11 @@ export class Relayer extends IRelayer {
         resolve();
       });
     } catch (e) {
-      console.log("transportOpen error, isStalled", this.isConnectionStalled((e as Error).message));
+      console.log(
+        "transportOpen error, isStalled",
+        this.isConnectionStalled((e as Error).message),
+        `ID: ${this.relayerId}`,
+      );
       this.logger.error(e);
       const error = e as Error;
       if (!this.isConnectionStalled(error.message)) {
@@ -327,7 +335,11 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
-    console.log("restartTransport called", this.connectionAttemptInProgress);
+    console.log(
+      "restartTransport called",
+      this.connectionAttemptInProgress,
+      `ID: ${this.relayerId}`,
+    );
     if (this.connectionAttemptInProgress) return;
     this.relayUrl = relayUrl || this.relayUrl;
     await this.confirmOnlineStateOrThrow();
@@ -383,7 +395,7 @@ export class Relayer extends IRelayer {
   }
 
   private async createProvider() {
-    console.log("createProvider called");
+    console.log("createProvider called", `ID: ${this.relayerId}`);
     if (this.provider.connection) {
       this.unregisterProviderListeners();
     }
@@ -472,18 +484,18 @@ export class Relayer extends IRelayer {
   };
 
   private onConnectHandler = () => {
-    console.log("onConnectHandler");
+    console.log("onConnectHandler", `ID: ${this.relayerId}`);
     this.startPingTimeout();
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
   private onDisconnectHandler = () => {
-    console.log("onDisconnectHandler");
+    console.log("onDisconnectHandler", `ID: ${this.relayerId}`);
     this.onProviderDisconnect();
   };
 
   private onProviderErrorHandler = (error: Error) => {
-    console.log("onProviderErrorHandler", error);
+    console.log("onProviderErrorHandler", error, `ID: ${this.relayerId}`);
     this.logger.error(error);
     this.events.emit(RELAYER_EVENTS.error, error);
     // close the transport when a fatal error is received as there's no way to recover from it
@@ -533,7 +545,7 @@ export class Relayer extends IRelayer {
     if (this.transportExplicitlyClosed) return;
 
     setTimeout(async () => {
-      console.log("auto reconnecting...");
+      console.log("auto reconnecting...", `ID: ${this.relayerId}`);
       await this.transportOpen().catch((error) => this.logger.error(error));
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
