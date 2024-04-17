@@ -124,9 +124,7 @@ export class Relayer extends IRelayer {
     // await this.createProvider();
     await Promise.all([this.messages.init(), this.subscriber.init()]);
     try {
-      console.log("init called", `ID: ${this.relayerId}`);
       await this.transportOpen();
-      console.log("init completed", `ID: ${this.relayerId}`);
     } catch {
       this.logger.warn(
         `Connection via ${this.relayUrl} failed, attempting to connect via failover domain ${RELAYER_FAILOVER_RELAY_URL}...`,
@@ -134,21 +132,14 @@ export class Relayer extends IRelayer {
       await this.restartTransport(RELAYER_FAILOVER_RELAY_URL);
     }
     this.initialized = true;
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    console.log("recreating transport", `ID: ${this.relayerId}`);
-    await this.transportOpen();
 
-    console.log("waiting for event...");
-    await new Promise((resolve) => setTimeout(resolve, 15000));
-    console.log("event received, closing transport", `ID: ${this.relayerId}`);
-
-    // setTimeout(async () => {
-    //   if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
-    //     this.logger.info(`No topics subscribed to after init, closing transport`);
-    //     await this.transportClose();
-    //     this.transportExplicitlyClosed = false;
-    //   }
-    // }, RELAYER_TRANSPORT_CUTOFF);
+    setTimeout(async () => {
+      if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
+        this.logger.info(`No topics subscribed to after init, closing transport`);
+        await this.transportClose();
+        this.transportExplicitlyClosed = false;
+      }
+    }, RELAYER_TRANSPORT_CUTOFF);
   }
 
   get context() {
