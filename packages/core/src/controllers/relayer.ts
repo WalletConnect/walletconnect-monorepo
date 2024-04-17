@@ -319,7 +319,9 @@ export class Relayer extends IRelayer {
     } catch (e) {
       console.log("transportOpen error, isStalled", this.isConnectionStalled((e as Error).message));
       console.time("sending ping");
-      const result = await fetch("https://relay.walletconnect.com/hello", { method: "GET" });
+      const result = await fetch("https://relay.walletconnect.com/hello", { method: "GET" }).catch(
+        (e) => console.warn(e),
+      );
       console.log("ping result", result?.status);
       console.timeEnd("sending ping");
       this.logger.error(e);
@@ -327,7 +329,6 @@ export class Relayer extends IRelayer {
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
-      this.provider.connection = undefined as any;
       this.reconnectionAttemptTimeout = this.reconnectionAttemptTimeout * 2;
       console.log("reconnectionAttemptTimeout", this.reconnectionAttemptTimeout);
       await new Promise<void>((resolve) => setTimeout(resolve, this.reconnectionAttemptTimeout));
