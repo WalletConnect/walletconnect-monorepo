@@ -4,7 +4,7 @@ import {
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
-import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
+import { expect, describe, it, vi } from "vitest";
 import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 
 import {
@@ -24,18 +24,6 @@ import {
 } from "../shared";
 
 describe("Sign Client Integration", () => {
-  process.on("unhandledRejection", (reason) => {
-    console.error("Unhandled Rejection:", reason);
-  });
-
-  beforeEach((context) => {
-    console.log("test start ", context.meta.name);
-  });
-
-  afterEach((context) => {
-    console.log("test end ", context.meta.name);
-  });
-
   it("init", async () => {
     const client = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
@@ -235,16 +223,13 @@ describe("Sign Client Integration", () => {
         } = await initTwoPairedClients({}, {}, { logger: "error" });
         const reason = getSdkError("USER_DISCONNECTED");
         await clients.A.disconnect({ topic, reason });
-        console.log("Client A disconnected");
         expect(() => clients.A.pairing.get(topic)).to.throw(
           `Missing or invalid. Record was recently deleted - pairing: ${topic}`,
         );
-        console.log("Client A pinging...");
         const promise = clients.A.ping({ topic });
         await expect(promise).rejects.toThrowError(
           `No matching key. session or pairing topic doesn't exist: ${topic}`,
         );
-        console.log("Client A pinged");
         await deleteClients(clients);
       });
     });
