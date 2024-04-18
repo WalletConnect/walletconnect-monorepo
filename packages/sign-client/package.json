@@ -39,19 +39,19 @@
   },
   "dependencies": {
     "@walletconnect/core": "2.12.2",
-    "@walletconnect/events": "^1.0.1",
+    "@walletconnect/events": "1.0.1",
     "@walletconnect/heartbeat": "1.2.1",
     "@walletconnect/jsonrpc-utils": "1.0.8",
-    "@walletconnect/logger": "^2.1.2",
-    "@walletconnect/time": "^1.0.2",
+    "@walletconnect/logger": "2.1.2",
+    "@walletconnect/time": "1.0.2",
     "@walletconnect/types": "2.12.2",
     "@walletconnect/utils": "2.12.2",
-    "events": "^3.3.0"
+    "events": "3.3.0"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudwatch": "3.450.0",
-    "@walletconnect/jsonrpc-provider": "^1.0.13",
-    "@walletconnect/jsonrpc-ws-connection": "^1.0.14",
-    "@walletconnect/relay-api": "^1.0.9"
+    "@walletconnect/jsonrpc-provider": "1.0.13",
+    "@walletconnect/jsonrpc-ws-connection": "1.0.14",
+    "@walletconnect/relay-api": "1.0.9"
   }
 }
