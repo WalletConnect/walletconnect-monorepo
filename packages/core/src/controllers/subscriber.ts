@@ -47,6 +47,8 @@ export class Subscriber extends ISubscriber {
   private restartInProgress = false;
   private clientId: string;
   private batchSubscribeTopicsLimit = 500;
+  private pendingBatchMessages: RelayerTypes.MessageEvent[] = [];
+
   constructor(public relayer: IRelayer, public logger: Logger) {
     super(relayer, logger);
     this.relayer = relayer;
@@ -263,6 +265,29 @@ export class Subscriber extends ISubscriber {
     }
   }
 
+  private async rpcBatchFetchMessages(subscriptions: SubscriberTypes.Params[]) {
+    if (!subscriptions.length) return;
+    // const relay = subscriptions[0].relay;
+    // const api = getRelayProtocolApi(relay.protocol);
+    const request: RequestArguments<RelayJsonRpc.BatchSubscribeParams> = {
+      method: "irn_batchFetchMessages",
+      params: {
+        topics: subscriptions.map((s) => s.topic),
+      },
+    };
+    this.logger.debug(`Outgoing Relay Payload`);
+    this.logger.trace({ type: "payload", direction: "outgoing", request });
+    try {
+      const fetchMessages = await createExpiringPromise(
+        this.relayer.request(request).catch((e) => this.logger.warn(e)),
+        this.subscribeTimeout,
+      );
+      return await fetchMessages;
+    } catch (err) {
+      this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+    }
+  }
+
   private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.UnsubscribeParams> = {
@@ -364,6 +389,7 @@ export class Subscriber extends ISubscriber {
       const batches = Math.ceil(this.cached.length / this.batchSubscribeTopicsLimit);
       for (let i = 0; i < batches; i++) {
         const batch = this.cached.splice(0, this.batchSubscribeTopicsLimit);
+        await this.batchFetchMessages(batch);
         await this.batchSubscribe(batch);
       }
     }
@@ -399,6 +425,17 @@ export class Subscriber extends ISubscriber {
     this.onBatchSubscribe(result.map((id, i) => ({ ...subscriptions[i], id })));
   }
 
+  private async batchFetchMessages(subscriptions: SubscriberTypes.Params[]) {
+    if (!subscriptions.length) return;
+    this.logger.trace(`Fetching batch messages for ${subscriptions.length} subscriptions`);
+    const response = (await this.rpcBatchFetchMessages(subscriptions)) as {
+      messages: RelayerTypes.MessageEvent[];
+    };
+    if (response && response.messages) {
+      this.pendingBatchMessages = this.pendingBatchMessages.concat(response.messages);
+    }
+  }
+
   private async onConnect() {
     await this.restart();
     this.onEnable();
@@ -416,6 +453,11 @@ export class Subscriber extends ISubscriber {
       pendingSubscriptions.push(params);
     });
     await this.batchSubscribe(pendingSubscriptions);
+
+    if (this.pendingBatchMessages.length) {
+      await this.relayer.handleBatchMessageEvents(this.pendingBatchMessages);
+      this.pendingBatchMessages = [];
+    }
   }
 
   private registerEventListeners() {

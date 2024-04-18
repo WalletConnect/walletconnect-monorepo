@@ -334,6 +334,23 @@ export class Relayer extends IRelayer {
     throw new Error("No internet connection detected. Please restart your network and try again.");
   }
 
+  public async handleBatchMessageEvents(messages: RelayerTypes.MessageEvent[]) {
+    if (messages?.length === 0) {
+      this.logger.trace("Batch message events is empty. Ignoring...");
+      return;
+    }
+    try {
+      const sortedMessages = messages.sort((a, b) => a.publishedAt - b.publishedAt);
+      this.logger.trace(`Batch message events sorted`);
+      for (const message of sortedMessages) {
+        await this.onMessageEvent(message);
+      }
+      this.logger.trace(`Batch message events processed`);
+    } catch (e) {
+      this.logger.warn(e);
+    }
+  }
+
   // ---------- Private ----------------------------------------------- //
   /*
    * In Node, we must detect when the connection is stalled and terminate it.
