@@ -35,7 +35,8 @@ describe("Sign Integration", () => {
   });
 
   afterEach(async () => {
-    await disconnect(core);
+    await disconnect(wallet.core);
+    await disconnect(dapp.core);
   });
 
   beforeEach(async () => {
@@ -702,6 +703,8 @@ describe("Sign Integration", () => {
       expect(metadata).to.be.exist;
       expect(metadata).to.be.a("object");
       expect(metadata).to.toMatchObject(dappMetadata);
+      await disconnect(wallet.core);
+      await disconnect(dapp.core);
     });
 
     it("should decrypt payload with pairing topic", async () => {
@@ -774,6 +777,8 @@ describe("Sign Integration", () => {
       expect(decrypted).to.be.exist;
       expect(decrypted).to.be.a("object");
       expect(decrypted).to.toMatchObject(decryptedMessage);
+      await disconnect(wallet.core);
+      await disconnect(dapp.core);
     });
     it("should decrypt payload with session topic", async () => {
       const dappMetadata: CoreTypes.Metadata = {
@@ -876,6 +881,8 @@ describe("Sign Integration", () => {
       expect(decrypted).to.be.exist;
       expect(decrypted).to.be.a("object");
       expect(decrypted).to.toMatchObject(decryptedMessage);
+      await disconnect(wallet.core);
+      await disconnect(dapp.core);
     });
   });
 
@@ -967,6 +974,8 @@ describe("Sign Integration", () => {
           resolve();
         }),
       ]);
+      await disconnect(web3Wallet.core);
+      await disconnect(dapp.core);
     });
     it("should fallback to session_proposal when no listener for `session_authenticate` exists", async () => {
       const dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp" });
@@ -1049,6 +1058,8 @@ describe("Sign Integration", () => {
           resolve();
         }),
       ]);
+      await disconnect(web3Wallet.core);
+      await disconnect(dapp.core);
     });
   });
 });
