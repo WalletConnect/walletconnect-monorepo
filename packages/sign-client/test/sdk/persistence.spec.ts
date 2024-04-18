@@ -202,7 +202,7 @@ describe("Sign Client Persistence", () => {
      * this test simulates case where a dapp is offline while the wallet performs normal operations such as adding new accounts & emitting events
      * the dapp should receive all requests when it comes back online and process them in the expected order
      */
-    it.skip("should process incoming mailbox messages after restart", async () => {
+    it("should process incoming mailbox messages after restart", async () => {
       const chains = ["eip155:1"];
       const accounts = ["0x0000000", "0x1111111", "0x2222222"];
       const requiredNamespaces = {

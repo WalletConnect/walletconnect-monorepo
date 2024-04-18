@@ -181,7 +181,7 @@ describe("Sign Client Integration", () => {
       await expect(wallet.pair({ uri })).rejects.toThrowError();
       await deleteClients({ A: dapp, B: wallet });
     });
-    it.skip("should set `sessionConfig`", async () => {
+    it("should set `sessionConfig`", async () => {
       const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
       const wallet = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "wallet" });
       const { uri, approval } = await dapp.connect(TEST_CONNECT_PARAMS);
@@ -314,10 +314,10 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
         it("B pings A", async () => {
-          const clients = await initTwoClients({ name: "dapp" }, { name: "wallet" });
           const {
+            clients,
             pairingA: { topic },
-          } = await testConnectMethod(clients);
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
           await clients.B.ping({ topic });
           await deleteClients(clients);
         });
@@ -326,18 +326,18 @@ describe("Sign Client Integration", () => {
     describe("session", () => {
       describe("with existing session", () => {
         it("A pings B", async () => {
-          const clients = await initTwoClients();
           const {
+            clients,
             sessionA: { topic },
-          } = await testConnectMethod(clients);
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
           await clients.A.ping({ topic });
           await deleteClients(clients);
         });
         it("B pings A", async () => {
-          const clients = await initTwoClients();
           const {
+            clients,
             sessionA: { topic },
-          } = await testConnectMethod(clients);
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
           await clients.B.ping({ topic });
           await deleteClients(clients);
         });

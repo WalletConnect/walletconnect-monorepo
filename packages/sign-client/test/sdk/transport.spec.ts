@@ -7,7 +7,7 @@ import {
   initTwoPairedClients,
 } from "../shared";
 
-describe.skip("Sign Client Transport Tests", () => {
+describe("Sign Client Transport Tests", () => {
   describe("transport", () => {
     it("should disconnect & reestablish socket transport", async () => {
       const {
