@@ -396,7 +396,7 @@ export class Engine extends IEngine {
     // This allows the client to use the updated session like emitting events
     // without waiting for the peer to acknowledge
     await this.client.session.update(topic, { namespaces });
-    this.sendRequest({
+    await this.sendRequest({
       topic,
       method: "wc_sessionUpdate",
       params: { namespaces },
