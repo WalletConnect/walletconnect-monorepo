@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
@@ -89,15 +88,12 @@ export class Relayer extends IRelayer {
     }
   >();
 
-  private start = performance.now();
   private pingTimeout: NodeJS.Timeout | undefined;
   /**
    * the relay pings the client 30 seconds after the last message was received
    * meaning if we don't receive a message in 30 seconds, the connection can be considered dead
    */
   private heartBeatTimeout = toMiliseconds(THIRTY_SECONDS + ONE_SECOND);
-  private relayerId = Math.random().toString(36).substring(7);
-  private providerId = 0;
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -264,11 +260,6 @@ export class Relayer extends IRelayer {
   public async transportDisconnect() {
     if (!this.hasExperiencedNetworkDisruption && this.connected && this.requestsInFlight.size > 0) {
       try {
-        console.log(
-          "transportDisconnect, waiting for requests to complete",
-          this.requestsInFlight.size,
-          `ID: ${this.relayerId}`,
-        );
         await Promise.all(
           Array.from(this.requestsInFlight.values()).map((request) => request.promise),
         );
@@ -287,18 +278,18 @@ export class Relayer extends IRelayer {
   }
 
   public async transportClose() {
-    console.log("transportClose called", `ID: ${this.relayerId}`);
     this.transportExplicitlyClosed = true;
     await this.transportDisconnect();
   }
 
   public async transportOpen(relayUrl?: string) {
-    console.log("transportOpen called", `ID: ${this.relayerId}`);
     await this.confirmOnlineStateOrThrow();
     if (relayUrl && relayUrl !== this.relayUrl) {
       this.relayUrl = relayUrl;
       await this.transportDisconnect();
     }
+    // Always create new socket instance when trying to connect because if the socket is dropped due to `socket hang up` exception
+    // It wont be able to reconnect
     await this.createProvider();
     this.connectionAttemptInProgress = true;
     this.transportExplicitlyClosed = false;
@@ -306,16 +297,14 @@ export class Relayer extends IRelayer {
       await new Promise<void>(async (resolve, reject) => {
         const onDisconnect = () => {
           this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
-          reject(
-            new Error(`Connection interrupted while trying to subscribe, ID: ${this.relayerId}`),
-          );
+          reject(new Error(`Connection interrupted while trying to subscribe`));
         };
         this.provider.on(RELAYER_PROVIDER_EVENTS.disconnect, onDisconnect);
 
         await createExpiringPromise(
           this.provider.connect(),
           toMiliseconds(ONE_MINUTE),
-          `Socket stalled when trying to connect to ${this.relayUrl}, ID: ${this.relayerId}`,
+          `Socket stalled when trying to connect to ${this.relayUrl}`,
         ).catch((e) => {
           reject(e);
         });
@@ -324,13 +313,7 @@ export class Relayer extends IRelayer {
         resolve();
       });
     } catch (e) {
-      console.log(
-        "transportOpen error, isStalled",
-        this.isConnectionStalled((e as Error).message),
-        `ID: ${this.relayerId}`,
-        `elapsed: ${performance.now() - this.start}ms`,
-      );
-      this.logger.error(e, `ID: ${this.relayerId}`);
+      this.logger.error(e);
       const error = e as Error;
       if (!this.isConnectionStalled(error.message)) {
         throw e;
@@ -342,16 +325,10 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
-    console.log(
-      "restartTransport called",
-      this.connectionAttemptInProgress,
-      `ID: ${this.relayerId}`,
-    );
     if (this.connectionAttemptInProgress) return;
     this.relayUrl = relayUrl || this.relayUrl;
     await this.confirmOnlineStateOrThrow();
     await this.transportClose();
-    // await this.createProvider();
     await this.transportOpen();
   }
 
@@ -389,11 +366,6 @@ export class Relayer extends IRelayer {
     try {
       clearTimeout(this.pingTimeout);
       this.pingTimeout = setTimeout(() => {
-        console.log(
-          "pingTimeout called",
-          `ID: ${this.relayerId}, elapsed: ${performance.now() - this.start}ms`,
-        );
-        console.log("terminating connection", `ID: ${this.relayerId}`);
         //@ts-expect-error
         this.provider?.connection?.socket?.terminate();
       }, this.heartBeatTimeout);
@@ -407,14 +379,12 @@ export class Relayer extends IRelayer {
   }
 
   private async createProvider() {
-    console.log("createProvider called", `ID: ${this.relayerId}`);
     if (this.provider.connection) {
       this.unregisterProviderListeners();
       this.provider = undefined as any;
     }
     const auth = await this.core.crypto.signJWT(this.relayUrl);
-    this.providerId += 1;
-    console.log("createProvider", this.providerId, `ID: ${this.relayerId}`);
+
     this.provider = new JsonRpcProvider(
       new WsConnection(
         formatRelayRpcUrl({
@@ -498,18 +468,15 @@ export class Relayer extends IRelayer {
   };
 
   private onConnectHandler = () => {
-    console.log("onConnectHandler", `ID: ${this.relayerId}`);
     this.startPingTimeout();
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
   private onDisconnectHandler = () => {
-    console.log("onDisconnectHandler", `ID: ${this.relayerId}`);
     this.onProviderDisconnect();
   };
 
   private onProviderErrorHandler = (error: Error) => {
-    console.log("onProviderErrorHandler", error, `ID: ${this.relayerId}`);
     this.logger.error(error);
     this.events.emit(RELAYER_EVENTS.error, error);
     // close the transport when a fatal error is received as there's no way to recover from it
@@ -552,15 +519,13 @@ export class Relayer extends IRelayer {
   }
 
   private async onProviderDisconnect() {
-    console.log("onProviderDisconnect", this.transportExplicitlyClosed, `ID: ${this.relayerId}`);
     await this.subscriber.stop();
     this.requestsInFlight.clear();
+    clearTimeout(this.pingTimeout);
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.connectionAttemptInProgress = false;
     if (this.transportExplicitlyClosed) return;
-
     setTimeout(async () => {
-      console.log("auto reconnecting...", `ID: ${this.relayerId}`);
       await this.transportOpen().catch((error) => this.logger.error(error));
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
