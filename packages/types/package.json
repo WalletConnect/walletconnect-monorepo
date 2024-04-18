@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/types",
   "description": "Typings for WalletConnect Protocol",
-  "version": "2.12.1",
+  "version": "2.12.2",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -27,11 +27,11 @@
     "prettier": "prettier --check 'src/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@walletconnect/events": "^1.0.1",
+    "@walletconnect/events": "1.0.1",
     "@walletconnect/heartbeat": "1.2.1",
     "@walletconnect/jsonrpc-types": "1.0.3",
-    "@walletconnect/keyvaluestorage": "^1.1.1",
-    "@walletconnect/logger": "^2.0.1",
-    "events": "^3.3.0"
+    "@walletconnect/keyvaluestorage": "1.1.1",
+    "@walletconnect/logger": "2.1.2",
+    "events": "3.3.0"
   }
 }
