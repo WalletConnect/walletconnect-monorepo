@@ -653,7 +653,7 @@ export class Engine extends IEngine {
       resources.push(recap);
     }
 
-    // ensure the expiry is at least the minimum required for the request - currently 1h
+    // Ensure the expiry is greater than the minimum required for the request - currently 1h
     const authRequestExpiry =
       expiry && expiry > ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl
         ? expiry
