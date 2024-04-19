@@ -604,7 +604,18 @@ export class Engine extends IEngine {
     this.isInitialized();
     this.isValidAuthenticate(params);
 
-    const { chains, statement = "", uri, domain, nonce, type, exp, nbf, methods = [] } = params;
+    const {
+      chains,
+      statement = "",
+      uri,
+      domain,
+      nonce,
+      type,
+      exp,
+      nbf,
+      methods = [],
+      expiry,
+    } = params;
     // reassign resources to remove reference as the array is modified and might cause side effects
     const resources = [...(params.resources || [])];
 
@@ -642,7 +653,12 @@ export class Engine extends IEngine {
       resources.push(recap);
     }
 
-    const expiryTimestamp = calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
+    // Ensure the expiry is greater than the minimum required for the request - currently 1h
+    const authRequestExpiry =
+      expiry && expiry > ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl
+        ? expiry
+        : ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl;
+
     const request = {
       authPayload: {
         type: type ?? "caip122",
@@ -658,7 +674,7 @@ export class Engine extends IEngine {
         resources,
       },
       requester: { publicKey, metadata: this.client.metadata },
-      expiryTimestamp,
+      expiryTimestamp: calcExpiry(authRequestExpiry),
     };
 
     // ----- build namespaces for fallback session proposal ----- //
@@ -679,13 +695,10 @@ export class Engine extends IEngine {
         publicKey,
         metadata: this.client.metadata,
       },
-      expiryTimestamp,
+      expiryTimestamp: calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl),
     };
 
-    const { done, resolve, reject } = createDelayedPromise(
-      ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl,
-      "Request expired",
-    );
+    const { done, resolve, reject } = createDelayedPromise(authRequestExpiry, "Request expired");
 
     // handle fallback session proposal response
     const onSessionConnect = async ({ error, session }: any) => {
@@ -703,6 +716,7 @@ export class Engine extends IEngine {
           });
         }
         const sessionObject = this.client.session.get(session.topic);
+        await this.deleteProposal(fallbackId);
         resolve({
           session: sessionObject,
         });
@@ -710,6 +724,10 @@ export class Engine extends IEngine {
     };
     // handle session authenticate response
     const onAuthenticate = async (payload: any) => {
+      // delete this auth request on response
+      // we're using payload from the wallet to establish the session so we don't need to keep this around
+      await this.deletePendingAuthRequest(id, { message: "fulfilled", code: 0 });
+
       if (payload.error) {
         // wallets that do not support wc_sessionAuthenticate will return an error
         // we should not reject the promise in this case as the fallback session proposal will be used
@@ -720,7 +738,8 @@ export class Engine extends IEngine {
         this.events.off(engineEvent("session_connect"), onSessionConnect);
         return reject(payload.error.message);
       }
-
+      // delete fallback proposal on successful authenticate as the proposal will not be responded to
+      await this.deleteProposal(fallbackId);
       // cleanup listener for fallback response
       this.events.off(engineEvent("session_connect"), onSessionConnect);
 
@@ -834,14 +853,9 @@ export class Engine extends IEngine {
     }
 
     await this.setProposal(fallbackId, { id: fallbackId, ...proposal });
-
-    await this.client.auth.requests.set(id, {
-      authPayload: request.authPayload,
-      requester: request.requester,
-      expiryTimestamp,
-      id,
+    await this.setAuthRequest(id, {
+      request: { ...request, verifyContext: {} as any },
       pairingTopic,
-      verifyContext: {} as any,
     });
 
     return {
@@ -1082,16 +1096,39 @@ export class Engine extends IEngine {
     }
   };
 
+  private deletePendingAuthRequest: EnginePrivate["deletePendingAuthRequest"] = async (
+    id,
+    reason,
+    expirerHasDeleted = false,
+  ) => {
+    await Promise.all([
+      this.client.auth.requests.delete(id, reason),
+      expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
+    ]);
+  };
+
   private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
-    if (this.client.session.keys.includes(topic)) {
-      await this.client.session.update(topic, { expiry });
-    }
+    if (!this.client.session.keys.includes(topic)) return;
     this.client.core.expirer.set(topic, expiry);
+    await this.client.session.update(topic, { expiry });
   };
 
   private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
-    await this.client.proposal.set(id, proposal);
     this.client.core.expirer.set(id, calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl));
+    await this.client.proposal.set(id, proposal);
+  };
+
+  private setAuthRequest: EnginePrivate["setAuthRequest"] = async (id, params) => {
+    const { request, pairingTopic } = params;
+    this.client.core.expirer.set(id, request.expiryTimestamp);
+    await this.client.auth.requests.set(id, {
+      authPayload: request.authPayload,
+      requester: request.requester,
+      expiryTimestamp: request.expiryTimestamp,
+      id,
+      pairingTopic,
+      verifyContext: request.verifyContext,
+    });
   };
 
   private setPendingSessionRequest: EnginePrivate["setPendingSessionRequest"] = async (
@@ -1100,13 +1137,13 @@ export class Engine extends IEngine {
     const { id, topic, params, verifyContext } = pendingRequest;
     const expiry =
       params.request.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl);
+    this.client.core.expirer.set(id, expiry);
     await this.client.pendingRequest.set(id, {
       id,
       topic,
       params,
       verifyContext,
     });
-    if (expiry) this.client.core.expirer.set(id, expiry);
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
@@ -1799,9 +1836,7 @@ export class Engine extends IEngine {
       verifyContext,
       expiryTimestamp,
     };
-
-    await this.client.auth.requests.set(payload.id, pendingRequest);
-
+    await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
     this.client.events.emit("session_authenticate", {
       topic,
       params: payload.params,
@@ -1877,6 +1912,9 @@ export class Engine extends IEngine {
       const { topic, id } = parseExpirerTarget(event.target);
       if (id && this.client.pendingRequest.keys.includes(id)) {
         return await this.deletePendingSessionRequest(id, getInternalError("EXPIRED"), true);
+      }
+      if (id && this.client.auth.requests.keys.includes(id)) {
+        return await this.deletePendingAuthRequest(id, getInternalError("EXPIRED"), true);
       }
 
       if (topic) {
