@@ -339,16 +339,16 @@ export class Relayer extends IRelayer {
       this.logger.trace("Batch message events is empty. Ignoring...");
       return;
     }
-    try {
-      const sortedMessages = messages.sort((a, b) => a.publishedAt - b.publishedAt);
-      this.logger.trace(`Batch message events sorted`);
-      for (const message of sortedMessages) {
+    const sortedMessages = messages.sort((a, b) => a.publishedAt - b.publishedAt);
+    this.logger.trace(`Batch of ${sortedMessages.length} message events sorted`);
+    for (const message of sortedMessages) {
+      try {
         await this.onMessageEvent(message);
+      } catch (e) {
+        this.logger.warn(e);
       }
-      this.logger.trace(`Batch message events processed`);
-    } catch (e) {
-      this.logger.warn(e);
     }
+    this.logger.trace(`Batch of ${sortedMessages.length} message events processed`);
   }
 
   // ---------- Private ----------------------------------------------- //

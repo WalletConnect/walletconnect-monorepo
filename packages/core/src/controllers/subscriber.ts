@@ -277,15 +277,19 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
+    let result;
     try {
       const fetchMessages = await createExpiringPromise(
         this.relayer.request(request).catch((e) => this.logger.warn(e)),
         this.subscribeTimeout,
       );
-      return await fetchMessages;
+      result = (await fetchMessages) as {
+        messages: RelayerTypes.MessageEvent[];
+      };
     } catch (err) {
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
     }
+    return result;
   }
 
   private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {
@@ -386,8 +390,8 @@ export class Subscriber extends ISubscriber {
 
   private async reset() {
     if (this.cached.length) {
-      const batches = Math.ceil(this.cached.length / this.batchSubscribeTopicsLimit);
-      for (let i = 0; i < batches; i++) {
+      const numOfBatches = Math.ceil(this.cached.length / this.batchSubscribeTopicsLimit);
+      for (let i = 0; i < numOfBatches; i++) {
         const batch = this.cached.splice(0, this.batchSubscribeTopicsLimit);
         await this.batchFetchMessages(batch);
         await this.batchSubscribe(batch);
@@ -428,9 +432,7 @@ export class Subscriber extends ISubscriber {
   private async batchFetchMessages(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
     this.logger.trace(`Fetching batch messages for ${subscriptions.length} subscriptions`);
-    const response = (await this.rpcBatchFetchMessages(subscriptions)) as {
-      messages: RelayerTypes.MessageEvent[];
-    };
+    const response = await this.rpcBatchFetchMessages(subscriptions);
     if (response && response.messages) {
       this.pendingBatchMessages = this.pendingBatchMessages.concat(response.messages);
     }
