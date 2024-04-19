@@ -267,10 +267,10 @@ export class Subscriber extends ISubscriber {
 
   private async rpcBatchFetchMessages(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
-    // const relay = subscriptions[0].relay;
-    // const api = getRelayProtocolApi(relay.protocol);
-    const request: RequestArguments<RelayJsonRpc.BatchSubscribeParams> = {
-      method: "irn_batchFetchMessages",
+    const relay = subscriptions[0].relay;
+    const api = getRelayProtocolApi(relay.protocol);
+    const request: RequestArguments<RelayJsonRpc.BatchFetchMessagesParams> = {
+      method: api.batchFetchMessages,
       params: {
         topics: subscriptions.map((s) => s.topic),
       },
