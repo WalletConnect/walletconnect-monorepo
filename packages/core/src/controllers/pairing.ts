@@ -102,9 +102,9 @@ export class Pairing implements IPairing {
       expiryTimestamp: expiry,
       methods: params?.methods,
     });
+    this.core.expirer.set(topic, expiry);
     await this.pairings.set(topic, pairing);
     await this.core.relayer.subscribe(topic);
-    this.core.expirer.set(topic, expiry);
 
     return { topic, uri };
   };
@@ -125,8 +125,8 @@ export class Pairing implements IPairing {
 
     const expiry = expiryTimestamp || calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false, methods };
-    await this.pairings.set(topic, pairing);
     this.core.expirer.set(topic, expiry);
+    await this.pairings.set(topic, pairing);
 
     if (params.activatePairing) {
       await this.activate({ topic });
@@ -145,8 +145,8 @@ export class Pairing implements IPairing {
   public activate: IPairing["activate"] = async ({ topic }) => {
     this.isInitialized();
     const expiry = calcExpiry(THIRTY_DAYS);
-    await this.pairings.update(topic, { active: true, expiry });
     this.core.expirer.set(topic, expiry);
+    await this.pairings.update(topic, { active: true, expiry });
   };
 
   public ping: IPairing["ping"] = async (params) => {
