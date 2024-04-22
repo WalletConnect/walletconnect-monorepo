@@ -279,11 +279,11 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     let result;
     try {
-      const fetchMessages = await createExpiringPromise(
+      const fetchMessagesPromise = await createExpiringPromise(
         this.relayer.request(request).catch((e) => this.logger.warn(e)),
         this.subscribeTimeout,
       );
-      result = (await fetchMessages) as {
+      result = (await fetchMessagesPromise) as {
         messages: RelayerTypes.MessageEvent[];
       };
     } catch (err) {
