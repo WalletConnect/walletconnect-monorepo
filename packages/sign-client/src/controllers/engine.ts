@@ -1137,7 +1137,7 @@ export class Engine extends IEngine {
     const { id, topic, params, verifyContext } = pendingRequest;
     const expiry =
       params.request.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl);
-    if (expiry) this.client.core.expirer.set(id, expiry);
+    this.client.core.expirer.set(id, expiry);
     await this.client.pendingRequest.set(id, {
       id,
       topic,

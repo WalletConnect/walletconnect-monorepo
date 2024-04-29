@@ -287,7 +287,7 @@ export class Relayer extends IRelayer {
       this.relayUrl = relayUrl;
       await this.transportDisconnect();
     }
-    // Always create new socket instance when trying to connect because if the socket is dropped due to `socket hang up` exception
+    // Always create new socket instance when trying to connect because if the socket was dropped due to `socket hang up` exception
     // It wont be able to reconnect
     await this.createProvider();
     this.connectionAttemptInProgress = true;
@@ -314,10 +314,10 @@ export class Relayer extends IRelayer {
     } catch (e) {
       this.logger.error(e);
       const error = e as Error;
+      this.hasExperiencedNetworkDisruption = true;
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
-      this.hasExperiencedNetworkDisruption = true;
     } finally {
       this.connectionAttemptInProgress = false;
     }
@@ -380,7 +380,6 @@ export class Relayer extends IRelayer {
   private async createProvider() {
     if (this.provider.connection) {
       this.unregisterProviderListeners();
-      this.provider = undefined as any;
     }
     const auth = await this.core.crypto.signJWT(this.relayUrl);
 
