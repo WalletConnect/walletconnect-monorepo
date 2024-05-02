@@ -35,16 +35,16 @@ class Eip155Provider implements IProvider {
   public async request<T = unknown>(args: RequestParams): Promise<T> {
     switch (args.request.method) {
       case "eth_requestAccounts":
-        return this.getAccounts() as T;
+        return this.getAccounts() as unknown as T;
       case "eth_accounts":
-        return this.getAccounts() as T;
+        return this.getAccounts() as unknown as T;
       case "wallet_switchEthereumChain": {
-        return (await this.handleSwitchChain(args)) as T;
+        return (await this.handleSwitchChain(args)) as unknown as T;
       }
       case "eth_chainId":
-        return parseInt(this.getDefaultChain()) as T;
+        return parseInt(this.getDefaultChain()) as unknown as T;
       case "wallet_getCapabilities":
-        return (await this.getCapabilities(args)) as T;
+        return (await this.getCapabilities(args)) as unknown as T;
       default:
         break;
     }
