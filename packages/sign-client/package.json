@@ -40,7 +40,7 @@
   "dependencies": {
     "@walletconnect/core": "2.12.2",
     "@walletconnect/events": "1.0.1",
-    "@walletconnect/heartbeat": "1.2.1",
+    "@walletconnect/heartbeat": "1.2.2",
     "@walletconnect/jsonrpc-utils": "1.0.8",
     "@walletconnect/logger": "2.1.2",
     "@walletconnect/time": "1.0.2",
