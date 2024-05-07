@@ -1,5 +1,12 @@
 import EventEmmiter, { EventEmitter } from "events";
-import { ICore, CoreTypes, ProposalTypes, Verify, AuthTypes } from "@walletconnect/types";
+import {
+  ICore,
+  CoreTypes,
+  ProposalTypes,
+  Verify,
+  AuthTypes,
+  SignClientTypes,
+} from "@walletconnect/types";
 import { AuthClientTypes } from "@walletconnect/auth-client";
 import { IWeb3WalletEngine } from "./engine";
 import { Logger } from "@walletconnect/logger";
@@ -41,6 +48,9 @@ export declare namespace Web3WalletTypes {
   type SessionRequestExpire = { id: number };
 
   type SessionAuthenticate = BaseEventArgs<AuthTypes.AuthRequestEventArgs>;
+
+  type SignConfig = SignClientTypes.Options["signConfig"];
+
   interface EventArguments {
     session_proposal: SessionProposal;
     session_request: SessionRequest;
@@ -55,6 +65,7 @@ export declare namespace Web3WalletTypes {
     core: ICore;
     metadata: Metadata;
     name?: string;
+    signConfig?: SignConfig;
   }
 
   type Metadata = CoreTypes.Metadata;
@@ -112,6 +123,7 @@ export abstract class IWeb3Wallet {
   public abstract logger: Logger;
   public abstract core: ICore;
   public abstract metadata: Web3WalletTypes.Metadata;
+  public abstract signConfig?: Web3WalletTypes.SignConfig;
 
   constructor(public opts: Web3WalletTypes.Options) {}
 

@@ -396,7 +396,7 @@ export class Engine extends IEngine {
     // This allows the client to use the updated session like emitting events
     // without waiting for the peer to acknowledge
     await this.client.session.update(topic, { namespaces });
-    this.sendRequest({
+    await this.sendRequest({
       topic,
       method: "wc_sessionUpdate",
       params: { namespaces },
@@ -1744,8 +1744,12 @@ export class Engine extends IEngine {
         verifyContext,
       };
       await this.setPendingSessionRequest(request);
-      this.addSessionRequestToSessionRequestQueue(request);
-      this.processSessionRequestQueue();
+      if (this.client.signConfig?.disableRequestQueue) {
+        this.emitSessionRequest(request);
+      } else {
+        this.addSessionRequestToSessionRequestQueue(request);
+        this.processSessionRequestQueue();
+      }
     } catch (err: any) {
       await this.sendError({
         id,
@@ -1899,10 +1903,14 @@ export class Engine extends IEngine {
 
     try {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.active;
-      this.client.events.emit("session_request", request);
+      this.emitSessionRequest(request);
     } catch (error) {
       this.client.logger.error(error);
     }
+  };
+
+  private emitSessionRequest = (request: PendingRequestTypes.Struct) => {
+    this.client.events.emit("session_request", request);
   };
 
   // ---------- Expirer Events ---------------------------------------- //
