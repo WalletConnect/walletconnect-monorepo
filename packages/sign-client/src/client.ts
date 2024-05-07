@@ -25,6 +25,7 @@ export class SignClient extends ISignClient {
   public proposal: ISignClient["proposal"];
   public pendingRequest: ISignClient["pendingRequest"];
   public auth: ISignClient["auth"];
+  public signConfig?: ISignClient["signConfig"];
 
   static async init(opts?: SignClientTypes.Options) {
     const client = new SignClient(opts);
@@ -38,6 +39,7 @@ export class SignClient extends ISignClient {
 
     this.name = opts?.name || SIGN_CLIENT_DEFAULT.name;
     this.metadata = opts?.metadata || getAppMetadata();
+    this.signConfig = opts?.signConfig;
 
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"

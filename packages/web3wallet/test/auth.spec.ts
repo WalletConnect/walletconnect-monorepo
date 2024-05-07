@@ -2,7 +2,7 @@ import { Core } from "@walletconnect/core";
 import { ICore } from "@walletconnect/types";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
-import { expect, describe, it, beforeEach, beforeAll, afterAll } from "vitest";
+import { expect, describe, it, beforeEach, beforeAll, afterAll, afterEach } from "vitest";
 import { Web3Wallet, IWeb3Wallet } from "../src";
 import { disconnect, TEST_CORE_OPTIONS } from "./shared";
 import {
@@ -32,7 +32,7 @@ describe("Auth Integration", () => {
     iss = `did:pkh:eip155:1:${cryptoWallet.address}`;
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await disconnect(core);
   });
 

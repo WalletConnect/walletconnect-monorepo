@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { initTwoClients, testConnectMethod, deleteClients, throttle } from "../shared";
+import {
+  initTwoClients,
+  testConnectMethod,
+  deleteClients,
+  throttle,
+  initTwoPairedClients,
+} from "../shared";
 
 describe("Sign Client Transport Tests", () => {
   describe("transport", () => {
     it("should disconnect & reestablish socket transport", async () => {
-      const clients = await initTwoClients();
       const {
+        clients,
         sessionA: { topic },
-      } = await testConnectMethod(clients);
+      } = await initTwoPairedClients();
       await clients.A.core.relayer.restartTransport();
       await clients.B.core.relayer.restartTransport();
       await Promise.all([
@@ -30,10 +36,10 @@ describe("Sign Client Transport Tests", () => {
       await deleteClients(clients);
     });
     it("should disconnect & reestablish socket transport with delay", async () => {
-      const clients = await initTwoClients();
       const {
+        clients,
         sessionA: { topic },
-      } = await testConnectMethod(clients);
+      } = await initTwoPairedClients();
       await clients.A.core.relayer.restartTransport();
       await throttle(2000);
       await clients.B.core.relayer.restartTransport();
@@ -57,10 +63,10 @@ describe("Sign Client Transport Tests", () => {
       await deleteClients(clients);
     });
     it("should automatically start transport on request after being closed. Case 1", async () => {
-      const clients = await initTwoClients();
       const {
+        clients,
         sessionA: { topic },
-      } = await testConnectMethod(clients);
+      } = await initTwoPairedClients();
       await clients.A.core.relayer.transportClose();
       await throttle(2000);
       await Promise.all([

@@ -18,6 +18,7 @@ export class Engine extends IWeb3WalletEngine {
     this.signClient = await SignClient.init({
       core: this.client.core,
       metadata: this.client.metadata,
+      signConfig: this.client.signConfig,
     });
     this.authClient = await AuthClient.init({
       core: this.client.core,
