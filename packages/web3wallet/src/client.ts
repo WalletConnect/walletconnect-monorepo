@@ -12,6 +12,7 @@ export class Web3Wallet extends IWeb3Wallet {
   public engine: IWeb3Wallet["engine"];
   public metadata: IWeb3Wallet["metadata"];
   public static notifications: Web3WalletTypes.INotifications = Notifications;
+  public signConfig: IWeb3Wallet["signConfig"];
 
   static async init(opts: Web3WalletTypes.Options) {
     const client = new Web3Wallet(opts);
@@ -24,6 +25,7 @@ export class Web3Wallet extends IWeb3Wallet {
     super(opts);
     this.metadata = opts.metadata;
     this.name = opts.name || CLIENT_CONTEXT;
+    this.signConfig = opts.signConfig;
     this.core = opts.core;
     this.logger = this.core.logger;
     this.engine = new Engine(this);
