@@ -161,6 +161,10 @@ export declare namespace AuthTypes {
     expiryTimestamp: number;
   }
 
+  interface SessionAuthenticateRequest extends SessionAuthenticateRequestParams {
+    verifyContext: Verify.Context;
+  }
+
   type AuthenticateResponseResult = {
     auths?: AuthTypes.AuthResponse;
     session: SessionTypes.Struct;

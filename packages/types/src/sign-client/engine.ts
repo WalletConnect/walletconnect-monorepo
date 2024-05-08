@@ -214,9 +214,23 @@ export interface EnginePrivate {
 
   setProposal(id: number, proposal: ProposalTypes.Struct): Promise<void>;
 
+  setAuthRequest(
+    id: number,
+    params: {
+      request: AuthTypes.SessionAuthenticateRequest;
+      pairingTopic: string;
+    },
+  ): Promise<void>;
+
   setPendingSessionRequest(pendingRequest: PendingRequestTypes.Struct): Promise<void>;
 
   deletePendingSessionRequest(
+    id: number,
+    reason: ErrorResponse,
+    expirerHasDeleted?: boolean,
+  ): Promise<void>;
+
+  deletePendingAuthRequest(
     id: number,
     reason: ErrorResponse,
     expirerHasDeleted?: boolean,

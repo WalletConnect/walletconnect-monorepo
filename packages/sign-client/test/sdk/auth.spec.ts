@@ -5,7 +5,6 @@ import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, throttle } from "../shar
 import {
   buildApprovedNamespaces,
   buildAuthObject,
-  calcExpiry,
   populateAuthPayload,
 } from "@walletconnect/utils";
 import { AuthTypes } from "@walletconnect/types";
@@ -48,6 +47,27 @@ describe("Authenticated Sessions", () => {
       Promise.race<void>([
         new Promise((resolve) => {
           wallet.on("session_authenticate", async (payload) => {
+            // validate that the dapp has both `session_authenticate` & `session_proposal` stored
+            // and expirer configured
+            const pendingProposals = dapp.proposal.getAll();
+            expect(pendingProposals.length).to.eq(1);
+            expect(dapp.core.expirer.keys).to.include(`id:${pendingProposals[0].id}`);
+            expect(dapp.core.expirer.get(pendingProposals[0].id)).to.exist;
+            expect(dapp.core.expirer.get(pendingProposals[0].id)?.expiry).to.exist;
+            expect(dapp.core.expirer.get(pendingProposals[0].id)?.expiry).to.be.greaterThan(0);
+
+            const pendingAuthRequests = dapp.auth.requests.getAll();
+            expect(pendingAuthRequests.length).to.eq(1);
+            expect(dapp.core.expirer.keys).to.include(`id:${pendingAuthRequests[0].id}`);
+            expect(dapp.core.expirer.get(pendingAuthRequests[0].id)).to.exist;
+            expect(dapp.core.expirer.get(pendingAuthRequests[0].id)?.expiry).to.exist;
+            expect(dapp.core.expirer.get(pendingAuthRequests[0].id)?.expiry).to.be.greaterThan(0);
+            expect(pendingAuthRequests[0].id).to.eq(payload.id);
+
+            // validate that the wallet doesn't have any pending proposals
+            const pendingProposalsWallet = wallet.proposal.getAll();
+            expect(pendingProposalsWallet.length).to.eq(0);
+
             const authPayload = populateAuthPayload({
               authPayload: payload.params.authPayload,
               chains: requestedChains,
@@ -115,6 +135,12 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+
+    // confirm that all pending proposals and auth requests have been cleared
+    expect(wallet.proposal.getAll().length).to.eq(0);
+    expect(wallet.auth.requests.getAll().length).to.eq(0);
+    expect(dapp.proposal.getAll().length).to.eq(0);
+    expect(dapp.auth.requests.getAll().length).to.eq(0);
   });
   // this test simulates the scenario where the wallet supports subset of the requested chains and all methods
   // and replies with a single signature
@@ -146,6 +172,27 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
+          // validate that the dapp has both `session_authenticate` & `session_proposal` stored
+          // and expirer configured
+          const pendingProposals = dapp.proposal.getAll();
+          expect(pendingProposals.length).to.eq(1);
+          expect(dapp.core.expirer.keys).to.include(`id:${pendingProposals[0].id}`);
+          expect(dapp.core.expirer.get(pendingProposals[0].id)).to.exist;
+          expect(dapp.core.expirer.get(pendingProposals[0].id)?.expiry).to.exist;
+          expect(dapp.core.expirer.get(pendingProposals[0].id)?.expiry).to.be.greaterThan(0);
+
+          const pendingAuthRequests = dapp.auth.requests.getAll();
+          expect(pendingAuthRequests.length).to.eq(1);
+          expect(dapp.core.expirer.keys).to.include(`id:${pendingAuthRequests[0].id}`);
+          expect(dapp.core.expirer.get(pendingAuthRequests[0].id)).to.exist;
+          expect(dapp.core.expirer.get(pendingAuthRequests[0].id)?.expiry).to.exist;
+          expect(dapp.core.expirer.get(pendingAuthRequests[0].id)?.expiry).to.be.greaterThan(0);
+          expect(pendingAuthRequests[0].id).to.eq(payload.id);
+
+          // validate that the wallet doesn't have any pending proposals
+          const pendingProposalsWallet = wallet.proposal.getAll();
+          expect(pendingProposalsWallet.length).to.eq(0);
+
           const authPayload = populateAuthPayload({
             authPayload: payload.params.authPayload,
             chains: supportedChains,
@@ -207,6 +254,11 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+    // confirm that all pending proposals and auth requests have been cleared
+    expect(wallet.proposal.getAll().length).to.eq(0);
+    expect(wallet.auth.requests.getAll().length).to.eq(0);
+    expect(dapp.proposal.getAll().length).to.eq(0);
+    expect(dapp.auth.requests.getAll().length).to.eq(0);
   });
   // this test simulates the scenario where the wallet supports subset of the requested chains and methods
   // and replies with a single signature
@@ -239,6 +291,27 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
+          // validate that the dapp has both `session_authenticate` & `session_proposal` stored
+          // and expirer configured
+          const pendingProposals = dapp.proposal.getAll();
+          expect(pendingProposals.length).to.eq(1);
+          expect(dapp.core.expirer.keys).to.include(`id:${pendingProposals[0].id}`);
+          expect(dapp.core.expirer.get(pendingProposals[0].id)).to.exist;
+          expect(dapp.core.expirer.get(pendingProposals[0].id)?.expiry).to.exist;
+          expect(dapp.core.expirer.get(pendingProposals[0].id)?.expiry).to.be.greaterThan(0);
+
+          const pendingAuthRequests = dapp.auth.requests.getAll();
+          expect(pendingAuthRequests.length).to.eq(1);
+          expect(dapp.core.expirer.keys).to.include(`id:${pendingAuthRequests[0].id}`);
+          expect(dapp.core.expirer.get(pendingAuthRequests[0].id)).to.exist;
+          expect(dapp.core.expirer.get(pendingAuthRequests[0].id)?.expiry).to.exist;
+          expect(dapp.core.expirer.get(pendingAuthRequests[0].id)?.expiry).to.be.greaterThan(0);
+          expect(pendingAuthRequests[0].id).to.eq(payload.id);
+
+          // validate that the wallet doesn't have any pending proposals
+          const pendingProposalsWallet = wallet.proposal.getAll();
+          expect(pendingProposalsWallet.length).to.eq(0);
+
           const authPayload = populateAuthPayload({
             authPayload: payload.params.authPayload,
             chains: supportedChains,
@@ -1132,10 +1205,19 @@ describe("Authenticated Sessions", () => {
     //@ts-expect-error
     wallet.core.pairing.registeredMethods = [];
     wallet.core.pairing.register({ methods: toRegisterMethods });
-
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
+          // validate that the dapp has both `session_authenticate` & `session_proposal` stored
+          // and expirer configured
+          const pendingProposals = dapp.proposal.getAll();
+          expect(pendingProposals.length).to.eq(1);
+          expect(dapp.core.expirer.keys).to.include(`id:${pendingProposals[0].id}`);
+          expect(dapp.core.expirer.get(pendingProposals[0].id)).to.exist;
+          expect(dapp.core.expirer.get(pendingProposals[0].id)?.expiry).to.exist;
+          expect(dapp.core.expirer.get(pendingProposals[0].id)?.expiry).to.be.greaterThan(0);
+          expect(pendingProposals[0].id).to.eq(payload.id);
+
           try {
             const approved = buildApprovedNamespaces({
               supportedNamespaces: {
@@ -1197,5 +1279,9 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+    // confirm that all pending proposals and auth requests have been cleared
+    expect(wallet.proposal.getAll().length).to.eq(0);
+    expect(dapp.proposal.getAll().length).to.eq(0);
+    expect(dapp.auth.requests.getAll().length).to.eq(0);
   });
 });
