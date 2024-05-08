@@ -39,7 +39,11 @@ export type RpcMethod =
   | "wallet_requestPermissions"
   | "wallet_registerOnboarding"
   | "wallet_watchAsset"
-  | "wallet_scanQRCode";
+  | "wallet_scanQRCode"
+  | "wallet_sendCalls"
+  | "wallet_getCapabilities"
+  | "wallet_getCallsStatus"
+  | "wallet_showCallsStatus";
 
 export type RpcEvent = "accountsChanged" | "chainChanged" | "message" | "disconnect" | "connect";
 

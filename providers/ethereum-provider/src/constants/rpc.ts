@@ -17,6 +17,10 @@ export const OPTIONAL_METHODS = [
   "wallet_registerOnboarding",
   "wallet_watchAsset",
   "wallet_scanQRCode",
+  "wallet_sendCalls",
+  "wallet_getCapabilities",
+  "wallet_getCallsStatus",
+  "wallet_showCallsStatus",
 ];
 export const REQUIRED_EVENTS = ["chainChanged", "accountsChanged"];
 export const OPTIONAL_EVENTS = [
