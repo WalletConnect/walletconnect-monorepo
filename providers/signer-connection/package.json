@@ -43,6 +43,6 @@
     "@walletconnect/types": "2.12.2",
     "@walletconnect/utils": "2.12.2",
     "events": "3.3.0",
-    "uint8arrays": "3.1.0"
+    "uint8arrays": "5.0.3"
   }
 }
