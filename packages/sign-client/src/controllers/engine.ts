@@ -1832,23 +1832,33 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { requester, authPayload, expiryTimestamp } = payload.params;
-    const hash = hashMessage(JSON.stringify(payload));
-    const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
-    const pendingRequest = {
-      requester,
-      pairingTopic: topic,
-      id: payload.id,
-      authPayload,
-      verifyContext,
-      expiryTimestamp,
-    };
-    await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
-    this.client.events.emit("session_authenticate", {
-      topic,
-      params: payload.params,
-      id: payload.id,
-    });
+    try {
+      const { requester, authPayload, expiryTimestamp } = payload.params;
+      const hash = hashMessage(JSON.stringify(payload));
+      const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
+      const pendingRequest = {
+        requester,
+        pairingTopic: topic,
+        id: payload.id,
+        authPayload,
+        verifyContext,
+        expiryTimestamp,
+      };
+      await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
+      this.client.events.emit("session_authenticate", {
+        topic,
+        params: payload.params,
+        id: payload.id,
+      });
+    } catch (err: any) {
+      await this.sendError({
+        id: payload.id,
+        topic,
+        error: err,
+        rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.autoReject,
+      });
+      this.client.logger.error(err);
+    }
   };
 
   private addSessionRequestToSessionRequestQueue = (request: PendingRequestTypes.Struct) => {
