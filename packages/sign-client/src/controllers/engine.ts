@@ -1851,10 +1851,19 @@ export class Engine extends IEngine {
         id: payload.id,
       });
     } catch (err: any) {
+      const receiverPublicKey = payload.params.requester.publicKey;
+      const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+
+      const encodeOpts = {
+        type: TYPE_1,
+        receiverPublicKey,
+        senderPublicKey,
+      };
       await this.sendError({
         id: payload.id,
         topic,
         error: err,
+        encodeOpts,
         rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.autoReject,
       });
       this.client.logger.error(err);
