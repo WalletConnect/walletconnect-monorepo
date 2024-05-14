@@ -1851,6 +1851,8 @@ export class Engine extends IEngine {
         id: payload.id,
       });
     } catch (err: any) {
+      this.client.logger.error(err);
+
       const receiverPublicKey = payload.params.requester.publicKey;
       const senderPublicKey = await this.client.core.crypto.generateKeyPair();
 
@@ -1866,7 +1868,6 @@ export class Engine extends IEngine {
         encodeOpts,
         rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.autoReject,
       });
-      this.client.logger.error(err);
     }
   };
 
