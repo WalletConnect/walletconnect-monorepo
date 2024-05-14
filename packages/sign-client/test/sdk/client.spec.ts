@@ -343,6 +343,8 @@ describe("Sign Client Integration", () => {
         expect(clients.B.pendingRequest.getAll().length).to.eq(0);
         // @ts-expect-error - sessionRequestQueue is private property
         expect(clients.B.engine.sessionRequestQueue.state).to.eq(ENGINE_QUEUE_STATES.idle);
+        // @ts-expect-error - force close the transport due to pending session request
+        clients.A.core.relayer.hasExperiencedNetworkDisruption = true;
         await deleteClients(clients);
       });
     });
