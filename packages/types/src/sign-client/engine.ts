@@ -139,6 +139,12 @@ export declare namespace EngineTypes {
     res: RelayerTypes.PublishOptions & {
       ttl: number;
     };
+    reject?: RelayerTypes.PublishOptions & {
+      ttl: number;
+    };
+    autoReject?: RelayerTypes.PublishOptions & {
+      ttl: number;
+    };
   }
 
   type RpcOptsMap = Record<JsonRpcTypes.WcMethod, RpcOpts>;
@@ -191,6 +197,7 @@ export interface EnginePrivate {
     topic: string;
     error: JsonRpcTypes.Error;
     encodeOpts?: CryptoTypes.EncodeOptions;
+    rpcOpts?: RelayerTypes.PublishOptions;
   }): Promise<void>;
 
   onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): void;

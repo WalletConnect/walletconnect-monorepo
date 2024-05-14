@@ -1,15 +1,17 @@
 /* eslint-disable no-console */
 import { expect, describe, it, beforeAll } from "vitest";
 import { ENGINE_RPC_OPTS, SignClient } from "../../src";
-import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, throttle } from "../shared";
+import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, deleteClients, throttle } from "../shared";
 import {
   buildApprovedNamespaces,
   buildAuthObject,
+  getSdkError,
   populateAuthPayload,
 } from "@walletconnect/utils";
 import { AuthTypes } from "@walletconnect/types";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { RELAYER_EVENTS } from "@walletconnect/core";
 
 describe("Authenticated Sessions", () => {
   let cryptoWallet: CryptoWallet;
@@ -141,6 +143,8 @@ describe("Authenticated Sessions", () => {
     expect(wallet.auth.requests.getAll().length).to.eq(0);
     expect(dapp.proposal.getAll().length).to.eq(0);
     expect(dapp.auth.requests.getAll().length).to.eq(0);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
   // this test simulates the scenario where the wallet supports subset of the requested chains and all methods
   // and replies with a single signature
@@ -259,6 +263,8 @@ describe("Authenticated Sessions", () => {
     expect(wallet.auth.requests.getAll().length).to.eq(0);
     expect(dapp.proposal.getAll().length).to.eq(0);
     expect(dapp.auth.requests.getAll().length).to.eq(0);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
   // this test simulates the scenario where the wallet supports subset of the requested chains and methods
   // and replies with a single signature
@@ -373,6 +379,8 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
   // this test simulates the scenario where the wallet supports all requested chains and subset of methods
   // and replies with a single signature
@@ -466,6 +474,8 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
 
   // this test simulates the scenario where the wallet supports all the requested chains and methods
@@ -564,6 +574,8 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
   // this test simulates the scenario where the wallet supports subset of the requested chains and all methods
   it("should establish authenticated session with multiple signatures. Case 2", async () => {
@@ -662,6 +674,8 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
   // this test simulates the scenario where the wallet supports subset of the requested chains and methods
   it("should establish authenticated session with multiple signatures. Case 3", async () => {
@@ -760,6 +774,8 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
   // this test simulates the scenario where the wallet supports all requested chains and subset of methods
   it("should establish authenticated session with multiple signatures. Case 4", async () => {
@@ -859,6 +875,8 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
   it("should establish authenticated session", async () => {
     const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
@@ -943,6 +961,8 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
 
   it("should establish normal sign session when URI doesn't specify `wc_sessionAuthenticate` method", async () => {
@@ -1029,6 +1049,8 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
 
   it("should establish normal sign session when wallet hasn't subscribed to session_authenticate", async () => {
@@ -1115,6 +1137,8 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
+
+    await deleteClients({ A: dapp, B: wallet });
   });
 
   it("should perform siwe", async () => {
@@ -1177,6 +1201,7 @@ describe("Authenticated Sessions", () => {
     expect(result.auths).to.exist;
     expect(result.auths).to.have.length(1);
     await throttle(1000);
+    await deleteClients({ A: dapp, B: wallet });
   });
   it("should perform siwe on fallback session via personal_sign", async () => {
     const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
@@ -1283,5 +1308,53 @@ describe("Authenticated Sessions", () => {
     expect(wallet.proposal.getAll().length).to.eq(0);
     expect(dapp.proposal.getAll().length).to.eq(0);
     expect(dapp.auth.requests.getAll().length).to.eq(0);
+    await deleteClients({ A: dapp, B: wallet });
+  });
+  it("should use rejected tag for session_authenticate", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    const requestedChains = ["eip155:1", "eip155:2"];
+    const requestedMethods = ["personal_sign", "eth_chainId", "eth_signTypedData_v4"];
+    const { uri } = await dapp.authenticate({
+      chains: requestedChains,
+      domain: "localhost",
+      nonce: "1",
+      uri: "aud",
+      methods: requestedMethods,
+      resources: [
+        "urn:recap:eyJhdHQiOnsiaHR0cHM6Ly9ub3RpZnkud2FsbGV0Y29ubmVjdC5jb20iOnsibWFuYWdlL2FsbC1hcHBzLW5vdGlmaWNhdGlvbnMiOlt7fV19fX0",
+      ],
+    });
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+
+    if (!uri) throw new Error("URI is undefined");
+    expect(uri).to.exist;
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.core.relayer.once(RELAYER_EVENTS.publish, (payload) => {
+          const { opts } = payload;
+          const expectedOpts = ENGINE_RPC_OPTS.wc_sessionAuthenticate.reject;
+          expect(opts).to.exist;
+          expect(opts.tag).to.eq(expectedOpts?.tag);
+          expect(opts.ttl).to.eq(expectedOpts?.ttl);
+          expect(opts.prompt).to.eq(expectedOpts?.prompt);
+          resolve();
+        });
+      }),
+      new Promise<void>((resolve) => {
+        wallet.once("session_authenticate", async (params) => {
+          await wallet.rejectSessionAuthenticate({
+            id: params.id,
+            reason: getSdkError("USER_REJECTED"),
+          });
+          resolve();
+        });
+      }),
+      wallet.pair({ uri }),
+    ]);
+    await deleteClients({ A: dapp, B: wallet });
   });
 });

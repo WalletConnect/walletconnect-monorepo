@@ -366,6 +366,7 @@ export class Engine extends IEngine {
         id,
         topic: pairingTopic,
         error: reason,
+        rpcOpts: ENGINE_RPC_OPTS.wc_sessionPropose.reject,
       });
       await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
     }
@@ -1003,6 +1004,7 @@ export class Engine extends IEngine {
       topic: responseTopic,
       error: reason,
       encodeOpts,
+      rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.reject,
     });
     await this.client.auth.requests.delete(id, { message: "rejected", code: 0 });
     await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
@@ -1214,7 +1216,7 @@ export class Engine extends IEngine {
   };
 
   private sendError: EnginePrivate["sendError"] = async (params) => {
-    const { id, topic, error, encodeOpts } = params;
+    const { id, topic, error, encodeOpts, rpcOpts } = params;
     const payload = formatJsonRpcError(id, error);
     let message;
     try {
@@ -1231,7 +1233,7 @@ export class Engine extends IEngine {
       this.client.logger.error(`sendError() -> history.get(${topic}, ${id}) failed`);
       throw error;
     }
-    const opts = ENGINE_RPC_OPTS[record.request.method].res;
+    const opts = rpcOpts || ENGINE_RPC_OPTS[record.request.method].res;
     // await is intentionally omitted to speed up performance
     this.client.core.relayer.publish(topic, message, opts);
     await this.client.core.history.resolve(payload);
@@ -1434,6 +1436,7 @@ export class Engine extends IEngine {
         id,
         topic,
         error: err,
+        rpcOpts: ENGINE_RPC_OPTS.wc_sessionPropose.autoReject,
       });
       this.client.logger.error(err);
     }
@@ -1829,23 +1832,43 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { requester, authPayload, expiryTimestamp } = payload.params;
-    const hash = hashMessage(JSON.stringify(payload));
-    const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
-    const pendingRequest = {
-      requester,
-      pairingTopic: topic,
-      id: payload.id,
-      authPayload,
-      verifyContext,
-      expiryTimestamp,
-    };
-    await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
-    this.client.events.emit("session_authenticate", {
-      topic,
-      params: payload.params,
-      id: payload.id,
-    });
+    try {
+      const { requester, authPayload, expiryTimestamp } = payload.params;
+      const hash = hashMessage(JSON.stringify(payload));
+      const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
+      const pendingRequest = {
+        requester,
+        pairingTopic: topic,
+        id: payload.id,
+        authPayload,
+        verifyContext,
+        expiryTimestamp,
+      };
+      await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
+      this.client.events.emit("session_authenticate", {
+        topic,
+        params: payload.params,
+        id: payload.id,
+      });
+    } catch (err: any) {
+      this.client.logger.error(err);
+
+      const receiverPublicKey = payload.params.requester.publicKey;
+      const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+
+      const encodeOpts = {
+        type: TYPE_1,
+        receiverPublicKey,
+        senderPublicKey,
+      };
+      await this.sendError({
+        id: payload.id,
+        topic,
+        error: err,
+        encodeOpts,
+        rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.autoReject,
+      });
+    }
   };
 
   private addSessionRequestToSessionRequestQueue = (request: PendingRequestTypes.Struct) => {
