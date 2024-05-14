@@ -5,7 +5,11 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
-import SignClient, { ENGINE_RPC_OPTS, WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
+import SignClient, {
+  ENGINE_QUEUE_STATES,
+  ENGINE_RPC_OPTS,
+  WALLETCONNECT_DEEPLINK_CHOICE,
+} from "../../src";
 
 import {
   initTwoClients,
@@ -303,6 +307,42 @@ describe("Sign Client Integration", () => {
         // small delay to finish disconnect
         await throttle(500);
         expect(await clients.A.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE)).to.be.undefined;
+        await deleteClients(clients);
+      });
+    });
+    describe("request queue", () => {
+      it("should reset request queue state on disconnect", async () => {
+        const {
+          clients,
+          sessionA: { topic },
+        } = await initTwoPairedClients({}, {}, { logger: "error" });
+        await new Promise<void>((resolve) => {
+          clients.B.once("session_request", () => {
+            resolve();
+          });
+          clients.A.request({
+            topic,
+            ...TEST_REQUEST_PARAMS,
+          });
+        });
+
+        expect(clients.B.pendingRequest.getAll().length).to.eq(1);
+        // @ts-expect-error - sessionRequestQueue is private property
+        expect(clients.B.engine.sessionRequestQueue.state).to.eq(ENGINE_QUEUE_STATES.active);
+
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            clients.B.once("session_delete", () => {
+              resolve();
+            });
+          }),
+          clients.A.disconnect({ topic, reason: getSdkError("USER_DISCONNECTED") }),
+        ]);
+        // small delay as deleting pending requests is async
+        await throttle(5_00);
+        expect(clients.B.pendingRequest.getAll().length).to.eq(0);
+        // @ts-expect-error - sessionRequestQueue is private property
+        expect(clients.B.engine.sessionRequestQueue.state).to.eq(ENGINE_QUEUE_STATES.idle);
         await deleteClients(clients);
       });
     });
