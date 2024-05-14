@@ -30,6 +30,7 @@ import {
 } from "./shared/constants";
 import { getChainId, getGlobal, getRpcUrl, setGlobal } from "../src/utils";
 import { RPC_URL } from "../src/constants";
+import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 const getDbName = (_prefix: string) => {
   return `./test/tmp/${_prefix}.db`;
@@ -1000,6 +1001,78 @@ describe("UniversalProvider", function () {
           defaultNamespace: "solana",
           expectedChainId,
         });
+      });
+      it("should cache `wallet_getCapabilities` request", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1"];
+        const { sessionA } = await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              eip155: {
+                methods: ["wallet_getCapabilities"],
+                events,
+                chains,
+              },
+            },
+            namespaces: {
+              eip155: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                methods: ["wallet_getCapabilities"],
+                events,
+              },
+            },
+          },
+        );
+        expect(sessionA).to.be.an("object");
+        expect(sessionA.sessionProperties).to.be.undefined;
+        const sessionPropertiesResponse = {
+          "0x2105": {
+            atomicBatch: {
+              supported: true,
+            },
+          },
+        };
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            wallet.client.on("session_request", async (event) => {
+              await wallet.client.respond({
+                topic: event.topic,
+                response: formatJsonRpcResult(event.id, sessionPropertiesResponse),
+              });
+              resolve();
+            });
+          }),
+          new Promise<void>(async (resolve) => {
+            const result = await dapp.request({
+              method: "wallet_getCapabilities",
+              params: [walletAddress],
+            });
+            expect(result).to.eql(sessionPropertiesResponse);
+            resolve();
+          }),
+        ]);
+        // now the sessionProperties should be cached
+        const updatedSession = dapp.client.session.get(sessionA.topic);
+        expect(updatedSession.sessionProperties).to.exist;
+        expect(updatedSession.sessionProperties?.capabilities).to.exist;
+
+        const cachedResult = await dapp.request({
+          method: "wallet_getCapabilities",
+          params: [walletAddress],
+        });
+        expect(cachedResult).to.eql(sessionPropertiesResponse);
+        await deleteProviders({ A: dapp, B: wallet });
       });
     });
   });
