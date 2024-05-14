@@ -1090,10 +1090,14 @@ export class Engine extends IEngine {
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
     this.addToRecentlyDeleted(id, "request");
-    this.sessionRequestQueue.queue = this.sessionRequestQueue.queue.filter((r) => r.id !== id);
-    // set the requestQueue state to idle if expirer has deleted a request as trying to respond to it would result in an exception
-    if (expirerHasDeleted) {
+
+    // this request being the first means it was already emitted to the wallet but hasn't been responded to
+    // so we need to reset the queue state back to idle
+    if (id === this.sessionRequestQueue.queue[0]?.id) {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
+    }
+    this.sessionRequestQueue.queue = this.sessionRequestQueue.queue.filter((r) => r.id !== id);
+    if (expirerHasDeleted) {
       this.client.events.emit("session_request_expire", { id });
     }
   };
