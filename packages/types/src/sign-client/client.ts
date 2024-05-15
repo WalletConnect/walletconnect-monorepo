@@ -60,9 +60,14 @@ export declare namespace SignClientTypes {
 
   type Metadata = CoreTypes.Metadata;
 
+  type SignConfig = {
+    disableRequestQueue?: boolean;
+  };
+
   interface Options extends CoreTypes.Options {
     core?: ICore;
     metadata?: Metadata;
+    signConfig?: SignConfig;
   }
 }
 
@@ -115,6 +120,7 @@ export abstract class ISignClient {
   public abstract proposal: IProposal;
   public abstract pendingRequest: IPendingRequest;
   public abstract auth: IAuth;
+  public abstract signConfig?: SignClientTypes.SignConfig;
 
   constructor(public opts?: SignClientTypes.Options) {}
 

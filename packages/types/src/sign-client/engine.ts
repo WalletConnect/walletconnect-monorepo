@@ -139,6 +139,12 @@ export declare namespace EngineTypes {
     res: RelayerTypes.PublishOptions & {
       ttl: number;
     };
+    reject?: RelayerTypes.PublishOptions & {
+      ttl: number;
+    };
+    autoReject?: RelayerTypes.PublishOptions & {
+      ttl: number;
+    };
   }
 
   type RpcOptsMap = Record<JsonRpcTypes.WcMethod, RpcOpts>;
@@ -191,6 +197,7 @@ export interface EnginePrivate {
     topic: string;
     error: JsonRpcTypes.Error;
     encodeOpts?: CryptoTypes.EncodeOptions;
+    rpcOpts?: RelayerTypes.PublishOptions;
   }): Promise<void>;
 
   onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): void;
@@ -214,9 +221,23 @@ export interface EnginePrivate {
 
   setProposal(id: number, proposal: ProposalTypes.Struct): Promise<void>;
 
+  setAuthRequest(
+    id: number,
+    params: {
+      request: AuthTypes.SessionAuthenticateRequest;
+      pairingTopic: string;
+    },
+  ): Promise<void>;
+
   setPendingSessionRequest(pendingRequest: PendingRequestTypes.Struct): Promise<void>;
 
   deletePendingSessionRequest(
+    id: number,
+    reason: ErrorResponse,
+    expirerHasDeleted?: boolean,
+  ): Promise<void>;
+
+  deletePendingAuthRequest(
     id: number,
     reason: ErrorResponse,
     expirerHasDeleted?: boolean,

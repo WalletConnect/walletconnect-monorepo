@@ -78,7 +78,7 @@ export class Relayer extends IRelayer {
   private projectId: string | undefined;
   private bundleId: string | undefined;
   private connectionStatusPollingInterval = 20;
-  private staleConnectionErrors = ["socket hang up", "socket stalled", "interrupted"];
+  private staleConnectionErrors = ["socket hang up", "stalled", "interrupted"];
   private hasExperiencedNetworkDisruption = false;
   private requestsInFlight = new Map<
     number,
@@ -117,7 +117,6 @@ export class Relayer extends IRelayer {
   public async init() {
     this.logger.trace(`Initialized`);
     this.registerEventListeners();
-    await this.createProvider();
     await Promise.all([this.messages.init(), this.subscriber.init()]);
     try {
       await this.transportOpen();
@@ -128,6 +127,7 @@ export class Relayer extends IRelayer {
       await this.restartTransport(RELAYER_FAILOVER_RELAY_URL);
     }
     this.initialized = true;
+
     setTimeout(async () => {
       if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
         this.logger.info(`No topics subscribed to after init, closing transport`);
@@ -286,8 +286,10 @@ export class Relayer extends IRelayer {
     if (relayUrl && relayUrl !== this.relayUrl) {
       this.relayUrl = relayUrl;
       await this.transportDisconnect();
-      await this.createProvider();
     }
+    // Always create new socket instance when trying to connect because if the socket was dropped due to `socket hang up` exception
+    // It wont be able to reconnect
+    await this.createProvider();
     this.connectionAttemptInProgress = true;
     this.transportExplicitlyClosed = false;
     try {
@@ -312,6 +314,7 @@ export class Relayer extends IRelayer {
     } catch (e) {
       this.logger.error(e);
       const error = e as Error;
+      this.hasExperiencedNetworkDisruption = true;
       if (!this.isConnectionStalled(error.message)) {
         throw e;
       }
@@ -325,13 +328,29 @@ export class Relayer extends IRelayer {
     this.relayUrl = relayUrl || this.relayUrl;
     await this.confirmOnlineStateOrThrow();
     await this.transportClose();
-    await this.createProvider();
     await this.transportOpen();
   }
 
   public async confirmOnlineStateOrThrow() {
     if (await isOnline()) return;
     throw new Error("No internet connection detected. Please restart your network and try again.");
+  }
+
+  public async handleBatchMessageEvents(messages: RelayerTypes.MessageEvent[]) {
+    if (messages?.length === 0) {
+      this.logger.trace("Batch message events is empty. Ignoring...");
+      return;
+    }
+    const sortedMessages = messages.sort((a, b) => a.publishedAt - b.publishedAt);
+    this.logger.trace(`Batch of ${sortedMessages.length} message events sorted`);
+    for (const message of sortedMessages) {
+      try {
+        await this.onMessageEvent(message);
+      } catch (e) {
+        this.logger.warn(e);
+      }
+    }
+    this.logger.trace(`Batch of ${sortedMessages.length} message events processed`);
   }
 
   // ---------- Private ----------------------------------------------- //
@@ -493,6 +512,7 @@ export class Relayer extends IRelayer {
     this.provider.off(RELAYER_PROVIDER_EVENTS.connect, this.onConnectHandler);
     this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, this.onDisconnectHandler);
     this.provider.off(RELAYER_PROVIDER_EVENTS.error, this.onProviderErrorHandler);
+    clearTimeout(this.pingTimeout);
   }
 
   private async registerEventListeners() {
@@ -515,10 +535,11 @@ export class Relayer extends IRelayer {
 
   private async onProviderDisconnect() {
     await this.subscriber.stop();
+    this.requestsInFlight.clear();
+    clearTimeout(this.pingTimeout);
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.connectionAttemptInProgress = false;
     if (this.transportExplicitlyClosed) return;
-
     setTimeout(async () => {
       await this.transportOpen().catch((error) => this.logger.error(error));
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));

@@ -5,7 +5,7 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
-import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
+import SignClient, { ENGINE_RPC_OPTS, WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
 
 import {
   initTwoClients,
@@ -22,14 +22,21 @@ import {
   initTwoPairedClients,
   TEST_CONNECT_PARAMS,
 } from "../shared";
+import { RELAYER_EVENTS } from "@walletconnect/core";
 
 describe("Sign Client Integration", () => {
   it("init", async () => {
-    const client = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "init" });
+    const client = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "init",
+      signConfig: { disableRequestQueue: true },
+    });
     expect(client).to.be.exist;
     expect(client.metadata.redirect).to.exist;
     expect(client.metadata.redirect?.universal).to.exist;
     expect(client.metadata.redirect?.native).to.not.exist;
+    expect(client.signConfig).to.exist;
+    expect(client.signConfig?.disableRequestQueue).to.be.true;
     await deleteClients({ A: client, B: undefined });
   });
 
@@ -206,6 +213,34 @@ describe("Sign Client Integration", () => {
       expect(sessionWallet.sessionConfig).to.eql(sessionDapp.sessionConfig);
       await deleteClients({ A: dapp, B: wallet });
     });
+    it("should use rejected tag for session_propose", async () => {
+      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+      const wallet = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "wallet" });
+      const { uri } = await dapp.connect(TEST_CONNECT_PARAMS);
+      if (!uri) throw new Error("URI is undefined");
+      expect(uri).to.exist;
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          wallet.core.relayer.once(RELAYER_EVENTS.publish, (payload) => {
+            const { opts } = payload;
+            const expectedOpts = ENGINE_RPC_OPTS.wc_sessionPropose.reject;
+            expect(opts).to.exist;
+            expect(opts.tag).to.eq(expectedOpts?.tag);
+            expect(opts.ttl).to.eq(expectedOpts?.ttl);
+            expect(opts.prompt).to.eq(expectedOpts?.prompt);
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          wallet.once("session_proposal", async (params) => {
+            await wallet.reject({ id: params.id, reason: getSdkError("USER_REJECTED") });
+            resolve();
+          });
+        }),
+        wallet.pair({ uri }),
+      ]);
+      await deleteClients({ A: dapp, B: wallet });
+    });
   });
 
   describe("disconnect", () => {
@@ -293,10 +328,10 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
         it("B pings A", async () => {
-          const clients = await initTwoClients({ name: "dapp" }, { name: "wallet" });
           const {
+            clients,
             pairingA: { topic },
-          } = await testConnectMethod(clients);
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
           await clients.B.ping({ topic });
           await deleteClients(clients);
         });
@@ -305,18 +340,18 @@ describe("Sign Client Integration", () => {
     describe("session", () => {
       describe("with existing session", () => {
         it("A pings B", async () => {
-          const clients = await initTwoClients();
           const {
+            clients,
             sessionA: { topic },
-          } = await testConnectMethod(clients);
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
           await clients.A.ping({ topic });
           await deleteClients(clients);
         });
         it("B pings A", async () => {
-          const clients = await initTwoClients();
           const {
+            clients,
             sessionA: { topic },
-          } = await testConnectMethod(clients);
+          } = await initTwoPairedClients({}, {}, { logger: "error" });
           await clients.B.ping({ topic });
           await deleteClients(clients);
         });
@@ -387,6 +422,70 @@ describe("Sign Client Integration", () => {
             ),
           ]);
           await throttle(1000);
+          await deleteClients(clients);
+        });
+        it("should disable requests queue via `signConfig`", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            { signConfig: { disableRequestQueue: true } },
+            { logger: "error" },
+          );
+          let firstRequestId;
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.once("session_request", (args) => {
+                const { id, topic } = args;
+                firstRequestId = id;
+                // validate that theres only one request pending (the one we just received)
+                const pendingRequests = clients.B.pendingRequest.getAll();
+                expect(pendingRequests.length).to.eq(1);
+                resolve();
+              });
+            }),
+            new Promise<void>((resolve) => {
+              clients.A.request({
+                topic,
+                ...TEST_REQUEST_PARAMS,
+              });
+              resolve();
+            }),
+          ]);
+          await throttle(1000);
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.once("session_request", async (args) => {
+                const { id, topic } = args;
+                const pendingRequests = clients.B.pendingRequest.getAll();
+                // validate that there are two requests pending
+                expect(pendingRequests.length).to.eq(2);
+                // validate the IDs are different even though we didn't respond to the first request
+                // if the queue was active, we would've received the first request again
+                expect(id).to.not.eq(firstRequestId);
+                // validate we can respond to the second request successfully
+                await clients.B.respond({
+                  topic,
+                  response: formatJsonRpcResult(id, "ok"),
+                });
+                resolve();
+              });
+            }),
+            clients.A.request({
+              topic,
+              ...TEST_REQUEST_PARAMS,
+            }),
+          ]);
+          // validate the first request is still pending
+          expect(clients.B.pendingRequest.getAll().length).to.eq(1);
+          expect(clients.B.pendingRequest.getAll()[0].id).to.eq(firstRequestId);
+
+          await clients.B.respond({
+            topic,
+            response: formatJsonRpcResult(firstRequestId, "ok"),
+          });
+
           await deleteClients(clients);
         });
         /**
