@@ -1069,7 +1069,7 @@ export class Engine extends IEngine {
         this.deletePendingSessionRequest(r.id, getSdkError("USER_DISCONNECTED"));
       }
     });
-    // reset the queue state back to idle if the deleted session is still in the queue
+    // reset the queue state back to idle if a request for the deleted session is still in the queue
     if (topic === this.sessionRequestQueue.queue[0]?.topic) {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
     }
