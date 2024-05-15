@@ -1069,6 +1069,10 @@ export class Engine extends IEngine {
         this.deletePendingSessionRequest(r.id, getSdkError("USER_DISCONNECTED"));
       }
     });
+    // reset the queue state back to idle if a request for the deleted session is still in the queue
+    if (topic === this.sessionRequestQueue.queue[0]?.topic) {
+      this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
+    }
     if (emitEvent) this.client.events.emit("session_delete", { id, topic });
   };
 
@@ -1091,7 +1095,6 @@ export class Engine extends IEngine {
     ]);
     this.addToRecentlyDeleted(id, "request");
     this.sessionRequestQueue.queue = this.sessionRequestQueue.queue.filter((r) => r.id !== id);
-    // set the requestQueue state to idle if expirer has deleted a request as trying to respond to it would result in an exception
     if (expirerHasDeleted) {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
       this.client.events.emit("session_request_expire", { id });
