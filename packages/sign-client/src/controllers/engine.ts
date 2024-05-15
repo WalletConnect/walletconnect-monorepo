@@ -1069,6 +1069,10 @@ export class Engine extends IEngine {
         this.deletePendingSessionRequest(r.id, getSdkError("USER_DISCONNECTED"));
       }
     });
+    // reset the queue state back to idle if the deleted session is still in the queue
+    if (topic === this.sessionRequestQueue.queue[0]?.topic) {
+      this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
+    }
     if (emitEvent) this.client.events.emit("session_delete", { id, topic });
   };
 
@@ -1090,14 +1094,9 @@ export class Engine extends IEngine {
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
     ]);
     this.addToRecentlyDeleted(id, "request");
-
-    // this request being the first means it was already emitted to the wallet but hasn't been responded to
-    // so we need to reset the queue state back to idle
-    if (id === this.sessionRequestQueue.queue[0]?.id) {
-      this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
-    }
     this.sessionRequestQueue.queue = this.sessionRequestQueue.queue.filter((r) => r.id !== id);
     if (expirerHasDeleted) {
+      this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
       this.client.events.emit("session_request_expire", { id });
     }
   };
