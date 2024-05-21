@@ -15,16 +15,20 @@ if (typeof Buffer === "undefined") {
 }
 
 // Polyfill btoa
-if (typeof btoa === 'undefined') {
+if (typeof btoa === "undefined") {
   global.btoa = function (str) {
-    return new Buffer(str, 'binary').toString('base64');
+    return Buffer.alloc(str.length, str, "binary").toString("base64");
   };
 }
 
 // Polyfill atob
-if (typeof atob === 'undefined') {
+if (typeof atob === "undefined") {
   global.atob = function (b64Encoded) {
-    return new Buffer(b64Encoded, 'base64').toString('binary');
+    return Buffer.alloc(
+      Buffer.from(b64Encoded, "base64").length,
+      Buffer.from(b64Encoded, "base64"),
+      "binary",
+    ).toString("binary");
   };
 }
 
