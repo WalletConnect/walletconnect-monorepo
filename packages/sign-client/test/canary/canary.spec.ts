@@ -23,7 +23,7 @@ const log = (log: string) => {
 };
 
 describe("Canary", () => {
-  const metric_prefix = "HappyPath.connects";
+  const metric_prefix = "performance-investigation-05-10.HappyPath.connects";
   describe("HappyPath", () => {
     it("connects", async () => {
       const start = Date.now();

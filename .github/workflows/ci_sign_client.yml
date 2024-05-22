@@ -3,9 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - v2.0
-    paths:
-      - "packages/sign-client/**"
+      - performance-investigation-05-10
 
 concurrency: ${{ github.workflow }}
 
@@ -28,7 +26,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          mask-password: 'true'
+          mask-password: "true"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,7 +46,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: sign-client
-          IMAGE_TAG: v2.0
+          IMAGE_TAG: performance-investigation-05-10
         with:
           context: .
           file: packages/sign-client/Dockerfile
