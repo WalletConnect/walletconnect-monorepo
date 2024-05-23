@@ -272,3 +272,16 @@ export const TEST_SIGN_REQUEST_PARAMS = {
 
 export const TESTS_CONNECT_RETRIES = 5;
 export const TESTS_CONNECT_TIMEOUT = 60_000;
+
+export const TEST_EMPTY_METADATA: SignClientTypes.Metadata = {
+  name: "",
+  description: "",
+  url: "",
+  icons: [],
+};
+export const TEST_INVALID_METADATA: SignClientTypes.Metadata = {
+  name: "test",
+  description: "",
+  url: "",
+  icons: ["test"],
+};
