@@ -271,7 +271,6 @@ export class Engine extends IEngine {
     }
 
     const { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
-    // pairingTopic = pairingTopic || "";
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -1512,7 +1511,7 @@ export class Engine extends IEngine {
         expiry,
         namespaces,
         acknowledged: true,
-        pairingTopic: "", // pairingTopic will be set in the `session_connect` listener
+        pairingTopic: "", // pairingTopic will be set in the `session_connect` handler
         requiredNamespaces: {},
         optionalNamespaces: {},
         controller: controller.publicKey,
