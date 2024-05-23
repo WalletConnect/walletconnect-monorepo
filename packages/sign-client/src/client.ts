@@ -73,9 +73,6 @@ export class SignClient extends ISignClient {
     if (!metadata.url) {
       throw new Error("description is required value in metadata");
     }
-    if (metadata.icons.length === 0) {
-      throw new Error("icons array is empty");
-    }
   }
 
   // ---------- Events ----------------------------------------------- //
