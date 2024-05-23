@@ -1,3 +1,4 @@
+import { TEST_METADATA } from "./shared/values";
 import { Core, RELAYER_EVENTS } from "@walletconnect/core";
 import {
   JsonRpcPayload,
@@ -51,7 +52,7 @@ describe("Sign Integration", () => {
     wallet = await Web3Wallet.init({
       core,
       name: "wallet",
-      metadata: {} as any,
+      metadata: TEST_METADATA,
       signConfig,
     });
     expect(wallet).to.be.exist;
