@@ -42,7 +42,7 @@ describe("Sign Integration", () => {
 
   beforeEach(async () => {
     core = new Core(TEST_CORE_OPTIONS);
-    dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp" });
+    dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp", metadata: TEST_METADATA });
     const { uri, approval } = await dapp.connect({
       requiredNamespaces: TEST_REQUIRED_NAMESPACES,
     });
