@@ -43,7 +43,7 @@ describe("Auth Integration", () => {
       metadata: TEST_METADATA,
       name: "dapp",
     });
-    wallet = await Web3Wallet.init({ core, name: "wallet", metadata: {} as any });
+    wallet = await Web3Wallet.init({ core, name: "wallet", metadata: TEST_METADATA });
     expect(wallet).to.be.exist;
     expect(dapp).to.be.exist;
     expect(core).to.be.exist;

@@ -51,8 +51,8 @@ export const TEST_CORE_OPTIONS = {
 };
 
 export const TEST_METADATA: CoreTypes.Metadata = {
-  name: "wallet",
-  description: "wallet",
-  url: "wallet",
+  name: "test",
+  description: "test",
+  url: "test",
   icons: [],
 };
