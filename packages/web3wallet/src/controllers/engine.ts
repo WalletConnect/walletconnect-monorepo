@@ -124,11 +124,13 @@ export class Engine extends IWeb3WalletEngine {
 
   // ---------- public events ----------------------------------------------- //
   public on: IWeb3WalletEngine["on"] = (name, listener) => {
+    this.setEvent(name, "off");
     this.setEvent(name, "on");
     return this.client.events.on(name, listener);
   };
 
   public once: IWeb3WalletEngine["once"] = (name, listener) => {
+    this.setEvent(name, "off");
     this.setEvent(name, "once");
     return this.client.events.once(name, listener);
   };
