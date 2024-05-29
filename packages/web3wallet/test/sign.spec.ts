@@ -11,7 +11,7 @@ import { buildApprovedNamespaces, buildAuthObject, getSdkError } from "@walletco
 import { toMiliseconds } from "@walletconnect/time";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
-import { expect, describe, it, beforeEach, vi, beforeAll, afterAll, afterEach } from "vitest";
+import { expect, describe, it, beforeEach, vi, beforeAll, afterEach, fn } from "vitest";
 import { Web3Wallet, IWeb3Wallet } from "../src";
 import {
   disconnect,
@@ -463,6 +463,25 @@ describe("Sign Integration", () => {
     expect(sessions).to.be.exist;
     expect(Object.values(sessions).length).to.be.eq(1);
     expect(Object.keys(sessions)[0]).to.be.eq(session.topic);
+  });
+
+  it("should handle multiple session proposal listeners correctly", async () => {
+    const firstHandler = vi.fn();
+    const secondHandler = vi.fn();
+
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.on("session_proposal", firstHandler);
+        wallet.on("session_proposal", secondHandler);
+        wallet.on("session_proposal", () => {
+          resolve();
+        });
+      }),
+      wallet.pair({ uri: uriString }),
+    ]);
+
+    expect(firstHandler.mock.calls).toHaveLength(1);
+    expect(secondHandler.mock.calls).toHaveLength(1);
   });
 
   it("should get pending session proposals", async () => {

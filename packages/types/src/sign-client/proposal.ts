@@ -30,7 +30,7 @@ export declare namespace ProposalTypes {
     requiredNamespaces: RequiredNamespaces;
     optionalNamespaces: OptionalNamespaces;
     sessionProperties?: SessionProperties;
-    pairingTopic?: string;
+    pairingTopic: string;
   }
 }
 
