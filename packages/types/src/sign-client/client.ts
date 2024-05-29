@@ -66,7 +66,7 @@ export declare namespace SignClientTypes {
 
   interface Options extends CoreTypes.Options {
     core?: ICore;
-    metadata?: Metadata;
+    metadata: Metadata;
     signConfig?: SignConfig;
   }
 }
