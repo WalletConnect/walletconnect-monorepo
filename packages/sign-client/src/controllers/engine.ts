@@ -494,11 +494,17 @@ export class Engine extends IEngine {
       new Promise<void>(async (resolve) => {
         // only attempt to handle deeplinks if they are not explicitly disabled in the session config
         if (!session.sessionConfig?.disableDeepLink) {
-          const wcDeepLink = await getDeepLink(
+          const redirectLink =
+            session.peer.metadata?.redirect?.native || session.peer.metadata?.redirect?.universal;
+          const pairingDeeplink = await getDeepLink(
             this.client.core.storage,
             WALLETCONNECT_DEEPLINK_CHOICE,
           );
-          handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink });
+          // wallets can set a redirect link on all envs but we should only attempt to use the redirect deeplink if a deeplink was used during pairing
+          if (pairingDeeplink) {
+            const wcDeepLink = redirectLink || pairingDeeplink;
+            handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink });
+          }
         }
         resolve();
       }),
