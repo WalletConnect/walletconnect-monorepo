@@ -71,7 +71,7 @@ export class SignClient extends ISignClient {
       throw new Error("description is required value in metadata");
     }
     if (!metadata.url) {
-      throw new Error("description is required value in metadata");
+      throw new Error("url is required value in metadata");
     }
   }
 
