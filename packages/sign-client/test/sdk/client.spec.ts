@@ -66,6 +66,19 @@ describe("Sign Client Integration", () => {
       }),
     ).rejects.toThrowError("description is required value in metadata");
   });
+  it("should not initialize with invalid metadata url", async () => {
+    await expect(
+      SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        metadata: {
+          ...TEST_INVALID_METADATA,
+          description: "description",
+        },
+        name: "init",
+        signConfig: { disableRequestQueue: true },
+      }),
+    ).rejects.toThrowError("url is required value in metadata");
+  });
 
   describe("connect", () => {
     it("connect (with new pairing)", async () => {
