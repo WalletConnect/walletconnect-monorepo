@@ -4,7 +4,7 @@ import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 
 import { expect, describe, it, beforeEach, beforeAll, afterAll, afterEach } from "vitest";
 import { Web3Wallet, IWeb3Wallet } from "../src";
-import { disconnect, TEST_CORE_OPTIONS } from "./shared";
+import { disconnect, TEST_CORE_OPTIONS, TEST_METADATA } from "./shared";
 import {
   AuthClient,
   AuthEngineTypes,
@@ -40,10 +40,10 @@ describe("Auth Integration", () => {
     core = new Core(TEST_CORE_OPTIONS);
     dapp = await AuthClient.init({
       projectId: TEST_CORE_OPTIONS.projectId,
-      metadata: {} as any,
+      metadata: TEST_METADATA,
       name: "dapp",
     });
-    wallet = await Web3Wallet.init({ core, name: "wallet", metadata: {} as any });
+    wallet = await Web3Wallet.init({ core, name: "wallet", metadata: TEST_METADATA });
     expect(wallet).to.be.exist;
     expect(dapp).to.be.exist;
     expect(core).to.be.exist;

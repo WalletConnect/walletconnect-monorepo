@@ -1,3 +1,4 @@
+import { TEST_EMPTY_METADATA, TEST_INVALID_METADATA } from "./../shared/values";
 import {
   formatJsonRpcError,
   formatJsonRpcResult,
@@ -42,6 +43,28 @@ describe("Sign Client Integration", () => {
     expect(client.signConfig).to.exist;
     expect(client.signConfig?.disableRequestQueue).to.be.true;
     await deleteClients({ A: client, B: undefined });
+  });
+
+  it("should not initialize with empty metadata", async () => {
+    await expect(
+      SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        metadata: TEST_EMPTY_METADATA,
+        name: "init",
+        signConfig: { disableRequestQueue: true },
+      }),
+    ).rejects.toThrowError("name is required value in metadata");
+  });
+
+  it("should not initialize with invalid metadata", async () => {
+    await expect(
+      SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        metadata: TEST_INVALID_METADATA,
+        name: "init",
+        signConfig: { disableRequestQueue: true },
+      }),
+    ).rejects.toThrowError("description is required value in metadata");
   });
 
   describe("connect", () => {

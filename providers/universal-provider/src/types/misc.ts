@@ -8,7 +8,7 @@ import { IProvider } from "./providers";
 
 export interface UniversalProviderOpts {
   projectId?: string;
-  metadata?: Metadata;
+  metadata: Metadata;
   logger?: string;
   client?: SignClient;
   relayUrl?: string;

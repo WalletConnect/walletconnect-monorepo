@@ -1,3 +1,4 @@
+import { TEST_METADATA } from "./shared/values";
 import { Core, RELAYER_EVENTS } from "@walletconnect/core";
 import {
   JsonRpcPayload,
@@ -41,7 +42,7 @@ describe("Sign Integration", () => {
 
   beforeEach(async () => {
     core = new Core(TEST_CORE_OPTIONS);
-    dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp" });
+    dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp", metadata: TEST_METADATA });
     const { uri, approval } = await dapp.connect({
       requiredNamespaces: TEST_REQUIRED_NAMESPACES,
     });
@@ -51,7 +52,7 @@ describe("Sign Integration", () => {
     wallet = await Web3Wallet.init({
       core,
       name: "wallet",
-      metadata: {} as any,
+      metadata: TEST_METADATA,
       signConfig,
     });
     expect(wallet).to.be.exist;
@@ -668,7 +669,7 @@ describe("Sign Integration", () => {
 
   describe("Decrypted notifications", () => {
     it("should get session metadata", async () => {
-      const dappMetadata: CoreTypes.Metadata = {
+      const initMetadata: CoreTypes.Metadata = {
         name: "Test Dapp",
         description: "Test Dapp Description",
         url: "https://walletconnect.com",
@@ -679,7 +680,7 @@ describe("Sign Integration", () => {
       const dapp = await SignClient.init({
         ...TEST_CORE_OPTIONS,
         name: "Dapp",
-        metadata: dappMetadata,
+        metadata: initMetadata,
         storageOptions: {
           database: dappTable,
         },
@@ -690,7 +691,7 @@ describe("Sign Integration", () => {
           storageOptions: { database: walletTable },
         }),
         name: "wallet",
-        metadata: {} as any,
+        metadata: initMetadata,
       });
 
       const { uri: uriString, approval } = await dapp.connect({});
@@ -721,13 +722,13 @@ describe("Sign Integration", () => {
 
       expect(metadata).to.be.exist;
       expect(metadata).to.be.a("object");
-      expect(metadata).to.toMatchObject(dappMetadata);
+      expect(metadata).to.toMatchObject(initMetadata);
       await disconnect(wallet.core);
       await disconnect(dapp.core);
     });
 
     it("should decrypt payload with pairing topic", async () => {
-      const dappMetadata: CoreTypes.Metadata = {
+      const initMetadata: CoreTypes.Metadata = {
         name: "Test Dapp",
         description: "Test Dapp Description",
         url: "https://walletconnect.com",
@@ -738,7 +739,7 @@ describe("Sign Integration", () => {
       const dapp = await SignClient.init({
         ...TEST_CORE_OPTIONS,
         name: "Dapp",
-        metadata: dappMetadata,
+        metadata: initMetadata,
         storageOptions: {
           database: dappTable,
         },
@@ -749,7 +750,7 @@ describe("Sign Integration", () => {
           storageOptions: { database: walletTable },
         }),
         name: "wallet",
-        metadata: {} as any,
+        metadata: initMetadata,
       });
 
       const { uri: uriString = "", approval } = await dapp.connect({});
@@ -800,7 +801,7 @@ describe("Sign Integration", () => {
       await disconnect(dapp.core);
     });
     it("should decrypt payload with session topic", async () => {
-      const dappMetadata: CoreTypes.Metadata = {
+      const initMetadata: CoreTypes.Metadata = {
         name: "Test Dapp",
         description: "Test Dapp Description",
         url: "https://walletconnect.com",
@@ -811,7 +812,7 @@ describe("Sign Integration", () => {
       const dapp = await SignClient.init({
         ...TEST_CORE_OPTIONS,
         name: "Dapp",
-        metadata: dappMetadata,
+        metadata: initMetadata,
         storageOptions: {
           database: dappTable,
         },
@@ -822,7 +823,7 @@ describe("Sign Integration", () => {
           storageOptions: { database: walletTable },
         }),
         name: "wallet",
-        metadata: {} as any,
+        metadata: initMetadata,
       });
 
       const { uri: uriString = "", approval } = await dapp.connect({});
@@ -907,7 +908,11 @@ describe("Sign Integration", () => {
 
   describe("Sign 2.5", () => {
     it("should establish authenticated session", async () => {
-      const dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp" });
+      const dapp = await SignClient.init({
+        ...TEST_CORE_OPTIONS,
+        name: "Dapp",
+        metadata: TEST_METADATA,
+      });
       expect(dapp).to.be.exist;
       const { uri, response } = await dapp.authenticate({
         chains: ["eip155:1", "eip155:2"],
@@ -920,7 +925,7 @@ describe("Sign Integration", () => {
       const web3Wallet = await Web3Wallet.init({
         name: "wallet",
         core: new Core(TEST_CORE_OPTIONS),
-        metadata: {} as any,
+        metadata: TEST_METADATA,
       });
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -997,7 +1002,11 @@ describe("Sign Integration", () => {
       await disconnect(dapp.core);
     });
     it("should fallback to session_proposal when no listener for `session_authenticate` exists", async () => {
-      const dapp = await SignClient.init({ ...TEST_CORE_OPTIONS, name: "Dapp" });
+      const dapp = await SignClient.init({
+        ...TEST_CORE_OPTIONS,
+        name: "Dapp",
+        metadata: TEST_METADATA,
+      });
       expect(dapp).to.be.exist;
       const { uri, response } = await dapp.authenticate({
         chains: ["eip155:1", "eip155:2"],
@@ -1010,7 +1019,7 @@ describe("Sign Integration", () => {
       const web3Wallet = await Web3Wallet.init({
         name: "wallet",
         core: new Core(TEST_CORE_OPTIONS),
-        metadata: {} as any,
+        metadata: TEST_METADATA,
       });
       await Promise.all([
         new Promise<void>((resolve) => {

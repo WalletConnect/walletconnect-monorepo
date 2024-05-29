@@ -22,6 +22,7 @@ import {
   TEST_SIGN_TRANSACTION,
   TEST_ETHEREUM_METHODS_REQUIRED,
   TEST_ETHEREUM_METHODS_OPTIONAL,
+  TEST_WALLET_METADATA,
 } from "./shared/constants";
 import { EthereumProviderOptions } from "../src/EthereumProvider";
 import { parseChainId } from "@walletconnect/utils";
@@ -52,6 +53,7 @@ describe("EthereumProvider", function () {
         },
       },
       disableProviderPing: true,
+      metadata: TEST_WALLET_METADATA,
     });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     await provider.connect({
@@ -352,11 +354,13 @@ describe("EthereumProvider", function () {
       storageOptions: {
         database: db,
       },
+      metadata: TEST_WALLET_METADATA,
     };
     it("should restore session with `eip155: { chains: [...] }` structure", async () => {
       const provider = await EthereumProvider.init(initOptions);
       const walletClient = await SignClient.init({
         projectId: initOptions.projectId,
+        metadata: initOptions.metadata,
       });
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -405,6 +409,7 @@ describe("EthereumProvider", function () {
       const provider = await EthereumProvider.init(initOptions);
       const walletClient = await SignClient.init({
         projectId: initOptions.projectId,
+        metadata: initOptions.metadata,
       });
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -456,10 +461,12 @@ describe("EthereumProvider", function () {
         projectId: process.env.TEST_PROJECT_ID || "",
         optionalChains: [CHAIN_ID, 137],
         showQrModal: false,
+        metadata: TEST_WALLET_METADATA,
       };
       const provider = await EthereumProvider.init(initOptions);
       const walletClient = await SignClient.init({
         projectId: initOptions.projectId,
+        metadata: initOptions.metadata,
       });
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -511,10 +518,12 @@ describe("EthereumProvider", function () {
         projectId: process.env.TEST_PROJECT_ID || "",
         chains: [CHAIN_ID],
         showQrModal: false,
+        metadata: TEST_WALLET_METADATA,
       };
       const provider = await EthereumProvider.init(initOptions);
       const walletClient = await SignClient.init({
         projectId: initOptions.projectId,
+        metadata: initOptions.metadata,
       });
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -563,10 +572,12 @@ describe("EthereumProvider", function () {
         projectId: process.env.TEST_PROJECT_ID || "",
         optionalChains: [CHAIN_ID],
         showQrModal: false,
+        metadata: TEST_WALLET_METADATA,
       };
       const provider = await EthereumProvider.init(initOptions);
       const walletClient = await SignClient.init({
         projectId: initOptions.projectId,
+        metadata: initOptions.metadata,
       });
       const chainToApprove = "eip155:137";
 

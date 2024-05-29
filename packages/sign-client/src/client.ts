@@ -63,6 +63,18 @@ export class SignClient extends ISignClient {
     return this.core.pairing.pairings;
   }
 
+  private validateMetadata(metadata: SignClientTypes.Metadata) {
+    if (!metadata.name) {
+      throw new Error("name is required value in metadata");
+    }
+    if (!metadata.description) {
+      throw new Error("description is required value in metadata");
+    }
+    if (!metadata.url) {
+      throw new Error("description is required value in metadata");
+    }
+  }
+
   // ---------- Events ----------------------------------------------- //
 
   public on: ISignClientEvents["on"] = (name, listener) => {
@@ -245,6 +257,7 @@ export class SignClient extends ISignClient {
   private async initialize() {
     this.logger.trace(`Initialized`);
     try {
+      await this.validateMetadata(this.metadata);
       await this.core.start();
       await this.session.init();
       await this.proposal.init();
