@@ -200,6 +200,7 @@ export class Engine extends IEngine {
         metadata: this.client.metadata,
       },
       expiryTimestamp,
+      pairingTopic: topic,
       ...(sessionProperties && { sessionProperties }),
     };
     const {
@@ -215,6 +216,7 @@ export class Engine extends IEngine {
           session.self.publicKey = publicKey;
           const completeSession = {
             ...session,
+            pairingTopic: proposal.pairingTopic,
             requiredNamespaces: proposal.requiredNamespaces,
             optionalNamespaces: proposal.optionalNamespaces,
           };
@@ -226,6 +228,7 @@ export class Engine extends IEngine {
               metadata: session.peer.metadata,
             });
           }
+          this.cleanupDuplicatePairings(completeSession);
           resolve(completeSession);
         }
       },
@@ -267,8 +270,7 @@ export class Engine extends IEngine {
       throw error;
     }
 
-    let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
-    pairingTopic = pairingTopic || "";
+    const { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -279,7 +281,6 @@ export class Engine extends IEngine {
     const sessionSettle = {
       relay: { protocol: relayProtocol ?? "irn" },
       namespaces,
-      pairingTopic,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
       ...(sessionProperties && { sessionProperties }),
@@ -692,6 +693,7 @@ export class Engine extends IEngine {
       requiredNamespaces: {},
       optionalNamespaces: namespaces,
       relays: [{ protocol: "irn" }],
+      pairingTopic,
       proposer: {
         publicKey,
         metadata: this.client.metadata,
@@ -1501,22 +1503,15 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidSessionSettleRequest(params);
-      const {
-        relay,
-        controller,
-        expiry,
-        namespaces,
-        sessionProperties,
-        pairingTopic,
-        sessionConfig,
-      } = payload.params;
+      const { relay, controller, expiry, namespaces, sessionProperties, sessionConfig } =
+        payload.params;
       const session = {
         topic,
         relay,
         expiry,
         namespaces,
         acknowledged: true,
-        pairingTopic,
+        pairingTopic: "", // pairingTopic will be set in the `session_connect` handler
         requiredNamespaces: {},
         optionalNamespaces: {},
         controller: controller.publicKey,
@@ -1543,7 +1538,6 @@ export class Engine extends IEngine {
         throw new Error(`emitting ${target} without any listeners 997`);
       }
       this.events.emit(engineEvent("session_connect"), { session });
-      this.cleanupDuplicatePairings(session);
     } catch (err: any) {
       await this.sendError({
         id,
