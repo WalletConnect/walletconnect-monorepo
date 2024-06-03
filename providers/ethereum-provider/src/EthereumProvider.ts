@@ -44,7 +44,7 @@ export type RpcMethod =
   | "wallet_getCapabilities"
   | "wallet_getCallsStatus"
   | "wallet_showCallsStatus"
-  | "wallet_issuePermissions";
+  | "wallet_grantPermissions";
 
 export type RpcEvent = "accountsChanged" | "chainChanged" | "message" | "disconnect" | "connect";
 
