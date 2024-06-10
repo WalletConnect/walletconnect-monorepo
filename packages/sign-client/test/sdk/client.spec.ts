@@ -45,6 +45,19 @@ describe("Sign Client Integration", () => {
     await deleteClients({ A: client, B: undefined });
   });
 
+  it("should not initialize without metadata object", async () => {
+    const options = TEST_SIGN_CLIENT_OPTIONS;
+    delete options.metadata;
+
+    await expect(
+      SignClient.init({
+        ...options,
+        name: "init",
+        signConfig: { disableRequestQueue: true },
+      }),
+    ).rejects.toThrowError("name is required value in metadata");
+  });
+
   it("should not initialize with empty metadata", async () => {
     await expect(
       SignClient.init({
