@@ -1,4 +1,9 @@
-import { TEST_EMPTY_METADATA, TEST_INVALID_METADATA } from "./../shared/values";
+import {
+  TEST_APP_METADATA_A,
+  TEST_EMPTY_METADATA,
+  TEST_INVALID_METADATA,
+  TEST_WALLET_METADATA,
+} from "./../shared/values";
 import {
   formatJsonRpcError,
   formatJsonRpcResult,
@@ -43,6 +48,19 @@ describe("Sign Client Integration", () => {
     expect(client.signConfig).to.exist;
     expect(client.signConfig?.disableRequestQueue).to.be.true;
     await deleteClients({ A: client, B: undefined });
+  });
+
+  it("should not initialize without metadata object", async () => {
+    const options = TEST_SIGN_CLIENT_OPTIONS;
+    delete options.metadata;
+
+    await expect(
+      SignClient.init({
+        ...options,
+        name: "init",
+        signConfig: { disableRequestQueue: true },
+      }),
+    ).rejects.toThrowError("name is required value in metadata");
   });
 
   it("should not initialize with empty metadata", async () => {
@@ -164,8 +182,16 @@ describe("Sign Client Integration", () => {
       await deleteClients(clients);
     });
     it("should emit session_proposal on every pair attempt with same URI as long as the proposal has not yet been approved or rejected", async () => {
-      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
-      const wallet = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "wallet" });
+      const dapp = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "dapp",
+        metadata: TEST_APP_METADATA_A,
+      });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_WALLET_METADATA,
+      });
       const { uri, approval } = await dapp.connect(TEST_CONNECT_PARAMS);
       if (!uri) throw new Error("URI is undefined");
       expect(uri).to.exist;
@@ -211,8 +237,16 @@ describe("Sign Client Integration", () => {
       await deleteClients({ A: dapp, B: wallet });
     });
     it("should set `sessionConfig`", async () => {
-      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
-      const wallet = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "wallet" });
+      const dapp = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "dapp",
+        metadata: TEST_APP_METADATA_A,
+      });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_WALLET_METADATA,
+      });
       const { uri, approval } = await dapp.connect(TEST_CONNECT_PARAMS);
       if (!uri) throw new Error("URI is undefined");
       expect(uri).to.exist;
@@ -254,8 +288,16 @@ describe("Sign Client Integration", () => {
       await deleteClients({ A: dapp, B: wallet });
     });
     it("should use rejected tag for session_propose", async () => {
-      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
-      const wallet = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "wallet" });
+      const dapp = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "dapp",
+        metadata: TEST_APP_METADATA_A,
+      });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_WALLET_METADATA,
+      });
       const { uri } = await dapp.connect(TEST_CONNECT_PARAMS);
       if (!uri) throw new Error("URI is undefined");
       expect(uri).to.exist;
