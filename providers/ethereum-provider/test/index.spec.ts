@@ -1,4 +1,3 @@
-import { TEST_APP_METADATA_A } from "./../../../packages/sign-client/test/shared/values";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import Web3 from "web3";
 import { BigNumber, providers, utils } from "ethers";
@@ -24,6 +23,7 @@ import {
   TEST_ETHEREUM_METHODS_REQUIRED,
   TEST_ETHEREUM_METHODS_OPTIONAL,
   TEST_WALLET_METADATA,
+  TEST_APP_METADATA_A,
 } from "./shared/constants";
 import { EthereumProviderOptions } from "../src/EthereumProvider";
 import { parseChainId } from "@walletconnect/utils";
