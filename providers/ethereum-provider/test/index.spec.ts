@@ -564,6 +564,7 @@ describe("EthereumProvider", function () {
           chains: [],
           optionalChains: [],
           showQrModal: false,
+          metadata: TEST_WALLET_METADATA,
         }),
       ).rejects.toThrowError("No chains specified in either `chains` or `optionalChains`");
     });
