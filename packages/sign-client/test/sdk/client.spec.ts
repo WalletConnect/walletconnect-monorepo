@@ -1,8 +1,8 @@
-import { TEST_WALLET_METADATA } from "./../../../../providers/universal-provider/test/shared/constants";
 import {
   TEST_APP_METADATA_A,
   TEST_EMPTY_METADATA,
   TEST_INVALID_METADATA,
+  TEST_WALLET_METADATA,
 } from "./../shared/values";
 import {
   formatJsonRpcError,
