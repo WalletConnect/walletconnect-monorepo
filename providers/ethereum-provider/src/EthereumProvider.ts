@@ -558,12 +558,13 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   protected async initialize(opts: EthereumProviderOptions) {
+    this.rpc = this.getRpcConfig(opts);
+
     const metadata = this.rpc.metadata;
     if (metadata === undefined) {
       throw new Error("Metadata field is required");
     }
 
-    this.rpc = this.getRpcConfig(opts);
     this.chainId = this.rpc.chains.length
       ? getEthereumChainId(this.rpc.chains)
       : getEthereumChainId(this.rpc.optionalChains);

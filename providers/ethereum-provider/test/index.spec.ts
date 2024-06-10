@@ -1,3 +1,4 @@
+import { TEST_APP_METADATA_A } from "./../../../packages/sign-client/test/shared/values";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import Web3 from "web3";
 import { BigNumber, providers, utils } from "ethers";
@@ -53,7 +54,7 @@ describe("EthereumProvider", function () {
         },
       },
       disableProviderPing: true,
-      metadata: TEST_WALLET_METADATA,
+      metadata: TEST_APP_METADATA_A,
     });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     await provider.connect({
