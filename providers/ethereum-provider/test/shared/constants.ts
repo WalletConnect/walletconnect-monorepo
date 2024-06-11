@@ -83,3 +83,14 @@ export const TEST_ETHEREUM_METHODS_OPTIONAL = [
   "personal_sign",
   "eth_signTypedData",
 ];
+
+export const TEST_APP_METADATA_A = {
+  name: "App A (Proposer)",
+  description: "Description of Proposer App run by client A",
+  url: "https://app.a.walletconnect.com",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
+  redirect: {
+    universal: "App A (Proposer)",
+    native: "App A Native (Proposer)",
+  },
+};
