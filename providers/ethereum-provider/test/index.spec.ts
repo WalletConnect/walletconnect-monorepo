@@ -23,6 +23,7 @@ import {
   TEST_ETHEREUM_METHODS_REQUIRED,
   TEST_ETHEREUM_METHODS_OPTIONAL,
   TEST_WALLET_METADATA,
+  TEST_APP_METADATA_A,
 } from "./shared/constants";
 import { EthereumProviderOptions } from "../src/EthereumProvider";
 import { parseChainId } from "@walletconnect/utils";
@@ -53,7 +54,7 @@ describe("EthereumProvider", function () {
         },
       },
       disableProviderPing: true,
-      metadata: TEST_WALLET_METADATA,
+      metadata: TEST_APP_METADATA_A,
     });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     await provider.connect({
@@ -564,6 +565,7 @@ describe("EthereumProvider", function () {
           chains: [],
           optionalChains: [],
           showQrModal: false,
+          metadata: TEST_WALLET_METADATA,
         }),
       ).rejects.toThrowError("No chains specified in either `chains` or `optionalChains`");
     });

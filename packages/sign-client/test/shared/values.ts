@@ -285,3 +285,10 @@ export const TEST_INVALID_METADATA: SignClientTypes.Metadata = {
   url: "",
   icons: ["test"],
 };
+
+export const TEST_WALLET_METADATA = {
+  name: "Test Wallet",
+  description: "Test Wallet for WalletConnect",
+  url: "https://walletconnect.com/",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
+};
