@@ -44,7 +44,6 @@ export declare namespace JsonRpcTypes {
       namespaces: SessionTypes.Namespaces;
       sessionProperties?: ProposalTypes.SessionProperties;
       sessionConfig?: SessionTypes.SessionConfig;
-      pairingTopic: string;
       expiry: number;
       controller: {
         publicKey: string;

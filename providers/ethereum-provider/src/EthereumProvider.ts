@@ -559,12 +559,18 @@ export class EthereumProvider implements IEthereumProvider {
 
   protected async initialize(opts: EthereumProviderOptions) {
     this.rpc = this.getRpcConfig(opts);
+
+    const metadata = this.rpc.metadata;
+    if (metadata === undefined) {
+      throw new Error("Metadata field is required");
+    }
+
     this.chainId = this.rpc.chains.length
       ? getEthereumChainId(this.rpc.chains)
       : getEthereumChainId(this.rpc.optionalChains);
     this.signer = await UniversalProvider.init({
       projectId: this.rpc.projectId,
-      metadata: this.rpc.metadata,
+      metadata,
       disableProviderPing: opts.disableProviderPing,
       relayUrl: opts.relayUrl,
       storageOptions: opts.storageOptions,

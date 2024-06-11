@@ -200,6 +200,7 @@ export class Engine extends IEngine {
         metadata: this.client.metadata,
       },
       expiryTimestamp,
+      pairingTopic: topic,
       ...(sessionProperties && { sessionProperties }),
     };
     const {
@@ -215,6 +216,7 @@ export class Engine extends IEngine {
           session.self.publicKey = publicKey;
           const completeSession = {
             ...session,
+            pairingTopic: proposal.pairingTopic,
             requiredNamespaces: proposal.requiredNamespaces,
             optionalNamespaces: proposal.optionalNamespaces,
           };
@@ -226,6 +228,7 @@ export class Engine extends IEngine {
               metadata: session.peer.metadata,
             });
           }
+          this.cleanupDuplicatePairings(completeSession);
           resolve(completeSession);
         }
       },
@@ -267,8 +270,7 @@ export class Engine extends IEngine {
       throw error;
     }
 
-    let { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
-    pairingTopic = pairingTopic || "";
+    const { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -279,7 +281,6 @@ export class Engine extends IEngine {
     const sessionSettle = {
       relay: { protocol: relayProtocol ?? "irn" },
       namespaces,
-      pairingTopic,
       controller: { publicKey: selfPublicKey, metadata: this.client.metadata },
       expiry: calcExpiry(SESSION_EXPIRY),
       ...(sessionProperties && { sessionProperties }),
@@ -366,6 +367,7 @@ export class Engine extends IEngine {
         id,
         topic: pairingTopic,
         error: reason,
+        rpcOpts: ENGINE_RPC_OPTS.wc_sessionPropose.reject,
       });
       await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
     }
@@ -691,6 +693,7 @@ export class Engine extends IEngine {
       requiredNamespaces: {},
       optionalNamespaces: namespaces,
       relays: [{ protocol: "irn" }],
+      pairingTopic,
       proposer: {
         publicKey,
         metadata: this.client.metadata,
@@ -972,7 +975,7 @@ export class Engine extends IEngine {
       encodeOpts,
       throwOnFailedPublish: true,
     });
-    await this.client.auth.requests.delete(id, { message: "fullfilled", code: 0 });
+    await this.client.auth.requests.delete(id, { message: "fulfilled", code: 0 });
     await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
     return { session };
   };
@@ -1003,6 +1006,7 @@ export class Engine extends IEngine {
       topic: responseTopic,
       error: reason,
       encodeOpts,
+      rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.reject,
     });
     await this.client.auth.requests.delete(id, { message: "rejected", code: 0 });
     await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
@@ -1067,6 +1071,10 @@ export class Engine extends IEngine {
         this.deletePendingSessionRequest(r.id, getSdkError("USER_DISCONNECTED"));
       }
     });
+    // reset the queue state back to idle if a request for the deleted session is still in the queue
+    if (topic === this.sessionRequestQueue.queue[0]?.topic) {
+      this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
+    }
     if (emitEvent) this.client.events.emit("session_delete", { id, topic });
   };
 
@@ -1089,7 +1097,6 @@ export class Engine extends IEngine {
     ]);
     this.addToRecentlyDeleted(id, "request");
     this.sessionRequestQueue.queue = this.sessionRequestQueue.queue.filter((r) => r.id !== id);
-    // set the requestQueue state to idle if expirer has deleted a request as trying to respond to it would result in an exception
     if (expirerHasDeleted) {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
       this.client.events.emit("session_request_expire", { id });
@@ -1214,7 +1221,7 @@ export class Engine extends IEngine {
   };
 
   private sendError: EnginePrivate["sendError"] = async (params) => {
-    const { id, topic, error, encodeOpts } = params;
+    const { id, topic, error, encodeOpts, rpcOpts } = params;
     const payload = formatJsonRpcError(id, error);
     let message;
     try {
@@ -1231,7 +1238,7 @@ export class Engine extends IEngine {
       this.client.logger.error(`sendError() -> history.get(${topic}, ${id}) failed`);
       throw error;
     }
-    const opts = ENGINE_RPC_OPTS[record.request.method].res;
+    const opts = rpcOpts || ENGINE_RPC_OPTS[record.request.method].res;
     // await is intentionally omitted to speed up performance
     this.client.core.relayer.publish(topic, message, opts);
     await this.client.core.history.resolve(payload);
@@ -1434,6 +1441,7 @@ export class Engine extends IEngine {
         id,
         topic,
         error: err,
+        rpcOpts: ENGINE_RPC_OPTS.wc_sessionPropose.autoReject,
       });
       this.client.logger.error(err);
     }
@@ -1495,22 +1503,15 @@ export class Engine extends IEngine {
     const { id, params } = payload;
     try {
       this.isValidSessionSettleRequest(params);
-      const {
-        relay,
-        controller,
-        expiry,
-        namespaces,
-        sessionProperties,
-        pairingTopic,
-        sessionConfig,
-      } = payload.params;
+      const { relay, controller, expiry, namespaces, sessionProperties, sessionConfig } =
+        payload.params;
       const session = {
         topic,
         relay,
         expiry,
         namespaces,
         acknowledged: true,
-        pairingTopic,
+        pairingTopic: "", // pairingTopic will be set in the `session_connect` handler
         requiredNamespaces: {},
         optionalNamespaces: {},
         controller: controller.publicKey,
@@ -1537,7 +1538,6 @@ export class Engine extends IEngine {
         throw new Error(`emitting ${target} without any listeners 997`);
       }
       this.events.emit(engineEvent("session_connect"), { session });
-      this.cleanupDuplicatePairings(session);
     } catch (err: any) {
       await this.sendError({
         id,
@@ -1829,23 +1829,43 @@ export class Engine extends IEngine {
     topic,
     payload,
   ) => {
-    const { requester, authPayload, expiryTimestamp } = payload.params;
-    const hash = hashMessage(JSON.stringify(payload));
-    const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
-    const pendingRequest = {
-      requester,
-      pairingTopic: topic,
-      id: payload.id,
-      authPayload,
-      verifyContext,
-      expiryTimestamp,
-    };
-    await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
-    this.client.events.emit("session_authenticate", {
-      topic,
-      params: payload.params,
-      id: payload.id,
-    });
+    try {
+      const { requester, authPayload, expiryTimestamp } = payload.params;
+      const hash = hashMessage(JSON.stringify(payload));
+      const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
+      const pendingRequest = {
+        requester,
+        pairingTopic: topic,
+        id: payload.id,
+        authPayload,
+        verifyContext,
+        expiryTimestamp,
+      };
+      await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
+      this.client.events.emit("session_authenticate", {
+        topic,
+        params: payload.params,
+        id: payload.id,
+      });
+    } catch (err: any) {
+      this.client.logger.error(err);
+
+      const receiverPublicKey = payload.params.requester.publicKey;
+      const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+
+      const encodeOpts = {
+        type: TYPE_1,
+        receiverPublicKey,
+        senderPublicKey,
+      };
+      await this.sendError({
+        id: payload.id,
+        topic,
+        error: err,
+        encodeOpts,
+        rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.autoReject,
+      });
+    }
   };
 
   private addSessionRequestToSessionRequestQueue = (request: PendingRequestTypes.Struct) => {

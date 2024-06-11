@@ -1,11 +1,21 @@
 import {
+  TEST_APP_METADATA_A,
+  TEST_EMPTY_METADATA,
+  TEST_INVALID_METADATA,
+  TEST_WALLET_METADATA,
+} from "./../shared/values";
+import {
   formatJsonRpcError,
   formatJsonRpcResult,
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
-import SignClient, { WALLETCONNECT_DEEPLINK_CHOICE } from "../../src";
+import SignClient, {
+  ENGINE_QUEUE_STATES,
+  ENGINE_RPC_OPTS,
+  WALLETCONNECT_DEEPLINK_CHOICE,
+} from "../../src";
 
 import {
   initTwoClients,
@@ -22,6 +32,7 @@ import {
   initTwoPairedClients,
   TEST_CONNECT_PARAMS,
 } from "../shared";
+import { RELAYER_EVENTS } from "@walletconnect/core";
 
 describe("Sign Client Integration", () => {
   it("init", async () => {
@@ -37,6 +48,54 @@ describe("Sign Client Integration", () => {
     expect(client.signConfig).to.exist;
     expect(client.signConfig?.disableRequestQueue).to.be.true;
     await deleteClients({ A: client, B: undefined });
+  });
+
+  it("should not initialize without metadata object", async () => {
+    const options = TEST_SIGN_CLIENT_OPTIONS;
+    delete options.metadata;
+
+    await expect(
+      SignClient.init({
+        ...options,
+        name: "init",
+        signConfig: { disableRequestQueue: true },
+      }),
+    ).rejects.toThrowError("name is required value in metadata");
+  });
+
+  it("should not initialize with empty metadata", async () => {
+    await expect(
+      SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        metadata: TEST_EMPTY_METADATA,
+        name: "init",
+        signConfig: { disableRequestQueue: true },
+      }),
+    ).rejects.toThrowError("name is required value in metadata");
+  });
+
+  it("should not initialize with invalid metadata", async () => {
+    await expect(
+      SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        metadata: TEST_INVALID_METADATA,
+        name: "init",
+        signConfig: { disableRequestQueue: true },
+      }),
+    ).rejects.toThrowError("description is required value in metadata");
+  });
+  it("should not initialize with invalid metadata url", async () => {
+    await expect(
+      SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        metadata: {
+          ...TEST_INVALID_METADATA,
+          description: "description",
+        },
+        name: "init",
+        signConfig: { disableRequestQueue: true },
+      }),
+    ).rejects.toThrowError("url is required value in metadata");
   });
 
   describe("connect", () => {
@@ -123,8 +182,16 @@ describe("Sign Client Integration", () => {
       await deleteClients(clients);
     });
     it("should emit session_proposal on every pair attempt with same URI as long as the proposal has not yet been approved or rejected", async () => {
-      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
-      const wallet = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "wallet" });
+      const dapp = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "dapp",
+        metadata: TEST_APP_METADATA_A,
+      });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_WALLET_METADATA,
+      });
       const { uri, approval } = await dapp.connect(TEST_CONNECT_PARAMS);
       if (!uri) throw new Error("URI is undefined");
       expect(uri).to.exist;
@@ -170,8 +237,16 @@ describe("Sign Client Integration", () => {
       await deleteClients({ A: dapp, B: wallet });
     });
     it("should set `sessionConfig`", async () => {
-      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
-      const wallet = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "wallet" });
+      const dapp = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "dapp",
+        metadata: TEST_APP_METADATA_A,
+      });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_WALLET_METADATA,
+      });
       const { uri, approval } = await dapp.connect(TEST_CONNECT_PARAMS);
       if (!uri) throw new Error("URI is undefined");
       expect(uri).to.exist;
@@ -210,6 +285,42 @@ describe("Sign Client Integration", () => {
       expect(sessionDapp.sessionConfig).to.eql(sessionConfig);
       expect(sessionWallet.sessionConfig).to.eql(sessionConfig);
       expect(sessionWallet.sessionConfig).to.eql(sessionDapp.sessionConfig);
+      await deleteClients({ A: dapp, B: wallet });
+    });
+    it("should use rejected tag for session_propose", async () => {
+      const dapp = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "dapp",
+        metadata: TEST_APP_METADATA_A,
+      });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_WALLET_METADATA,
+      });
+      const { uri } = await dapp.connect(TEST_CONNECT_PARAMS);
+      if (!uri) throw new Error("URI is undefined");
+      expect(uri).to.exist;
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          wallet.core.relayer.once(RELAYER_EVENTS.publish, (payload) => {
+            const { opts } = payload;
+            const expectedOpts = ENGINE_RPC_OPTS.wc_sessionPropose.reject;
+            expect(opts).to.exist;
+            expect(opts.tag).to.eq(expectedOpts?.tag);
+            expect(opts.ttl).to.eq(expectedOpts?.ttl);
+            expect(opts.prompt).to.eq(expectedOpts?.prompt);
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          wallet.once("session_proposal", async (params) => {
+            await wallet.reject({ id: params.id, reason: getSdkError("USER_REJECTED") });
+            resolve();
+          });
+        }),
+        wallet.pair({ uri }),
+      ]);
       await deleteClients({ A: dapp, B: wallet });
     });
   });
@@ -274,6 +385,44 @@ describe("Sign Client Integration", () => {
         // small delay to finish disconnect
         await throttle(500);
         expect(await clients.A.core.storage.getItem(WALLETCONNECT_DEEPLINK_CHOICE)).to.be.undefined;
+        await deleteClients(clients);
+      });
+    });
+    describe("request queue", () => {
+      it("should reset request queue state on disconnect", async () => {
+        const {
+          clients,
+          sessionA: { topic },
+        } = await initTwoPairedClients({}, {}, { logger: "error" });
+        await new Promise<void>((resolve) => {
+          clients.B.once("session_request", () => {
+            resolve();
+          });
+          clients.A.request({
+            topic,
+            ...TEST_REQUEST_PARAMS,
+          });
+        });
+
+        expect(clients.B.pendingRequest.getAll().length).to.eq(1);
+        // @ts-expect-error - sessionRequestQueue is private property
+        expect(clients.B.engine.sessionRequestQueue.state).to.eq(ENGINE_QUEUE_STATES.active);
+
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            clients.B.once("session_delete", () => {
+              resolve();
+            });
+          }),
+          clients.A.disconnect({ topic, reason: getSdkError("USER_DISCONNECTED") }),
+        ]);
+        // small delay as deleting pending requests is async
+        await throttle(5_00);
+        expect(clients.B.pendingRequest.getAll().length).to.eq(0);
+        // @ts-expect-error - sessionRequestQueue is private property
+        expect(clients.B.engine.sessionRequestQueue.state).to.eq(ENGINE_QUEUE_STATES.idle);
+        // @ts-expect-error - force close the transport due to pending session request
+        clients.A.core.relayer.hasExperiencedNetworkDisruption = true;
         await deleteClients(clients);
       });
     });
