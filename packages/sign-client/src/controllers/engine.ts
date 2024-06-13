@@ -951,7 +951,7 @@ export class Engine extends IEngine {
         requiredNamespaces: {},
         optionalNamespaces: {},
         relay: { protocol: "irn" },
-        pairingTopic: "",
+        pairingTopic: pendingRequest.pairingTopic,
         namespaces: buildNamespacesFromAuth(
           [...new Set(approvedMethods)],
           [...new Set(approvedAccounts)],
@@ -960,6 +960,10 @@ export class Engine extends IEngine {
 
       await this.client.core.relayer.subscribe(sessionTopic);
       await this.client.session.set(sessionTopic, session);
+      await this.client.core.pairing.updateMetadata({
+        topic: pendingRequest.pairingTopic,
+        metadata: pendingRequest.requester.metadata,
+      });
     }
 
     await this.sendResult<"wc_sessionAuthenticate">({
