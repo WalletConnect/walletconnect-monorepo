@@ -50,52 +50,27 @@ describe("Sign Client Integration", () => {
     await deleteClients({ A: client, B: undefined });
   });
 
-  it("should not initialize without metadata object", async () => {
+  it("should initialize without metadata object", async () => {
     const options = TEST_SIGN_CLIENT_OPTIONS;
     delete options.metadata;
-
-    await expect(
-      SignClient.init({
-        ...options,
-        name: "init",
-        signConfig: { disableRequestQueue: true },
-      }),
-    ).rejects.toThrowError("name is required value in metadata");
+    const client = await SignClient.init({
+      ...options,
+      name: "init",
+      signConfig: { disableRequestQueue: true },
+    });
+    expect(client).to.be.exist;
+    await deleteClients({ A: client, B: undefined });
   });
 
-  it("should not initialize with empty metadata", async () => {
-    await expect(
-      SignClient.init({
-        ...TEST_SIGN_CLIENT_OPTIONS,
-        metadata: TEST_EMPTY_METADATA,
-        name: "init",
-        signConfig: { disableRequestQueue: true },
-      }),
-    ).rejects.toThrowError("name is required value in metadata");
-  });
-
-  it("should not initialize with invalid metadata", async () => {
-    await expect(
-      SignClient.init({
-        ...TEST_SIGN_CLIENT_OPTIONS,
-        metadata: TEST_INVALID_METADATA,
-        name: "init",
-        signConfig: { disableRequestQueue: true },
-      }),
-    ).rejects.toThrowError("description is required value in metadata");
-  });
-  it("should not initialize with invalid metadata url", async () => {
-    await expect(
-      SignClient.init({
-        ...TEST_SIGN_CLIENT_OPTIONS,
-        metadata: {
-          ...TEST_INVALID_METADATA,
-          description: "description",
-        },
-        name: "init",
-        signConfig: { disableRequestQueue: true },
-      }),
-    ).rejects.toThrowError("url is required value in metadata");
+  it("should initialize with empty metadata", async () => {
+    const client = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      metadata: TEST_EMPTY_METADATA,
+      name: "init",
+      signConfig: { disableRequestQueue: true },
+    });
+    expect(client).to.be.exist;
+    await deleteClients({ A: client, B: undefined });
   });
 
   describe("connect", () => {
