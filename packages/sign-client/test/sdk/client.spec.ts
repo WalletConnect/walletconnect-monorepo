@@ -50,6 +50,29 @@ describe("Sign Client Integration", () => {
     await deleteClients({ A: client, B: undefined });
   });
 
+  it("should initialize without metadata object", async () => {
+    const options = TEST_SIGN_CLIENT_OPTIONS;
+    delete options.metadata;
+    const client = await SignClient.init({
+      ...options,
+      name: "init",
+      signConfig: { disableRequestQueue: true },
+    });
+    expect(client).to.be.exist;
+    await deleteClients({ A: client, B: undefined });
+  });
+
+  it("should initialize with empty metadata", async () => {
+    const client = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      metadata: TEST_EMPTY_METADATA,
+      name: "init",
+      signConfig: { disableRequestQueue: true },
+    });
+    expect(client).to.be.exist;
+    await deleteClients({ A: client, B: undefined });
+  });
+
   describe("connect", () => {
     it("connect (with new pairing)", async () => {
       const { clients, sessionA, pairingA } = await initTwoPairedClients(
