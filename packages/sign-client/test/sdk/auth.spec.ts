@@ -962,6 +962,12 @@ describe("Authenticated Sessions", () => {
       }),
     ]);
 
+    // Ensure that pairing metadata has been set correctly on both peers.
+    expect(wallet.pairing.get(walletSession.pairingTopic).peerMetadata).to.deep.eq(
+      TEST_SIGN_CLIENT_OPTIONS.metadata,
+    );
+    expect(dapp.pairing.get(session.pairingTopic).peerMetadata).to.deep.eq(TEST_APP_METADATA_B);
+
     await deleteClients({ A: dapp, B: wallet });
   });
 
