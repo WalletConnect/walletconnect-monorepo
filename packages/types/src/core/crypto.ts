@@ -63,6 +63,8 @@ export abstract class ICrypto {
 
   public abstract keychain: IKeyChain;
 
+  public abstract readonly randomSessionIdentifier: string;
+
   constructor(
     public core: ICore,
     public logger: Logger,
