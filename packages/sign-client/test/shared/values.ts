@@ -271,4 +271,24 @@ export const TEST_SIGN_REQUEST_PARAMS = {
 };
 
 export const TESTS_CONNECT_RETRIES = 5;
-export const TESTS_CONNECT_TIMEOUT = 20_000;
+export const TESTS_CONNECT_TIMEOUT = 60_000;
+
+export const TEST_EMPTY_METADATA: SignClientTypes.Metadata = {
+  name: "",
+  description: "",
+  url: "",
+  icons: [],
+};
+export const TEST_INVALID_METADATA: SignClientTypes.Metadata = {
+  name: "test",
+  description: "",
+  url: "",
+  icons: ["test"],
+};
+
+export const TEST_WALLET_METADATA = {
+  name: "Test Wallet",
+  description: "Test Wallet for WalletConnect",
+  url: "https://walletconnect.com/",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
+};

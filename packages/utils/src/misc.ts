@@ -49,7 +49,7 @@ export function isReactNative(): boolean {
 }
 
 export function isBrowser(): boolean {
-  return !isNode() && !!getNavigator();
+  return !isNode() && !!getNavigator() && !!getDocument();
 }
 
 export function getEnvironment(): string {
@@ -379,7 +379,7 @@ export async function handleDeeplinkRedirect({
     const env = getEnvironment();
 
     if (env === ENV_MAP.browser) {
-      if (link.startsWith("https://")) {
+      if (link.startsWith("https://") || link.startsWith("http://")) {
         window.open(link, "_blank", "noreferrer noopener");
       } else {
         window.open(link, "_self", "noreferrer noopener");
@@ -409,4 +409,8 @@ export async function getDeepLink(store: IKeyValueStorage, key: string) {
     // eslint-disable-next-line no-console
     console.error(err);
   }
+}
+
+export function getCommonValuesInArrays<T = string | number | boolean>(arr1: T[], arr2: T[]): T[] {
+  return arr1.filter((value) => arr2.includes(value));
 }

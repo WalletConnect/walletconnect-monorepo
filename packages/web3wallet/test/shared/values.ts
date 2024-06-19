@@ -1,3 +1,4 @@
+import { CoreTypes } from "@walletconnect/types";
 export const TEST_ETHEREUM_CHAIN = "eip155:1";
 export const TEST_ARBITRUM_CHAIN = "eip155:42161";
 export const TEST_AVALANCHE_CHAIN = "eip155:43114";
@@ -47,4 +48,11 @@ export const TEST_CORE_OPTIONS = {
   projectId: process.env.TEST_PROJECT_ID || "",
   logger: "fatal",
   relayUrl: process.env.TEST_RELAY_URL || "",
+};
+
+export const TEST_METADATA: CoreTypes.Metadata = {
+  name: "test",
+  description: "test",
+  url: "test",
+  icons: [],
 };

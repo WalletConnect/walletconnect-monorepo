@@ -104,8 +104,8 @@ export interface MobileWallet {
   id: string;
   name: string;
   links: {
-    universal: string;
-    native?: string;
+    native: string;
+    universal?: string;
   };
 }
 export interface DesktopWallet {
@@ -143,66 +143,79 @@ export interface ConfigCtrlState {
 
 export interface ThemeCtrlState {
   themeVariables?: {
-    "--w3m-z-index"?: string;
-    "--w3m-accent-color"?: string;
-    "--w3m-accent-fill-color"?: string;
-    "--w3m-background-color"?: string;
-    "--w3m-background-image-url"?: string;
-    "--w3m-logo-image-url"?: string;
-    "--w3m-background-border-radius"?: string;
-    "--w3m-container-border-radius"?: string;
-    "--w3m-wallet-icon-border-radius"?: string;
-    "--w3m-wallet-icon-large-border-radius"?: string;
-    "--w3m-wallet-icon-small-border-radius"?: string;
-    "--w3m-input-border-radius"?: string;
-    "--w3m-notification-border-radius"?: string;
-    "--w3m-button-border-radius"?: string;
-    "--w3m-secondary-button-border-radius"?: string;
-    "--w3m-icon-button-border-radius"?: string;
-    "--w3m-button-hover-highlight-border-radius"?: string;
-    "--w3m-font-family"?: string;
-    "--w3m-text-big-bold-size"?: string;
-    "--w3m-text-big-bold-weight"?: string;
-    "--w3m-text-big-bold-line-height"?: string;
-    "--w3m-text-big-bold-letter-spacing"?: string;
-    "--w3m-text-big-bold-text-transform"?: string;
-    "--w3m-text-big-bold-font-family"?: string;
-    "--w3m-text-medium-regular-size"?: string;
-    "--w3m-text-medium-regular-weight"?: string;
-    "--w3m-text-medium-regular-line-height"?: string;
-    "--w3m-text-medium-regular-letter-spacing"?: string;
-    "--w3m-text-medium-regular-text-transform"?: string;
-    "--w3m-text-medium-regular-font-family"?: string;
-    "--w3m-text-small-regular-size"?: string;
-    "--w3m-text-small-regular-weight"?: string;
-    "--w3m-text-small-regular-line-height"?: string;
-    "--w3m-text-small-regular-letter-spacing"?: string;
-    "--w3m-text-small-regular-text-transform"?: string;
-    "--w3m-text-small-regular-font-family"?: string;
-    "--w3m-text-small-thin-size"?: string;
-    "--w3m-text-small-thin-weight"?: string;
-    "--w3m-text-small-thin-line-height"?: string;
-    "--w3m-text-small-thin-letter-spacing"?: string;
-    "--w3m-text-small-thin-text-transform"?: string;
-    "--w3m-text-small-thin-font-family"?: string;
-    "--w3m-text-xsmall-bold-size"?: string;
-    "--w3m-text-xsmall-bold-weight"?: string;
-    "--w3m-text-xsmall-bold-line-height"?: string;
-    "--w3m-text-xsmall-bold-letter-spacing"?: string;
-    "--w3m-text-xsmall-bold-text-transform"?: string;
-    "--w3m-text-xsmall-bold-font-family"?: string;
-    "--w3m-text-xsmall-regular-size"?: string;
-    "--w3m-text-xsmall-regular-weight"?: string;
-    "--w3m-text-xsmall-regular-line-height"?: string;
-    "--w3m-text-xsmall-regular-letter-spacing"?: string;
-    "--w3m-text-xsmall-regular-text-transform"?: string;
-    "--w3m-text-xsmall-regular-font-family"?: string;
+    "--wcm-z-index"?: string;
+    "--wcm-accent-color"?: string;
+    "--wcm-accent-fill-color"?: string;
+    "--wcm-background-color"?: string;
+    "--wcm-background-border-radius"?: string;
+    "--wcm-container-border-radius"?: string;
+    "--wcm-wallet-icon-border-radius"?: string;
+    "--wcm-wallet-icon-large-border-radius"?: string;
+    "--wcm-wallet-icon-small-border-radius"?: string;
+    "--wcm-input-border-radius"?: string;
+    "--wcm-notification-border-radius"?: string;
+    "--wcm-button-border-radius"?: string;
+    "--wcm-secondary-button-border-radius"?: string;
+    "--wcm-icon-button-border-radius"?: string;
+    "--wcm-button-hover-highlight-border-radius"?: string;
+    "--wcm-font-family"?: string;
+    "--wcm-font-feature-settings"?: string;
+    "--wcm-text-big-bold-size"?: string;
+    "--wcm-text-big-bold-weight"?: string;
+    "--wcm-text-big-bold-line-height"?: string;
+    "--wcm-text-big-bold-letter-spacing"?: string;
+    "--wcm-text-big-bold-text-transform"?: string;
+    "--wcm-text-big-bold-font-family"?: string;
+    "--wcm-text-medium-regular-size"?: string;
+    "--wcm-text-medium-regular-weight"?: string;
+    "--wcm-text-medium-regular-line-height"?: string;
+    "--wcm-text-medium-regular-letter-spacing"?: string;
+    "--wcm-text-medium-regular-text-transform"?: string;
+    "--wcm-text-medium-regular-font-family"?: string;
+    "--wcm-text-small-regular-size"?: string;
+    "--wcm-text-small-regular-weight"?: string;
+    "--wcm-text-small-regular-line-height"?: string;
+    "--wcm-text-small-regular-letter-spacing"?: string;
+    "--wcm-text-small-regular-text-transform"?: string;
+    "--wcm-text-small-regular-font-family"?: string;
+    "--wcm-text-small-thin-size"?: string;
+    "--wcm-text-small-thin-weight"?: string;
+    "--wcm-text-small-thin-line-height"?: string;
+    "--wcm-text-small-thin-letter-spacing"?: string;
+    "--wcm-text-small-thin-text-transform"?: string;
+    "--wcm-text-small-thin-font-family"?: string;
+    "--wcm-text-xsmall-bold-size"?: string;
+    "--wcm-text-xsmall-bold-weight"?: string;
+    "--wcm-text-xsmall-bold-line-height"?: string;
+    "--wcm-text-xsmall-bold-letter-spacing"?: string;
+    "--wcm-text-xsmall-bold-text-transform"?: string;
+    "--wcm-text-xsmall-bold-font-family"?: string;
+    "--wcm-text-xsmall-regular-size"?: string;
+    "--wcm-text-xsmall-regular-weight"?: string;
+    "--wcm-text-xsmall-regular-line-height"?: string;
+    "--wcm-text-xsmall-regular-letter-spacing"?: string;
+    "--wcm-text-xsmall-regular-text-transform"?: string;
+    "--wcm-text-xsmall-regular-font-family"?: string;
+    "--wcm-overlay-background-color"?: string;
+    "--wcm-overlay-backdrop-filter"?: string;
   };
   themeMode?: "dark" | "light";
 }
 
 export type WalletConnectModalConfig = ConfigCtrlState &
-  ThemeCtrlState & { walletConnectVersion: 1 | 2 };
+  ThemeCtrlState & {
+    projectId: string;
+    chains?: string[];
+    mobileWallets?: MobileWallet[];
+    desktopWallets?: DesktopWallet[];
+    walletImages?: Record<string, string>;
+    enableAuthMode?: boolean;
+    enableExplorer?: boolean;
+    explorerRecommendedWalletIds?: string[] | "NONE";
+    explorerExcludedWalletIds?: string[] | "ALL";
+    termsOfServiceUrl?: string;
+    privacyPolicyUrl?: string;
+  };
 
 export type QrModalOptions = Pick<
   WalletConnectModalConfig,

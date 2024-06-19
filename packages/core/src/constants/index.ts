@@ -10,3 +10,4 @@ export * from "./pairing";
 export * from "./history";
 export * from "./expirer";
 export * from "./verify";
+export * from "./echo";

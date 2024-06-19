@@ -255,7 +255,6 @@ describe("Relayer", () => {
       });
     });
     describe("transport", () => {
-      let relayer: IRelayer;
       beforeEach(async () => {
         relayer = new Relayer({
           core,

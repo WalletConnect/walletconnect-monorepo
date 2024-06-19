@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/sign-client",
   "description": "Sign Client for WalletConnect Protocol",
-  "version": "2.10.6",
+  "version": "2.13.3",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -27,7 +27,7 @@
     "test:run": "vitest run --dir test/sdk",
     "test:concurrency": "vitest run --dir test/concurrency",
     "test:xregion": "vitest run --dir test/xregion -- --dangerouslyIgnoreUnhandledErrors --segfault-retry=3",
-    "test": "npm run test:pre; npm run test:run",
+    "test": "npm run test:pre; npm run test:run  --threads=false",
     "test:integration": "vitest run --dir test/sdk/integration",
     "test:ignoreUnhandled": "npm run test:pre; npm run test:integration -- --dangerouslyIgnoreUnhandledErrors --segfault-retry=3",
     "test:canary": "vitest run --dir test/canary",
@@ -38,21 +38,20 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@walletconnect/core": "2.10.6",
-    "@walletconnect/events": "^1.0.1",
-    "@walletconnect/heartbeat": "1.2.1",
+    "@walletconnect/core": "2.13.3",
+    "@walletconnect/events": "1.0.1",
+    "@walletconnect/heartbeat": "1.2.2",
     "@walletconnect/jsonrpc-utils": "1.0.8",
-    "@walletconnect/logger": "^2.0.1",
-    "@walletconnect/time": "^1.0.2",
-    "@walletconnect/types": "2.10.6",
-    "@walletconnect/utils": "2.10.6",
-    "events": "^3.3.0"
+    "@walletconnect/logger": "2.1.2",
+    "@walletconnect/time": "1.0.2",
+    "@walletconnect/types": "2.13.3",
+    "@walletconnect/utils": "2.13.3",
+    "events": "3.3.0"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudwatch": "3.450.0",
-    "@walletconnect/jsonrpc-provider": "^1.0.13",
+    "@walletconnect/jsonrpc-provider": "1.0.14",
     "@walletconnect/jsonrpc-ws-connection": "1.0.14",
-    "@walletconnect/relay-api": "^1.0.9",
-    "lokijs": "^1.5.12"
+    "@walletconnect/relay-api": "1.0.10"
   }
 }

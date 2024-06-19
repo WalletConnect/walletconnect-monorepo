@@ -96,7 +96,7 @@ describe("Store", () => {
       expect(store.keys.includes(key)).to.be.true;
       expect(store.values.includes(value)).to.be.true;
     });
-    it("updates an existing entry for a a known key", async () => {
+    it("updates an existing entry for a known key", async () => {
       const key = "key";
       const value = {
         topic: "111",
@@ -147,6 +147,43 @@ describe("Store", () => {
     it("does nothing if key is unknown", async () => {
       await store.delete("key", { code: 0, message: "reason" });
       expect(store.length).to.equal(0);
+    });
+    it("should add deleted key to the recentlyDeleted list", async () => {
+      const key = "key";
+      const value = "value";
+      await store.set(key, value);
+      await store.delete(key, { code: 0, message: "reason" });
+      try {
+        await store.get(key);
+      } catch (e) {
+        expect(e.message).to.equal(
+          `Missing or invalid. Record was recently deleted - mock-entity: ${key}`,
+        );
+      }
+    });
+    it("should cleanup recentlyDeleted when size limit is reached", async () => {
+      //@ts-expect-error
+      const itemsToDelete = store.recentlyDeletedLimit - 1;
+      // populate recentlyDeleted just below the limit
+      for (let i = 0; i < itemsToDelete; i++) {
+        const key = `key${i}`;
+        const value = `value${i}`;
+        await store.set(key, value);
+        await store.delete(key, { code: 0, message: "reason" });
+      }
+      //@ts-expect-error
+      expect(store.recentlyDeleted?.length).to.be.greaterThan(1);
+      //@ts-expect-error
+      expect(store.recentlyDeleted?.length).to.equal(itemsToDelete);
+      // add one more to reach the limit
+      await store.set("test", "test");
+      await store.delete("test", { code: 0, message: "reason" });
+
+      // check that the recentlyDeleted list has been halved
+      //@ts-expect-error
+      expect(store.recentlyDeleted?.length).to.be.greaterThan(1);
+      //@ts-expect-error
+      expect(store.recentlyDeleted?.length).to.equal(store.recentlyDeletedLimit / 2);
     });
   });
 

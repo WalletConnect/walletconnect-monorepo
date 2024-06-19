@@ -220,7 +220,7 @@ describe("Sign Client Persistence", () => {
         },
       };
 
-      const db_a = generateClientDbName("client_b");
+      const db_a = generateClientDbName("client_a");
       const clients = await initTwoClients({
         storageOptions: { database: db_a },
       });
@@ -233,9 +233,8 @@ describe("Sign Client Persistence", () => {
 
       // delete client B
       await deleteClients({ A: clients.A, B: undefined });
-
       await throttle(500);
-      clients.B.update({
+      await clients.B.update({
         topic,
         namespaces: {
           eip155: {
@@ -244,9 +243,7 @@ describe("Sign Client Persistence", () => {
           },
         },
       });
-
       await throttle(500);
-
       const lastWalletSessionNamespacesValue = {
         eip155: {
           ...approvedNamespaces.eip155,
@@ -257,13 +254,11 @@ describe("Sign Client Persistence", () => {
         },
       };
 
-      clients.B.update({
+      await clients.B.update({
         topic,
         namespaces: lastWalletSessionNamespacesValue,
       });
-      const lastAccountsChangedValue = [`${chains[0]}:${accounts[1]}`];
-
-      clients.B.emit({
+      await clients.B.emit({
         topic,
         event: {
           name: "accountsChanged",
@@ -272,7 +267,7 @@ describe("Sign Client Persistence", () => {
         chainId: "eip155:1",
       });
       await throttle(500);
-      clients.B.emit({
+      await clients.B.emit({
         topic,
         event: {
           name: "accountsChanged",
@@ -280,8 +275,9 @@ describe("Sign Client Persistence", () => {
         },
         chainId: "eip155:1",
       });
-      await throttle(500);
-      clients.B.emit({
+
+      const lastAccountsChangedValue = [`${chains[0]}:${accounts[1]}`];
+      await clients.B.emit({
         topic,
         event: {
           name: "accountsChanged",
@@ -289,8 +285,6 @@ describe("Sign Client Persistence", () => {
         },
         chainId: "eip155:1",
       });
-
-      await throttle(500);
       // restart the client
       clients.A = await SignClient.init({
         ...TEST_SIGN_CLIENT_OPTIONS_A,

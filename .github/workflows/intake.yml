@@ -17,7 +17,7 @@ jobs:
     if: github.event.action == 'labeled' && github.event.label.name == 'accepted'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/add-to-project@v0.5.0
+      - uses: actions/add-to-project@v1.0.1
         with:
           project-url: https://github.com/orgs/WalletConnect/projects/6
           github-token: ${{ secrets.ASSIGN_TO_PROJECT_GITHUB_TOKEN }}
@@ -42,7 +42,7 @@ jobs:
         run: echo "$CREATOR (Core Team Member $IS_TEAM_MEMBER) created this issue/PR"
       - name: Label issues
         if: ${{ steps.is-core-team.outputs.isTeamMember == 'true' }}
-        uses: andymckay/labeler@e6c4322d0397f3240f0e7e30a33b5c5df2d39e90
+        uses: andymckay/labeler@3a4296e9dcdf9576b0456050db78cfd34853f260
         with:
           add-labels: "accepted"
           repo-token: ${{ secrets.ASSIGN_TO_PROJECT_GITHUB_TOKEN }}

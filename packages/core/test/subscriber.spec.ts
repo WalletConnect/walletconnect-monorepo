@@ -36,6 +36,55 @@ describe("Subscriber", () => {
     await disconnectSocket(core.relayer);
   });
 
+  describe("init", () => {
+    it("should call batch fetch messages on init when it has cached topics", async () => {
+      const requestSpy: Sinon.SinonSpy = Sinon.spy(() => {
+        return {};
+      });
+      subscriber.relayer.provider.request = requestSpy;
+
+      const topic = generateRandomBytes32();
+      // manually switch off the subscriber
+      // @ts-expect-error
+      subscriber.onDisconnect();
+      // add a topic to the subscriber as if it was loaded from persistence
+      // @ts-expect-error
+      subscriber.cached = [{ topic, relay: { protocol: "irn" } }];
+
+      // restart the subscriber
+      // @ts-expect-error
+      subscriber.onConnect();
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // first req should be the batch fetch messages call followed by the batch subscribe call
+      expect(requestSpy.getCalls().length).toBe(2);
+      expect(requestSpy.getCalls()[0].args[0].method).toBe("irn_batchFetchMessages");
+      expect(requestSpy.getCalls()[1].args[0].method).toBe("irn_batchSubscribe");
+      expect(
+        requestSpy.calledWith(
+          Sinon.match({
+            method: "irn_batchFetchMessages",
+            params: {
+              topics: [topic],
+            },
+          }),
+        ),
+      ).to.be.true;
+
+      expect(
+        requestSpy.calledWith(
+          Sinon.match({
+            method: "irn_batchSubscribe",
+            params: {
+              topics: [topic],
+            },
+          }),
+        ),
+      ).to.be.true;
+    });
+  });
+
   describe("storageKey", () => {
     it("provides the expected default `storageKey` format", () => {
       const subscriber = new Subscriber(relayer, logger);
@@ -117,7 +166,7 @@ describe("Subscriber", () => {
     let messageDeleteSpy: Sinon.SinonSpy;
 
     beforeEach(() => {
-      requestSpy = Sinon.spy();
+      requestSpy = Sinon.spy(() => "test-id");
       messageDeleteSpy = Sinon.spy();
       topic = generateRandomBytes32();
       subscriber.relayer.provider.request = requestSpy;

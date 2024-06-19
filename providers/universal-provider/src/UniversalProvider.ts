@@ -1,5 +1,6 @@
 import SignClient, { PROPOSAL_EXPIRY_MESSAGE } from "@walletconnect/sign-client";
 import { SessionTypes } from "@walletconnect/types";
+import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import { getSdkError, isValidArray, parseNamespaceKey } from "@walletconnect/utils";
 import { getDefaultLoggerOptions, Logger, pino } from "@walletconnect/logger";
 import {
@@ -30,10 +31,12 @@ import {
   NamespaceConfig,
   PairingsCleanupOpts,
   ProviderAccounts,
+  AuthenticateParams,
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS } from "./constants";
 import EventEmitter from "events";
+import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 export class UniversalProvider implements IUniversalProvider {
   public client!: SignClient;
@@ -69,6 +72,7 @@ export class UniversalProvider implements IUniversalProvider {
   public async request<T = unknown>(
     args: RequestArguments,
     chain?: string | undefined,
+    expiry?: number | undefined,
   ): Promise<T> {
     const [namespace, chainId] = this.validateChain(chain);
 
@@ -82,17 +86,20 @@ export class UniversalProvider implements IUniversalProvider {
       },
       chainId: `${namespace}:${chainId}`,
       topic: this.session.topic,
+      expiry,
     });
   }
 
   public sendAsync(
     args: RequestArguments,
-    callback: (error: Error | null, response: any) => void,
+    callback: (error: Error | null, response: JsonRpcResult) => void,
     chain?: string | undefined,
+    expiry?: number | undefined,
   ): void {
-    this.request(args, chain)
-      .then((response) => callback(null, response))
-      .catch((error) => callback(error, undefined));
+    const id = new Date().getTime();
+    this.request(args, chain, expiry)
+      .then((response) => callback(null, formatJsonRpcResult(id, response)))
+      .catch((error) => callback(error, undefined as any));
   }
 
   public async enable(): Promise<ProviderAccounts> {
@@ -130,6 +137,30 @@ export class UniversalProvider implements IUniversalProvider {
     if (opts.skipPairing) return;
 
     return await this.pair(opts.pairingTopic);
+  }
+
+  public async authenticate(opts: AuthenticateParams) {
+    if (!this.client) {
+      throw new Error("Sign Client not initialized");
+    }
+    this.setNamespaces(opts);
+    await this.cleanupPendingPairings();
+
+    const { uri, response } = await this.client.authenticate(opts);
+    if (uri) {
+      this.uri = uri;
+      this.events.emit("display_uri", uri);
+    }
+    const result = await response();
+    this.session = result.session;
+    if (this.session) {
+      // assign namespaces from session if not already defined
+      const approved = populateNamespacesChains(this.session.namespaces) as NamespaceConfig;
+      this.namespaces = mergeRequiredOptionalNamespaces(this.namespaces, approved);
+      this.persist("namespaces", this.namespaces);
+      this.onConnect();
+    }
+    return result;
   }
 
   public on(event: any, listener: any): void {
@@ -180,10 +211,9 @@ export class UniversalProvider implements IUniversalProvider {
         .then((session) => {
           this.session = session;
           // assign namespaces from session if not already defined
-          if (!this.namespaces) {
-            this.namespaces = populateNamespacesChains(session.namespaces) as NamespaceConfig;
-            this.persist("namespaces", this.namespaces);
-          }
+          const approved = populateNamespacesChains(session.namespaces) as NamespaceConfig;
+          this.namespaces = mergeRequiredOptionalNamespaces(this.namespaces, approved);
+          this.persist("namespaces", this.namespaces);
         })
         .catch((error) => {
           if (error.message !== PROPOSAL_EXPIRY_MESSAGE) {
@@ -367,6 +397,7 @@ export class UniversalProvider implements IUniversalProvider {
           convertChainIdToNumber(requestChainId) !== convertChainIdToNumber(payloadChainId)
             ? `${namespace}:${convertChainIdToNumber(payloadChainId)}`
             : requestChainId;
+
         this.onChainChanged(chainIdToProcess);
       } else {
         this.events.emit(event.name, event.data);
@@ -461,12 +492,21 @@ export class UniversalProvider implements IUniversalProvider {
 
     const [namespace, chainId] = this.validateChain(caip2Chain);
 
+    if (!chainId) return;
+
     if (!internal) {
       this.getProvider(namespace).setDefaultChain(chainId);
     }
 
-    (this.namespaces[namespace] ?? this.namespaces[`${namespace}:${chainId}`]).defaultChain =
-      chainId;
+    if (this.namespaces[namespace]) {
+      this.namespaces[namespace].defaultChain = chainId;
+    } else if (this.namespaces[`${namespace}:${chainId}`]) {
+      this.namespaces[`${namespace}:${chainId}`].defaultChain = chainId;
+    } else {
+      // @ts-ignore
+      this.namespaces[`${namespace}:${chainId}`] = { defaultChain: chainId };
+    }
+
     this.persist("namespaces", this.namespaces);
     this.events.emit("chainChanged", chainId);
   }
