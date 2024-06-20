@@ -1336,9 +1336,11 @@ export class Engine extends IEngine {
       if (!request) continue;
 
       try {
-        this.processRequest(request);
+        console.log("Processing request", request.payload.id);
+        await this.processRequest(request);
         // small delay to allow for any async tasks to complete
         await new Promise((resolve) => setTimeout(resolve, 300));
+        console.log("Request processed", request.payload.id, "✅");
       } catch (error) {
         this.client.logger.warn(error);
       }
@@ -1346,7 +1348,7 @@ export class Engine extends IEngine {
     this.requestQueue.state = ENGINE_QUEUE_STATES.idle;
   };
 
-  private processRequest: EnginePrivate["onRelayEventRequest"] = (event) => {
+  private processRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
@@ -1356,23 +1358,23 @@ export class Engine extends IEngine {
 
     switch (reqMethod) {
       case "wc_sessionPropose":
-        return this.onSessionProposeRequest(topic, payload);
+        return await this.onSessionProposeRequest(topic, payload);
       case "wc_sessionSettle":
-        return this.onSessionSettleRequest(topic, payload);
+        return await this.onSessionSettleRequest(topic, payload);
       case "wc_sessionUpdate":
-        return this.onSessionUpdateRequest(topic, payload);
+        return await this.onSessionUpdateRequest(topic, payload);
       case "wc_sessionExtend":
-        return this.onSessionExtendRequest(topic, payload);
+        return await this.onSessionExtendRequest(topic, payload);
       case "wc_sessionPing":
-        return this.onSessionPingRequest(topic, payload);
+        return await this.onSessionPingRequest(topic, payload);
       case "wc_sessionDelete":
-        return this.onSessionDeleteRequest(topic, payload);
+        return await this.onSessionDeleteRequest(topic, payload);
       case "wc_sessionRequest":
-        return this.onSessionRequest(topic, payload);
+        return await this.onSessionRequest(topic, payload);
       case "wc_sessionEvent":
-        return this.onSessionEventRequest(topic, payload);
+        return await this.onSessionEventRequest(topic, payload);
       case "wc_sessionAuthenticate":
-        return this.onSessionAuthenticateRequest(topic, payload);
+        return await this.onSessionAuthenticateRequest(topic, payload);
       default:
         return this.client.logger.info(`Unsupported request method ${reqMethod}`);
     }

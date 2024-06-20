@@ -457,7 +457,9 @@ export class Subscriber extends ISubscriber {
     await this.batchSubscribe(pendingSubscriptions);
 
     if (this.pendingBatchMessages.length) {
+      console.log("starting delivery batch messages");
       await this.relayer.handleBatchMessageEvents(this.pendingBatchMessages);
+      console.log("batch messages delivered successfully");
       this.pendingBatchMessages = [];
     }
   }

@@ -200,7 +200,7 @@ export interface EnginePrivate {
     rpcOpts?: RelayerTypes.PublishOptions;
   }): Promise<void>;
 
-  onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): void;
+  onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): Promise<void>;
 
   onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>): Promise<void>;
 
