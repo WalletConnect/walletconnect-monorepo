@@ -131,6 +131,7 @@ export class Engine extends IEngine {
   >();
 
   private recentlyDeletedLimit = 200;
+  private relayMessagesCache: RelayerTypes.MessageEvent[] = [];
 
   constructor(client: IEngine["client"]) {
     super(client);
@@ -1028,6 +1029,25 @@ export class Engine extends IEngine {
     return formatMessage(request, iss);
   };
 
+  public processRelayMessageCache: IEngine["processRelayMessageCache"] = () => {
+    // process the relay messages cache in the next tick to allow event listeners to be registered by the implementing app
+    setTimeout(async () => {
+      console.log("Processing relay messages cache", this.relayMessagesCache.length);
+      if (this.relayMessagesCache.length === 0) return;
+      while (this.relayMessagesCache.length > 0) {
+        try {
+          const message = this.relayMessagesCache.shift();
+          console.log("Processing relay message", message);
+          if (message) {
+            await this.onRelayMessage(message);
+          }
+        } catch (error) {
+          this.client.logger.error(error);
+        }
+      }
+    }, 50);
+  };
+
   // ---------- Private Helpers --------------------------------------- //
 
   private cleanupDuplicatePairings: EnginePrivate["cleanupDuplicatePairings"] = async (
@@ -1283,36 +1303,44 @@ export class Engine extends IEngine {
   // ---------- Relay Events Router ----------------------------------- //
 
   private registerRelayerEvents() {
-    this.client.core.relayer.on(
-      RELAYER_EVENTS.message,
-      async (event: RelayerTypes.MessageEvent) => {
-        const { topic, message } = event;
+    this.client.core.relayer.on(RELAYER_EVENTS.message, (event: RelayerTypes.MessageEvent) => {
+      console.log("Relayer message received", this.initialized, this.relayMessagesCache.length > 0);
+      // capture any messages that arrive before the client is initialized so we can process them after initialization is complete
+      if (!this.initialized || this.relayMessagesCache.length > 0) {
+        this.relayMessagesCache.push(event);
+        console.log("Relayer message cached", this.relayMessagesCache.length);
+      } else {
+        this.onRelayMessage(event);
+      }
+    });
+  }
 
-        // Retrieve the public key (if defined) to decrypt possible `auth_request` response
-        const { publicKey } = this.client.auth.authKeys.keys.includes(AUTH_PUBLIC_KEY_NAME)
-          ? this.client.auth.authKeys.get(AUTH_PUBLIC_KEY_NAME)
-          : ({ responseTopic: undefined, publicKey: undefined } as any);
+  private async onRelayMessage(event: RelayerTypes.MessageEvent) {
+    const { topic, message } = event;
 
-        const payload = await this.client.core.crypto.decode(topic, message, {
-          receiverPublicKey: publicKey,
-        });
+    // Retrieve the public key (if defined) to decrypt possible `auth_request` response
+    const { publicKey } = this.client.auth.authKeys.keys.includes(AUTH_PUBLIC_KEY_NAME)
+      ? this.client.auth.authKeys.get(AUTH_PUBLIC_KEY_NAME)
+      : ({ responseTopic: undefined, publicKey: undefined } as any);
 
-        try {
-          if (isJsonRpcRequest(payload)) {
-            this.client.core.history.set(topic, payload);
-            this.onRelayEventRequest({ topic, payload });
-          } else if (isJsonRpcResponse(payload)) {
-            await this.client.core.history.resolve(payload);
-            await this.onRelayEventResponse({ topic, payload });
-            this.client.core.history.delete(topic, payload.id);
-          } else {
-            this.onRelayEventUnknownPayload({ topic, payload });
-          }
-        } catch (error) {
-          this.client.logger.error(error);
-        }
-      },
-    );
+    const payload = await this.client.core.crypto.decode(topic, message, {
+      receiverPublicKey: publicKey,
+    });
+
+    try {
+      if (isJsonRpcRequest(payload)) {
+        this.client.core.history.set(topic, payload);
+        this.onRelayEventRequest({ topic, payload });
+      } else if (isJsonRpcResponse(payload)) {
+        await this.client.core.history.resolve(payload);
+        await this.onRelayEventResponse({ topic, payload });
+        this.client.core.history.delete(topic, payload.id);
+      } else {
+        this.onRelayEventUnknownPayload({ topic, payload });
+      }
+    } catch (error) {
+      this.client.logger.error(error);
+    }
   }
 
   private onRelayEventRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
@@ -1604,6 +1632,7 @@ export class Engine extends IEngine {
         MemoryStore.delete(memoryKey);
         throw e;
       }
+
       this.client.events.emit("session_update", { id, topic, params });
     } catch (err: any) {
       await this.sendError({

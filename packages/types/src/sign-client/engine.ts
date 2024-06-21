@@ -402,4 +402,6 @@ export abstract class IEngine {
   }) => string;
 
   public abstract rejectSessionAuthenticate(params: EngineTypes.RejectParams): Promise<void>;
+
+  public abstract processRelayMessageCache(): void;
 }
