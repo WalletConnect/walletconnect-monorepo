@@ -131,7 +131,7 @@ export class Engine extends IEngine {
   >();
 
   private recentlyDeletedLimit = 200;
-  private relayMessagesCache: RelayerTypes.MessageEvent[] = [];
+  private relayMessageCache: RelayerTypes.MessageEvent[] = [];
 
   constructor(client: IEngine["client"]) {
     super(client);
@@ -1032,12 +1032,10 @@ export class Engine extends IEngine {
   public processRelayMessageCache: IEngine["processRelayMessageCache"] = () => {
     // process the relay messages cache in the next tick to allow event listeners to be registered by the implementing app
     setTimeout(async () => {
-      console.log("Processing relay messages cache", this.relayMessagesCache.length);
-      if (this.relayMessagesCache.length === 0) return;
-      while (this.relayMessagesCache.length > 0) {
+      if (this.relayMessageCache.length === 0) return;
+      while (this.relayMessageCache.length > 0) {
         try {
-          const message = this.relayMessagesCache.shift();
-          console.log("Processing relay message", message);
+          const message = this.relayMessageCache.shift();
           if (message) {
             await this.onRelayMessage(message);
           }
@@ -1304,11 +1302,9 @@ export class Engine extends IEngine {
 
   private registerRelayerEvents() {
     this.client.core.relayer.on(RELAYER_EVENTS.message, (event: RelayerTypes.MessageEvent) => {
-      console.log("Relayer message received", this.initialized, this.relayMessagesCache.length > 0);
       // capture any messages that arrive before the client is initialized so we can process them after initialization is complete
-      if (!this.initialized || this.relayMessagesCache.length > 0) {
-        this.relayMessagesCache.push(event);
-        console.log("Relayer message cached", this.relayMessagesCache.length);
+      if (!this.initialized || this.relayMessageCache.length > 0) {
+        this.relayMessageCache.push(event);
       } else {
         this.onRelayMessage(event);
       }
@@ -1364,11 +1360,9 @@ export class Engine extends IEngine {
       if (!request) continue;
 
       try {
-        console.log("Processing request", request.payload.id);
         await this.processRequest(request);
         // small delay to allow for any async tasks to complete
         await new Promise((resolve) => setTimeout(resolve, 300));
-        console.log("Request processed", request.payload.id, "✅");
       } catch (error) {
         this.client.logger.warn(error);
       }
