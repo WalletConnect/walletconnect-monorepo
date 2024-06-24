@@ -814,6 +814,21 @@ export class Engine extends IEngine {
 
         session = this.client.session.get(sessionTopic);
       }
+
+      //TODO: do we also check if dapp enabled linkMode?
+      // check if wallet supports link_mode and save
+      if (responder.metadata.redirect?.linkMode) {
+        // save wallet link in array of wallets that support linkMode
+        const wallets =
+          (await this.client.core.storage.getItem<string[]>("WALLETCONNECT_LINK_MODE_WALLETS")) ||
+          [];
+        const walletLink = responder.metadata.redirect?.universal;
+        if (walletLink && !wallets?.includes(walletLink)) {
+          wallets.push(walletLink);
+          await this.client.core.storage.setItem("WALLETCONNECT_LINK_MODE_WALLETS", wallets);
+        }
+      }
+
       resolve({
         auths: cacaos,
         session,
@@ -865,6 +880,10 @@ export class Engine extends IEngine {
       uri: connectionUri,
       response: done,
     } as EngineTypes.SessionAuthenticateResponsePromise;
+  };
+
+  public authenticateLinkMode: IEngine["authenticate"] = async (params) => {
+    return await this.authenticate(params);
   };
 
   public approveSessionAuthenticate: IEngine["approveSessionAuthenticate"] = async (
@@ -2089,6 +2108,11 @@ export class Engine extends IEngine {
       const { message } = getInternalError("EXPIRED", `proposal id: ${id}`);
       throw new Error(message);
     }
+  }
+
+  // ---------- LinkMode Events Router ---------------------------------------- //
+  public async handleLinkModeEvents(url: string) {
+    console.log("handleLinkModeEvents", url);
   }
 
   // ---------- Validation  ------------------------------------------- //

@@ -6,7 +6,7 @@ import {
   pino,
 } from "@walletconnect/logger";
 import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
-import { getAppMetadata } from "@walletconnect/utils";
+import { getAppMetadata, isReactNative } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
 import { AuthStore, Engine, PendingRequest, Proposal, Session } from "./controllers";
@@ -216,8 +216,17 @@ export class SignClient extends ISignClient {
     }
   };
 
-  public authenticate: ISignClient["authenticate"] = async (params) => {
+  public authenticate: ISignClient["authenticate"] = async (params, walletUniversalLink) => {
     try {
+      if (walletUniversalLink) {
+        const wallets = await this.core.storage.getItem<string[]>(
+          "WALLETCONNECT_LINK_MODE_WALLETS",
+        ); //TODO move to constants
+        if (wallets && wallets.includes(walletUniversalLink)) {
+          return await this.engine.authenticateLinkMode(params, walletUniversalLink);
+        }
+      }
+
       return await this.engine.authenticate(params);
     } catch (error: any) {
       this.logger.error(error.message);
@@ -264,6 +273,21 @@ export class SignClient extends ISignClient {
       await this.pendingRequest.init();
       await this.engine.init();
       await this.auth.init();
+
+      if (isReactNative()) {
+        // && linkMode enabled?
+        // global.Linking is set by react-native-compat
+        if (typeof (global as any)?.Linking !== "undefined") {
+          // set URL listener
+          (global as any).Linking.addEventListener("url", this.handleLinkRequest);
+
+          // check for initial URL -> cold boots
+          const initialUrl = await (global as any).Linking.getInitialURL();
+          if (initialUrl) {
+            this.handleLinkRequest({ url: initialUrl });
+          }
+        }
+      }
       this.core.verify.init({ verifyUrl: this.metadata.verifyUrl });
       this.logger.info(`SignClient Initialization Success`);
     } catch (error: any) {
@@ -271,5 +295,10 @@ export class SignClient extends ISignClient {
       this.logger.error(error.message);
       throw error;
     }
+  }
+
+  private handleLinkRequest({ url }: { url: string }) {
+    // add validations -> url contains wc_ev, etc
+    console.log("handleLinkRequest", url);
   }
 }

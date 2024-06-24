@@ -33,6 +33,7 @@ export declare namespace CoreTypes {
     redirect?: {
       native?: string;
       universal?: string;
+      linkMode?: boolean;
     };
   }
 }

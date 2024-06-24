@@ -53,6 +53,7 @@ export declare namespace AuthTypes {
     redirect?: {
       native?: string;
       universal?: string;
+      linkMode?: boolean;
     };
     verifyUrl?: string;
   }
