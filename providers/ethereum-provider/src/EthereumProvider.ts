@@ -68,7 +68,7 @@ export interface EthereumRpcConfig {
   optionalEvents?: string[];
   rpcMap: EthereumRpcMap;
   projectId: string;
-  metadata: Metadata;
+  metadata?: Metadata;
   showQrModal: boolean;
   qrModalOptions?: QrModalOptions;
 }
@@ -213,7 +213,7 @@ export type EthereumProviderOptions = {
   events?: string[];
   optionalEvents?: string[];
   rpcMap?: EthereumRpcMap;
-  metadata: Metadata;
+  metadata?: Metadata;
   showQrModal: boolean;
   qrModalOptions?: QrModalOptions;
   disableProviderPing?: boolean;
@@ -563,6 +563,7 @@ export class EthereumProvider implements IEthereumProvider {
 
   protected async initialize(opts: EthereumProviderOptions) {
     this.rpc = this.getRpcConfig(opts);
+
     this.chainId = this.rpc.chains.length
       ? getEthereumChainId(this.rpc.chains)
       : getEthereumChainId(this.rpc.optionalChains);
