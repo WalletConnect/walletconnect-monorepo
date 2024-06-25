@@ -452,8 +452,17 @@ export class Engine extends IEngine {
       this.client.logger.error("request() -> isValidRequest() failed");
       throw error;
     }
+
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
+
     const session = this.client.session.get(topic);
+
+    const intercepted = await this.interceptRequestIfConfigured(params, session.sessionProperties ?? {})
+
+    if(intercepted) {
+      return intercepted
+    }
+
     const clientRpcId = payloadId();
     const relayRpcId = getBigIntRpcId().toString() as any;
     const { done, resolve, reject } = createDelayedPromise<T>(
@@ -1029,6 +1038,37 @@ export class Engine extends IEngine {
   };
 
   // ---------- Private Helpers --------------------------------------- //
+
+  private interceptGetCallsStatus = async (request: EngineTypes.RequestParams, sessionProperties: ProposalTypes.SessionProperties) => {
+    const bundlerUrl = sessionProperties.bunder_url;
+
+    const response = await fetch(bundlerUrl, {
+      method: "POST",
+      body: JSON.stringify(formatJsonRpcRequest("eth_getUserOperationReceipt", [request.request.params[0]]))
+    })
+
+    const json = await response.json()
+
+    return json.result;
+  }
+
+  private interceptRequestIfConfigured = async (request: EngineTypes.RequestParams, sessionProperties: ProposalTypes.SessionProperties) => {
+    const interceptableMethods = []
+    const interceptionMethods = {
+      ["wallet_getCallsStatus"]: this.interceptGetCallsStatus 
+    } as const;
+
+    if(Object.keys(sessionProperties).includes("bundler_url")) {
+      interceptableMethods.push("wallet_getCallsStatus")
+    }
+
+    if(interceptableMethods.includes(request.request.method)) {
+      return interceptionMethods[request.request.method](request, sessionProperties)
+    }
+
+    return null;
+  }
+    
 
   private cleanupDuplicatePairings: EnginePrivate["cleanupDuplicatePairings"] = async (
     session: SessionTypes.Struct,
