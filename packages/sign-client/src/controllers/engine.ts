@@ -457,7 +457,9 @@ export class Engine extends IEngine {
 
     const session = this.client.session.get(topic);
 
+    console.log(">>>> checking to intercept", {params, sessionProps: session.sessionProperties})
     const intercepted = await this.interceptRequestIfConfigured(params, session.sessionProperties ?? {})
+    console.log(">>>> intercept", {intercepted})
 
     if(intercepted) {
       return intercepted
@@ -1040,16 +1042,21 @@ export class Engine extends IEngine {
   // ---------- Private Helpers --------------------------------------- //
 
   private interceptGetCallsStatus = async (request: EngineTypes.RequestParams, sessionProperties: ProposalTypes.SessionProperties) => {
-    const bundlerUrl = sessionProperties.bunder_url;
+    const bundlerUrl = sessionProperties.bundler_url;
 
     const response = await fetch(bundlerUrl, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(formatJsonRpcRequest("eth_getUserOperationReceipt", [request.request.params[0]]))
     })
 
     const json = await response.json()
 
-    return json.result;
+    console.log(">>>>", {json})
+
+    return json;
   }
 
   private interceptRequestIfConfigured = async (request: EngineTypes.RequestParams, sessionProperties: ProposalTypes.SessionProperties) => {
@@ -1061,6 +1068,8 @@ export class Engine extends IEngine {
     if(Object.keys(sessionProperties).includes("bundler_url")) {
       interceptableMethods.push("wallet_getCallsStatus")
     }
+
+    console.log(">>>>", { interceptableMethods, method: request.request.method  })
 
     if(interceptableMethods.includes(request.request.method)) {
       return interceptionMethods[request.request.method](request, sessionProperties)
