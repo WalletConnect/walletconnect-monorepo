@@ -18,14 +18,13 @@ export class Engine extends IWeb3WalletEngine {
     this.signClient = await SignClient.init({
       core: this.client.core,
       metadata: this.client.metadata,
+      signConfig: this.client.signConfig,
     });
     this.authClient = await AuthClient.init({
       core: this.client.core,
       projectId: "",
       metadata: this.client.metadata,
     });
-
-    this.initializeEventListeners();
   };
 
   public pair: IWeb3WalletEngine["pair"] = async (params) => {
@@ -35,8 +34,11 @@ export class Engine extends IWeb3WalletEngine {
   // Sign //
   public approveSession: IWeb3WalletEngine["approveSession"] = async (sessionProposal) => {
     const { topic, acknowledged } = await this.signClient.approve({
+      ...sessionProposal,
       id: sessionProposal.id,
       namespaces: sessionProposal.namespaces,
+      sessionProperties: sessionProposal.sessionProperties,
+      sessionConfig: sessionProposal.sessionConfig,
     });
     await acknowledged();
     return this.signClient.session.get(topic);
@@ -47,11 +49,11 @@ export class Engine extends IWeb3WalletEngine {
   };
 
   public updateSession: IWeb3WalletEngine["updateSession"] = async (params) => {
-    return await (await this.signClient.update(params)).acknowledged();
+    return await this.signClient.update(params);
   };
 
   public extendSession: IWeb3WalletEngine["extendSession"] = async (params) => {
-    return await (await this.signClient.extend(params)).acknowledged();
+    return await this.signClient.extend(params);
   };
 
   public respondSessionRequest: IWeb3WalletEngine["respondSessionRequest"] = async (params) => {
@@ -98,6 +100,51 @@ export class Engine extends IWeb3WalletEngine {
     return this.authClient.formatMessage(params, iss);
   };
 
+  // Multi chain Auth //
+  public approveSessionAuthenticate: IWeb3WalletEngine["approveSessionAuthenticate"] = async (
+    params,
+  ) => {
+    return await this.signClient.approveSessionAuthenticate(params);
+  };
+
+  public rejectSessionAuthenticate: IWeb3WalletEngine["rejectSessionAuthenticate"] = async (
+    params,
+  ) => {
+    return await this.signClient.rejectSessionAuthenticate(params);
+  };
+
+  public formatAuthMessage: IWeb3WalletEngine["formatAuthMessage"] = (params) => {
+    return this.signClient.formatAuthMessage(params);
+  };
+
+  // Push //
+  public registerDeviceToken: IWeb3WalletEngine["registerDeviceToken"] = (params) => {
+    return this.client.core.echoClient.registerDeviceToken(params);
+  };
+
+  // ---------- public events ----------------------------------------------- //
+  public on: IWeb3WalletEngine["on"] = (name, listener) => {
+    this.setEvent(name, "off");
+    this.setEvent(name, "on");
+    return this.client.events.on(name, listener);
+  };
+
+  public once: IWeb3WalletEngine["once"] = (name, listener) => {
+    this.setEvent(name, "off");
+    this.setEvent(name, "once");
+    return this.client.events.once(name, listener);
+  };
+
+  public off: IWeb3WalletEngine["off"] = (name, listener) => {
+    this.setEvent(name, "off");
+    return this.client.events.off(name, listener);
+  };
+
+  public removeListener: IWeb3WalletEngine["removeListener"] = (name, listener) => {
+    this.setEvent(name, "removeListener");
+    return this.client.events.removeListener(name, listener);
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private onSessionRequest = (event: Web3WalletTypes.SessionRequest) => {
@@ -116,10 +163,44 @@ export class Engine extends IWeb3WalletEngine {
     this.client.events.emit("auth_request", event);
   };
 
-  private initializeEventListeners = () => {
-    this.signClient.events.on("session_proposal", this.onSessionProposal);
-    this.signClient.events.on("session_request", this.onSessionRequest);
-    this.signClient.events.on("session_delete", this.onSessionDelete);
-    this.authClient.on("auth_request", this.onAuthRequest);
+  private onProposalExpire = (event: Web3WalletTypes.ProposalExpire) => {
+    this.client.events.emit("proposal_expire", event);
+  };
+
+  private onSessionRequestExpire = (event: Web3WalletTypes.SessionRequestExpire) => {
+    this.client.events.emit("session_request_expire", event);
+  };
+
+  private onSessionRequestAuthenticate = (event: Web3WalletTypes.SessionAuthenticate) => {
+    this.client.events.emit("session_authenticate", event);
+  };
+
+  private setEvent = (
+    event: Web3WalletTypes.Event,
+    action: "on" | "off" | "once" | "removeListener",
+  ) => {
+    switch (event) {
+      case "session_request":
+        this.signClient.events[action]("session_request", this.onSessionRequest);
+        break;
+      case "session_proposal":
+        this.signClient.events[action]("session_proposal", this.onSessionProposal);
+        break;
+      case "session_delete":
+        this.signClient.events[action]("session_delete", this.onSessionDelete);
+        break;
+      case "auth_request":
+        this.authClient[action]("auth_request", this.onAuthRequest);
+        break;
+      case "proposal_expire":
+        this.signClient.events[action]("proposal_expire", this.onProposalExpire);
+        break;
+      case "session_request_expire":
+        this.signClient.events[action]("session_request_expire", this.onSessionRequestExpire);
+        break;
+      case "session_authenticate":
+        this.signClient.events[action]("session_authenticate", this.onSessionRequestAuthenticate);
+        break;
+    }
   };
 }

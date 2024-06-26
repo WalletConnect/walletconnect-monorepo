@@ -1,11 +1,12 @@
-import { IStore } from "../core";
-import { JsonRpcTypes } from "./jsonrpc";
+import { IStore, Verify } from "../core";
+import { SignClientTypes } from "./";
 
 export declare namespace PendingRequestTypes {
   export interface Struct {
     topic: string;
     id: number;
-    params: JsonRpcTypes.RequestParams["wc_sessionRequest"];
+    params: SignClientTypes.EventArguments["session_request"]["params"];
+    verifyContext: Verify.Context;
   }
 }
 export type IPendingRequest = IStore<number, PendingRequestTypes.Struct>;

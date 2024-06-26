@@ -12,7 +12,7 @@ import {
   SubProviderOpts,
 } from "../types";
 
-import { getGlobal, getRpcUrl } from "../utils";
+import { getChainId, getGlobal, getRpcUrl } from "../utils";
 
 class PolkadotProvider implements IProvider {
   public name = "polkadot";
@@ -57,17 +57,12 @@ class PolkadotProvider implements IProvider {
   }
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
-    this.chainId = chainId;
     // http provider exists so just set the chainId
     if (!this.httpProviders[chainId]) {
-      const rpc = rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace);
-      if (!rpc) {
-        throw new Error(`No RPC url provided for chainId: ${chainId}`);
-      }
-      this.setHttpProvider(chainId, rpc);
+      this.setHttpProvider(chainId, rpcUrl);
     }
-
-    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${this.chainId}`);
+    this.chainId = chainId;
+    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${chainId}`);
   }
 
   // ---------------- PRIVATE ---------------- //
@@ -90,7 +85,8 @@ class PolkadotProvider implements IProvider {
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      http[chain] = this.createHttpProvider(chain, this.namespace.rpcMap?.[chain]);
+      const parsedChainId = getChainId(chain);
+      http[parsedChainId] = this.createHttpProvider(parsedChainId, this.namespace.rpcMap?.[chain]);
     });
     return http;
   }
@@ -115,8 +111,10 @@ class PolkadotProvider implements IProvider {
     chainId: string,
     rpcUrl?: string | undefined,
   ): JsonRpcProvider | undefined {
-    const rpc = rpcUrl || getRpcUrl(chainId, this.namespace);
-    if (typeof rpc === "undefined") return undefined;
+    const rpc = rpcUrl || getRpcUrl(chainId, this.namespace, this.client.core.projectId);
+    if (!rpc) {
+      throw new Error(`No RPC url provided for chainId: ${chainId}`);
+    }
     const http = new JsonRpcProvider(new HttpConnection(rpc, getGlobal("disableProviderPing")));
     return http;
   }

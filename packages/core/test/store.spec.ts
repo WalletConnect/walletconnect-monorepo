@@ -6,11 +6,11 @@ import { ICore, IStore, SessionTypes } from "@walletconnect/types";
 
 const MOCK_STORE_NAME = "mock-entity";
 
-// TODO: Test persistence behavior
 describe("Store", () => {
   const logger = pino(getDefaultLoggerOptions({ level: "fatal" }));
 
   let core: ICore;
+  type MockValue = { id: string; value: string };
   let store: IStore<any, any>;
 
   beforeEach(async () => {
@@ -19,15 +19,23 @@ describe("Store", () => {
     await store.init();
   });
 
-  it("provides the expected `storageKey` format", () => {
-    const store = new Store(core, logger, MOCK_STORE_NAME);
-    expect(store.storageKey).to.equal(
-      CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME,
-    );
+  describe("storageKey", () => {
+    it("provides the expected default `storageKey` format", () => {
+      const store = new Store(core, logger, MOCK_STORE_NAME);
+      expect(store.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME,
+      );
+    });
+    it("provides the expected custom `storageKey` format", () => {
+      const core = new Core({ ...TEST_CORE_OPTIONS, customStoragePrefix: "test" });
+      const store = new Store(core, logger, MOCK_STORE_NAME);
+      expect(store.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + ":test" + "//" + MOCK_STORE_NAME,
+      );
+    });
   });
 
   describe("init", () => {
-    type MockValue = { id: string; value: string };
     const ids = ["1", "2", "3", "foo"];
     const STORAGE_KEY = CORE_STORAGE_PREFIX + STORE_STORAGE_VERSION + "//" + MOCK_STORE_NAME;
 
@@ -88,7 +96,7 @@ describe("Store", () => {
       expect(store.keys.includes(key)).to.be.true;
       expect(store.values.includes(value)).to.be.true;
     });
-    it("updates an existing entry for a a known key", async () => {
+    it("updates an existing entry for a known key", async () => {
       const key = "key";
       const value = {
         topic: "111",
@@ -140,6 +148,43 @@ describe("Store", () => {
       await store.delete("key", { code: 0, message: "reason" });
       expect(store.length).to.equal(0);
     });
+    it("should add deleted key to the recentlyDeleted list", async () => {
+      const key = "key";
+      const value = "value";
+      await store.set(key, value);
+      await store.delete(key, { code: 0, message: "reason" });
+      try {
+        await store.get(key);
+      } catch (e) {
+        expect(e.message).to.equal(
+          `Missing or invalid. Record was recently deleted - mock-entity: ${key}`,
+        );
+      }
+    });
+    it("should cleanup recentlyDeleted when size limit is reached", async () => {
+      //@ts-expect-error
+      const itemsToDelete = store.recentlyDeletedLimit - 1;
+      // populate recentlyDeleted just below the limit
+      for (let i = 0; i < itemsToDelete; i++) {
+        const key = `key${i}`;
+        const value = `value${i}`;
+        await store.set(key, value);
+        await store.delete(key, { code: 0, message: "reason" });
+      }
+      //@ts-expect-error
+      expect(store.recentlyDeleted?.length).to.be.greaterThan(1);
+      //@ts-expect-error
+      expect(store.recentlyDeleted?.length).to.equal(itemsToDelete);
+      // add one more to reach the limit
+      await store.set("test", "test");
+      await store.delete("test", { code: 0, message: "reason" });
+
+      // check that the recentlyDeleted list has been halved
+      //@ts-expect-error
+      expect(store.recentlyDeleted?.length).to.be.greaterThan(1);
+      //@ts-expect-error
+      expect(store.recentlyDeleted?.length).to.equal(store.recentlyDeletedLimit / 2);
+    });
   });
 
   describe("getAll", () => {
@@ -160,44 +205,6 @@ describe("Store", () => {
       const filtered = store.getAll({ active: true });
       expect(filtered.length).to.equal(1);
       expect(filtered[0].active).to.equal(true);
-    });
-  });
-  describe("persistence", () => {
-    type MockValue = { id: string; value: string };
-    it("repopulate values with getKey correctly after restart", async () => {
-      const coreOptions = {
-        ...TEST_CORE_OPTIONS,
-        storageOptions: { database: "tmp/store-persistence.db" },
-      };
-      const core = new Core(coreOptions);
-      const store = new Store<string, MockValue>(
-        core,
-        logger,
-        MOCK_STORE_NAME,
-        undefined,
-        (val) => val.value,
-      );
-      await store.init();
-      const values = [
-        { id: "1", value: "foo" },
-        { id: "2", value: "bar" },
-        { id: "3", value: "baz" },
-      ];
-      values.forEach((val) => store.set(val.id, val));
-
-      expect(store.getAll()).to.toMatchObject(values);
-
-      const coreAfter = new Core(coreOptions);
-
-      const storeAfter = new Store<string, MockValue>(
-        coreAfter,
-        logger,
-        MOCK_STORE_NAME,
-        undefined,
-        (val) => val.value,
-      );
-      await storeAfter.init();
-      expect(storeAfter.getAll()).to.toMatchObject(values);
     });
   });
 });

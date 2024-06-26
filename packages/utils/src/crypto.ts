@@ -36,6 +36,7 @@ export function deriveSymKey(privateKeyA: string, publicKeyB: string): string {
   const sharedKey = x25519.sharedKey(
     fromString(privateKeyA, BASE16),
     fromString(publicKeyB, BASE16),
+    true,
   );
   const hkdf = new HKDF(SHA256, sharedKey);
   const symKey = hkdf.expand(KEY_LENGTH);

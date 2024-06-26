@@ -42,8 +42,8 @@ export class Expirer extends IExpirer {
     return getLoggerContext(this.logger);
   }
 
-  get storageKey(): string {
-    return this.storagePrefix + this.version + "//" + this.name;
+  get storageKey() {
+    return this.storagePrefix + this.version + this.core.customStoragePrefix + "//" + this.name;
   }
 
   get length(): number {
@@ -166,7 +166,7 @@ export class Expirer extends IExpirer {
     const expiration = this.expirations.get(target);
     if (!expiration) {
       const { message } = getInternalError("NO_MATCHING_KEY", `${this.name}: ${target}`);
-      this.logger.error(message);
+      this.logger.warn(message);
       throw new Error(message);
     }
     return expiration;

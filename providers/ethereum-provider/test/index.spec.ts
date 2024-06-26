@@ -3,7 +3,7 @@ import Web3 from "web3";
 import { BigNumber, providers, utils } from "ethers";
 import { TestNetwork } from "ethereum-test-network";
 
-import { SignClient } from "@walletconnect/sign-client";
+import { SESSION_REQUEST_EXPIRY_BOUNDARIES, SignClient } from "@walletconnect/sign-client";
 
 import {
   ERC20Token__factory,
@@ -11,7 +11,7 @@ import {
   _bytecode,
 } from "ethereum-test-network/lib/utils/ERC20Token__factory";
 import { WalletClient } from "./shared";
-import EthereumProvider from "../src";
+import EthereumProvider, { OPTIONAL_EVENTS, OPTIONAL_METHODS } from "../src";
 import {
   CHAIN_ID,
   PORT,
@@ -22,6 +22,8 @@ import {
   TEST_SIGN_TRANSACTION,
   TEST_ETHEREUM_METHODS_REQUIRED,
   TEST_ETHEREUM_METHODS_OPTIONAL,
+  TEST_WALLET_METADATA,
+  TEST_APP_METADATA_A,
 } from "./shared/constants";
 import { EthereumProviderOptions } from "../src/EthereumProvider";
 import { parseChainId } from "@walletconnect/utils";
@@ -44,14 +46,15 @@ describe("EthereumProvider", function () {
       chains: [1],
       methods: TEST_ETHEREUM_METHODS_REQUIRED,
       optionalMethods: TEST_ETHEREUM_METHODS_OPTIONAL,
-      showQrModal: true,
+      showQrModal: false,
       qrModalOptions: {
         themeMode: "dark",
         themeVariables: {
-          "--w3m-z-index": "99",
+          "--wcm-z-index": "99",
         },
       },
       disableProviderPing: true,
+      metadata: TEST_APP_METADATA_A,
     });
     walletClient = await WalletClient.init(provider, TEST_WALLET_CLIENT_OPTS);
     await provider.connect({
@@ -165,6 +168,26 @@ describe("EthereumProvider", function () {
       }),
     ]);
   });
+
+  describe("validation", () => {
+    it("should reject when lower than min expiry is used", async () => {
+      const expiryToTest = SESSION_REQUEST_EXPIRY_BOUNDARIES.min - 1;
+      await expect(
+        provider.request({ method: "personal_sign" }, expiryToTest),
+      ).rejects.toThrowError(
+        `Missing or invalid. request() expiry: ${expiryToTest}. Expiry must be a number (in seconds) between ${SESSION_REQUEST_EXPIRY_BOUNDARIES.min} and ${SESSION_REQUEST_EXPIRY_BOUNDARIES.max}`,
+      );
+    });
+    it("should reject when higher than max expiry is used", async () => {
+      const expiryToTest = SESSION_REQUEST_EXPIRY_BOUNDARIES.max + 1;
+      await expect(
+        provider.request({ method: "personal_sign" }, expiryToTest),
+      ).rejects.toThrowError(
+        `Missing or invalid. request() expiry: ${expiryToTest}. Expiry must be a number (in seconds) between ${SESSION_REQUEST_EXPIRY_BOUNDARIES.min} and ${SESSION_REQUEST_EXPIRY_BOUNDARIES.max}`,
+      );
+    });
+  });
+
   describe("eip155", () => {
     describe("Web3", () => {
       let web3: Web3;
@@ -332,11 +355,13 @@ describe("EthereumProvider", function () {
       storageOptions: {
         database: db,
       },
+      metadata: TEST_WALLET_METADATA,
     };
     it("should restore session with `eip155: { chains: [...] }` structure", async () => {
       const provider = await EthereumProvider.init(initOptions);
       const walletClient = await SignClient.init({
         projectId: initOptions.projectId,
+        metadata: initOptions.metadata,
       });
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -385,6 +410,7 @@ describe("EthereumProvider", function () {
       const provider = await EthereumProvider.init(initOptions);
       const walletClient = await SignClient.init({
         projectId: initOptions.projectId,
+        metadata: initOptions.metadata,
       });
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -403,8 +429,8 @@ describe("EthereumProvider", function () {
           });
         }),
         new Promise<void>((resolve) => {
-          provider.on("display_uri", (uri) => {
-            walletClient.pair({ uri });
+          provider.on("display_uri", async (uri) => {
+            await walletClient.pair({ uri });
             resolve();
           });
         }),
@@ -436,14 +462,19 @@ describe("EthereumProvider", function () {
         projectId: process.env.TEST_PROJECT_ID || "",
         optionalChains: [CHAIN_ID, 137],
         showQrModal: false,
+        metadata: TEST_WALLET_METADATA,
       };
       const provider = await EthereumProvider.init(initOptions);
       const walletClient = await SignClient.init({
         projectId: initOptions.projectId,
+        metadata: initOptions.metadata,
       });
       await Promise.all([
         new Promise<void>((resolve) => {
           walletClient.on("session_proposal", async (proposal) => {
+            expect(proposal.params.optionalNamespaces.eip155.methods).to.eql(OPTIONAL_METHODS);
+            expect(proposal.params.optionalNamespaces.eip155.events).to.eql(OPTIONAL_EVENTS);
+
             await walletClient.approve({
               id: proposal.id,
               namespaces: {
@@ -488,10 +519,12 @@ describe("EthereumProvider", function () {
         projectId: process.env.TEST_PROJECT_ID || "",
         chains: [CHAIN_ID],
         showQrModal: false,
+        metadata: TEST_WALLET_METADATA,
       };
       const provider = await EthereumProvider.init(initOptions);
       const walletClient = await SignClient.init({
         projectId: initOptions.projectId,
+        metadata: initOptions.metadata,
       });
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -532,6 +565,7 @@ describe("EthereumProvider", function () {
           chains: [],
           optionalChains: [],
           showQrModal: false,
+          metadata: TEST_WALLET_METADATA,
         }),
       ).rejects.toThrowError("No chains specified in either `chains` or `optionalChains`");
     });
@@ -540,10 +574,12 @@ describe("EthereumProvider", function () {
         projectId: process.env.TEST_PROJECT_ID || "",
         optionalChains: [CHAIN_ID],
         showQrModal: false,
+        metadata: TEST_WALLET_METADATA,
       };
       const provider = await EthereumProvider.init(initOptions);
       const walletClient = await SignClient.init({
         projectId: initOptions.projectId,
+        metadata: initOptions.metadata,
       });
       const chainToApprove = "eip155:137";
 

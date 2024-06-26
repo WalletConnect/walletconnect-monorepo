@@ -1,11 +1,26 @@
 import EventEmmiter, { EventEmitter } from "events";
-import { ICore, ProposalTypes, Verify } from "@walletconnect/types";
+import {
+  ICore,
+  CoreTypes,
+  ProposalTypes,
+  Verify,
+  AuthTypes,
+  SignClientTypes,
+} from "@walletconnect/types";
 import { AuthClientTypes } from "@walletconnect/auth-client";
 import { IWeb3WalletEngine } from "./engine";
 import { Logger } from "@walletconnect/logger";
+import { JsonRpcPayload } from "@walletconnect/jsonrpc-utils";
 
 export declare namespace Web3WalletTypes {
-  type Event = "session_proposal" | "session_request" | "session_delete" | "auth_request";
+  type Event =
+    | "session_proposal"
+    | "session_request"
+    | "session_delete"
+    | "auth_request"
+    | "proposal_expire"
+    | "session_request_expire"
+    | "session_authenticate";
 
   interface BaseEventArgs<T = unknown> {
     id: number;
@@ -28,20 +43,46 @@ export declare namespace Web3WalletTypes {
 
   type SessionDelete = Omit<BaseEventArgs, "params">;
 
+  type ProposalExpire = { id: number };
+
+  type SessionRequestExpire = { id: number };
+
+  type SessionAuthenticate = BaseEventArgs<AuthTypes.AuthRequestEventArgs>;
+
+  type SignConfig = SignClientTypes.Options["signConfig"];
+
   interface EventArguments {
     session_proposal: SessionProposal;
     session_request: SessionRequest;
     session_delete: Omit<BaseEventArgs, "params">;
     auth_request: AuthRequest;
+    proposal_expire: ProposalExpire;
+    session_request_expire: SessionRequestExpire;
+    session_authenticate: SessionAuthenticate;
   }
 
   interface Options {
     core: ICore;
     metadata: Metadata;
     name?: string;
+    signConfig?: SignConfig;
   }
 
-  type Metadata = AuthClientTypes.Metadata;
+  type Metadata = CoreTypes.Metadata;
+
+  interface INotifications {
+    decryptMessage: (params: {
+      topic: string;
+      encryptedMessage: string;
+      storageOptions?: CoreTypes.Options["storageOptions"];
+      storage?: CoreTypes.Options["storage"];
+    }) => Promise<JsonRpcPayload>;
+    getMetadata: (params: {
+      topic: string;
+      storageOptions?: CoreTypes.Options["storageOptions"];
+      storage?: CoreTypes.Options["storage"];
+    }) => Promise<CoreTypes.Metadata>;
+  }
 }
 
 export abstract class IWeb3WalletEvents extends EventEmmiter {
@@ -82,6 +123,7 @@ export abstract class IWeb3Wallet {
   public abstract logger: Logger;
   public abstract core: ICore;
   public abstract metadata: Web3WalletTypes.Metadata;
+  public abstract signConfig?: Web3WalletTypes.SignConfig;
 
   constructor(public opts: Web3WalletTypes.Options) {}
 
@@ -104,6 +146,12 @@ export abstract class IWeb3Wallet {
   public abstract respondAuthRequest: IWeb3WalletEngine["respondAuthRequest"];
   public abstract getPendingAuthRequests: IWeb3WalletEngine["getPendingAuthRequests"];
   public abstract formatMessage: IWeb3WalletEngine["formatMessage"];
+  // push
+  public abstract registerDeviceToken: IWeb3WalletEngine["registerDeviceToken"];
+  // multi chain auth //
+  public abstract approveSessionAuthenticate: IWeb3WalletEngine["approveSessionAuthenticate"];
+  public abstract formatAuthMessage: IWeb3WalletEngine["formatAuthMessage"];
+  public abstract rejectSessionAuthenticate: IWeb3WalletEngine["rejectSessionAuthenticate"];
 
   // ---------- Event Handlers ----------------------------------------------- //
   public abstract on: <E extends Web3WalletTypes.Event>(

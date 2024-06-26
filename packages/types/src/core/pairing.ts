@@ -20,6 +20,7 @@ export declare namespace PairingTypes {
     relay: RelayerTypes.ProtocolOptions;
     active: boolean;
     peerMetadata?: CoreTypes.Metadata;
+    methods?: string[];
   }
 }
 
@@ -72,7 +73,7 @@ export abstract class IPairing {
   }): Promise<PairingTypes.Struct>;
 
   // for proposer to create inactive pairing
-  public abstract create(): Promise<{ topic: string; uri: string }>;
+  public abstract create(params?: { methods?: string[] }): Promise<{ topic: string; uri: string }>;
 
   // for either to activate a previously created pairing
   public abstract activate(params: { topic: string }): Promise<void>;
