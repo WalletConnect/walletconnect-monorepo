@@ -14,9 +14,12 @@ import {
   validateEncoding,
   validateDecoding,
   isTypeOneEnvelope,
+  isTypeTwoEnvelope,
+  encodeTypeTwo,
   deserialize,
   decodeTypeByte,
   BASE16,
+  decodeTypeTwo,
 } from "@walletconnect/utils";
 import { toString } from "uint8arrays";
 
@@ -108,6 +111,11 @@ export class Crypto implements ICrypto {
     this.isInitialized();
     const params = validateEncoding(opts);
     const message = safeJsonStringify(payload);
+
+    if (isTypeTwoEnvelope(params)) {
+      return encodeTypeTwo(message);
+    }
+
     if (isTypeOneEnvelope(params)) {
       const selfPublicKey = params.senderPublicKey;
       const peerPublicKey = params.receiverPublicKey;
@@ -122,6 +130,10 @@ export class Crypto implements ICrypto {
   public decode: ICrypto["decode"] = async (topic, encoded, opts) => {
     this.isInitialized();
     const params = validateDecoding(encoded, opts);
+    if (isTypeTwoEnvelope(params)) {
+      const message = decodeTypeTwo(encoded);
+      return safeJsonParse(message);
+    }
     if (isTypeOneEnvelope(params)) {
       const selfPublicKey = params.receiverPublicKey;
       const peerPublicKey = params.senderPublicKey;

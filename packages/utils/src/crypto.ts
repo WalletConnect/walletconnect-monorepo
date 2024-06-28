@@ -13,6 +13,7 @@ export const UTF8 = "utf8";
 
 export const TYPE_0 = 0;
 export const TYPE_1 = 1;
+export const TYPE_2 = 2;
 
 const ZERO_INDEX = 0;
 const TYPE_LENGTH = 1;
@@ -78,6 +79,14 @@ export function encrypt(params: CryptoTypes.EncryptParams): string {
   return serialize({ type, sealed, iv, senderPublicKey });
 }
 
+export function encodeTypeTwo(message: string): string {
+  const type = encodeTypeByte(TYPE_2);
+  // TODO: serialize iv should be optional
+  const iv = randomBytes(IV_LENGTH);
+  const sealed = fromString(message, UTF8);
+  return serialize({ type, sealed, iv });
+}
+
 export function decrypt(params: CryptoTypes.DecryptParams): string {
   const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
   const { sealed, iv } = deserialize(params.encoded);
@@ -86,7 +95,15 @@ export function decrypt(params: CryptoTypes.DecryptParams): string {
   return toString(message, UTF8);
 }
 
+export function decodeTypeTwo(encoded: string): string {
+  const { sealed } = deserialize(encoded);
+  return toString(sealed, UTF8);
+}
+
 export function serialize(params: CryptoTypes.EncodingParams): string {
+  if (decodeTypeByte(params.type) === TYPE_2) {
+    return toString(concat([params.type, params.sealed]), BASE64);
+  }
   if (decodeTypeByte(params.type) === TYPE_1) {
     if (typeof params.senderPublicKey === "undefined") {
       throw new Error("Missing sender public key for type 1 envelope");
@@ -111,6 +128,12 @@ export function deserialize(encoded: string): CryptoTypes.EncodingParams {
     const iv = bytes.slice(slice2, slice3);
     const sealed = bytes.slice(slice3);
     return { type, sealed, iv, senderPublicKey };
+  }
+  if (decodeTypeByte(type) === TYPE_2) {
+    const sealed = bytes.slice(slice1);
+    // TODO: iv should be optional
+    const iv = randomBytes(IV_LENGTH);
+    return { type, sealed, iv };
   }
   // default to type 0 envelope
   const slice2 = slice1 + IV_LENGTH;
@@ -159,4 +182,10 @@ export function isTypeOneEnvelope(
     typeof result.senderPublicKey === "string" &&
     typeof result.receiverPublicKey === "string"
   );
+}
+
+export function isTypeTwoEnvelope(
+  result: CryptoTypes.EncodingValidation,
+): result is CryptoTypes.TypeOneParams {
+  return result.type === TYPE_2;
 }

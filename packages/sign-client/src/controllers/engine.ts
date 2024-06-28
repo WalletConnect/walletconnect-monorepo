@@ -67,6 +67,7 @@ import {
   isValidString,
   parseExpirerTarget,
   TYPE_1,
+  TYPE_2,
   handleDeeplinkRedirect,
   MemoryStore,
   getDeepLink,
@@ -94,6 +95,7 @@ import {
   WALLETCONNECT_DEEPLINK_CHOICE,
   ENGINE_QUEUE_STATES,
   AUTH_PUBLIC_KEY_NAME,
+  WALLETCONNECT_LINK_MODE_WALLETS,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -467,6 +469,40 @@ export class Engine extends IEngine {
         else resolve(result);
       },
     );
+
+    if (session.peer.metadata?.redirect?.linkMode) {
+      const walletLink = session.peer.metadata.redirect?.universal;
+      const linkModeWallets =
+        (await this.client.core.storage.getItem<string[]>(WALLETCONNECT_LINK_MODE_WALLETS)) || [];
+      if (walletLink && linkModeWallets.includes(walletLink)) {
+        const params = {
+          request: {
+            ...request,
+            expiryTimestamp: calcExpiry(expiry),
+          },
+          chainId,
+        };
+        const payload = formatJsonRpcRequest("wc_sessionRequest", params, clientRpcId);
+        this.client.core.history.set(topic, payload);
+        const message = await this.client.core.crypto.encode(topic, payload);
+        const encodedMessage = encodeURIComponent(message);
+        if (typeof (global as any)?.Linking !== "undefined") {
+          await (global as any).Linking.openURL(
+            `${walletLink}?wc_ev=${encodedMessage}&topic=${topic}`,
+          );
+        }
+
+        this.client.events.emit("session_request_sent", {
+          topic,
+          request,
+          chainId,
+          id: clientRpcId,
+        });
+        const result = await done();
+        return result;
+      }
+    }
+
     return await Promise.all([
       new Promise<void>(async (resolve) => {
         await this.sendRequest({
@@ -602,7 +638,7 @@ export class Engine extends IEngine {
 
   // ---------- Auth ------------------------------------------------ //
 
-  public authenticate: IEngine["authenticate"] = async (params) => {
+  public authenticate: IEngine["authenticate"] = async (params, walletUniversalLink) => {
     this.isInitialized();
     this.isValidAuthenticate(params);
 
@@ -821,17 +857,14 @@ export class Engine extends IEngine {
         session = this.client.session.get(sessionTopic);
       }
 
-      //TODO: do we also check if dapp enabled linkMode?
-      // check if wallet supports link_mode and save
-      if (responder.metadata.redirect?.linkMode) {
+      if (this.client.metadata.redirect?.linkMode && responder.metadata.redirect?.linkMode) {
         // save wallet link in array of wallets that support linkMode
         const wallets =
-          (await this.client.core.storage.getItem<string[]>("WALLETCONNECT_LINK_MODE_WALLETS")) ||
-          [];
+          (await this.client.core.storage.getItem<string[]>(WALLETCONNECT_LINK_MODE_WALLETS)) || [];
         const walletLink = responder.metadata.redirect?.universal;
         if (walletLink && !wallets?.includes(walletLink)) {
           wallets.push(walletLink);
-          await this.client.core.storage.setItem("WALLETCONNECT_LINK_MODE_WALLETS", wallets);
+          await this.client.core.storage.setItem(WALLETCONNECT_LINK_MODE_WALLETS, wallets);
         }
       }
 
@@ -849,26 +882,35 @@ export class Engine extends IEngine {
     this.events.once<"session_connect">(engineEvent("session_connect"), onSessionConnect);
     this.events.once(engineEvent("session_request", id), onAuthenticate);
 
+    let linkModeUri;
     try {
-      // send both (main & fallback) requests
-      await Promise.all([
-        this.sendRequest({
-          topic: pairingTopic,
-          method: "wc_sessionAuthenticate",
-          params: request,
-          expiry: params.expiry,
-          throwOnFailedPublish: true,
-          clientRpcId: id,
-        }),
-        this.sendRequest({
-          topic: pairingTopic,
-          method: "wc_sessionPropose",
-          params: proposal,
-          expiry: ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl,
-          throwOnFailedPublish: true,
-          clientRpcId: fallbackId,
-        }),
-      ]);
+      if (walletUniversalLink) {
+        const payload = formatJsonRpcRequest("wc_sessionAuthenticate", request, id);
+        this.client.core.history.set(pairingTopic, payload);
+        const message = await this.client.core.crypto.encode("", payload, { type: TYPE_2 });
+        const encodedMessage = encodeURIComponent(message);
+        linkModeUri = `${walletUniversalLink}?wc_ev=${encodedMessage}&topic=${pairingTopic}`;
+      } else {
+        // send both (main & fallback) requests
+        await Promise.all([
+          this.sendRequest({
+            topic: pairingTopic,
+            method: "wc_sessionAuthenticate",
+            params: request,
+            expiry: params.expiry,
+            throwOnFailedPublish: true,
+            clientRpcId: id,
+          }),
+          this.sendRequest({
+            topic: pairingTopic,
+            method: "wc_sessionPropose",
+            params: proposal,
+            expiry: ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl,
+            throwOnFailedPublish: true,
+            clientRpcId: fallbackId,
+          }),
+        ]);
+      }
     } catch (error) {
       // cleanup listeners on failed publish
       this.events.off(engineEvent("session_connect"), onSessionConnect);
@@ -883,13 +925,13 @@ export class Engine extends IEngine {
     });
 
     return {
-      uri: connectionUri,
+      uri: linkModeUri ?? connectionUri,
       response: done,
     } as EngineTypes.SessionAuthenticateResponsePromise;
   };
 
-  public authenticateLinkMode: IEngine["authenticate"] = async (params) => {
-    return await this.authenticate(params);
+  public authenticateLinkMode: IEngine["authenticate"] = (params, walletUniversalLink) => {
+    return this.authenticate(params, walletUniversalLink);
   };
 
   public approveSessionAuthenticate: IEngine["approveSessionAuthenticate"] = async (
@@ -2118,11 +2160,6 @@ export class Engine extends IEngine {
       const { message } = getInternalError("EXPIRED", `proposal id: ${id}`);
       throw new Error(message);
     }
-  }
-
-  // ---------- LinkMode Events Router ---------------------------------------- //
-  public async handleLinkModeEvents(url: string) {
-    console.log("handleLinkModeEvents", url);
   }
 
   // ---------- Validation  ------------------------------------------- //

@@ -471,6 +471,15 @@ export class Relayer extends IRelayer {
     await this.recordMessageEvent(messageEvent);
   }
 
+  public async onLinkMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
+    const { topic } = messageEvent;
+    const pairing = { topic, expiry: -1, relay: { protocol: "link-mode" }, active: false };
+    await this.core.pairing.pairings.set(topic, pairing);
+
+    this.events.emit(RELAYER_EVENTS.message, messageEvent);
+    await this.recordMessageEvent(messageEvent);
+  }
+
   private async acknowledgePayload(payload: JsonRpcPayload) {
     const response = formatJsonRpcResult(payload.id, true);
     await this.provider.connection.send(response);

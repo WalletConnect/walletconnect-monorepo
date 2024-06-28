@@ -119,4 +119,5 @@ export abstract class IRelayer extends IEvents {
   public abstract restartTransport(relayUrl?: string): Promise<void>;
   public abstract confirmOnlineStateOrThrow(): Promise<void>;
   public abstract handleBatchMessageEvents(messages: RelayerTypes.MessageEvent[]): Promise<void>;
+  public abstract onLinkMessageEvent(messageEvent: RelayerTypes.MessageEvent): Promise<void>;
 }

@@ -29,6 +29,7 @@ import {
   RELAYER_DEFAULT_RELAY_URL,
   WALLETCONNECT_CLIENT_ID,
 } from "./constants";
+import { isReactNative } from "@walletconnect/utils";
 
 export class Core extends ICore {
   public readonly protocol = CORE_PROTOCOL;
@@ -158,6 +159,22 @@ export class Core extends ICore {
       await this.relayer.init();
       await this.heartbeat.init();
       await this.pairing.init();
+
+      if (isReactNative()) {
+        // && linkMode enabled?
+        // global.Linking is set by react-native-compat
+        if (typeof (global as any)?.Linking !== "undefined") {
+          // set URL listener
+          (global as any).Linking.addEventListener("url", this.dispatchEnvelope);
+
+          // check for initial URL -> cold boots
+          const initialUrl = await (global as any).Linking.getInitialURL();
+          if (initialUrl) {
+            this.dispatchEnvelope({ url: initialUrl });
+          }
+        }
+      }
+
       this.initialized = true;
       this.logger.info(`Core Initialization Success`);
     } catch (error) {
@@ -166,4 +183,23 @@ export class Core extends ICore {
       throw error;
     }
   }
+
+  private dispatchEnvelope = ({ url }: { url: string }) => {
+    if (!url || !url.includes("wc_ev") || !url.includes("topic")) return;
+
+    const getSearchParamFromURL = (_url: string, param: any) => {
+      const include = _url.includes(param);
+      if (!include) return null;
+      const params = _url.split(/([&,?,=])/);
+      const index = params.indexOf(param);
+      const value = params[index + 2];
+      return value;
+    };
+
+    const topic = getSearchParamFromURL(url, "topic") || "";
+    const message = decodeURIComponent(getSearchParamFromURL(url, "wc_ev") || "");
+
+    const payload = { topic, message, publishedAt: Date.now() };
+    this.relayer.onLinkMessageEvent(payload);
+  };
 }
