@@ -1361,8 +1361,6 @@ export class Engine extends IEngine {
 
       try {
         await this.processRequest(request);
-        // small delay to allow for any async tasks to complete
-        await new Promise((resolve) => setTimeout(resolve, 300));
       } catch (error) {
         this.client.logger.warn(error);
       }
