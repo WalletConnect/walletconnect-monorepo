@@ -47,7 +47,7 @@
     "events": "3.3.0",
     "isomorphic-unfetch": "3.1.0",
     "lodash.isequal": "4.5.0",
-    "uint8arrays": "3.1.0"
+    "uint8arrays": "^5.1.0"
   },
   "devDependencies": {
     "@types/lodash.isequal": "4.5.6",
