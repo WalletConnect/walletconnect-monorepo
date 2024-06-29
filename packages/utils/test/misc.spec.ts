@@ -18,15 +18,15 @@ const EXPECTED_RPC_URL_1 =
 
 const EXPECTED_RPC_URL_2 =
   RELAY_URL +
-  `?auth=${AUTH}&projectId=${PROJECT_ID}&ua=${encodeURIComponent(
+  `?auth=${AUTH}&ua=${encodeURIComponent(
     formatUA(PROTOCOL, VERSION, SDK_VERSION),
-  )}`;
+  )}&projectId=${PROJECT_ID}`;
 
 const EXPECTED_RPC_URL_3 =
   RELAY_URL +
-  `?auth=${AUTH}&projectId=${PROJECT_ID}&ua=${encodeURIComponent(
+  `?auth=${AUTH}&ua=${encodeURIComponent(
     formatUA(PROTOCOL, VERSION, SDK_VERSION),
-  )}&useOnCloseEvent=true`;
+  )}&projectId=${PROJECT_ID}&useOnCloseEvent=true`;
 
 const SEVEN_DAYS_IN_SECONDS = 604800;
 
