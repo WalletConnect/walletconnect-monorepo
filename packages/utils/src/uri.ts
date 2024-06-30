@@ -68,7 +68,6 @@ export function formatRelayParams(relay: RelayerTypes.ProtocolOptions, delimiter
 export function formatUri(params: EngineTypes.UriParameters): string {
   const urlSearchParams = new URLSearchParams();
 
-  // Adding relay parameters using formatRelayParams function
   const relayParams = formatRelayParams(params.relay);
   Object.keys(relayParams)
     .sort()
@@ -76,7 +75,6 @@ export function formatUri(params: EngineTypes.UriParameters): string {
       urlSearchParams.set(key, relayParams[key]);
     });
 
-  // Adding individual parameters to URLSearchParams
   urlSearchParams.set("symKey", params.symKey);
   if (params.expiryTimestamp)
     urlSearchParams.set("expiryTimestamp", params.expiryTimestamp.toString());
@@ -85,7 +83,6 @@ export function formatUri(params: EngineTypes.UriParameters): string {
     urlSearchParams.set("methods", params.methods.join(","));
   }
 
-  // Constructing the final URI string
   const queryString = urlSearchParams.toString();
   return `${params.protocol}:${params.topic}@${params.version}?${queryString}`;
 }
