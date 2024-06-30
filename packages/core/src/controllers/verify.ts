@@ -72,7 +72,7 @@ export class Verify extends IVerify {
   private fetchAttestation = async (attestationId: string, url: string) => {
     this.logger.info(`resolving attestation: ${attestationId} from url: ${url}`);
     // set artificial timeout to prevent hanging
-    const timeout = this.startAbortTimer(ONE_SECOND * 2);
+    const timeout = this.startAbortTimer(ONE_SECOND * 5);
     const result = await fetch(`${url}/attestation/${attestationId}`, {
       signal: this.abortController.signal,
     });
