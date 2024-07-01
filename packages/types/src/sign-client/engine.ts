@@ -182,6 +182,8 @@ export interface EnginePrivate {
     relayRpcId?: number;
     clientRpcId?: number;
     throwOnFailedPublish?: boolean;
+    transportType?: RelayerTypes.TransportType;
+    appLink?: string;
   }): Promise<number>;
 
   sendResult<M extends JsonRpcTypes.WcMethod>(args: {
@@ -190,6 +192,8 @@ export interface EnginePrivate {
     result: JsonRpcTypes.Results[M];
     throwOnFailedPublish?: boolean;
     encodeOpts?: CryptoTypes.EncodeOptions;
+    transportType?: RelayerTypes.TransportType;
+    appLink?: string;
   }): Promise<void>;
 
   sendError(params: {
@@ -198,6 +202,8 @@ export interface EnginePrivate {
     error: JsonRpcTypes.Error;
     encodeOpts?: CryptoTypes.EncodeOptions;
     rpcOpts?: RelayerTypes.PublishOptions;
+    transportType?: RelayerTypes.TransportType;
+    appLink?: string;
   }): Promise<void>;
 
   onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): void;

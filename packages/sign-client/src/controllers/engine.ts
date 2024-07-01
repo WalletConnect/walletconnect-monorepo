@@ -470,27 +470,28 @@ export class Engine extends IEngine {
       },
     );
 
-    if (session.peer.metadata?.redirect?.linkMode) {
+    if (this.isLinkModeEnabled(session.peer.metadata)) {
       const walletLink = session.peer.metadata.redirect?.universal;
       const linkModeWallets =
         (await this.client.core.storage.getItem<string[]>(WALLETCONNECT_LINK_MODE_WALLETS)) || [];
       if (walletLink && linkModeWallets.includes(walletLink)) {
-        const params = {
-          request: {
-            ...request,
-            expiryTimestamp: calcExpiry(expiry),
+        await this.sendRequest({
+          clientRpcId,
+          relayRpcId,
+          topic,
+          method: "wc_sessionRequest",
+          params: {
+            request: {
+              ...request,
+              expiryTimestamp: calcExpiry(expiry),
+            },
+            chainId,
           },
-          chainId,
-        };
-        const payload = formatJsonRpcRequest("wc_sessionRequest", params, clientRpcId);
-        this.client.core.history.set(topic, payload);
-        const message = await this.client.core.crypto.encode(topic, payload);
-        const encodedMessage = encodeURIComponent(message);
-        if (typeof (global as any)?.Linking !== "undefined") {
-          await (global as any).Linking.openURL(
-            `${walletLink}?wc_ev=${encodedMessage}&topic=${topic}`,
-          );
-        }
+          expiry,
+          throwOnFailedPublish: true,
+          transportType: "link_mode",
+          appLink: walletLink,
+        }).catch((error) => reject(error));
 
         this.client.events.emit("session_request_sent", {
           topic,
@@ -548,10 +549,26 @@ export class Engine extends IEngine {
     await this.isValidRespond(params);
     const { topic, response } = params;
     const { id } = response;
+
+    const session = this.client.session.get(topic);
+    let transportType: RelayerTypes.TransportType = "relay";
+    let appLink;
+    if (this.isLinkModeEnabled(session.peer.metadata)) {
+      transportType = "link_mode";
+      appLink = session.peer.metadata.redirect?.universal;
+    }
+
     if (isJsonRpcResult(response)) {
-      await this.sendResult({ id, topic, result: response.result, throwOnFailedPublish: true });
+      await this.sendResult({
+        id,
+        topic,
+        result: response.result,
+        throwOnFailedPublish: true,
+        transportType,
+        appLink,
+      });
     } else if (isJsonRpcError(response)) {
-      await this.sendError({ id, topic, error: response.error });
+      await this.sendError({ id, topic, error: response.error, transportType, appLink });
     }
     this.cleanupAfterResponse(params);
   };
@@ -947,6 +964,13 @@ export class Engine extends IEngine {
       throw new Error(`Could not find pending auth request with id ${id}`);
     }
 
+    let transportType: RelayerTypes.TransportType = "relay";
+    let appLink;
+    if (this.isLinkModeEnabled(pendingRequest.requester.metadata)) {
+      transportType = "link_mode";
+      appLink = pendingRequest.requester.metadata.redirect?.universal;
+    }
+
     const receiverPublicKey = pendingRequest.requester.publicKey;
     const senderPublicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(receiverPublicKey);
@@ -1045,6 +1069,8 @@ export class Engine extends IEngine {
       },
       encodeOpts,
       throwOnFailedPublish: true,
+      transportType,
+      appLink,
     });
     await this.client.auth.requests.delete(id, { message: "fulfilled", code: 0 });
     await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
@@ -1060,6 +1086,13 @@ export class Engine extends IEngine {
 
     if (!pendingRequest) {
       throw new Error(`Could not find pending auth request with id ${id}`);
+    }
+
+    let transportType: RelayerTypes.TransportType = "relay";
+    let appLink;
+    if (this.isLinkModeEnabled(pendingRequest.requester.metadata)) {
+      transportType = "link_mode";
+      appLink = pendingRequest.requester.metadata.redirect?.universal;
     }
 
     const receiverPublicKey = pendingRequest.requester.publicKey;
@@ -1078,6 +1111,8 @@ export class Engine extends IEngine {
       error: reason,
       encodeOpts,
       rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.reject,
+      transportType,
+      appLink,
     });
     await this.client.auth.requests.delete(id, { message: "rejected", code: 0 });
     await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
@@ -1225,7 +1260,17 @@ export class Engine extends IEngine {
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
-    const { topic, method, params, expiry, relayRpcId, clientRpcId, throwOnFailedPublish } = args;
+    const {
+      topic,
+      method,
+      params,
+      expiry,
+      relayRpcId,
+      clientRpcId,
+      throwOnFailedPublish,
+      transportType = "relay",
+      appLink,
+    } = args;
     const payload = formatJsonRpcRequest(method, params, clientRpcId);
     if (isBrowser() && METHODS_TO_VERIFY.includes(method)) {
       const hash = hashMessage(JSON.stringify(payload));
@@ -1243,22 +1288,44 @@ export class Engine extends IEngine {
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
     this.client.core.history.set(topic, payload);
-    if (throwOnFailedPublish) {
-      opts.internal = {
-        ...opts.internal,
-        throwOnFailedPublish: true,
-      };
-      await this.client.core.relayer.publish(topic, message, opts);
+
+    if (
+      transportType === "link_mode" &&
+      appLink &&
+      typeof (global as any)?.Linking !== "undefined"
+    ) {
+      const encodedMessage = encodeURIComponent(message);
+      await (global as any).Linking.openURL(`${appLink}?wc_ev=${encodedMessage}&topic=${topic}`);
     } else {
-      this.client.core.relayer
-        .publish(topic, message, opts)
-        .catch((error) => this.client.logger.error(error));
+      const opts = ENGINE_RPC_OPTS[method].req;
+      if (expiry) opts.ttl = expiry;
+      if (relayRpcId) opts.id = relayRpcId;
+      if (throwOnFailedPublish) {
+        opts.internal = {
+          ...opts.internal,
+          throwOnFailedPublish: true,
+        };
+        await this.client.core.relayer.publish(topic, message, opts);
+      } else {
+        this.client.core.relayer
+          .publish(topic, message, opts)
+          .catch((error) => this.client.logger.error(error));
+      }
     }
+
     return payload.id;
   };
 
   private sendResult: EnginePrivate["sendResult"] = async (args) => {
-    const { id, topic, result, throwOnFailedPublish, encodeOpts } = args;
+    const {
+      id,
+      topic,
+      result,
+      throwOnFailedPublish,
+      encodeOpts,
+      transportType = "relay",
+      appLink,
+    } = args;
     const payload = formatJsonRpcResult(id, result);
     let message;
     try {
@@ -1276,23 +1343,34 @@ export class Engine extends IEngine {
       this.client.logger.error(`sendResult() -> history.get(${topic}, ${id}) failed`);
       throw error;
     }
-    const opts = ENGINE_RPC_OPTS[record.request.method].res;
-    if (throwOnFailedPublish) {
-      opts.internal = {
-        ...opts.internal,
-        throwOnFailedPublish: true,
-      };
-      await this.client.core.relayer.publish(topic, message, opts);
+
+    if (
+      transportType === "link_mode" &&
+      appLink &&
+      typeof (global as any)?.Linking !== "undefined"
+    ) {
+      const encodedMessage = encodeURIComponent(message);
+      await (global as any).Linking.openURL(`${appLink}?wc_ev=${encodedMessage}&topic=${topic}`);
     } else {
-      this.client.core.relayer
-        .publish(topic, message, opts)
-        .catch((error) => this.client.logger.error(error));
+      const opts = ENGINE_RPC_OPTS[record.request.method].res;
+      if (throwOnFailedPublish) {
+        opts.internal = {
+          ...opts.internal,
+          throwOnFailedPublish: true,
+        };
+        await this.client.core.relayer.publish(topic, message, opts);
+      } else {
+        this.client.core.relayer
+          .publish(topic, message, opts)
+          .catch((error) => this.client.logger.error(error));
+      }
     }
+
     await this.client.core.history.resolve(payload);
   };
 
   private sendError: EnginePrivate["sendError"] = async (params) => {
-    const { id, topic, error, encodeOpts, rpcOpts } = params;
+    const { id, topic, error, encodeOpts, rpcOpts, transportType = "relay", appLink } = params;
     const payload = formatJsonRpcError(id, error);
     let message;
     try {
@@ -1310,8 +1388,19 @@ export class Engine extends IEngine {
       throw error;
     }
     const opts = rpcOpts || ENGINE_RPC_OPTS[record.request.method].res;
-    // await is intentionally omitted to speed up performance
-    this.client.core.relayer.publish(topic, message, opts);
+
+    if (
+      transportType === "link_mode" &&
+      appLink &&
+      typeof (global as any)?.Linking !== "undefined"
+    ) {
+      const encodedMessage = encodeURIComponent(message);
+      await (global as any).Linking.openURL(`${appLink}?wc_ev=${encodedMessage}&topic=${topic}`);
+    } else {
+      // await is intentionally omitted to speed up performance
+      this.client.core.relayer.publish(topic, message, opts);
+    }
+
     await this.client.core.history.resolve(payload);
   };
 
@@ -2520,5 +2609,15 @@ export class Engine extends IEngine {
       );
       throw new Error(message);
     }
+  };
+
+  private isLinkModeEnabled = (peerMetadata?: CoreTypes.Metadata) => {
+    return (
+      this.client.metadata?.redirect?.linkMode === true &&
+      this.client.metadata?.redirect?.universal &&
+      peerMetadata?.redirect?.universal &&
+      peerMetadata?.redirect?.linkMode === true &&
+      typeof (global as any)?.Linking !== "undefined"
+    );
   };
 }
