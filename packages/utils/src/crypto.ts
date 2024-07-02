@@ -81,7 +81,7 @@ export function encrypt(params: CryptoTypes.EncryptParams): string {
 
 export function encodeTypeTwoEnvelope(message: string): string {
   const type = encodeTypeByte(TYPE_2);
-  // TODO: serialize iv should be optional
+  // iv is not used in type 2 envelopes
   const iv = randomBytes(IV_LENGTH);
   const sealed = fromString(message, UTF8);
   return serialize({ type, sealed, iv });
@@ -131,7 +131,7 @@ export function deserialize(encoded: string): CryptoTypes.EncodingParams {
   }
   if (decodeTypeByte(type) === TYPE_2) {
     const sealed = bytes.slice(slice1);
-    // TODO: iv should be optional
+    // iv is not used in type 2 envelopes
     const iv = randomBytes(IV_LENGTH);
     return { type, sealed, iv };
   }

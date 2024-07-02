@@ -948,10 +948,6 @@ export class Engine extends IEngine {
     } as EngineTypes.SessionAuthenticateResponsePromise;
   };
 
-  public authenticateLinkMode: IEngine["authenticate"] = (params, walletUniversalLink) => {
-    return this.authenticate(params, walletUniversalLink);
-  };
-
   public approveSessionAuthenticate: IEngine["approveSessionAuthenticate"] = async (
     sessionAuthenticateResponseParams,
   ) => {

@@ -399,11 +399,6 @@ export abstract class IEngine {
     walletUniversalLink?: string,
   ) => Promise<EngineTypes.SessionAuthenticateResponsePromise>;
 
-  public abstract authenticateLinkMode: (
-    params: AuthTypes.SessionAuthenticateParams,
-    walletUniversalLink: string,
-  ) => Promise<EngineTypes.SessionAuthenticateResponsePromise>;
-
   public abstract approveSessionAuthenticate: (
     params: AuthTypes.ApproveSessionAuthenticateParams,
   ) => Promise<{ session: SessionTypes.Struct | undefined }>;

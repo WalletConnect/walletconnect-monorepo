@@ -214,7 +214,7 @@ export class SignClient extends ISignClient {
       if (walletUniversalLink) {
         const wallets = await this.core.storage.getItem<string[]>(WALLETCONNECT_LINK_MODE_WALLETS);
         if (wallets && wallets.includes(walletUniversalLink)) {
-          return await this.engine.authenticateLinkMode(params, walletUniversalLink);
+          return await this.engine.authenticate(params, walletUniversalLink);
         }
       }
 
