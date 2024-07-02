@@ -79,7 +79,7 @@ export function encrypt(params: CryptoTypes.EncryptParams): string {
   return serialize({ type, sealed, iv, senderPublicKey });
 }
 
-export function encodeTypeTwo(message: string): string {
+export function encodeTypeTwoEnvelope(message: string): string {
   const type = encodeTypeByte(TYPE_2);
   // TODO: serialize iv should be optional
   const iv = randomBytes(IV_LENGTH);
@@ -95,7 +95,7 @@ export function decrypt(params: CryptoTypes.DecryptParams): string {
   return toString(message, UTF8);
 }
 
-export function decodeTypeTwo(encoded: string): string {
+export function decodeTypeTwoEnvelope(encoded: string): string {
   const { sealed } = deserialize(encoded);
   return toString(sealed, UTF8);
 }
