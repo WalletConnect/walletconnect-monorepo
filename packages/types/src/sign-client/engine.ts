@@ -182,7 +182,6 @@ export interface EnginePrivate {
     relayRpcId?: number;
     clientRpcId?: number;
     throwOnFailedPublish?: boolean;
-    transportType?: RelayerTypes.TransportType;
     appLink?: string;
   }): Promise<number>;
 
@@ -192,7 +191,6 @@ export interface EnginePrivate {
     result: JsonRpcTypes.Results[M];
     throwOnFailedPublish?: boolean;
     encodeOpts?: CryptoTypes.EncodeOptions;
-    transportType?: RelayerTypes.TransportType;
     appLink?: string;
   }): Promise<void>;
 
@@ -202,7 +200,6 @@ export interface EnginePrivate {
     error: JsonRpcTypes.Error;
     encodeOpts?: CryptoTypes.EncodeOptions;
     rpcOpts?: RelayerTypes.PublishOptions;
-    transportType?: RelayerTypes.TransportType;
     appLink?: string;
   }): Promise<void>;
 

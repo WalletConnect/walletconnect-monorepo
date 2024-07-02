@@ -55,8 +55,6 @@ export declare namespace RelayerTypes {
     useOnCloseEvent?: boolean;
     bundleId?: string;
   }
-
-  export type TransportType = "relay" | "link_mode";
 }
 
 export interface RelayerOptions {
