@@ -473,7 +473,10 @@ export class Relayer extends IRelayer {
 
   public async onLinkMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic } = messageEvent;
-    const pairing = { topic, expiry: -1, relay: { protocol: "link-mode" }, active: false };
+
+    // expires in 7 days
+    const expiry = Math.floor(Date.now() / 1000) + 604800;
+    const pairing = { topic, expiry, relay: { protocol: "link-mode" }, active: false };
     await this.core.pairing.pairings.set(topic, pairing);
 
     this.events.emit(RELAYER_EVENTS.message, messageEvent);
