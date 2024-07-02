@@ -414,3 +414,12 @@ export async function getDeepLink(store: IKeyValueStorage, key: string) {
 export function getCommonValuesInArrays<T = string | number | boolean>(arr1: T[], arr2: T[]): T[] {
   return arr1.filter((value) => arr2.includes(value));
 }
+
+export function getSearchParamFromURL(url: string, param: any) {
+  const include = url.includes(param);
+  if (!include) return null;
+  const params = url.split(/([&,?,=])/);
+  const index = params.indexOf(param);
+  const value = params[index + 2];
+  return value;
+}

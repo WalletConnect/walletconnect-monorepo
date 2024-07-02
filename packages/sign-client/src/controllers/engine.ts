@@ -83,6 +83,7 @@ import {
   validateSignedCacao,
   getNamespacedDidChainId,
   parseChainId,
+  getLinkModeURL,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -899,14 +900,14 @@ export class Engine extends IEngine {
     this.events.once<"session_connect">(engineEvent("session_connect"), onSessionConnect);
     this.events.once(engineEvent("session_request", id), onAuthenticate);
 
-    let linkModeUri;
+    let linkModeURL;
     try {
       if (walletUniversalLink) {
         const payload = formatJsonRpcRequest("wc_sessionAuthenticate", request, id);
         this.client.core.history.set(pairingTopic, payload);
         const message = await this.client.core.crypto.encode("", payload, { type: TYPE_2 });
         const encodedMessage = encodeURIComponent(message);
-        linkModeUri = `${walletUniversalLink}?wc_ev=${encodedMessage}&topic=${pairingTopic}`;
+        linkModeURL = getLinkModeURL(walletUniversalLink, pairingTopic, encodedMessage);
       } else {
         // send both (main & fallback) requests
         await Promise.all([
@@ -942,7 +943,7 @@ export class Engine extends IEngine {
     });
 
     return {
-      uri: linkModeUri ?? connectionUri,
+      uri: linkModeURL ?? connectionUri,
       response: done,
     } as EngineTypes.SessionAuthenticateResponsePromise;
   };

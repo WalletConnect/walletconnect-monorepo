@@ -29,7 +29,7 @@ import {
   RELAYER_DEFAULT_RELAY_URL,
   WALLETCONNECT_CLIENT_ID,
 } from "./constants";
-import { isReactNative } from "@walletconnect/utils";
+import { isReactNative, getSearchParamFromURL } from "@walletconnect/utils";
 
 export class Core extends ICore {
   public readonly protocol = CORE_PROTOCOL;
@@ -186,15 +186,6 @@ export class Core extends ICore {
 
   private dispatchEnvelope = ({ url }: { url: string }) => {
     if (!url || !url.includes("wc_ev") || !url.includes("topic")) return;
-
-    const getSearchParamFromURL = (_url: string, param: any) => {
-      const include = _url.includes(param);
-      if (!include) return null;
-      const params = _url.split(/([&,?,=])/);
-      const index = params.indexOf(param);
-      const value = params[index + 2];
-      return value;
-    };
 
     const topic = getSearchParamFromURL(url, "topic") || "";
     const message = decodeURIComponent(getSearchParamFromURL(url, "wc_ev") || "");
