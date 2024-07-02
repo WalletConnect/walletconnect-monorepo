@@ -131,6 +131,7 @@ export class Engine extends IEngine {
   >();
 
   private recentlyDeletedLimit = 200;
+  private relayMessageCache: RelayerTypes.MessageEvent[] = [];
 
   constructor(client: IEngine["client"]) {
     super(client);
@@ -1028,6 +1029,23 @@ export class Engine extends IEngine {
     return formatMessage(request, iss);
   };
 
+  public processRelayMessageCache: IEngine["processRelayMessageCache"] = () => {
+    // process the relay messages cache in the next tick to allow event listeners to be registered by the implementing app
+    setTimeout(async () => {
+      if (this.relayMessageCache.length === 0) return;
+      while (this.relayMessageCache.length > 0) {
+        try {
+          const message = this.relayMessageCache.shift();
+          if (message) {
+            await this.onRelayMessage(message);
+          }
+        } catch (error) {
+          this.client.logger.error(error);
+        }
+      }
+    }, 50);
+  };
+
   // ---------- Private Helpers --------------------------------------- //
 
   private cleanupDuplicatePairings: EnginePrivate["cleanupDuplicatePairings"] = async (
@@ -1283,36 +1301,42 @@ export class Engine extends IEngine {
   // ---------- Relay Events Router ----------------------------------- //
 
   private registerRelayerEvents() {
-    this.client.core.relayer.on(
-      RELAYER_EVENTS.message,
-      async (event: RelayerTypes.MessageEvent) => {
-        const { topic, message } = event;
+    this.client.core.relayer.on(RELAYER_EVENTS.message, (event: RelayerTypes.MessageEvent) => {
+      // capture any messages that arrive before the client is initialized so we can process them after initialization is complete
+      if (!this.initialized || this.relayMessageCache.length > 0) {
+        this.relayMessageCache.push(event);
+      } else {
+        this.onRelayMessage(event);
+      }
+    });
+  }
 
-        // Retrieve the public key (if defined) to decrypt possible `auth_request` response
-        const { publicKey } = this.client.auth.authKeys.keys.includes(AUTH_PUBLIC_KEY_NAME)
-          ? this.client.auth.authKeys.get(AUTH_PUBLIC_KEY_NAME)
-          : ({ responseTopic: undefined, publicKey: undefined } as any);
+  private async onRelayMessage(event: RelayerTypes.MessageEvent) {
+    const { topic, message } = event;
 
-        const payload = await this.client.core.crypto.decode(topic, message, {
-          receiverPublicKey: publicKey,
-        });
+    // Retrieve the public key (if defined) to decrypt possible `auth_request` response
+    const { publicKey } = this.client.auth.authKeys.keys.includes(AUTH_PUBLIC_KEY_NAME)
+      ? this.client.auth.authKeys.get(AUTH_PUBLIC_KEY_NAME)
+      : ({ responseTopic: undefined, publicKey: undefined } as any);
 
-        try {
-          if (isJsonRpcRequest(payload)) {
-            this.client.core.history.set(topic, payload);
-            this.onRelayEventRequest({ topic, payload });
-          } else if (isJsonRpcResponse(payload)) {
-            await this.client.core.history.resolve(payload);
-            await this.onRelayEventResponse({ topic, payload });
-            this.client.core.history.delete(topic, payload.id);
-          } else {
-            this.onRelayEventUnknownPayload({ topic, payload });
-          }
-        } catch (error) {
-          this.client.logger.error(error);
-        }
-      },
-    );
+    const payload = await this.client.core.crypto.decode(topic, message, {
+      receiverPublicKey: publicKey,
+    });
+
+    try {
+      if (isJsonRpcRequest(payload)) {
+        this.client.core.history.set(topic, payload);
+        this.onRelayEventRequest({ topic, payload });
+      } else if (isJsonRpcResponse(payload)) {
+        await this.client.core.history.resolve(payload);
+        await this.onRelayEventResponse({ topic, payload });
+        this.client.core.history.delete(topic, payload.id);
+      } else {
+        this.onRelayEventUnknownPayload({ topic, payload });
+      }
+    } catch (error) {
+      this.client.logger.error(error);
+    }
   }
 
   private onRelayEventRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
@@ -1336,9 +1360,7 @@ export class Engine extends IEngine {
       if (!request) continue;
 
       try {
-        this.processRequest(request);
-        // small delay to allow for any async tasks to complete
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await this.processRequest(request);
       } catch (error) {
         this.client.logger.warn(error);
       }
@@ -1346,7 +1368,7 @@ export class Engine extends IEngine {
     this.requestQueue.state = ENGINE_QUEUE_STATES.idle;
   };
 
-  private processRequest: EnginePrivate["onRelayEventRequest"] = (event) => {
+  private processRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
@@ -1356,23 +1378,23 @@ export class Engine extends IEngine {
 
     switch (reqMethod) {
       case "wc_sessionPropose":
-        return this.onSessionProposeRequest(topic, payload);
+        return await this.onSessionProposeRequest(topic, payload);
       case "wc_sessionSettle":
-        return this.onSessionSettleRequest(topic, payload);
+        return await this.onSessionSettleRequest(topic, payload);
       case "wc_sessionUpdate":
-        return this.onSessionUpdateRequest(topic, payload);
+        return await this.onSessionUpdateRequest(topic, payload);
       case "wc_sessionExtend":
-        return this.onSessionExtendRequest(topic, payload);
+        return await this.onSessionExtendRequest(topic, payload);
       case "wc_sessionPing":
-        return this.onSessionPingRequest(topic, payload);
+        return await this.onSessionPingRequest(topic, payload);
       case "wc_sessionDelete":
-        return this.onSessionDeleteRequest(topic, payload);
+        return await this.onSessionDeleteRequest(topic, payload);
       case "wc_sessionRequest":
-        return this.onSessionRequest(topic, payload);
+        return await this.onSessionRequest(topic, payload);
       case "wc_sessionEvent":
-        return this.onSessionEventRequest(topic, payload);
+        return await this.onSessionEventRequest(topic, payload);
       case "wc_sessionAuthenticate":
-        return this.onSessionAuthenticateRequest(topic, payload);
+        return await this.onSessionAuthenticateRequest(topic, payload);
       default:
         return this.client.logger.info(`Unsupported request method ${reqMethod}`);
     }
@@ -1602,6 +1624,7 @@ export class Engine extends IEngine {
         MemoryStore.delete(memoryKey);
         throw e;
       }
+
       this.client.events.emit("session_update", { id, topic, params });
     } catch (err: any) {
       await this.sendError({
