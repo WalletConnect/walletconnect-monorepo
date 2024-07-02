@@ -61,6 +61,9 @@ export const formatMessage = (cacao: AuthTypes.FormatMessageParams, iss: string)
   const chainId = `Chain ID: ${getDidChainId(iss)}`;
   const nonce = `Nonce: ${cacao.nonce}`;
   const issuedAt = `Issued At: ${cacao.iat}`;
+  const expirationTime = cacao.exp ? `Expiration Time: ${cacao.exp}` : undefined;
+  const notBefore = cacao.nbf ? `Not Before: ${cacao.nbf}` : undefined;
+  const requestId = cacao.requestId ? `Request ID: ${cacao.requestId}` : undefined;
   const resources = cacao.resources
     ? `Resources:${cacao.resources.map((resource) => `\n- ${resource}`).join("")}`
     : undefined;
@@ -81,6 +84,9 @@ export const formatMessage = (cacao: AuthTypes.FormatMessageParams, iss: string)
     chainId,
     nonce,
     issuedAt,
+    expirationTime,
+    notBefore,
+    requestId,
     resources,
   ]
     .filter((val) => val !== undefined && val !== null) // remove unnecessary empty lines
