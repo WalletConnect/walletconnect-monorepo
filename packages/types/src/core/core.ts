@@ -64,4 +64,5 @@ export abstract class ICore extends IEvents {
   }
 
   public abstract start(): Promise<void>;
+  public abstract dispatchEnvelope(params: { url:string }): void;
 }

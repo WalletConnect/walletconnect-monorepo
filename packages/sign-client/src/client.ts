@@ -6,7 +6,7 @@ import {
   pino,
 } from "@walletconnect/logger";
 import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
-import { getAppMetadata } from "@walletconnect/utils";
+import { getAppMetadata, isReactNative } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import {
   SIGN_CLIENT_DEFAULT,
@@ -264,12 +264,30 @@ export class SignClient extends ISignClient {
       await this.engine.init();
       await this.auth.init();
       this.core.verify.init({ verifyUrl: this.metadata.verifyUrl });
+
       this.logger.info(`SignClient Initialization Success`);
       this.engine.processRelayMessageCache();
+      this.registerLinkModeListeners();
     } catch (error: any) {
       this.logger.info(`SignClient Initialization Failure`);
       this.logger.error(error.message);
       throw error;
+    }
+  }
+
+  private async registerLinkModeListeners() {
+    if (isReactNative() && this.metadata.redirect?.linkMode) {
+      // global.Linking is set by react-native-compat
+      if (typeof (global as any)?.Linking !== "undefined") {
+        // set URL listener
+        (global as any).Linking.addEventListener("url", this.core.dispatchEnvelope);
+
+        // check for initial URL -> cold boots
+        const initialUrl = await (global as any).Linking.getInitialURL();
+        if (initialUrl) {
+          this.core.dispatchEnvelope({ url: initialUrl });
+        }
+      }
     }
   }
 }
