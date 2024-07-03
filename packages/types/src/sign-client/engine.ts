@@ -203,7 +203,7 @@ export interface EnginePrivate {
     appLink?: string;
   }): Promise<void>;
 
-  onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): void;
+  onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): Promise<void>;
 
   onRelayEventResponse(event: EngineTypes.EventCallback<JsonRpcResponse>): Promise<void>;
 
@@ -406,4 +406,6 @@ export abstract class IEngine {
   }) => string;
 
   public abstract rejectSessionAuthenticate(params: EngineTypes.RejectParams): Promise<void>;
+
+  public abstract processRelayMessageCache(): void;
 }
