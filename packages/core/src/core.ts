@@ -28,6 +28,7 @@ import {
   CORE_VERSION,
   RELAYER_DEFAULT_RELAY_URL,
   WALLETCONNECT_CLIENT_ID,
+  WALLETCONNECT_LINK_MODE_APPS,
 } from "./constants";
 import { getSearchParamFromURL } from "@walletconnect/utils";
 
@@ -50,6 +51,7 @@ export class Core extends ICore {
   public pairing: ICore["pairing"];
   public verify: ICore["verify"];
   public echoClient: ICore["echoClient"];
+  public linkModeSupportedApps: ICore["linkModeSupportedApps"];
 
   private initialized = false;
   private logChunkController: ChunkLoggerController | null;
@@ -111,6 +113,7 @@ export class Core extends ICore {
     this.pairing = new Pairing(this, this.logger);
     this.verify = new Verify(this.projectId || "", this.logger);
     this.echoClient = new EchoClient(this.projectId || "", this.logger);
+    this.linkModeSupportedApps = [];
   }
 
   get context() {
@@ -128,6 +131,12 @@ export class Core extends ICore {
     return this.logChunkController?.logsToBlob({
       clientId: await this.crypto.getClientId(),
     });
+  }
+
+  public async addLinkModeSupportedApp(universalLink: string) {
+    if (this.linkModeSupportedApps.includes(universalLink)) return;
+    this.linkModeSupportedApps.push(universalLink);
+    await this.storage.setItem(WALLETCONNECT_LINK_MODE_APPS, this.linkModeSupportedApps);
   }
 
   // ---------- Events ----------------------------------------------- //
@@ -148,6 +157,18 @@ export class Core extends ICore {
     return this.events.removeListener(name, listener);
   };
 
+  // ---------- Link-mode ----------------------------------------------- //
+
+  public dispatchEnvelope = ({ url }: { url: string }) => {
+    if (!url || !url.includes("wc_ev") || !url.includes("topic")) return;
+
+    const topic = getSearchParamFromURL(url, "topic") || "";
+    const message = decodeURIComponent(getSearchParamFromURL(url, "wc_ev") || "");
+
+    const payload = { topic, message, publishedAt: Date.now() };
+    this.relayer.onLinkMessageEvent(payload);
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {
@@ -159,6 +180,8 @@ export class Core extends ICore {
       await this.relayer.init();
       await this.heartbeat.init();
       await this.pairing.init();
+      this.linkModeSupportedApps = (await this.storage.getItem(WALLETCONNECT_LINK_MODE_APPS)) || [];
+
       this.initialized = true;
       this.logger.info(`Core Initialization Success`);
     } catch (error) {
@@ -167,14 +190,4 @@ export class Core extends ICore {
       throw error;
     }
   }
-
-  public dispatchEnvelope = ({ url }: { url: string }) => {
-    if (!url || !url.includes("wc_ev") || !url.includes("topic")) return;
-
-    const topic = getSearchParamFromURL(url, "topic") || "";
-    const message = decodeURIComponent(getSearchParamFromURL(url, "wc_ev") || "");
-
-    const payload = { topic, message, publishedAt: Date.now() };
-    this.relayer.onLinkMessageEvent(payload);
-  };
 }

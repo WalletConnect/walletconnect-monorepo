@@ -96,7 +96,6 @@ import {
   WALLETCONNECT_DEEPLINK_CHOICE,
   ENGINE_QUEUE_STATES,
   AUTH_PUBLIC_KEY_NAME,
-  WALLETCONNECT_LINK_MODE_WALLETS,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -474,8 +473,7 @@ export class Engine extends IEngine {
 
     if (this.isLinkModeEnabled(session.peer.metadata)) {
       const appLink = session.peer.metadata.redirect?.universal;
-      const linkModeWallets =
-        (await this.client.core.storage.getItem<string[]>(WALLETCONNECT_LINK_MODE_WALLETS)) || [];
+      const linkModeWallets = this.client.core.linkModeSupportedApps;
       if (appLink && linkModeWallets.includes(appLink)) {
         await this.sendRequest({
           clientRpcId,
@@ -869,13 +867,10 @@ export class Engine extends IEngine {
       }
 
       if (this.client.metadata.redirect?.linkMode && responder.metadata.redirect?.linkMode) {
-        // save wallet link in array of wallets that support linkMode
-        const wallets =
-          (await this.client.core.storage.getItem<string[]>(WALLETCONNECT_LINK_MODE_WALLETS)) || [];
-        const walletLink = responder.metadata.redirect?.universal;
-        if (walletLink && !wallets?.includes(walletLink)) {
-          wallets.push(walletLink);
-          await this.client.core.storage.setItem(WALLETCONNECT_LINK_MODE_WALLETS, wallets);
+        const linkModeApps = this.client.core.linkModeSupportedApps;
+        if (walletUniversalLink && !linkModeApps?.includes(walletUniversalLink)) {
+          // save wallet link in array of apps that support linkMode
+          this.client.core.addLinkModeSupportedApp(walletUniversalLink);
         }
       }
 
@@ -2588,6 +2583,8 @@ export class Engine extends IEngine {
   };
 
   private isLinkModeEnabled = (peerMetadata?: CoreTypes.Metadata): boolean => {
+    if (!peerMetadata) return false;
+
     return (
       this.client.metadata?.redirect?.linkMode === true &&
       this.client.metadata?.redirect?.universal !== undefined &&
@@ -2595,6 +2592,7 @@ export class Engine extends IEngine {
       peerMetadata?.redirect?.universal !== undefined &&
       peerMetadata?.redirect?.universal !== "" &&
       peerMetadata?.redirect?.linkMode === true &&
+      this.client.core.linkModeSupportedApps.includes(peerMetadata.redirect.universal) &&
       typeof (global as any)?.Linking !== "undefined"
     );
   };

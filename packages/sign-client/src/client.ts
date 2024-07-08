@@ -8,12 +8,7 @@ import {
 import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
 import { getAppMetadata, isReactNative } from "@walletconnect/utils";
 import { EventEmitter } from "events";
-import {
-  SIGN_CLIENT_DEFAULT,
-  SIGN_CLIENT_PROTOCOL,
-  SIGN_CLIENT_VERSION,
-  WALLETCONNECT_LINK_MODE_WALLETS,
-} from "./constants";
+import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
 import { AuthStore, Engine, PendingRequest, Proposal, Session } from "./controllers";
 
 export class SignClient extends ISignClient {
@@ -212,7 +207,7 @@ export class SignClient extends ISignClient {
   public authenticate: ISignClient["authenticate"] = async (params, walletUniversalLink) => {
     try {
       if (walletUniversalLink) {
-        const wallets = await this.core.storage.getItem<string[]>(WALLETCONNECT_LINK_MODE_WALLETS);
+        const wallets = this.core.linkModeSupportedApps;
         if (wallets && wallets.includes(walletUniversalLink)) {
           return await this.engine.authenticate(params, walletUniversalLink);
         }

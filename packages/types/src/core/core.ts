@@ -58,6 +58,7 @@ export abstract class ICore extends IEvents {
   public abstract pairing: IPairing;
   public abstract verify: IVerify;
   public abstract echoClient: IEchoClient;
+  public abstract linkModeSupportedApps: string[];
 
   constructor(public opts?: CoreTypes.Options) {
     super();
@@ -65,4 +66,5 @@ export abstract class ICore extends IEvents {
 
   public abstract start(): Promise<void>;
   public abstract dispatchEnvelope(params: { url: string }): void;
+  public abstract addLinkModeSupportedApp(universalLink: string): void;
 }
