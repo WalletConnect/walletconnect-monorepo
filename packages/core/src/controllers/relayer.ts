@@ -159,6 +159,7 @@ export class Relayer extends IRelayer {
       message,
       // We don't have `publishedAt` from the relay server on outgoing, so use current time to satisfy type.
       publishedAt: Date.now(),
+      transportType: "relay",
     });
   }
 
@@ -454,7 +455,12 @@ export class Relayer extends IRelayer {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message, publishedAt } = event.data;
-      const messageEvent: RelayerTypes.MessageEvent = { topic, message, publishedAt };
+      const messageEvent: RelayerTypes.MessageEvent = {
+        topic,
+        message,
+        publishedAt,
+        transportType: "relay",
+      };
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });
       this.events.emit(event.id, messageEvent);
@@ -476,7 +482,7 @@ export class Relayer extends IRelayer {
 
     // expires in 7 days
     const expiry = Math.floor(Date.now() / 1000) + 604800;
-    const pairing = { topic, expiry, relay: { protocol: "link-mode" }, active: false };
+    const pairing = { topic, expiry, relay: { protocol: "irn" }, active: false };
     await this.core.pairing.pairings.set(topic, pairing);
 
     this.events.emit(RELAYER_EVENTS.message, messageEvent);

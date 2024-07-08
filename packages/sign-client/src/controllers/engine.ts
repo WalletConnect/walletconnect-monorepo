@@ -1410,7 +1410,7 @@ export class Engine extends IEngine {
   }
 
   private async onRelayMessage(event: RelayerTypes.MessageEvent) {
-    const { topic, message } = event;
+    const { topic, message, transportType } = event;
 
     // Retrieve the public key (if defined) to decrypt possible `auth_request` response
     const { publicKey } = this.client.auth.authKeys.keys.includes(AUTH_PUBLIC_KEY_NAME)
@@ -1424,13 +1424,13 @@ export class Engine extends IEngine {
     try {
       if (isJsonRpcRequest(payload)) {
         this.client.core.history.set(topic, payload);
-        this.onRelayEventRequest({ topic, payload });
+        this.onRelayEventRequest({ topic, payload, transportType });
       } else if (isJsonRpcResponse(payload)) {
         await this.client.core.history.resolve(payload);
-        await this.onRelayEventResponse({ topic, payload });
+        await this.onRelayEventResponse({ topic, payload, transportType });
         this.client.core.history.delete(topic, payload.id);
       } else {
-        this.onRelayEventUnknownPayload({ topic, payload });
+        this.onRelayEventUnknownPayload({ topic, payload, transportType });
       }
     } catch (error) {
       this.client.logger.error(error);
@@ -1467,7 +1467,7 @@ export class Engine extends IEngine {
   };
 
   private processRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
-    const { topic, payload } = event;
+    const { topic, payload, transportType } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
     if (this.shouldIgnorePairingRequest({ topic, requestMethod: reqMethod })) {
@@ -1488,11 +1488,11 @@ export class Engine extends IEngine {
       case "wc_sessionDelete":
         return await this.onSessionDeleteRequest(topic, payload);
       case "wc_sessionRequest":
-        return await this.onSessionRequest(topic, payload);
+        return await this.onSessionRequest(topic, payload, transportType);
       case "wc_sessionEvent":
         return await this.onSessionEventRequest(topic, payload);
       case "wc_sessionAuthenticate":
-        return await this.onSessionAuthenticateRequest(topic, payload);
+        return await this.onSessionAuthenticateRequest(topic, payload, transportType);
       default:
         return this.client.logger.info(`Unsupported request method ${reqMethod}`);
     }
@@ -1859,7 +1859,11 @@ export class Engine extends IEngine {
     }
   };
 
-  private onSessionRequest: EnginePrivate["onSessionRequest"] = async (topic, payload) => {
+  private onSessionRequest: EnginePrivate["onSessionRequest"] = async (
+    topic,
+    payload,
+    transportType,
+  ) => {
     const { id, params } = payload;
     try {
       await this.isValidRequest({ topic, ...params });
@@ -1875,6 +1879,12 @@ export class Engine extends IEngine {
         verifyContext,
       };
       await this.setPendingSessionRequest(request);
+
+      if (transportType === "link-mode" && session.peer.metadata.redirect?.universal) {
+        // save app as supported for link mode
+        this.client.core.addLinkModeSupportedApp(session.peer.metadata.redirect?.universal);
+      }
+
       if (this.client.signConfig?.disableRequestQueue) {
         this.emitSessionRequest(request);
       } else {
@@ -1959,6 +1969,7 @@ export class Engine extends IEngine {
   private onSessionAuthenticateRequest: EnginePrivate["onSessionAuthenticateRequest"] = async (
     topic,
     payload,
+    transportType,
   ) => {
     try {
       const { requester, authPayload, expiryTimestamp } = payload.params;
@@ -1973,6 +1984,12 @@ export class Engine extends IEngine {
         expiryTimestamp,
       };
       await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
+
+      if (transportType === "link-mode" && requester.metadata.redirect?.universal) {
+        // save app as supported for link mode
+        this.client.core.addLinkModeSupportedApp(requester.metadata.redirect.universal);
+      }
+
       this.client.events.emit("session_authenticate", {
         topic,
         params: payload.params,

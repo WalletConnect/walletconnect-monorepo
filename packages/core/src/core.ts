@@ -165,7 +165,12 @@ export class Core extends ICore {
     const topic = getSearchParamFromURL(url, "topic") || "";
     const message = decodeURIComponent(getSearchParamFromURL(url, "wc_ev") || "");
 
-    const payload = { topic, message, publishedAt: Date.now() };
+    const payload = {
+      topic,
+      message,
+      publishedAt: Date.now(),
+      transportType: "link-mode" as const,
+    };
     this.relayer.onLinkMessageEvent(payload);
   };
 

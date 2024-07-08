@@ -43,6 +43,7 @@ export declare namespace RelayerTypes {
     topic: string;
     message: string;
     publishedAt: number;
+    transportType: "relay" | "link-mode";
   }
 
   export interface RpcUrlParams {
