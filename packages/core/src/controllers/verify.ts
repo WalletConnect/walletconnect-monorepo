@@ -3,12 +3,7 @@ import { IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, isReactNative } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
-import {
-  TRUSTED_VERIFY_URLS,
-  VERIFY_CONTEXT,
-  VERIFY_FALLBACK_SERVER,
-  VERIFY_SERVER,
-} from "../constants";
+import { TRUSTED_VERIFY_URLS, VERIFY_CONTEXT, VERIFY_SERVER } from "../constants";
 
 export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
@@ -49,19 +44,7 @@ export class Verify extends IVerify {
     } catch (error) {
       this.logger.info(`Verify iframe failed to load: ${this.verifyUrl}`);
       this.logger.info(error);
-    }
-
-    if (this.initialized) return;
-
-    this.removeIframe();
-    this.verifyUrl = VERIFY_FALLBACK_SERVER;
-
-    try {
-      await this.createIframe();
-    } catch (error) {
-      this.logger.info(`Verify iframe failed to load: ${this.verifyUrl}`);
-      this.logger.info(error);
-      // if the fallback url fails to load as well, disable verify
+      // if the iframe fails to load, disable verify
       this.verifyDisabled = true;
     }
   };
@@ -79,17 +62,7 @@ export class Verify extends IVerify {
     if (this.isDevEnv) return "";
 
     const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
-    let result;
-    try {
-      result = await this.fetchAttestation(params.attestationId, verifyUrl);
-    } catch (error) {
-      this.logger.info(
-        `failed to resolve attestation: ${params.attestationId} from url: ${verifyUrl}`,
-      );
-      this.logger.info(error);
-      result = await this.fetchAttestation(params.attestationId, VERIFY_FALLBACK_SERVER);
-    }
-    return result;
+    return this.fetchAttestation(params.attestationId, verifyUrl);
   };
 
   get context(): string {
@@ -99,7 +72,7 @@ export class Verify extends IVerify {
   private fetchAttestation = async (attestationId: string, url: string) => {
     this.logger.info(`resolving attestation: ${attestationId} from url: ${url}`);
     // set artificial timeout to prevent hanging
-    const timeout = this.startAbortTimer(ONE_SECOND * 2);
+    const timeout = this.startAbortTimer(ONE_SECOND * 5);
     const result = await fetch(`${url}/attestation/${attestationId}`, {
       signal: this.abortController.signal,
     });
