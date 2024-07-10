@@ -6,6 +6,8 @@ import {
   BASE16,
   encrypt,
   decrypt,
+  encodeTypeTwoEnvelope,
+  decodeTypeTwoEnvelope,
   deriveSymKey,
   deserialize,
   generateKeyPair,
@@ -14,6 +16,7 @@ import {
   validateDecoding,
   isTypeOneEnvelope,
   generateRandomBytes32,
+  BASE64URL,
 } from "../src";
 
 import { TEST_KEY_PAIRS, TEST_SHARED_KEY, TEST_HASHED_KEY, TEST_SYM_KEY } from "./shared";
@@ -35,8 +38,18 @@ const TEST_SEALED =
 
 const TEST_ENCODED_TYPE_0 =
   "AHF3ZWNmYWFzZGFkc3paHoQ96/mLAdanVxi17icRXq+jyrqXA8ocVgGmryQZBFMg+uwgc8yLa43EOeY+IWEv84g8hn4L3Ncsgz6397sgNKnsNcL7A9k3Mg==";
+
+const TEST_ENCODED_TYPE_0_BASE64URL =
+  "AHF3ZWNmYWFzZGFkc3paHoQ96_mLAdanVxi17icRXq-jyrqXA8ocVgGmryQZBFMg-uwgc8yLa43EOeY-IWEv84g8hn4L3Ncsgz6397sgNKnsNcL7A9k3Mg";
+
 const TEST_ENCODED_TYPE_1 =
   "Af96fVdnw2KwoXrZIpnr23gx3L2aVpWcATaMdARUOzNCcXdlY2ZhYXNkYWRzeloehD3r+YsB1qdXGLXuJxFer6PKupcDyhxWAaavJBkEUyD67CBzzItrjcQ55j4hYS/ziDyGfgvc1yyDPrf3uyA0qew1wvsD2Tcy";
+
+const TEST_ENCODED_TYPE_1_BASE64URL =
+  "Af96fVdnw2KwoXrZIpnr23gx3L2aVpWcATaMdARUOzNCcXdlY2ZhYXNkYWRzeloehD3r-YsB1qdXGLXuJxFer6PKupcDyhxWAaavJBkEUyD67CBzzItrjcQ55j4hYS_ziDyGfgvc1yyDPrf3uyA0qew1wvsD2Tcy";
+
+const TEST_ENCODED_TYPE_2 =
+  "AnsiaWQiOjEsImpzb25ycGMiOiIyLjAiLCJtZXRob2QiOiJ0ZXN0X21ldGhvZCIsInBhcmFtcyI6e319";
 
 const TEST_HASHED_MESSAGE = "15112289b5b794e68d1ea3cd91330db55582a37d0596f7b99ea8becdf9d10496";
 
@@ -65,7 +78,7 @@ describe("Crypto", () => {
   it("encrypt (type 0)", () => {
     const encoded = encrypt({ symKey: TEST_SYM_KEY, message: TEST_MESSAGE, iv: TEST_IV });
     expect(encoded).to.eql(TEST_ENCODED_TYPE_0);
-    const deserialized = deserialize(encoded);
+    const deserialized = deserialize({ encoded });
     const iv = toString(deserialized.iv, BASE16);
     expect(iv).to.eql(TEST_IV);
     const sealed = toString(deserialized.sealed, BASE16);
@@ -73,6 +86,25 @@ describe("Crypto", () => {
   });
   it("decrypt (type 0)", () => {
     const decrypted = decrypt({ symKey: TEST_SYM_KEY, encoded: TEST_ENCODED_TYPE_0 });
+    expect(decrypted).to.eql(TEST_MESSAGE);
+  });
+  it("encrypt (type 0) for link-mode", () => {
+    const encoding = BASE64URL;
+    const encoded = encrypt({ symKey: TEST_SYM_KEY, message: TEST_MESSAGE, iv: TEST_IV, encoding });
+    expect(encoded).to.eql(TEST_ENCODED_TYPE_0_BASE64URL);
+    const deserialized = deserialize({ encoded, encoding });
+    const iv = toString(deserialized.iv, BASE16);
+    expect(iv).to.eql(TEST_IV);
+    const sealed = toString(deserialized.sealed, BASE16);
+    expect(sealed).to.eql(TEST_SEALED);
+  });
+  it("decrypt (type 0) for link-mode", () => {
+    const encoding = BASE64URL;
+    const decrypted = decrypt({
+      symKey: TEST_SYM_KEY,
+      encoded: TEST_ENCODED_TYPE_0_BASE64URL,
+      encoding,
+    });
     expect(decrypted).to.eql(TEST_MESSAGE);
   });
   it("encrypt (type 1)", () => {
@@ -84,7 +116,7 @@ describe("Crypto", () => {
       iv: TEST_IV,
     });
     expect(encoded).to.eql(TEST_ENCODED_TYPE_1);
-    const deserialized = deserialize(encoded);
+    const deserialized = deserialize({ encoded });
     const iv = toString(deserialized.iv, BASE16);
     expect(iv).to.eql(TEST_IV);
     const sealed = toString(deserialized.sealed, BASE16);
@@ -104,6 +136,48 @@ describe("Crypto", () => {
     expect(symKey).to.eql(TEST_SYM_KEY);
     const decrypted = decrypt({ symKey, encoded });
     expect(decrypted).to.eql(TEST_MESSAGE);
+  });
+  it("encrypt (type 1) for link-mode", () => {
+    const encoding = BASE64URL;
+    const encoded = encrypt({
+      type: 1,
+      symKey: TEST_SYM_KEY,
+      senderPublicKey: TEST_SELF.publicKey,
+      message: TEST_MESSAGE,
+      iv: TEST_IV,
+      encoding,
+    });
+    expect(encoded).to.eql(TEST_ENCODED_TYPE_1_BASE64URL);
+    const deserialized = deserialize({ encoded, encoding });
+    const iv = toString(deserialized.iv, BASE16);
+    expect(iv).to.eql(TEST_IV);
+    const sealed = toString(deserialized.sealed, BASE16);
+    expect(sealed).to.eql(TEST_SEALED);
+  });
+  it("decrypt (type 1) for link-mode", () => {
+    const encoding = BASE64URL;
+    const encoded = TEST_ENCODED_TYPE_1_BASE64URL;
+    const params = validateDecoding(encoded, {
+      receiverPublicKey: TEST_PEER.publicKey,
+      encoding,
+    });
+    expect(isTypeOneEnvelope(params)).to.eql(true);
+    if (!isTypeOneEnvelope(params)) return;
+    expect(params.type).to.eql(1);
+    expect(params.senderPublicKey).to.eql(TEST_SELF.publicKey);
+    expect(params.receiverPublicKey).to.eql(TEST_PEER.publicKey);
+    const symKey = deriveSymKey(TEST_PEER.privateKey, params.senderPublicKey);
+    expect(symKey).to.eql(TEST_SYM_KEY);
+    const decrypted = decrypt({ symKey, encoded, encoding });
+    expect(decrypted).to.eql(TEST_MESSAGE);
+  });
+  it("encode (type 2) for link-mode", () => {
+    const encoded = encodeTypeTwoEnvelope(TEST_MESSAGE, BASE64URL);
+    expect(encoded).to.eql(TEST_ENCODED_TYPE_2);
+  });
+  it("decode (type 2) for link-mode", () => {
+    const decoded = decodeTypeTwoEnvelope(TEST_ENCODED_TYPE_2, BASE64URL);
+    expect(decoded).to.eql(TEST_MESSAGE);
   });
   it("calls generateRandomBytes32", () => {
     expect(generateRandomBytes32()).toBeTruthy();

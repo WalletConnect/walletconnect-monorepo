@@ -84,6 +84,8 @@ import {
   getNamespacedDidChainId,
   parseChainId,
   getLinkModeURL,
+  BASE64,
+  BASE64URL,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -888,14 +890,19 @@ export class Engine extends IEngine {
     this.events.once<"session_connect">(engineEvent("session_connect"), onSessionConnect);
     this.events.once(engineEvent("session_request", id), onAuthenticate);
 
+    const isLinkMode =
+      walletUniversalLink && this.client.core.linkModeSupportedApps.includes(walletUniversalLink);
+
     let linkModeURL;
     try {
-      if (walletUniversalLink) {
+      if (isLinkMode) {
         const payload = formatJsonRpcRequest("wc_sessionAuthenticate", request, id);
         this.client.core.history.set(pairingTopic, payload);
-        const message = await this.client.core.crypto.encode("", payload, { type: TYPE_2 });
-        const encodedMessage = encodeURIComponent(message);
-        linkModeURL = getLinkModeURL(walletUniversalLink, pairingTopic, encodedMessage);
+        const message = await this.client.core.crypto.encode("", payload, {
+          type: TYPE_2,
+          encoding: BASE64URL,
+        });
+        linkModeURL = getLinkModeURL(walletUniversalLink, pairingTopic, message);
       } else {
         // send both (main & fallback) requests
         await Promise.all([
@@ -1262,8 +1269,11 @@ export class Engine extends IEngine {
       this.client.core.verify.register({ attestationId: hash });
     }
     let message;
+    const isLinkMode = appLink && typeof (global as any)?.Linking !== "undefined";
+
     try {
-      message = await this.client.core.crypto.encode(topic, payload);
+      const encoding = isLinkMode ? BASE64URL : BASE64;
+      message = await this.client.core.crypto.encode(topic, payload, { encoding });
     } catch (error) {
       await this.cleanup();
       this.client.logger.error(`sendRequest() -> core.crypto.encode() for topic ${topic} failed`);
@@ -1272,9 +1282,8 @@ export class Engine extends IEngine {
 
     this.client.core.history.set(topic, payload);
 
-    if (appLink && typeof (global as any)?.Linking !== "undefined") {
-      const encodedMessage = encodeURIComponent(message);
-      const redirectURL = getLinkModeURL(appLink, topic, encodedMessage);
+    if (isLinkMode) {
+      const redirectURL = getLinkModeURL(appLink, topic, message);
       await (global as any).Linking.openURL(redirectURL);
     } else {
       const opts = ENGINE_RPC_OPTS[method].req;
@@ -1300,8 +1309,14 @@ export class Engine extends IEngine {
     const { id, topic, result, throwOnFailedPublish, encodeOpts, appLink } = args;
     const payload = formatJsonRpcResult(id, result);
     let message;
+    const isLinkMode = appLink && typeof (global as any)?.Linking !== "undefined";
+
     try {
-      message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
+      const encoding = isLinkMode ? BASE64URL : BASE64;
+      message = await this.client.core.crypto.encode(topic, payload, {
+        ...(encodeOpts || {}),
+        encoding,
+      });
     } catch (error) {
       // if encoding fails e.g. due to missing keychain, we want to cleanup all related data as its unusable
       await this.cleanup();
@@ -1316,9 +1331,8 @@ export class Engine extends IEngine {
       throw error;
     }
 
-    if (appLink && typeof (global as any)?.Linking !== "undefined") {
-      const encodedMessage = encodeURIComponent(message);
-      const redirectURL = getLinkModeURL(appLink, topic, encodedMessage);
+    if (isLinkMode) {
+      const redirectURL = getLinkModeURL(appLink, topic, message);
       await (global as any).Linking.openURL(redirectURL);
     } else {
       const opts = ENGINE_RPC_OPTS[record.request.method].res;
@@ -1342,8 +1356,13 @@ export class Engine extends IEngine {
     const { id, topic, error, encodeOpts, rpcOpts, appLink } = params;
     const payload = formatJsonRpcError(id, error);
     let message;
+    const isLinkMode = appLink && typeof (global as any)?.Linking !== "undefined";
     try {
-      message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
+      const encoding = isLinkMode ? BASE64URL : BASE64;
+      message = await this.client.core.crypto.encode(topic, payload, {
+        ...(encodeOpts || {}),
+        encoding,
+      });
     } catch (error) {
       await this.cleanup();
       this.client.logger.error(`sendError() -> core.crypto.encode() for topic ${topic} failed`);
@@ -1357,9 +1376,8 @@ export class Engine extends IEngine {
       throw error;
     }
 
-    if (appLink && typeof (global as any)?.Linking !== "undefined") {
-      const encodedMessage = encodeURIComponent(message);
-      const redirectURL = getLinkModeURL(appLink, topic, encodedMessage);
+    if (isLinkMode) {
+      const redirectURL = getLinkModeURL(appLink, topic, message);
       await (global as any).Linking.openURL(redirectURL);
     } else {
       const opts = rpcOpts || ENGINE_RPC_OPTS[record.request.method].res;
@@ -1419,6 +1437,7 @@ export class Engine extends IEngine {
 
     const payload = await this.client.core.crypto.decode(topic, message, {
       receiverPublicKey: publicKey,
+      encoding: transportType === "link-mode" ? BASE64URL : BASE64,
     });
 
     try {

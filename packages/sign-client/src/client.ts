@@ -206,14 +206,7 @@ export class SignClient extends ISignClient {
 
   public authenticate: ISignClient["authenticate"] = async (params, walletUniversalLink) => {
     try {
-      if (walletUniversalLink) {
-        const wallets = this.core.linkModeSupportedApps;
-        if (wallets && wallets.includes(walletUniversalLink)) {
-          return await this.engine.authenticate(params, walletUniversalLink);
-        }
-      }
-
-      return await this.engine.authenticate(params);
+      return await this.engine.authenticate(params, walletUniversalLink);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
