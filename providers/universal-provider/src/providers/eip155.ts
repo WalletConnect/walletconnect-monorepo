@@ -14,6 +14,7 @@ import {
 import { getChainId, getGlobal, getRpcUrl } from "../utils";
 import EventEmitter from "events";
 import { PROVIDER_EVENTS } from "../constants";
+import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
 class Eip155Provider implements IProvider {
   public name = "eip155";
@@ -45,6 +46,8 @@ class Eip155Provider implements IProvider {
         return parseInt(this.getDefaultChain()) as unknown as T;
       case "wallet_getCapabilities":
         return (await this.getCapabilities(args)) as unknown as T;
+      case "wallet_getCallsStatus":
+        return (await this.getCallStatus(args)) as unknown as T;
       default:
         break;
     }
@@ -197,6 +200,41 @@ class Eip155Provider implements IProvider {
       console.warn("Failed to update session with capabilities", error);
     }
     return capabilities;
+  }
+
+  private async getCallStatus(args: RequestParams) {
+    const session = this.client.session.get(args.topic);
+    if (
+      session?.sessionProperties &&
+      Object.keys(session.sessionProperties).includes("bundler_url")
+    ) {
+      const bundlerUrl = session.sessionProperties.bundler_url;
+      try {
+        return await this.getUserOperationReceipt(bundlerUrl, args);
+      } catch (error) {
+        console.warn("Failed to fetch call status from bundler", error, bundlerUrl);
+      }
+    }
+    if (this.namespace.methods.includes(args.request.method)) {
+      return await this.client.request(args as EngineTypes.RequestParams);
+    }
+
+    throw new Error("Fetching call status not approved by the wallet.");
+  }
+
+  private async getUserOperationReceipt(bundlerUrl: string, args: RequestParams) {
+    const url = new URL(bundlerUrl);
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        formatJsonRpcRequest("eth_getUserOperationReceipt", [args.request.params?.[0]]),
+      ),
+    });
+
+    return await response.json();
   }
 }
 
