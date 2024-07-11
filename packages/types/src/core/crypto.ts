@@ -117,7 +117,7 @@ export abstract class ICrypto {
   ): Promise<JsonRpcPayload>;
 
   public abstract signJWT(aud: string): Promise<string>;
-  public abstract getPayloadType(encoded: string): number;
+  public abstract getPayloadType(encoded: string, encoding?: CryptoTypes.EncodingType): number;
   public abstract getPayloadSenderPublicKey(
     encoded: string,
     encoding?: CryptoTypes.EncodingType,

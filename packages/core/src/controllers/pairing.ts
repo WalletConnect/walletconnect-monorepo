@@ -247,10 +247,13 @@ export class Pairing implements IPairing {
 
   private registerRelayerEvents() {
     this.core.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
-      const { topic, message } = event;
+      const { topic, message, transportType } = event;
 
       // Do not handle if the topic is not related to known pairing topics.
       if (!this.pairings.keys.includes(topic)) return;
+
+      // Do not handle link-mode messages
+      if (transportType === "link-mode") return;
 
       // messages of certain types should be ignored as they are handled by their respective SDKs
       if (this.ignoredPayloadTypes.includes(this.core.crypto.getPayloadType(message))) return;

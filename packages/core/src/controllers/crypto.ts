@@ -153,8 +153,8 @@ export class Crypto implements ICrypto {
     }
   };
 
-  public getPayloadType: ICrypto["getPayloadType"] = (encoded) => {
-    const deserialized = deserialize({ encoded });
+  public getPayloadType: ICrypto["getPayloadType"] = (encoded, encoding = BASE64) => {
+    const deserialized = deserialize({ encoded, encoding });
     return decodeTypeByte(deserialized.type);
   };
 
