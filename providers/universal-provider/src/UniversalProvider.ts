@@ -20,6 +20,7 @@ import CardanoProvider from "./providers/cardano";
 import ElrondProvider from "./providers/elrond";
 import MultiversXProvider from "./providers/multiversx";
 import NearProvider from "./providers/near";
+import GenericProvider from "./providers/generic";
 
 import {
   IUniversalProvider,
@@ -231,7 +232,13 @@ export class UniversalProvider implements IUniversalProvider {
       // ignore without active session
       if (!this.session) return;
       const [namespace, chainId] = this.validateChain(chain);
-      this.getProvider(namespace).setDefaultChain(chainId, rpcUrl);
+      const provider = this.getProvider(namespace);
+      // @ts-expect-error
+      if (provider.name === "generic") {
+        provider.setDefaultChain(`${namespace}:${chainId}`, rpcUrl);
+      } else {
+        provider.setDefaultChain(chainId, rpcUrl);
+      }
     } catch (error) {
       // ignore the error if the fx is used prematurely before namespaces are set
       if (!/Please call connect/.test((error as Error).message)) throw error;
@@ -367,6 +374,10 @@ export class UniversalProvider implements IUniversalProvider {
             namespace: combinedNamespace,
           });
           break;
+        default:
+          this.rpcProviders.generic = new GenericProvider({
+            namespace: combinedNamespace,
+          });
       }
     });
   }
@@ -429,10 +440,7 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   private getProvider(namespace: string): IProvider {
-    if (!this.rpcProviders[namespace]) {
-      throw new Error(`Provider not found: ${namespace}`);
-    }
-    return this.rpcProviders[namespace];
+    return this.rpcProviders[namespace] || this.rpcProviders.generic;
   }
 
   private onSessionUpdate(): void {
