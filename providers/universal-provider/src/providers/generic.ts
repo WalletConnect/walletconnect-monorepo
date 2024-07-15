@@ -11,7 +11,7 @@ import {
   SessionNamespace,
   SubProviderOpts,
 } from "../types";
-import { getChainId, getGlobal, getRpcUrl } from "../utils";
+import { getGlobal, getRpcUrl } from "../utils";
 import { parseChainId } from "@walletconnect/utils";
 
 // Old wallet connect provider for Elrond
