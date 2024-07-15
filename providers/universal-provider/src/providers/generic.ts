@@ -14,7 +14,6 @@ import {
 import { getGlobal, getRpcUrl } from "../utils";
 import { parseChainId } from "@walletconnect/utils";
 
-// Old wallet connect provider for Elrond
 class GenericProvider implements IProvider {
   public name = "generic";
   public client: Client;
