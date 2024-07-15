@@ -12,6 +12,7 @@ import {
   SubProviderOpts,
 } from "../types";
 import { getChainId, getGlobal, getRpcUrl } from "../utils";
+import { parseChainId } from "@walletconnect/utils";
 
 // Old wallet connect provider for Elrond
 class GenericProvider implements IProvider {
@@ -31,7 +32,19 @@ class GenericProvider implements IProvider {
   }
 
   public updateNamespace(namespace: SessionTypes.Namespace) {
-    this.namespace = Object.assign(this.namespace, namespace);
+    this.namespace.chains = [
+      ...new Set((this.namespace.chains || []).concat(namespace.chains || [])),
+    ];
+    this.namespace.accounts = [
+      ...new Set((this.namespace.accounts || []).concat(namespace.accounts || [])),
+    ];
+    this.namespace.methods = [
+      ...new Set((this.namespace.methods || []).concat(namespace.methods || [])),
+    ];
+    this.namespace.events = [
+      ...new Set((this.namespace.events || []).concat(namespace.events || [])),
+    ];
+    this.httpProviders = this.createHttpProviders();
   }
 
   public requestAccounts(): string[] {
@@ -42,7 +55,7 @@ class GenericProvider implements IProvider {
     if (this.namespace.methods.includes(args.request.method)) {
       return this.client.request(args as EngineTypes.RequestParams);
     }
-    return this.getHttpProvider().request(args.request);
+    return this.getHttpProvider(args.chainId).request(args.request);
   }
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
@@ -86,14 +99,13 @@ class GenericProvider implements IProvider {
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace?.accounts?.forEach((account) => {
-      const parsedChainId = getChainId(account);
-      http[parsedChainId] = this.createHttpProvider(account);
+      const chain = parseChainId(account);
+      http[`${chain.namespace}:${chain.reference}`] = this.createHttpProvider(account);
     });
     return http;
   }
 
-  private getHttpProvider(): JsonRpcProvider {
-    const chain = `${this.name}:${this.chainId}`;
+  private getHttpProvider(chain: string): JsonRpcProvider {
     const http = this.httpProviders[chain];
     if (typeof http === "undefined") {
       throw new Error(`JSON-RPC provider for ${chain} not found`);

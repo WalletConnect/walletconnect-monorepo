@@ -375,9 +375,13 @@ export class UniversalProvider implements IUniversalProvider {
           });
           break;
         default:
-          this.rpcProviders.generic = new GenericProvider({
-            namespace: combinedNamespace,
-          });
+          if (!this.rpcProviders.generic) {
+            this.rpcProviders.generic = new GenericProvider({
+              namespace: combinedNamespace,
+            });
+          } else {
+            this.rpcProviders.generic.updateNamespace(combinedNamespace);
+          }
       }
     });
   }

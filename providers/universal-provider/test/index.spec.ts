@@ -1164,11 +1164,11 @@ describe("UniversalProvider", function () {
         ...TEST_PROVIDER_OPTS,
         name: "wallet",
       });
-      const namespace = "tron";
-      const chains = [
-        `${namespace}:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ`,
-        `${namespace}:8E9rvCKLFQia2Y35HXjjpWzj8weVo44K`,
+      const tronChains = [
+        `tron:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ`,
+        `tron:8E9rvCKLFQia2Y35HXjjpWzj8weVo44K`,
       ];
+      const zoraChains = [`zora:1`, `zora:2`];
       await testConnectMethod(
         {
           dapp,
@@ -1178,9 +1178,15 @@ describe("UniversalProvider", function () {
           requiredNamespaces: {},
           optionalNamespaces: {},
           namespaces: {
-            [namespace]: {
-              accounts: chains.map((chain) => `${chain}:${walletAddress}`),
-              chains,
+            tron: {
+              accounts: tronChains.map((chain) => `${chain}:${walletAddress}`),
+              chains: tronChains,
+              methods,
+              events,
+            },
+            zora: {
+              accounts: zoraChains.map((chain) => `${chain}:${walletAddress}`),
+              chains: zoraChains,
               methods,
               events,
             },
@@ -1195,13 +1201,14 @@ describe("UniversalProvider", function () {
       const httpProviders = dapp.rpcProviders.generic.httpProviders;
 
       expect(Object.keys(httpProviders).length).is.greaterThan(0);
-      expect(Object.keys(httpProviders).length).to.eql(chains.length);
+      expect(Object.keys(httpProviders).length).to.eql(tronChains.length + zoraChains.length);
 
+      const allChains = [...tronChains, ...zoraChains];
       Object.values(httpProviders).forEach((provider, i) => {
         const url = provider.connection.url as string;
         expect(url).to.include("https://");
         expect(url).to.include(RPC_URL);
-        expect(url).to.eql(getRpcUrl(chains[i], {} as Namespace, TEST_PROVIDER_OPTS.projectId));
+        expect(url).to.eql(getRpcUrl(allChains[i], {} as Namespace, TEST_PROVIDER_OPTS.projectId));
       });
 
       await deleteProviders({ A: dapp, B: wallet });
