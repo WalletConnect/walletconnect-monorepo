@@ -274,7 +274,13 @@ export class Engine extends IEngine {
       configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.no_internet_connection);
       throw error;
     }
-
+    try {
+      await this.isValidProposalId(params?.id);
+    } catch (error) {
+      this.client.logger.error(`approve() -> proposal.get(${params?.id}) failed`);
+      configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found);
+      throw error;
+    }
     try {
       await this.isValidApprove(params);
     } catch (error) {
@@ -286,14 +292,8 @@ export class Engine extends IEngine {
     }
 
     const { id, relayProtocol, namespaces, sessionProperties, sessionConfig } = params;
-    let proposal;
-    try {
-      proposal = this.client.proposal.get(id);
-    } catch (error) {
-      this.client.logger.error(`approve() -> proposal.get(${id}) failed`);
-      configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found);
-      throw error;
-    }
+
+    const proposal = this.client.proposal.get(id);
 
     this.client.core.eventClient.deleteEvent({ eventId: configEvent.eventId });
 
