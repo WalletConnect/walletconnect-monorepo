@@ -48,7 +48,6 @@ import {
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_DEFAULT_RELAY_URL,
-  RELAYER_FAILOVER_RELAY_URL,
   SUBSCRIBER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
   RELAYER_TRANSPORT_CUTOFF,
@@ -118,16 +117,8 @@ export class Relayer extends IRelayer {
     this.logger.trace(`Initialized`);
     this.registerEventListeners();
     await Promise.all([this.messages.init(), this.subscriber.init()]);
-    try {
-      await this.transportOpen();
-    } catch {
-      this.logger.warn(
-        `Connection via ${this.relayUrl} failed, attempting to connect via failover domain ${RELAYER_FAILOVER_RELAY_URL}...`,
-      );
-      await this.restartTransport(RELAYER_FAILOVER_RELAY_URL);
-    }
+    await this.transportOpen();
     this.initialized = true;
-
     setTimeout(async () => {
       if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
         this.logger.info(`No topics subscribed to after init, closing transport`);
