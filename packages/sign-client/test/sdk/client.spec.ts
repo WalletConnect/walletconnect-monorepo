@@ -911,6 +911,7 @@ describe("Sign Client Integration", () => {
       );
 
       vi.useFakeTimers({ shouldAdvanceTime: true });
+      vi.useFakeTimers({ shouldAdvanceTime: true, shouldClearNativeTimers: true });
       vi.setSystemTime(Date.now() + 60_000 * 6);
       await throttle(5_000);
 
