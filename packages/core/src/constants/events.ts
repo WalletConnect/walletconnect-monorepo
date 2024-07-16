@@ -22,6 +22,7 @@ export const EVENT_CLIENT_PAIRING_ERRORS = {
   subscribe_pairing_topic_failure: "subscribe_pairing_topic_failure",
   pairing_expired: "pairing_expired",
   proposal_expired: "proposal_expired",
+  proposal_listener_not_found: "proposal_listener_not_found",
 };
 
 export const EVENT_CLIENT_SESSION_TRACES = {
@@ -46,6 +47,7 @@ export const EVENT_CLIENT_SESSION_ERRORS = {
   session_approve_publish_failure: "session_approve_publish_failure",
   session_settle_publish_failure: "session_settle_publish_failure",
   session_approve_namespace_validation_failure: "session_approve_namespace_validation_failure",
+  proposal_not_found: "proposal_not_found",
 };
 
 export const EVENT_CLIENT_AUTHENTICATE_TRACES = {
@@ -72,4 +74,14 @@ export const EVENT_CLIENT_AUTHENTICATE_ERRORS = {
   invalid_cacao: "invalid_cacao",
   subscribe_authenticated_session_topic_failure: "subscribe_authenticated_session_topic_failure",
   authenticated_session_approve_publish_failure: "authenticated_session_approve_publish_failure",
+  authenticated_session_pending_request_not_found:
+    "authenticated_session_pending_request_not_found",
 };
+
+export const EVENTS_STORAGE_VERSION = 0.1;
+
+export const EVENTS_STORAGE_CONTEXT = "event-client";
+
+export const EVENTS_STORAGE_CLEANUP_INTERVAL = 86400;
+
+export const EVENTS_CLIENT_API_URL = "https://pulse.walletconnect.com/batch";

@@ -7,6 +7,8 @@ export declare namespace EventClientTypes {
     bundleId: string;
     timestamp: number;
     props: Props;
+    addTrace: (trace: string) => void;
+    setError: (error: string) => void;
   }
 
   export interface Props {
@@ -26,14 +28,21 @@ export declare namespace EventClientTypes {
 export abstract class IEventClient {
   public abstract readonly context: string;
 
-  constructor(public core: ICore, public logger: Logger) {}
+  constructor(public core: ICore, public logger: Logger, public telemetryEnabled: boolean) {}
 
   public abstract createEvent(params: {
     event?: "ERROR";
-    type: string;
+    type?: string;
     properties: {
       topic: string;
       trace: EventClientTypes.Trace;
     };
-  }): Promise<EventClientTypes.Event>;
+  }): EventClientTypes.Event;
+
+  public abstract getEvent(params: {
+    eventId?: string;
+    topic?: string;
+  }): EventClientTypes.Event | undefined;
+
+  public abstract deleteEvent(params: { eventId: string }): void;
 }

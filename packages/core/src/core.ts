@@ -112,7 +112,7 @@ export class Core extends ICore {
     this.pairing = new Pairing(this, this.logger);
     this.verify = new Verify(this.projectId || "", this.logger);
     this.echoClient = new EchoClient(this.projectId || "", this.logger);
-    this.eventClient = new EventClient(this, this.logger);
+    this.eventClient = new EventClient(this, this.logger, opts?.telemetryEnabled);
   }
 
   get context() {

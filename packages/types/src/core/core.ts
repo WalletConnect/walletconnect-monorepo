@@ -23,6 +23,7 @@ export declare namespace CoreTypes {
     storageOptions?: KeyValueStorageOptions;
     maxLogBlobSizeInBytes?: number;
     customStoragePrefix?: string;
+    telemetryEnabled?: boolean;
   }
 
   interface Metadata {
@@ -59,7 +60,7 @@ export abstract class ICore extends IEvents {
   public abstract verify: IVerify;
   public abstract echoClient: IEchoClient;
   public abstract eventClient: IEventClient;
-  
+
   constructor(public opts?: CoreTypes.Options) {
     super();
   }

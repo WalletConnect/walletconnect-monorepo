@@ -8,7 +8,12 @@ import {
   RequestArguments,
   QrModalOptions,
 } from "./types";
-import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
+import {
+  Metadata,
+  Namespace,
+  UniversalProvider,
+  UniversalProviderOpts,
+} from "@walletconnect/universal-provider";
 import { AuthTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import {
@@ -219,7 +224,8 @@ export type EthereumProviderOptions = {
   disableProviderPing?: boolean;
   relayUrl?: string;
   storageOptions?: KeyValueStorageOptions;
-} & ChainsProps;
+} & ChainsProps &
+  UniversalProviderOpts;
 
 export class EthereumProvider implements IEthereumProvider {
   public events = new EventEmitter();
@@ -569,6 +575,8 @@ export class EthereumProvider implements IEthereumProvider {
       disableProviderPing: opts.disableProviderPing,
       relayUrl: opts.relayUrl,
       storageOptions: opts.storageOptions,
+      customStoragePrefix: opts.customStoragePrefix,
+      telemetryEnabled: opts.telemetryEnabled,
     });
     this.registerEventListeners();
     await this.loadPersistedSession();
