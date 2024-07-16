@@ -32,7 +32,12 @@ import {
   initTwoPairedClients,
   TEST_CONNECT_PARAMS,
 } from "../shared";
-import { RELAYER_EVENTS } from "@walletconnect/core";
+import {
+  EVENT_CLIENT_PAIRING_ERRORS,
+  EVENT_CLIENT_PAIRING_TRACES,
+  EVENT_CLIENT_SESSION_ERRORS,
+  RELAYER_EVENTS,
+} from "@walletconnect/core";
 
 describe("Sign Client Integration", () => {
   it("init", async () => {
@@ -875,6 +880,120 @@ describe("Sign Client Integration", () => {
           resolve();
         }),
       ]);
+      await deleteClients(clients);
+    });
+  });
+  describe("Events Client", () => {
+    it("should create event during pairing flow", async () => {
+      const clients = await initTwoClients();
+      const { uri } = await clients.A.connect({});
+      if (!uri) throw new Error("URI is undefined");
+      await clients.B.pair({ uri });
+      const { topic } = parseUri(uri);
+      expect(clients.B.core.eventClient.events.size).to.eq(1);
+      const event = clients.B.core.eventClient.getEvent({ topic });
+      if (!event) throw new Error("Event is undefined");
+      expect(event).to.exist;
+      expect(event.props.event).to.eq("ERROR");
+      expect(event.props.type).to.eq(""); // there is no type yet as no error has happened
+      expect(event.props.properties.topic).to.eq(topic);
+      expect(event.props.properties.trace).to.exist;
+      expect(event.props.properties.trace.length).to.toBeGreaterThan(0);
+
+      await new Promise<void>((resolve) => {
+        clients.B.once("session_proposal", (params) => {
+          resolve();
+        });
+      });
+
+      expect(event.props.properties.trace).to.include(
+        EVENT_CLIENT_PAIRING_TRACES.emit_session_proposal,
+      );
+
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      vi.setSystemTime(Date.now() + 60_000 * 6);
+      await throttle(5_000);
+
+      expect(event.props.type).to.eq(EVENT_CLIENT_PAIRING_ERRORS.proposal_expired);
+
+      vi.useRealTimers();
+
+      await deleteClients(clients);
+    });
+    it("should set missing event listener error type", async () => {
+      const clients = await initTwoClients();
+      const { uri } = await clients.A.connect({});
+      if (!uri) throw new Error("URI is undefined");
+      await clients.B.pair({ uri });
+      const { topic } = parseUri(uri);
+      expect(clients.B.core.eventClient.events.size).to.eq(1);
+      const event = clients.B.core.eventClient.getEvent({ topic });
+      if (!event) throw new Error("Event is undefined");
+      expect(event).to.exist;
+      expect(event.props.event).to.eq("ERROR");
+      expect(event.props.type).to.eq(""); // there is no type yet as no error has happened
+      expect(event.props.properties.topic).to.eq(topic);
+      expect(event.props.properties.trace).to.exist;
+      expect(event.props.properties.trace.length).to.toBeGreaterThan(0);
+
+      // wait for the proposal to be received
+      await throttle(5_000);
+
+      expect(event.props.type).to.eq(EVENT_CLIENT_PAIRING_ERRORS.proposal_listener_not_found);
+
+      await deleteClients(clients);
+    });
+    it("should create event during approve session flow when proposal is not found", async () => {
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_WALLET_METADATA,
+      });
+
+      await expect(wallet.approve({ id: 123, namespaces: TEST_NAMESPACES })).rejects.toThrowError();
+      expect(wallet.core.eventClient.events.size).to.eq(1);
+      const event = wallet.core.eventClient.getEvent({ topic: "123" });
+      if (!event) throw new Error("Event is undefined");
+      expect(event).to.exist;
+      expect(event.props.event).to.eq("ERROR");
+      expect(event.props.type).to.eq(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found);
+      expect(event.props.properties.topic).to.eq("123");
+      expect(event.props.properties.trace).to.exist;
+      expect(event.props.properties.trace.length).to.toBeGreaterThan(0);
+      await deleteClients({ A: wallet, B: undefined });
+    });
+    it("should create event during approve session flow and delete it on successful approve", async () => {
+      const clients = await initTwoClients();
+      const { uri } = await clients.A.connect({});
+      if (!uri) throw new Error("URI is undefined");
+      await clients.B.pair({ uri });
+      const { topic } = parseUri(uri);
+      expect(clients.B.core.eventClient.events.size).to.eq(1);
+      const event = clients.B.core.eventClient.getEvent({ topic });
+      if (!event) throw new Error("Event is undefined");
+      expect(event).to.exist;
+      expect(event.props.event).to.eq("ERROR");
+      expect(event.props.type).to.eq(""); // there is no type yet as no error has happened
+      expect(event.props.properties.topic).to.eq(topic);
+      expect(event.props.properties.trace).to.exist;
+      expect(event.props.properties.trace.length).to.toBeGreaterThan(0);
+
+      await new Promise<void>((resolve) => {
+        clients.B.once("session_proposal", async (params) => {
+          // confirm the emit_session_proposal trace
+          expect(event.props.properties.trace).to.include(
+            EVENT_CLIENT_PAIRING_TRACES.emit_session_proposal,
+          );
+          await clients.B.approve({ id: params.id, namespaces: TEST_NAMESPACES });
+          resolve();
+        });
+      });
+
+      await throttle(2_000);
+
+      // the event should be deleted
+      expect(clients.B.core.eventClient.events.size).to.eq(0);
+
       await deleteClients(clients);
     });
   });
