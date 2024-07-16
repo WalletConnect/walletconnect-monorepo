@@ -416,7 +416,7 @@ export function getCommonValuesInArrays<T = string | number | boolean>(arr1: T[]
 }
 
 export function uuidv4() {
-  if (crypto?.randomUUID) {
+  if (typeof crypto !== "undefined" && crypto?.randomUUID) {
     return crypto.randomUUID();
   }
 
