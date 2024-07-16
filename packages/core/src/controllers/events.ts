@@ -28,26 +28,10 @@ export class EventClient extends IEventClient {
         this.setEventListeners();
       });
     } else {
-      // overrite any persisted events with empty array
+      // overwrite any persisted events with an empty array
       this.persist();
     }
   }
-
-  private setEventListeners = () => {
-    this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
-      if (this.toPersist) await this.persist();
-      // cleanup events older than EVENTS_STORAGE_CLEANUP_INTERVAL
-      this.events.forEach((event) => {
-        if (
-          fromMiliseconds(Date.now()) - fromMiliseconds(event.timestamp) >
-          EVENTS_STORAGE_CLEANUP_INTERVAL
-        ) {
-          this.events.delete(event.eventId);
-          this.toPersist = true;
-        }
-      });
-    });
-  };
 
   get storageKey() {
     return (
@@ -88,13 +72,6 @@ export class EventClient extends IEventClient {
     return eventObj;
   };
 
-  private setMethods = (eventId: string) => {
-    return {
-      addTrace: (trace: string) => this.addTrace(eventId, trace),
-      setError: (errorType: string) => this.setError(eventId, errorType),
-    };
-  };
-
   public getEvent: IEventClient["getEvent"] = (params) => {
     const { eventId, topic } = params;
     if (eventId) {
@@ -116,6 +93,29 @@ export class EventClient extends IEventClient {
     const { eventId } = params;
     this.events.delete(eventId);
     this.toPersist = true;
+  };
+
+  private setEventListeners = () => {
+    this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
+      if (this.toPersist) await this.persist();
+      // cleanup events older than EVENTS_STORAGE_CLEANUP_INTERVAL
+      this.events.forEach((event) => {
+        if (
+          fromMiliseconds(Date.now()) - fromMiliseconds(event.timestamp) >
+          EVENTS_STORAGE_CLEANUP_INTERVAL
+        ) {
+          this.events.delete(event.eventId);
+          this.toPersist = true;
+        }
+      });
+    });
+  };
+
+  private setMethods = (eventId: string) => {
+    return {
+      addTrace: (trace: string) => this.addTrace(eventId, trace),
+      setError: (errorType: string) => this.setError(eventId, errorType),
+    };
   };
 
   private addTrace = async (eventId: string, trace: string) => {
