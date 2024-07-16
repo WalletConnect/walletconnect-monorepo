@@ -264,7 +264,7 @@ export class Engine extends IEngine {
   public approve: IEngine["approve"] = async (params) => {
     const configEvent = this.client.core.eventClient.createEvent({
       properties: {
-        topic: params.id.toString(),
+        topic: params?.id?.toString(),
         trace: [EVENT_CLIENT_SESSION_TRACES.session_approve_started],
       },
     });
@@ -275,16 +275,6 @@ export class Engine extends IEngine {
       throw error;
     }
 
-    const { id, relayProtocol, namespaces, sessionProperties, sessionConfig } = params;
-    let proposal;
-    try {
-      proposal = this.client.proposal.get(id);
-    } catch (error) {
-      this.client.logger.error(`approve() -> proposal.get(${id}) failed`);
-      configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found);
-      throw error;
-    }
-
     try {
       await this.isValidApprove(params);
     } catch (error) {
@@ -292,6 +282,16 @@ export class Engine extends IEngine {
       configEvent.setError(
         EVENT_CLIENT_SESSION_ERRORS.session_approve_namespace_validation_failure,
       );
+      throw error;
+    }
+
+    const { id, relayProtocol, namespaces, sessionProperties, sessionConfig } = params;
+    let proposal;
+    try {
+      proposal = this.client.proposal.get(id);
+    } catch (error) {
+      this.client.logger.error(`approve() -> proposal.get(${id}) failed`);
+      configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found);
       throw error;
     }
 
