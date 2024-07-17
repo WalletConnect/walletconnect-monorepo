@@ -272,7 +272,7 @@ describe("Relayer", () => {
         const randomSessionIdentifier = relayer.core.crypto.randomSessionIdentifier;
         await relayer.provider.connection.close();
         expect(relayer.connected).to.be.false;
-        await relayer.restartTransport();
+        await throttle(1000);
         expect(relayer.connected).to.be.true;
         // the identifier should be the same
         expect(relayer.core.crypto.randomSessionIdentifier).to.eq(randomSessionIdentifier);

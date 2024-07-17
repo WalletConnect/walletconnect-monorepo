@@ -2017,6 +2017,7 @@ export class Engine extends IEngine {
         topic,
         params: payload.params,
         id: payload.id,
+        verifyContext,
       });
     } catch (err: any) {
       this.client.logger.error(err);

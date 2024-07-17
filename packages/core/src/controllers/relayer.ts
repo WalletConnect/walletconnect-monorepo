@@ -298,7 +298,10 @@ export class Relayer extends IRelayer {
         ).catch((e) => {
           reject(e);
         });
-        await this.subscriber.start();
+        this.subscriber.start().catch((error) => {
+          this.logger.error(error);
+          this.onDisconnectHandler();
+        });
         this.hasExperiencedNetworkDisruption = false;
         resolve();
       });
@@ -474,11 +477,13 @@ export class Relayer extends IRelayer {
   };
 
   private onConnectHandler = () => {
+    this.logger.trace("relayer connected");
     this.startPingTimeout();
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
   private onDisconnectHandler = () => {
+    this.logger.trace("relayer disconnected");
     this.onProviderDisconnect();
   };
 
