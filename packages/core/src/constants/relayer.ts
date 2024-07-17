@@ -1,5 +1,3 @@
-import { ONE_SECOND } from "@walletconnect/time";
-
 export const RELAYER_DEFAULT_PROTOCOL = "irn";
 
 export const RELAYER_DEFAULT_LOGGER = "error";
@@ -28,7 +26,7 @@ export const RELAYER_PROVIDER_EVENTS = {
   error: "error",
 };
 
-export const RELAYER_RECONNECT_TIMEOUT = ONE_SECOND;
+export const RELAYER_RECONNECT_TIMEOUT = 0.1;
 
 export const RELAYER_STORAGE_OPTIONS = {
   database: ":memory:",
