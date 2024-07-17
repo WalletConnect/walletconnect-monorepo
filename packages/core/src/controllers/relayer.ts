@@ -298,7 +298,7 @@ export class Relayer extends IRelayer {
         ).catch((e) => {
           reject(e);
         });
-        await this.subscriber.start();
+        this.subscriber.start().catch((error) => this.logger.warn(error));
         this.hasExperiencedNetworkDisruption = false;
         resolve();
       });
