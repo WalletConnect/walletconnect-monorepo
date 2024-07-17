@@ -73,9 +73,9 @@ export class Relayer extends IRelayer {
   private initialized = false;
   private connectionAttemptInProgress = false;
 
-  private relayUrl: string;
-  private projectId: string | undefined;
-  private bundleId: string | undefined;
+  public relayUrl: string;
+  public projectId: string | undefined;
+  public bundleId: string | undefined;
   private connectionStatusPollingInterval = 20;
   private staleConnectionErrors = ["socket hang up", "stalled", "interrupted"];
   private hasExperiencedNetworkDisruption = false;

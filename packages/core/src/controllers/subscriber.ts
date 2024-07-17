@@ -19,6 +19,7 @@ import {
   createExpiringPromise,
   hashMessage,
   isValidArray,
+  formatRelayRpcUrl,
 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
@@ -27,8 +28,10 @@ import {
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
   RELAYER_EVENTS,
+  RELAYER_SDK_VERSION,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
+import { getBigIntRpcId } from "@walletconnect/jsonrpc-utils";
 
 export class Subscriber extends ISubscriber {
   public subscriptions = new Map<string, SubscriberTypes.Active>();
@@ -61,6 +64,73 @@ export class Subscriber extends ISubscriber {
       this.logger.trace(`Initialized`);
       this.registerEventListeners();
       this.clientId = await this.relayer.core.crypto.getClientId();
+      // window.addEventListener("focus", () => {
+      //   // alert("=====onfocus===");
+      //   // this.reset();
+      //   this.batchFetchMessages(this.values);
+      // });
+      // window.addEventListener("pageshow", () => {
+      //   // alert("=====pageshow===");
+      //   // this.reset();
+      //   this.batchFetchMessages(this.values);
+      // });
+      window.addEventListener("visibilitychange", async () => {
+        // alert("=====visibilitychange===");
+        // this.reset();
+        // this.batchFetchMessages(this.values);
+
+        const subscriptions = this.values;
+        const relay = subscriptions[0].relay;
+        const api = getRelayProtocolApi(relay.protocol);
+        const request = {
+          id: getBigIntRpcId().toString() as any,
+          jsonrpc: "2.0",
+          method: api.batchFetchMessages,
+          params: {
+            topics: subscriptions.map((s) => s.topic),
+          },
+        };
+
+        const auth = await this.relayer.core.crypto.signJWT(
+          (this.relayer as unknown as any).relayUrl,
+        );
+        const url = formatRelayRpcUrl({
+          sdkVersion: RELAYER_SDK_VERSION,
+          protocol: (this.relayer as unknown as any).protocol,
+          version: (this.relayer as unknown as any).version,
+          relayUrl: "http://192.168.0.159:3003/rpc",
+          projectId: (this.relayer as unknown as any).projectId,
+          auth,
+          useOnCloseEvent: true,
+          bundleId: (this.relayer as unknown as any).bundleId,
+        });
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(request),
+          // credentials: "omit",
+          // mode: "no-cors",
+        });
+        if (!res.ok) {
+          alert(res.status);
+          alert(await res.text());
+        }
+        // console.log(await res.text());
+        const response = await res.json();
+        if (response && response.result?.messages) {
+          // alert(response.result?.messages.length);
+          this.pendingBatchMessages = this.pendingBatchMessages.concat(response.result.messages);
+
+          if (this.pendingBatchMessages.length) {
+            await this.relayer.handleBatchMessageEvents(this.pendingBatchMessages);
+            this.pendingBatchMessages = [];
+          }
+        }
+
+        // await this.relayer.restartTransport();
+      });
     }
   };
 
@@ -389,6 +459,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private async reset() {
+    // alert(this.cached.length);
     if (this.cached.length) {
       const numOfBatches = Math.ceil(this.cached.length / this.batchSubscribeTopicsLimit);
       for (let i = 0; i < numOfBatches; i++) {
