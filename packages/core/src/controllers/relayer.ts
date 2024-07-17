@@ -298,7 +298,10 @@ export class Relayer extends IRelayer {
         ).catch((e) => {
           reject(e);
         });
-        this.subscriber.start().catch((error) => this.logger.warn(error));
+        this.subscriber.start().catch((error) => {
+          this.logger.warn(error);
+          this.onDisconnectHandler();
+        });
         this.hasExperiencedNetworkDisruption = false;
         resolve();
       });
@@ -474,11 +477,13 @@ export class Relayer extends IRelayer {
   };
 
   private onConnectHandler = () => {
+    this.logger.trace("wss connected");
     this.startPingTimeout();
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
   private onDisconnectHandler = () => {
+    this.logger.trace("wss disconnected");
     this.onProviderDisconnect();
   };
 
