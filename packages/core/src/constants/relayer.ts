@@ -4,8 +4,7 @@ export const RELAYER_DEFAULT_PROTOCOL = "irn";
 
 export const RELAYER_DEFAULT_LOGGER = "error";
 
-export const RELAYER_DEFAULT_RELAY_URL = "wss://relay.walletconnect.com";
-export const RELAYER_FAILOVER_RELAY_URL = "wss://relay.walletconnect.org";
+export const RELAYER_DEFAULT_RELAY_URL = "wss://relay.walletconnect.org";
 
 export const RELAYER_CONTEXT = "relayer";
 
