@@ -6,3 +6,4 @@ export * as ElrondProvider from "./elrond";
 export * as MultiversXProvider from "./multiversx";
 export * as PolkadotProvider from "./polkadot";
 export * as NearProvider from "./near";
+export * as GenericProvider from "./generic";
