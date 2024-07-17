@@ -9,3 +9,5 @@ export const CONTEXT = "universal_provider";
 export const STORAGE = `${PROTOCOL}@${WC_VERSION}:${CONTEXT}:`;
 
 export const RPC_URL = "https://rpc.walletconnect.com/v1/";
+
+export const GENERIC_SUBPROVIDER_NAME = "generic";

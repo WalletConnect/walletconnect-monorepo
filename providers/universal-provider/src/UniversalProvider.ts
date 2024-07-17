@@ -35,7 +35,7 @@ import {
   AuthenticateParams,
 } from "./types";
 
-import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS } from "./constants";
+import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS, GENERIC_SUBPROVIDER_NAME } from "./constants";
 import EventEmitter from "events";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
@@ -234,7 +234,7 @@ export class UniversalProvider implements IUniversalProvider {
       const [namespace, chainId] = this.validateChain(chain);
       const provider = this.getProvider(namespace);
       // @ts-expect-error
-      if (provider.name === "generic") {
+      if (provider.name === GENERIC_SUBPROVIDER_NAME) {
         provider.setDefaultChain(`${namespace}:${chainId}`, rpcUrl);
       } else {
         provider.setDefaultChain(chainId, rpcUrl);
@@ -375,12 +375,12 @@ export class UniversalProvider implements IUniversalProvider {
           });
           break;
         default:
-          if (!this.rpcProviders.generic) {
-            this.rpcProviders.generic = new GenericProvider({
+          if (!this.rpcProviders[GENERIC_SUBPROVIDER_NAME]) {
+            this.rpcProviders[GENERIC_SUBPROVIDER_NAME] = new GenericProvider({
               namespace: combinedNamespace,
             });
           } else {
-            this.rpcProviders.generic.updateNamespace(combinedNamespace);
+            this.rpcProviders[GENERIC_SUBPROVIDER_NAME].updateNamespace(combinedNamespace);
           }
       }
     });
@@ -444,7 +444,7 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   private getProvider(namespace: string): IProvider {
-    return this.rpcProviders[namespace] || this.rpcProviders.generic;
+    return this.rpcProviders[namespace] || this.rpcProviders[GENERIC_SUBPROVIDER_NAME];
   }
 
   private onSessionUpdate(): void {

@@ -3,7 +3,7 @@ import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import Client from "@walletconnect/sign-client";
 import { EngineTypes, SessionTypes } from "@walletconnect/types";
 import EventEmitter from "events";
-import { PROVIDER_EVENTS } from "../constants";
+import { GENERIC_SUBPROVIDER_NAME, PROVIDER_EVENTS } from "../constants";
 import {
   IProvider,
   RequestParams,
@@ -16,7 +16,7 @@ import { parseChainId } from "@walletconnect/utils";
 
 // Old wallet connect provider for Elrond
 class GenericProvider implements IProvider {
-  public name = "generic";
+  public name = GENERIC_SUBPROVIDER_NAME;
   public client: Client;
   public httpProviders: RpcProvidersMap;
   public events: EventEmitter;
