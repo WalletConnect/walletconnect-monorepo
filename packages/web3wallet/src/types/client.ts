@@ -28,16 +28,9 @@ export declare namespace Web3WalletTypes {
     params: T;
   }
 
-  type SessionRequest = BaseEventArgs<{
-    request: { method: string; params: any };
-    chainId: string;
-  }> & {
-    verifyContext: Verify.Context;
-  };
+  type SessionRequest = SignClientTypes.EventArguments["session_request"];
 
-  type SessionProposal = Omit<BaseEventArgs<ProposalTypes.Struct>, "topic"> & {
-    verifyContext: Verify.Context;
-  };
+  type SessionProposal = SignClientTypes.EventArguments["session_proposal"];
 
   type AuthRequest = BaseEventArgs<AuthClientTypes.AuthRequestEventArgs>;
 
@@ -47,7 +40,7 @@ export declare namespace Web3WalletTypes {
 
   type SessionRequestExpire = { id: number };
 
-  type SessionAuthenticate = BaseEventArgs<AuthTypes.AuthRequestEventArgs>;
+  type SessionAuthenticate = SignClientTypes.EventArguments["session_authenticate"];
 
   type SignConfig = SignClientTypes.Options["signConfig"];
 
