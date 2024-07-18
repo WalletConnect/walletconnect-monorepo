@@ -6,11 +6,20 @@ import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
-  pino,
+  generatePlatformLogger,
+  ChunkLoggerController,
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
-import { Crypto, Relayer, Pairing, JsonRpcHistory, Expirer, Verify } from "./controllers";
+import {
+  Crypto,
+  Relayer,
+  Pairing,
+  JsonRpcHistory,
+  Expirer,
+  Verify,
+  EchoClient,
+} from "./controllers";
 import {
   CORE_CONTEXT,
   CORE_DEFAULT,
@@ -28,6 +37,7 @@ export class Core extends ICore {
   public readonly name: ICore["name"] = CORE_CONTEXT;
   public readonly relayUrl: ICore["relayUrl"];
   public readonly projectId: ICore["projectId"];
+  public readonly customStoragePrefix: ICore["customStoragePrefix"];
   public events: ICore["events"] = new EventEmitter();
   public logger: ICore["logger"];
   public heartbeat: ICore["heartbeat"];
@@ -38,8 +48,10 @@ export class Core extends ICore {
   public expirer: ICore["expirer"];
   public pairing: ICore["pairing"];
   public verify: ICore["verify"];
+  public echoClient: ICore["echoClient"];
 
   private initialized = false;
+  private logChunkController: ChunkLoggerController | null;
 
   static async init(opts?: CoreTypes.Options) {
     const core = new Core(opts);
@@ -52,13 +64,35 @@ export class Core extends ICore {
 
   constructor(opts?: CoreTypes.Options) {
     super(opts);
-
     this.projectId = opts?.projectId;
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
-    const logger =
-      typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
-        ? opts.logger
-        : pino(getDefaultLoggerOptions({ level: opts?.logger || CORE_DEFAULT.logger }));
+    this.customStoragePrefix = opts?.customStoragePrefix ? `:${opts.customStoragePrefix}` : "";
+
+    const loggerOptions = getDefaultLoggerOptions({
+      level: typeof opts?.logger === "string" && opts.logger ? opts.logger : CORE_DEFAULT.logger,
+    });
+
+    const { logger, chunkLoggerController } = generatePlatformLogger({
+      opts: loggerOptions,
+      maxSizeInBytes: opts?.maxLogBlobSizeInBytes,
+      loggerOverride: opts?.logger,
+    });
+
+    this.logChunkController = chunkLoggerController;
+
+    if (this.logChunkController?.downloadLogsBlobInBrowser) {
+      // @ts-ignore
+      window.downloadLogsBlobInBrowser = async () => {
+        // Have to null check twice becquse there is no guarantee
+        // this.logChunkController.downloadLogsBlobInBrowser is always truthy
+        if (this.logChunkController?.downloadLogsBlobInBrowser) {
+          this.logChunkController?.downloadLogsBlobInBrowser({
+            clientId: await this.crypto.getClientId(),
+          });
+        }
+      };
+    }
+
     this.logger = generateChildLogger(logger, this.name);
     this.heartbeat = new HeartBeat();
     this.crypto = new Crypto(this, this.logger, opts?.keychain);
@@ -75,6 +109,7 @@ export class Core extends ICore {
     });
     this.pairing = new Pairing(this, this.logger);
     this.verify = new Verify(this.projectId || "", this.logger);
+    this.echoClient = new EchoClient(this.projectId || "", this.logger);
   }
 
   get context() {
@@ -86,6 +121,12 @@ export class Core extends ICore {
   public async start() {
     if (this.initialized) return;
     await this.initialize();
+  }
+
+  public async getLogsBlob() {
+    return this.logChunkController?.logsToBlob({
+      clientId: await this.crypto.getClientId(),
+    });
   }
 
   // ---------- Events ----------------------------------------------- //

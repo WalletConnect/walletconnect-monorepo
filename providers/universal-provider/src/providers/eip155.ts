@@ -35,14 +35,16 @@ class Eip155Provider implements IProvider {
   public async request<T = unknown>(args: RequestParams): Promise<T> {
     switch (args.request.method) {
       case "eth_requestAccounts":
-        return this.getAccounts() as any;
+        return this.getAccounts() as unknown as T;
       case "eth_accounts":
-        return this.getAccounts() as any;
+        return this.getAccounts() as unknown as T;
       case "wallet_switchEthereumChain": {
-        return await this.handleSwitchChain(args);
+        return (await this.handleSwitchChain(args)) as unknown as T;
       }
       case "eth_chainId":
-        return parseInt(this.getDefaultChain()) as any;
+        return parseInt(this.getDefaultChain()) as unknown as T;
+      case "wallet_getCapabilities":
+        return (await this.getCapabilities(args)) as unknown as T;
       default:
         break;
     }
@@ -57,19 +59,12 @@ class Eip155Provider implements IProvider {
   }
 
   public setDefaultChain(chainId: string, rpcUrl?: string | undefined) {
-    const parsedChain = getChainId(chainId);
     // http provider exists so just set the chainId
-    if (!this.httpProviders[parsedChain]) {
-      const rpc =
-        rpcUrl ||
-        getRpcUrl(`${this.name}:${parsedChain}`, this.namespace, this.client.core.projectId);
-      if (!rpc) {
-        throw new Error(`No RPC url provided for chainId: ${parsedChain}`);
-      }
-      this.setHttpProvider(parsedChain, rpc);
+    if (!this.httpProviders[chainId]) {
+      this.setHttpProvider(parseInt(chainId), rpcUrl);
     }
-    this.chainId = parsedChain;
-    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${parsedChain}`);
+    this.chainId = parseInt(chainId);
+    this.events.emit(PROVIDER_EVENTS.DEFAULT_CHAIN_CHANGED, `${this.name}:${chainId}`);
   }
 
   public requestAccounts(): string[] {
@@ -94,7 +89,9 @@ class Eip155Provider implements IProvider {
   ): JsonRpcProvider | undefined {
     const rpc =
       rpcUrl || getRpcUrl(`${this.name}:${chainId}`, this.namespace, this.client.core.projectId);
-    if (typeof rpc === "undefined") return undefined;
+    if (!rpc) {
+      throw new Error(`No RPC url provided for chainId: ${chainId}`);
+    }
     const http = new JsonRpcProvider(new HttpConnection(rpc, getGlobal("disableProviderPing")));
     return http;
   }
@@ -109,7 +106,7 @@ class Eip155Provider implements IProvider {
   private createHttpProviders(): RpcProvidersMap {
     const http = {};
     this.namespace.chains.forEach((chain) => {
-      const parsedChain = getChainId(chain);
+      const parsedChain = parseInt(getChainId(chain));
       http[parsedChain] = this.createHttpProvider(parsedChain, this.namespace.rpcMap?.[chain]);
     });
     return http;
@@ -172,6 +169,34 @@ class Eip155Provider implements IProvider {
 
   private isChainApproved(chainId: number): boolean {
     return this.namespace.chains.includes(`${this.name}:${chainId}`);
+  }
+
+  private async getCapabilities(args: RequestParams) {
+    // if capabilities are stored in the session, return them, else send the request to the wallet
+    const address = args.request?.params?.[0];
+    if (!address) throw new Error("Missing address parameter in `wallet_getCapabilities` request");
+    const session = this.client.session.get(args.topic);
+    const sessionCapabilities = session?.sessionProperties?.capabilities || {};
+    if (sessionCapabilities?.[address]) {
+      return sessionCapabilities?.[address];
+    }
+    // intentionally omit catching errors/rejection during `request` to allow the error to bubble up
+    const capabilities = await this.client.request(args as EngineTypes.RequestParams);
+    try {
+      // update the session with the capabilities so they can be retrieved later
+      await this.client.session.update(args.topic, {
+        sessionProperties: {
+          ...(session.sessionProperties || {}),
+          capabilities: {
+            ...(sessionCapabilities || {}),
+            [address]: capabilities,
+          } as any, // by spec sessionProperties should be <string, string> but here are used as objects?
+        },
+      });
+    } catch (error) {
+      console.warn("Failed to update session with capabilities", error);
+    }
+    return capabilities;
   }
 }
 

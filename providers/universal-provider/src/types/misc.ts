@@ -1,15 +1,15 @@
 import SignClient from "@walletconnect/sign-client";
-import { SignClientTypes, ProposalTypes } from "@walletconnect/types";
+import { SignClientTypes, ProposalTypes, AuthTypes } from "@walletconnect/types";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { KeyValueStorageOptions, IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 import { IEvents } from "@walletconnect/events";
-
+import { Logger } from "@walletconnect/logger";
 import { IProvider } from "./providers";
 
 export interface UniversalProviderOpts {
   projectId?: string;
   metadata?: Metadata;
-  logger?: string;
+  logger?: string | Logger;
   client?: SignClient;
   relayUrl?: string;
   storageOptions?: KeyValueStorageOptions;
@@ -58,6 +58,8 @@ export interface ConnectParams {
   skipPairing?: boolean;
 }
 
+export type AuthenticateParams = AuthTypes.SessionAuthenticateParams;
+
 export interface SubProviderOpts {
   namespace: Namespace;
 }
@@ -67,6 +69,7 @@ export interface RequestParams {
   request: RequestArguments;
   chainId: string;
   id?: number;
+  expiry?: number;
 }
 
 export interface RequestArguments {

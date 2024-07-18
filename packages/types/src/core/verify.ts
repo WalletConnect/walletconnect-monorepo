@@ -6,6 +6,7 @@ export declare namespace Verify {
       origin: string;
       validation: "UNKNOWN" | "VALID" | "INVALID";
       verifyUrl: string;
+      isScam?: boolean;
     };
   }
 }
@@ -19,5 +20,8 @@ export abstract class IVerify {
 
   public abstract register(params: { attestationId: string }): Promise<void>;
 
-  public abstract resolve(params: { attestationId: string; verifyUrl?: string }): Promise<string>;
+  public abstract resolve(params: {
+    attestationId: string;
+    verifyUrl?: string;
+  }): Promise<{ origin: string; isScam?: boolean }>;
 }

@@ -2,6 +2,7 @@ import { RelayerTypes } from "../core/relayer";
 import { IStore } from "../core/store";
 import { SignClientTypes } from "./client";
 import { ProposalTypes } from "./proposal";
+import { AuthTypes } from "./auth";
 
 export declare namespace SessionTypes {
   type Expiry = number;
@@ -17,6 +18,10 @@ export declare namespace SessionTypes {
 
   type Namespaces = Record<string, Namespace>;
 
+  interface SessionConfig {
+    disableDeepLink?: boolean;
+  }
+
   interface Struct {
     topic: string;
     pairingTopic: string;
@@ -28,6 +33,7 @@ export declare namespace SessionTypes {
     requiredNamespaces: ProposalTypes.RequiredNamespaces;
     optionalNamespaces: ProposalTypes.OptionalNamespaces;
     sessionProperties?: ProposalTypes.SessionProperties;
+    sessionConfig?: SessionConfig;
     self: {
       publicKey: string;
       metadata: SignClientTypes.Metadata;
@@ -36,6 +42,7 @@ export declare namespace SessionTypes {
       publicKey: string;
       metadata: SignClientTypes.Metadata;
     };
+    authentication?: AuthTypes.Cacao[];
   }
 }
 

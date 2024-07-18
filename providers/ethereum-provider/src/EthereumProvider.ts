@@ -6,10 +6,11 @@ import {
   IEthereumProviderEvents,
   ProviderAccounts,
   RequestArguments,
+  QrModalOptions,
 } from "./types";
 import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
-import type { WalletConnectModalConfig, WalletConnectModal } from "@walletconnect/modal";
-import { SessionTypes, SignClientTypes } from "@walletconnect/types";
+import { AuthTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
+import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import {
   STORAGE_KEY,
   REQUIRED_METHODS,
@@ -18,20 +19,6 @@ import {
   OPTIONAL_METHODS,
   OPTIONAL_EVENTS,
 } from "./constants";
-
-export type QrModalOptions = Pick<
-  WalletConnectModalConfig,
-  | "themeMode"
-  | "themeVariables"
-  | "desktopWallets"
-  | "enableExplorer"
-  | "explorerRecommendedWalletIds"
-  | "explorerExcludedWalletIds"
-  | "mobileWallets"
-  | "privacyPolicyUrl"
-  | "termsOfServiceUrl"
-  | "walletImages"
->;
 
 export type RpcMethod =
   | "personal_sign"
@@ -52,7 +39,11 @@ export type RpcMethod =
   | "wallet_requestPermissions"
   | "wallet_registerOnboarding"
   | "wallet_watchAsset"
-  | "wallet_scanQRCode";
+  | "wallet_scanQRCode"
+  | "wallet_sendCalls"
+  | "wallet_getCapabilities"
+  | "wallet_getCallsStatus"
+  | "wallet_showCallsStatus";
 
 export type RpcEvent = "accountsChanged" | "chainChanged" | "message" | "disconnect" | "connect";
 
@@ -87,6 +78,10 @@ export interface ConnectOps {
   rpcMap?: EthereumRpcMap;
   pairingTopic?: string;
 }
+
+export type AuthenticateParams = {
+  chains?: number[];
+} & Omit<AuthTypes.SessionAuthenticateParams, "chains">;
 
 export interface IEthereumProvider extends IProvider {
   connect(opts?: ConnectOps | undefined): Promise<void>;
@@ -156,7 +151,7 @@ export function buildNamespaces(params: NamespacesParams): {
 
   /*
    * decides whether or not to include the required chains in the optional namespace
-   * use case: if there is a single chain as required but additonal methods/events as optional
+   * use case: if there is a single chain as required but additional methods/events as optional
    */
   const shouldIncludeRequiredChains =
     (eventsRequiringPermissions?.length && methodsRequiringPermissions?.length) || !optionalChains;
@@ -172,7 +167,9 @@ export function buildNamespaces(params: NamespacesParams): {
         required.methods.concat(optionalMethods?.length ? optionalMethods : OPTIONAL_METHODS),
       ),
     ],
-    events: [...new Set(required.events.concat(optionalEvents || OPTIONAL_EVENTS))],
+    events: [
+      ...new Set(required.events.concat(optionalEvents?.length ? optionalEvents : OPTIONAL_EVENTS)),
+    ],
     rpcMap,
   };
 
@@ -230,7 +227,7 @@ export class EthereumProvider implements IEthereumProvider {
   public accounts: string[] = [];
   public signer: InstanceType<typeof UniversalProvider>;
   public chainId = 1;
-  public modal?: WalletConnectModal;
+  public modal?: any;
 
   protected rpc: EthereumRpcConfig;
   protected readonly STORAGE_KEY = STORAGE_KEY;
@@ -247,15 +244,16 @@ export class EthereumProvider implements IEthereumProvider {
     return provider;
   }
 
-  public async request<T = unknown>(args: RequestArguments): Promise<T> {
-    return await this.signer.request(args, this.formatChainId(this.chainId));
+  public async request<T = unknown>(args: RequestArguments, expiry?: number): Promise<T> {
+    return await this.signer.request(args, this.formatChainId(this.chainId), expiry);
   }
 
   public sendAsync(
     args: RequestArguments,
-    callback: (error: Error | null, response: any) => void,
+    callback: (error: Error | null, response: JsonRpcResult) => void,
+    expiry?: number,
   ): void {
-    this.signer.sendAsync(args, callback, this.formatChainId(this.chainId));
+    this.signer.sendAsync(args, callback, this.formatChainId(this.chainId), expiry);
   }
 
   get connected(): boolean {
@@ -285,7 +283,7 @@ export class EthereumProvider implements IEthereumProvider {
       const session = await new Promise<SessionTypes.Struct | undefined>(
         async (resolve, reject) => {
           if (this.rpc.showQrModal) {
-            this.modal?.subscribeModal((state) => {
+            this.modal?.subscribeModal((state: { open: boolean }) => {
               // the modal was closed so reject the promise
               if (!state.open && !this.signer.session) {
                 this.signer.abortPairingAttempt();
@@ -307,7 +305,7 @@ export class EthereumProvider implements IEthereumProvider {
               }),
               pairingTopic: opts?.pairingTopic,
             })
-            .then((session) => {
+            .then((session?: SessionTypes.Struct) => {
               resolve(session);
             })
             .catch((error: Error) => {
@@ -316,10 +314,66 @@ export class EthereumProvider implements IEthereumProvider {
         },
       );
       if (!session) return;
-      this.setChainIds(this.rpc.chains);
+
       const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
+      // if no required chains are set, use the approved accounts to fetch chainIds
+      this.setChainIds(this.rpc.chains.length ? this.rpc.chains : accounts);
       this.setAccounts(accounts);
       this.events.emit("connect", { chainId: toHexChainId(this.chainId) });
+    } catch (error) {
+      this.signer.logger.error(error);
+      throw error;
+    } finally {
+      if (this.modal) this.modal.closeModal();
+    }
+  }
+
+  public async authenticate(
+    params: AuthenticateParams,
+  ): Promise<AuthTypes.AuthenticateResponseResult | undefined> {
+    if (!this.signer.client) {
+      throw new Error("Provider not initialized. Call init() first");
+    }
+
+    this.loadConnectOpts({
+      chains: params?.chains,
+    });
+
+    try {
+      const result = await new Promise<AuthTypes.AuthenticateResponseResult>(
+        async (resolve, reject) => {
+          if (this.rpc.showQrModal) {
+            this.modal?.subscribeModal((state: { open: boolean }) => {
+              // the modal was closed so reject the promise
+              if (!state.open && !this.signer.session) {
+                this.signer.abortPairingAttempt();
+                reject(new Error("Connection request reset. Please try again."));
+              }
+            });
+          }
+          await this.signer
+            .authenticate({
+              ...params,
+              chains: this.rpc.chains,
+            })
+            .then((result: AuthTypes.AuthenticateResponseResult) => {
+              resolve(result);
+            })
+            .catch((error: Error) => {
+              reject(new Error(error.message));
+            });
+        },
+      );
+
+      const session = result.session;
+      if (session) {
+        const accounts = getAccountsFromNamespaces(session.namespaces, [this.namespace]);
+        // if no required chains are set, use the approved accounts to fetch chainIds as both contain <namespace>:<chainId>
+        this.setChainIds(this.rpc.chains.length ? this.rpc.chains : accounts);
+        this.setAccounts(accounts);
+        this.events.emit("connect", { chainId: toHexChainId(this.chainId) });
+      }
+      return result;
     } catch (error) {
       this.signer.logger.error(error);
       throw error;
@@ -505,6 +559,7 @@ export class EthereumProvider implements IEthereumProvider {
 
   protected async initialize(opts: EthereumProviderOptions) {
     this.rpc = this.getRpcConfig(opts);
+
     this.chainId = this.rpc.chains.length
       ? getEthereumChainId(this.rpc.chains)
       : getEthereumChainId(this.rpc.optionalChains);
@@ -528,9 +583,7 @@ export class EthereumProvider implements IEthereumProvider {
       if (WalletConnectModalClass) {
         try {
           this.modal = new WalletConnectModalClass({
-            walletConnectVersion: 2,
             projectId: this.rpc.projectId,
-            standaloneChains: this.rpc.chains,
             ...this.rpc.qrModalOptions,
           });
         } catch (e) {
@@ -569,15 +622,21 @@ export class EthereumProvider implements IEthereumProvider {
 
   protected async loadPersistedSession() {
     if (!this.session) return;
-    const chainId = await this.signer.client.core.storage.getItem(`${this.STORAGE_KEY}/chainId`);
+    try {
+      const chainId = await this.signer.client.core.storage.getItem(`${this.STORAGE_KEY}/chainId`);
 
-    // cater to both inline & nested namespace formats
-    const namespace = this.session.namespaces[`${this.namespace}:${chainId}`]
-      ? this.session.namespaces[`${this.namespace}:${chainId}`]
-      : this.session.namespaces[this.namespace];
+      // cater to both inline & nested namespace formats
+      const namespace = this.session.namespaces[`${this.namespace}:${chainId}`]
+        ? this.session.namespaces[`${this.namespace}:${chainId}`]
+        : this.session.namespaces[this.namespace];
 
-    this.setChainIds(chainId ? [this.formatChainId(chainId)] : namespace?.accounts);
-    this.setAccounts(namespace?.accounts);
+      this.setChainIds(chainId ? [this.formatChainId(chainId)] : namespace?.accounts);
+      this.setAccounts(namespace?.accounts);
+    } catch (error) {
+      this.signer.logger.error("Failed to load persisted session, clearing state...");
+      this.signer.logger.error(error);
+      await this.disconnect().catch((error) => this.signer.logger.warn(error));
+    }
   }
 
   protected reset() {

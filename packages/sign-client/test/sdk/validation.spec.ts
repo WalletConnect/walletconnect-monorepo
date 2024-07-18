@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 // @ts-nocheck
 import { expect, describe, it, beforeAll, afterAll } from "vitest";
 import {
@@ -747,6 +746,31 @@ describe("Sign Client Validation", () => {
       await expect(clients.A.disconnect({ topic: "none" })).rejects.toThrowError(
         "No matching key. session or pairing topic doesn't exist: none",
       );
+    });
+  });
+  describe("miscellaneous", () => {
+    it("should cleanup recentlyDeletedMap when size limit is reached", async () => {
+      const client = clients.A.engine;
+      client.recentlyDeletedMap.clear();
+      const itemsToDelete = client.recentlyDeletedLimit - 1;
+      // populate recentlyDeleted just below the limit
+      for (let i = 0; i < itemsToDelete; i++) {
+        const key = `key${i}`;
+        const value = `session`;
+        await client.addToRecentlyDeleted(key, value);
+      }
+      //@ts-expect-error
+      expect(client.recentlyDeletedMap.size).to.be.greaterThan(1);
+      //@ts-expect-error
+      expect(client.recentlyDeletedMap.size).to.equal(itemsToDelete);
+      // add one more to reach the limit
+      await client.addToRecentlyDeleted("test", "session");
+
+      // check that the recentlyDeleted list has been halved
+      //@ts-expect-error
+      expect(client.recentlyDeletedMap.size).to.be.greaterThan(1);
+      //@ts-expect-error
+      expect(client.recentlyDeletedMap.size).to.equal(client.recentlyDeletedLimit / 2);
     });
   });
 });

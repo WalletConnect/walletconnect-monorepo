@@ -1,5 +1,6 @@
 import SignClient from "@walletconnect/sign-client";
 import { SessionTypes } from "@walletconnect/types";
+import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 
 import {
   RpcProvidersMap,
@@ -34,7 +35,7 @@ export interface IUniversalProvider extends IEthereumProvider {
   request: <T = unknown>(args: RequestArguments, chain?: string) => Promise<T>;
   sendAsync: (
     args: RequestArguments,
-    callback: (error: Error | null, response: any) => void,
+    callback: (error: Error | null, response: JsonRpcResult) => void,
     chain?: string,
   ) => void;
   pair: (pairingTopic: string | undefined) => Promise<SessionTypes.Struct>;

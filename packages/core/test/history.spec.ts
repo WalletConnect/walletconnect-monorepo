@@ -1,17 +1,49 @@
+import { pino, getDefaultLoggerOptions } from "@walletconnect/logger";
 import { vi, expect, describe, it, beforeEach, afterEach } from "vitest";
 import { calcExpiry } from "@walletconnect/utils";
-
-import { Core, HISTORY_EVENTS } from "../src";
-import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
+import { THIRTY_DAYS, toMiliseconds } from "@walletconnect/time";
 import { ICore, JsonRpcRecord } from "@walletconnect/types";
-import { THIRTY_DAYS, toMiliseconds, fromMiliseconds } from "@walletconnect/time";
+
+import {
+  Core,
+  CORE_DEFAULT,
+  CORE_STORAGE_PREFIX,
+  HISTORY_STORAGE_VERSION,
+  HISTORY_CONTEXT,
+  HISTORY_EVENTS,
+  JsonRpcHistory,
+} from "../src";
+import { disconnectSocket, TEST_CORE_OPTIONS } from "./shared";
 
 describe("history", () => {
+  const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
   let core: ICore;
+
   beforeEach(async () => {
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
   });
+  afterEach(async () => {
+    await disconnectSocket(core.relayer);
+  });
+
+  describe("storageKey", () => {
+    it("provides the expected default `storageKey` format", () => {
+      const core = new Core(TEST_CORE_OPTIONS);
+      const history = new JsonRpcHistory(core, logger);
+      expect(history.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + HISTORY_STORAGE_VERSION + "//" + HISTORY_CONTEXT,
+      );
+    });
+    it("provides the expected custom `storageKey` format", () => {
+      const core = new Core({ ...TEST_CORE_OPTIONS, customStoragePrefix: "test" });
+      const history = new JsonRpcHistory(core, logger);
+      expect(history.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + HISTORY_STORAGE_VERSION + ":test" + "//" + HISTORY_CONTEXT,
+      );
+    });
+  });
+
   it("should set a record expiry", async () => {
     expect(core.history.records.size).to.eq(0);
     const request = {
@@ -53,8 +85,5 @@ describe("history", () => {
     });
     vi.useRealTimers();
     expect(core.history.records.size).to.eq(0);
-  });
-  afterEach(async () => {
-    await disconnectSocket(core.relayer);
   });
 });
