@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@stablelib/chacha20poly1305": "1.0.1",
-    "@stablelib/hkdf": "1.0.1",
+    "@stablelib/hkdf": "2.0.0",
     "@stablelib/random": "1.0.2",
     "@stablelib/sha256": "1.0.1",
     "@stablelib/x25519": "1.0.3",
