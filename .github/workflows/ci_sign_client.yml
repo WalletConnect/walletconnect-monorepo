@@ -44,7 +44,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
       - name: Build, tag, and push image to Amazon ECR
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: sign-client

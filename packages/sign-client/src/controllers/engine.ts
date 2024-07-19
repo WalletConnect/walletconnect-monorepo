@@ -338,10 +338,7 @@ export class Engine extends IEngine {
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
     return {
       topic: sessionTopic,
-      acknowledged: () =>
-        new Promise((resolve) =>
-          setTimeout(() => resolve(this.client.session.get(sessionTopic)), 5_00),
-        ), // artificial delay to allow for the session to be processed by the peer
+      acknowledged: () => Promise.resolve(this.client.session.get(sessionTopic)),
     };
   };
 
@@ -1879,6 +1876,7 @@ export class Engine extends IEngine {
         topic,
         params: payload.params,
         id: payload.id,
+        verifyContext,
       });
     } catch (err: any) {
       this.client.logger.error(err);
