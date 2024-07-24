@@ -17,7 +17,7 @@ jobs:
     if: github.event.action == 'labeled' && github.event.label.name == 'accepted'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/add-to-project@v1.0.1
+      - uses: actions/add-to-project@v1.0.2
         with:
           project-url: https://github.com/orgs/WalletConnect/projects/6
           github-token: ${{ secrets.ASSIGN_TO_PROJECT_GITHUB_TOKEN }}

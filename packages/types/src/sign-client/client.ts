@@ -53,7 +53,9 @@ export declare namespace SignClientTypes {
       event: { name: string; data: any };
       chainId: string;
     }>;
-    session_authenticate: BaseEventArgs<AuthTypes.AuthRequestEventArgs>;
+    session_authenticate: {
+      verifyContext: Verify.Context;
+    } & BaseEventArgs<AuthTypes.AuthRequestEventArgs>;
     proposal_expire: { id: number };
     session_request_expire: { id: number };
   }

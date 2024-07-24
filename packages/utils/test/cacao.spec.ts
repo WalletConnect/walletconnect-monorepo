@@ -330,5 +330,40 @@ describe("URI", () => {
       expect(message).to.include(`Resources:`);
       expect(message).to.include(request.resources[0]);
     });
+
+    it("should add optional params to siwe message", () => {
+      const request = {
+        type: "caip122",
+        chains: ["eip155:1"],
+        aud: "https://example.com",
+        domain: "http://localhost:3000",
+        version: "1",
+        nonce: "1",
+        iat: "2024-02-19T09:29:21.394Z",
+        exp: "2024-02-25T09:29:21.394Z",
+        nbf: "2024-02-20T09:29:21.394Z",
+        requestId: "123",
+        statement: "Requesting access to your account",
+        resources: [
+          "https://example.com",
+          "urn:recap:eyJhdHQiOnsiZWlwMTU1Ijp7InJlcXVlc3QvZXRoX2NoYWluSWQiOlt7fV0sInJlcXVlc3QvZXRoX3NpZ25UeXBlZERhdGFfdjQiOlt7fV0sInB1c2gvcGVyc29uYWxfc2lnbiI6W3t9XX0sImh0dHBzOi8vbm90aWZ5LndhbGxldGNvbm5lY3QuY29tIjp7Im1hbmFnZS9hbGwtYXBwcy1ub3RpZmljYXRpb25zIjpbe31dLCJlbWl0L2FsZXJ0cyI6W3t9XX19fQ",
+        ],
+      };
+
+      const message = formatMessage(
+        request as any,
+        "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
+      );
+
+      expect(message).to.include("Version: 1");
+      expect(message).to.include("Nonce: 1");
+      expect(message).to.include(`URI: ${request.aud}`);
+      expect(message).to.include(`Issued At: ${request.iat}`);
+      expect(message).to.include(`Expiration Time: ${request.exp}`);
+      expect(message).to.include(`Not Before: ${request.nbf}`);
+      expect(message).to.include(`Request ID: ${request.requestId}`);
+      expect(message).to.include(`Resources:`);
+      expect(message).to.include(request.resources[0]);
+    });
   });
 });

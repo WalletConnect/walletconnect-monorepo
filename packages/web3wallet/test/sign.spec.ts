@@ -930,6 +930,10 @@ describe("Sign Integration", () => {
       await Promise.all([
         new Promise<void>((resolve) => {
           web3Wallet.on("session_authenticate", async (payload) => {
+            const verifyContext = payload.verifyContext;
+            expect(verifyContext).to.exist;
+            expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+
             const auths: any[] = [];
             for (const chain of payload.params.authPayload.chains) {
               const message = web3Wallet.formatAuthMessage({

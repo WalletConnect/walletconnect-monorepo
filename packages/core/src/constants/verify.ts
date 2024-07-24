@@ -1,7 +1,7 @@
 export const VERIFY_CONTEXT = "verify-api";
 
-export const VERIFY_SERVER = "https://verify.walletconnect.com";
+const VERIFY_SERVER_COM = "https://verify.walletconnect.com";
+const VERIFY_SERVER_ORG = "https://verify.walletconnect.org";
+export const VERIFY_SERVER = VERIFY_SERVER_ORG;
 
-export const VERIFY_FALLBACK_SERVER = "https://verify.walletconnect.org";
-
-export const TRUSTED_VERIFY_URLS = [VERIFY_SERVER, VERIFY_FALLBACK_SERVER];
+export const TRUSTED_VERIFY_URLS = [VERIFY_SERVER_COM, VERIFY_SERVER_ORG];
