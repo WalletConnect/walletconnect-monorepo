@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
 import { AuthTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
