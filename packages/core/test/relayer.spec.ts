@@ -1,4 +1,3 @@
-import { RELAYER_FAILOVER_RELAY_URL } from "./../src/constants/relayer";
 import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
@@ -7,6 +6,7 @@ import {
   Core,
   CORE_DEFAULT,
   Relayer,
+  RELAYER_DEFAULT_RELAY_URL,
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
@@ -272,7 +272,7 @@ describe("Relayer", () => {
         const randomSessionIdentifier = relayer.core.crypto.randomSessionIdentifier;
         await relayer.provider.connection.close();
         expect(relayer.connected).to.be.false;
-        await relayer.restartTransport();
+        await throttle(1000);
         expect(relayer.connected).to.be.true;
         // the identifier should be the same
         expect(relayer.core.crypto.randomSessionIdentifier).to.eq(randomSessionIdentifier);
@@ -301,16 +301,15 @@ describe("Relayer", () => {
         await throttle(RELAYER_TRANSPORT_CUTOFF + 1_000); // +1 sec buffer
         expect(relayer.connected).to.be.true;
       });
-      it(`should fall back to ${RELAYER_FAILOVER_RELAY_URL} if the default relayUrl is not reachable`, async () => {
+      it(`should connect to ${RELAYER_DEFAULT_RELAY_URL} relay url`, async () => {
         relayer = new Relayer({
           core,
-          relayUrl: "wss://relay.blocked.not.real",
           projectId: TEST_CORE_OPTIONS.projectId,
         });
         await relayer.init();
         const wsConnection = relayer.provider.connection as unknown as WebSocket;
         expect(relayer.connected).to.be.true;
-        expect(wsConnection.url.startsWith(RELAYER_FAILOVER_RELAY_URL)).to.be.true;
+        expect(wsConnection.url.startsWith(RELAYER_DEFAULT_RELAY_URL)).to.be.true;
       });
     });
   });
