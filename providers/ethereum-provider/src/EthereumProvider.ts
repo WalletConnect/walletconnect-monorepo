@@ -1,24 +1,24 @@
-import { EventEmitter } from "events";
-import { getAccountsFromNamespaces, getSdkError, isValidArray } from "@walletconnect/utils";
-import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
-import {
-  IEthereumProvider as IProvider,
-  IEthereumProviderEvents,
-  ProviderAccounts,
-  RequestArguments,
-  QrModalOptions,
-} from "./types";
-import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
-import { AuthTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
+import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
+import { AuthTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
+import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
+import { getAccountsFromNamespaces, getSdkError, isValidArray } from "@walletconnect/utils";
+import { EventEmitter } from "events";
 import {
-  STORAGE_KEY,
-  REQUIRED_METHODS,
-  REQUIRED_EVENTS,
-  RPC_URL,
-  OPTIONAL_METHODS,
   OPTIONAL_EVENTS,
+  OPTIONAL_METHODS,
+  REQUIRED_EVENTS,
+  REQUIRED_METHODS,
+  RPC_URL,
+  STORAGE_KEY,
 } from "./constants";
+import {
+  IEthereumProviderEvents,
+  IEthereumProvider as IProvider,
+  ProviderAccounts,
+  QrModalOptions,
+  RequestArguments,
+} from "./types";
 
 export type RpcMethod =
   | "personal_sign"
@@ -421,6 +421,7 @@ export class EthereumProvider implements IEthereumProvider {
 
   protected registerEventListeners() {
     this.signer.on("session_event", (payload: SignClientTypes.EventArguments["session_event"]) => {
+      console.log({ session_event: "session_event", payload });
       const { params } = payload;
       const { event } = params;
       if (event.name === "accountsChanged") {
@@ -435,6 +436,7 @@ export class EthereumProvider implements IEthereumProvider {
     });
 
     this.signer.on("chainChanged", (chainId: string) => {
+      console.log({ session_event: "session_event", chainId });
       const chain = parseInt(chainId);
       this.chainId = chain;
       this.events.emit("chainChanged", toHexChainId(this.chainId));
@@ -444,6 +446,7 @@ export class EthereumProvider implements IEthereumProvider {
     this.signer.on(
       "session_update",
       (payload: SignClientTypes.EventArguments["session_update"]) => {
+        console.log({ session_update: "session_event", payload });
         this.events.emit("session_update", payload);
       },
     );
