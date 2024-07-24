@@ -1,4 +1,3 @@
-import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
   formatJsonRpcResult,
@@ -15,8 +14,8 @@ import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
-  pino,
   Logger,
+  pino,
 } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { ONE_MINUTE, ONE_SECOND, THIRTY_SECONDS, toMiliseconds } from "@walletconnect/time";
@@ -33,24 +32,25 @@ import {
 import {
   createExpiringPromise,
   formatRelayRpcUrl,
-  isOnline,
-  subscribeToNetworkChange,
   getBundleId,
   getInternalError,
   isNode,
+  isOnline,
+  subscribeToNetworkChange,
 } from "@walletconnect/utils";
+import { EventEmitter } from "events";
 
 import {
-  RELAYER_SDK_VERSION,
   RELAYER_CONTEXT,
   RELAYER_DEFAULT_LOGGER,
+  RELAYER_DEFAULT_RELAY_URL,
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
-  RELAYER_SUBSCRIBER_SUFFIX,
-  RELAYER_DEFAULT_RELAY_URL,
-  SUBSCRIBER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
+  RELAYER_SDK_VERSION,
+  RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_TRANSPORT_CUTOFF,
+  SUBSCRIBER_EVENTS,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
@@ -442,6 +442,8 @@ export class Relayer extends IRelayer {
   }
 
   private async onProviderPayload(payload: JsonRpcPayload) {
+    // eslint-disable-next-line no-console
+    console.log({ onProviderPayload: payload });
     this.logger.debug(`Incoming Relay Payload`);
     this.logger.trace({ type: "payload", direction: "incoming", payload });
     if (isJsonRpcRequest(payload)) {

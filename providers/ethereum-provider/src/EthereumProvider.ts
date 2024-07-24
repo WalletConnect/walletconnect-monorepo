@@ -437,7 +437,7 @@ export class EthereumProvider implements IEthereumProvider {
     });
 
     this.signer.on("chainChanged", (chainId: string) => {
-      console.log({ session_event: "session_event", chainId });
+      console.log({ chainChanged: "chainChanged", chainId });
       const chain = parseInt(chainId);
       this.chainId = chain;
       this.events.emit("chainChanged", toHexChainId(this.chainId));

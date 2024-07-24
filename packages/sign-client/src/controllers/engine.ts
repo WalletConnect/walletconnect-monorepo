@@ -373,6 +373,7 @@ export class Engine extends IEngine {
   };
 
   public update: IEngine["update"] = async (params) => {
+    console.log({ update: params });
     await this.isInitialized();
     try {
       await this.isValidUpdate(params);
@@ -1815,6 +1816,7 @@ export class Engine extends IEngine {
   ) => {
     const { id, params } = payload;
     try {
+      console.log("onSessionEventRequest", { topic, payload });
       // similar to session update, we want to discard out of sync requests
       // additionally we have to check the event type as well e.g. chainChanged/accountsChanged
       const memoryKey = `${topic}_session_event_${params.event.name}`;
@@ -2348,10 +2350,17 @@ export class Engine extends IEngine {
     const { topic, event, chainId } = params;
     await this.isValidSessionTopic(topic);
     const { namespaces } = this.client.session.get(topic);
+    console.log({
+      isValidNamespacesChainId: isValidNamespacesChainId(namespaces, chainId),
+      namespaces,
+      event,
+    });
+
     if (!isValidNamespacesChainId(namespaces, chainId)) {
       const { message } = getInternalError("MISSING_OR_INVALID", `emit() chainId: ${chainId}`);
       throw new Error(message);
     }
+    console.log({ isValidEvent: isValidEvent(event), event });
     if (!isValidEvent(event)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
@@ -2359,6 +2368,12 @@ export class Engine extends IEngine {
       );
       throw new Error(message);
     }
+    console.log({
+      isValidNamespacesEvent: isValidNamespacesEvent(namespaces, chainId, event.name),
+      namespaces,
+      chainId,
+      event,
+    });
     if (!isValidNamespacesEvent(namespaces, chainId, event.name)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
