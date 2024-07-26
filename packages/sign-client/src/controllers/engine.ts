@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
   EXPIRER_EVENTS,
   PAIRING_EVENTS,
@@ -7,41 +8,54 @@ import {
 } from "@walletconnect/core";
 
 import {
+  ErrorResponse,
   formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
-  payloadId,
+  getBigIntRpcId,
   isJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
   isJsonRpcResult,
   JsonRpcRequest,
-  ErrorResponse,
-  getBigIntRpcId,
+  payloadId,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import {
+  AuthTypes,
+  CoreTypes,
   EnginePrivate,
   EngineTypes,
   ExpirerTypes,
   IEngine,
   IEngineEvents,
   JsonRpcTypes,
+  PairingTypes,
   PendingRequestTypes,
-  Verify,
-  CoreTypes,
   ProposalTypes,
   RelayerTypes,
   SessionTypes,
-  PairingTypes,
-  AuthTypes,
+  Verify,
 } from "@walletconnect/types";
 import {
+  buildNamespacesFromAuth,
   calcExpiry,
   createDelayedPromise,
+  createEncodedRecap,
   engineEvent,
+  formatMessage,
+  getChainsFromRecap,
+  getDeepLink,
+  getDidAddress,
   getInternalError,
+  getMethodsFromRecap,
+  getNamespacedDidChainId,
+  getRecapFromResources,
   getSdkError,
+  handleDeeplinkRedirect,
+  hashKey,
+  hashMessage,
+  isBrowser,
   isConformingNamespaces,
   isExpired,
   isSessionCompatible,
@@ -60,40 +74,27 @@ import {
   isValidRelays,
   isValidRequest,
   isValidRequestExpiry,
-  hashMessage,
-  isBrowser,
   isValidRequiredNamespaces,
   isValidResponse,
   isValidString,
+  MemoryStore,
+  mergeEncodedRecaps,
+  parseChainId,
   parseExpirerTarget,
   TYPE_1,
-  handleDeeplinkRedirect,
-  MemoryStore,
-  getDeepLink,
-  hashKey,
-  getDidAddress,
-  formatMessage,
-  getMethodsFromRecap,
-  buildNamespacesFromAuth,
-  createEncodedRecap,
-  getChainsFromRecap,
-  mergeEncodedRecaps,
-  getRecapFromResources,
   validateSignedCacao,
-  getNamespacedDidChainId,
-  parseChainId,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
+  AUTH_PUBLIC_KEY_NAME,
   ENGINE_CONTEXT,
+  ENGINE_QUEUE_STATES,
   ENGINE_RPC_OPTS,
+  METHODS_TO_VERIFY,
   PROPOSAL_EXPIRY_MESSAGE,
   SESSION_EXPIRY,
   SESSION_REQUEST_EXPIRY_BOUNDARIES,
-  METHODS_TO_VERIFY,
   WALLETCONNECT_DEEPLINK_CHOICE,
-  ENGINE_QUEUE_STATES,
-  AUTH_PUBLIC_KEY_NAME,
 } from "../constants";
 
 export class Engine extends IEngine {
@@ -372,6 +373,7 @@ export class Engine extends IEngine {
   };
 
   public update: IEngine["update"] = async (params) => {
+    console.log({ update: params });
     await this.isInitialized();
     try {
       await this.isValidUpdate(params);
@@ -492,7 +494,7 @@ export class Engine extends IEngine {
       }),
       new Promise<void>(async (resolve) => {
         // only attempt to handle deeplinks if they are not explicitly disabled in the session config
-        if (!session.sessionConfig?.disableDeepLink) {
+        if (!session.sessionConfig?.disableDeepLink && !params.disableRedirect) {
           const wcDeepLink = await getDeepLink(
             this.client.core.storage,
             WALLETCONNECT_DEEPLINK_CHOICE,
@@ -1813,6 +1815,7 @@ export class Engine extends IEngine {
   ) => {
     const { id, params } = payload;
     try {
+      console.log("onSessionEventRequest", { topic, payload });
       // similar to session update, we want to discard out of sync requests
       // additionally we have to check the event type as well e.g. chainChanged/accountsChanged
       const memoryKey = `${topic}_session_event_${params.event.name}`;
@@ -2346,10 +2349,17 @@ export class Engine extends IEngine {
     const { topic, event, chainId } = params;
     await this.isValidSessionTopic(topic);
     const { namespaces } = this.client.session.get(topic);
+    console.log({
+      isValidNamespacesChainId: isValidNamespacesChainId(namespaces, chainId),
+      namespaces,
+      event,
+    });
+
     if (!isValidNamespacesChainId(namespaces, chainId)) {
       const { message } = getInternalError("MISSING_OR_INVALID", `emit() chainId: ${chainId}`);
       throw new Error(message);
     }
+    console.log({ isValidEvent: isValidEvent(event), event });
     if (!isValidEvent(event)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
@@ -2357,6 +2367,12 @@ export class Engine extends IEngine {
       );
       throw new Error(message);
     }
+    console.log({
+      isValidNamespacesEvent: isValidNamespacesEvent(namespaces, chainId, event.name),
+      namespaces,
+      chainId,
+      event,
+    });
     if (!isValidNamespacesEvent(namespaces, chainId, event.name)) {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",

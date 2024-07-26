@@ -64,12 +64,17 @@ export interface SubProviderOpts {
   namespace: Namespace;
 }
 
+export interface RequestOpts {
+  disableRedirect?: boolean;
+}
+
 export interface RequestParams {
   topic: string;
   request: RequestArguments;
   chainId: string;
   id?: number;
   expiry?: number;
+  disableRedirect?: boolean;
 }
 
 export interface RequestArguments {

@@ -8,7 +8,12 @@ import {
   RequestArguments,
   QrModalOptions,
 } from "./types";
-import { Metadata, Namespace, UniversalProvider } from "@walletconnect/universal-provider";
+import {
+  Metadata,
+  Namespace,
+  UniversalProvider,
+  type RequestOpts,
+} from "@walletconnect/universal-provider";
 import { AuthTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import {
@@ -244,8 +249,12 @@ export class EthereumProvider implements IEthereumProvider {
     return provider;
   }
 
-  public async request<T = unknown>(args: RequestArguments, expiry?: number): Promise<T> {
-    return await this.signer.request(args, this.formatChainId(this.chainId), expiry);
+  public async request<T = unknown>(
+    args: RequestArguments,
+    expiry?: number,
+    opts?: RequestOpts,
+  ): Promise<T> {
+    return await this.signer.request(args, this.formatChainId(this.chainId), expiry, opts);
   }
 
   public sendAsync(
