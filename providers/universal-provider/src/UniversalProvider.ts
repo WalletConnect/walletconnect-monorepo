@@ -90,7 +90,7 @@ export class UniversalProvider implements IUniversalProvider {
       chainId: `${namespace}:${chainId}`,
       topic: this.session.topic,
       expiry,
-      disableRedirect: opts?.disableRedirect,
+      disableDeepLink: opts?.disableDeepLink,
     });
   }
 

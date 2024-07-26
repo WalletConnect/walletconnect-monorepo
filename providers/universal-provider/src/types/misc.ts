@@ -65,7 +65,7 @@ export interface SubProviderOpts {
 }
 
 export interface RequestOpts {
-  disableRedirect?: boolean;
+  disableDeepLink?: boolean;
 }
 
 export interface RequestParams {
@@ -74,7 +74,7 @@ export interface RequestParams {
   chainId: string;
   id?: number;
   expiry?: number;
-  disableRedirect?: boolean;
+  disableDeepLink?: boolean;
 }
 
 export interface RequestArguments {
