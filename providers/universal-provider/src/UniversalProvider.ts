@@ -34,6 +34,7 @@ import {
   PairingsCleanupOpts,
   ProviderAccounts,
   AuthenticateParams,
+  RequestOpts,
 } from "./types";
 
 import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS, GENERIC_SUBPROVIDER_NAME } from "./constants";
@@ -75,6 +76,7 @@ export class UniversalProvider implements IUniversalProvider {
     args: RequestArguments,
     chain?: string | undefined,
     expiry?: number | undefined,
+    opts?: RequestOpts,
   ): Promise<T> {
     const [namespace, chainId] = this.validateChain(chain);
 
@@ -89,6 +91,7 @@ export class UniversalProvider implements IUniversalProvider {
       chainId: `${namespace}:${chainId}`,
       topic: this.session.topic,
       expiry,
+      disableDeepLink: opts?.disableDeepLink,
     });
   }
 

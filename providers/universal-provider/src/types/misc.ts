@@ -64,12 +64,17 @@ export interface SubProviderOpts {
   namespace: Namespace;
 }
 
+export interface RequestOpts {
+  disableDeepLink?: boolean;
+}
+
 export interface RequestParams {
   topic: string;
   request: RequestArguments;
   chainId: string;
   id?: number;
   expiry?: number;
+  disableDeepLink?: boolean;
 }
 
 export interface RequestArguments {

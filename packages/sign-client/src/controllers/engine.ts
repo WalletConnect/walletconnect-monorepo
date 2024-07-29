@@ -491,8 +491,8 @@ export class Engine extends IEngine {
         resolve();
       }),
       new Promise<void>(async (resolve) => {
-        // only attempt to handle deeplinks if they are not explicitly disabled in the session config
-        if (!session.sessionConfig?.disableDeepLink) {
+        // only attempt to handle deeplinks if they are not explicitly disabled in the session config or params
+        if (!session.sessionConfig?.disableDeepLink && !params.disableDeepLink) {
           const wcDeepLink = await getDeepLink(
             this.client.core.storage,
             WALLETCONNECT_DEEPLINK_CHOICE,

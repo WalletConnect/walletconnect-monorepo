@@ -96,6 +96,7 @@ export declare namespace EngineTypes {
     };
     chainId: string;
     expiry?: number;
+    disableDeepLink?: boolean;
   }
 
   interface RespondParams {

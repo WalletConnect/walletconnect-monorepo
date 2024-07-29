@@ -157,6 +157,7 @@ class Eip155Provider implements IProvider {
           ],
         },
         chainId: this.namespace.chains?.[0], // Sending a previously unapproved chainId will cause namespace validation failure so we must set request chainId to the first chainId in the namespace to avoid it
+        disableDeepLink: args.disableDeepLink,
       } as EngineTypes.RequestParams);
       this.setDefaultChain(`${parsedChainId}`);
     } else {
