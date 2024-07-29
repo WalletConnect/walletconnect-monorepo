@@ -256,7 +256,7 @@ describe("URI", () => {
     expect(message).to.include("Nonce: 32891756");
     expect(message).to.include(`URI: ${request.aud}`);
   });
-  describe("resurces", () => {
+  describe("resources", () => {
     it("should not add resources to siwe message when missing from request", () => {
       const request = {
         type: "caip122",
