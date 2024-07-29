@@ -19,7 +19,7 @@ import {
 
 describe("URI", () => {
   describe("merge recaps", () => {
-    it("shoud merge recaps", () => {
+    it("should merge recaps", () => {
       const recap1 = {
         att: {
           "https://notify.walletconnect.com": { "manage/all-apps-notifications": [{}] },
@@ -48,7 +48,7 @@ describe("URI", () => {
       };
       expect(JSON.stringify(recap)).to.eql(JSON.stringify(expected));
     });
-    it("shoud merge recaps with different keys", () => {
+    it("should merge recaps with different keys", () => {
       const recap1 = createRecap("https://web3inbox.com", "push", ["notifications", "alerts"]);
       const recap2 = createRecap("eip155", "request", ["personal_sign", "eth_sendTransaction"]);
       const expected = {
@@ -66,7 +66,7 @@ describe("URI", () => {
       const mergedRecap = mergeRecaps(recap1, recap2);
       expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(expected));
     });
-    it("shoud merge recaps with same resource", () => {
+    it("should merge recaps with same resource", () => {
       const recap1 = createRecap("eip155", "push", ["notifications", "alerts"]);
       const recap2 = createRecap("eip155", "request", ["personal_sign", "eth_sendTransaction"]);
       const expected = {
@@ -82,7 +82,7 @@ describe("URI", () => {
       const mergedRecap = mergeRecaps(recap1, recap2);
       expect(JSON.stringify(mergedRecap)).to.eql(JSON.stringify(expected));
     });
-    it("shoud merge recaps with same resource & actions", () => {
+    it("should merge recaps with same resource & actions", () => {
       const recap1 = createRecap("eip155", "request", ["personal_sign", "notifications"]);
       const recap2 = createRecap("eip155", "request", ["alerts", "eth_sendTransaction"]);
       const expected = {
@@ -100,7 +100,7 @@ describe("URI", () => {
     });
   });
 
-  it("shoud encode recap", () => {
+  it("should encode recap", () => {
     const recap = createRecap("eip155", "request", ["personal_sign", "eth_signTypedData_v4"]);
     isValidRecap(recap);
     const encoded = encodeRecap(recap);
