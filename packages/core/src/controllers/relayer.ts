@@ -480,6 +480,7 @@ export class Relayer extends IRelayer {
   public async onLinkMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     const { topic } = messageEvent;
 
+    //TODO: Check this logic. Shouldn't create a new pairing if a session exists
     // expires in 7 days
     const expiry = Math.floor(Date.now() / 1000) + 604800;
     const pairing = { topic, expiry, relay: { protocol: "irn" }, active: false };

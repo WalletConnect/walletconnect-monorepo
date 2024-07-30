@@ -5,7 +5,7 @@ import {
   JsonRpcResponse,
   JsonRpcResult,
 } from "@walletconnect/jsonrpc-types";
-import { CoreTypes, ICore, IStore, Verify } from "../core";
+import { CoreTypes, ICore, IStore, RelayerTypes, Verify } from "../core";
 import { SessionTypes } from "./session";
 
 export declare namespace AuthTypes {
@@ -132,6 +132,7 @@ export declare namespace AuthTypes {
     expiryTimestamp: number;
     authPayload: PayloadParams;
     verifyContext: Verify.Context;
+    transportType: RelayerTypes.TransportType;
   }
 
   interface ApproveSessionAuthenticateParams {
@@ -160,6 +161,7 @@ export declare namespace AuthTypes {
     requester: Participant;
     authPayload: PayloadParams;
     expiryTimestamp: number;
+    transportType: RelayerTypes.TransportType;
   }
 
   interface SessionAuthenticateRequest extends SessionAuthenticateRequestParams {

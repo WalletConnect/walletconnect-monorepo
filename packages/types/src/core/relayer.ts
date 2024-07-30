@@ -39,11 +39,14 @@ export declare namespace RelayerTypes {
     message: string;
     opts?: RelayerTypes.PublishOptions;
   }
+
+  export type TransportType = "relay" | "link-mode";
+
   export interface MessageEvent {
     topic: string;
     message: string;
     publishedAt: number;
-    transportType: "relay" | "link-mode";
+    transportType: TransportType;
   }
 
   export interface RpcUrlParams {

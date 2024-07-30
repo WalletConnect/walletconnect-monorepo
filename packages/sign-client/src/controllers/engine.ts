@@ -224,6 +224,7 @@ export class Engine extends IEngine {
             pairingTopic: proposal.pairingTopic,
             requiredNamespaces: proposal.requiredNamespaces,
             optionalNamespaces: proposal.optionalNamespaces,
+            transportType: "relay" as RelayerTypes.TransportType,
           };
           await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
@@ -305,6 +306,7 @@ export class Engine extends IEngine {
         metadata: proposer.metadata,
       },
       controller: selfPublicKey,
+      transportType: "relay" as RelayerTypes.TransportType,
     };
     await this.client.session.set(sessionTopic, session);
     try {
@@ -708,6 +710,11 @@ export class Engine extends IEngine {
         ? expiry
         : ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl;
 
+    const isLinkMode =
+      walletUniversalLink && this.client.core.linkModeSupportedApps.includes(walletUniversalLink);
+
+    const transportType: RelayerTypes.TransportType = isLinkMode ? "link-mode" : "relay";
+
     const request = {
       authPayload: {
         type: type ?? "caip122",
@@ -724,6 +731,7 @@ export class Engine extends IEngine {
       },
       requester: { publicKey, metadata: this.client.metadata },
       expiryTimestamp: calcExpiry(authRequestExpiry),
+      transportType,
     };
 
     // ----- build namespaces for fallback session proposal ----- //
@@ -854,6 +862,7 @@ export class Engine extends IEngine {
             [...new Set(approvedMethods)],
             [...new Set(approvedAccounts)],
           ),
+          transportType,
         };
 
         await this.client.core.relayer.subscribe(sessionTopic);
@@ -889,9 +898,6 @@ export class Engine extends IEngine {
     // subscribe to response events
     this.events.once<"session_connect">(engineEvent("session_connect"), onSessionConnect);
     this.events.once(engineEvent("session_request", id), onAuthenticate);
-
-    const isLinkMode =
-      walletUniversalLink && this.client.core.linkModeSupportedApps.includes(walletUniversalLink);
 
     let linkModeURL;
     try {
@@ -933,10 +939,15 @@ export class Engine extends IEngine {
 
     await this.setProposal(fallbackId, { id: fallbackId, ...proposal });
     await this.setAuthRequest(id, {
-      request: { ...request, verifyContext: {} as any },
+      request: {
+        ...request,
+        transportType: isLinkMode ? "link-mode" : "relay",
+        verifyContext: {} as any,
+      },
       pairingTopic,
     });
 
+    // TODO: check if it's ok to return linkmode url
     return {
       uri: linkModeURL ?? connectionUri,
       response: done,
@@ -1008,6 +1019,12 @@ export class Engine extends IEngine {
       senderPublicKey,
       receiverPublicKey,
     );
+
+    const transportType =
+      pendingRequest.transportType || this.isLinkModeEnabled(pendingRequest.requester.metadata)
+        ? "link-mode"
+        : "relay";
+
     let session: SessionTypes.Struct | undefined;
     if (approvedMethods?.length > 0) {
       session = {
@@ -1032,6 +1049,7 @@ export class Engine extends IEngine {
           [...new Set(approvedMethods)],
           [...new Set(approvedAccounts)],
         ),
+        transportType,
       };
 
       await this.client.core.relayer.subscribe(sessionTopic);
@@ -1234,6 +1252,7 @@ export class Engine extends IEngine {
       id,
       pairingTopic,
       verifyContext: request.verifyContext,
+      transportType: request.transportType,
     });
   };
 
@@ -1674,6 +1693,7 @@ export class Engine extends IEngine {
         },
         ...(sessionProperties && { sessionProperties }),
         ...(sessionConfig && { sessionConfig }),
+        transportType: "relay" as RelayerTypes.TransportType,
       };
       await this.sendResult<"wc_sessionSettle">({
         id: payload.id,
@@ -2001,6 +2021,7 @@ export class Engine extends IEngine {
         authPayload,
         verifyContext,
         expiryTimestamp,
+        transportType,
       };
       await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
 
