@@ -1181,10 +1181,7 @@ export class Engine extends IEngine {
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
     const { topic, method, params, expiry, relayRpcId, clientRpcId, throwOnFailedPublish } = args;
     const payload = formatJsonRpcRequest(method, params, clientRpcId);
-    if (isBrowser() && METHODS_TO_VERIFY.includes(method)) {
-      const hash = hashMessage(JSON.stringify(payload));
-      this.client.core.verify.register({ attestationId: hash });
-    }
+
     let message;
     try {
       message = await this.client.core.crypto.encode(topic, payload);
@@ -1192,6 +1189,11 @@ export class Engine extends IEngine {
       await this.cleanup();
       this.client.logger.error(`sendRequest() -> core.crypto.encode() for topic ${topic} failed`);
       throw error;
+    }
+    if (METHODS_TO_VERIFY.includes(method)) {
+      const decryptedId = hashMessage(JSON.stringify(payload));
+      const id = hashMessage(message);
+      this.client.core.verify.register({ id, decryptedId });
     }
     const opts = ENGINE_RPC_OPTS[method].req;
     if (expiry) opts.ttl = expiry;
