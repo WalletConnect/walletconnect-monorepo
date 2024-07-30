@@ -379,6 +379,11 @@ export async function handleDeeplinkRedirect({
     const env = getEnvironment();
 
     if (env === ENV_MAP.browser) {
+      if (!getDocument()?.hasFocus()) {
+        console.warn("Document does not have focus, skipping deeplink.");
+        return;
+      }
+
       if (link.startsWith("https://") || link.startsWith("http://")) {
         window.open(link, "_blank", "noreferrer noopener");
       } else {
