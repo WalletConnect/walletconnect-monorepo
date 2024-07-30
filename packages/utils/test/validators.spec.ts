@@ -302,7 +302,7 @@ describe("Validators", () => {
     expect(error).to.throw;
   });
 
-  it("should throw on CAIP-2 namespace not including that CAIP-2 in accouns", () => {
+  it("should throw on CAIP-2 namespace not including that CAIP-2 in accounts", () => {
     const required = {
       eip155: {
         chains: ["eip155:1", "eip155:2"],
