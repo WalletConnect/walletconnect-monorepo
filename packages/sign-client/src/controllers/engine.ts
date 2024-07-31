@@ -61,7 +61,6 @@ import {
   isValidRequest,
   isValidRequestExpiry,
   hashMessage,
-  isBrowser,
   isValidRequiredNamespaces,
   isValidResponse,
   isValidString,
@@ -1190,12 +1189,14 @@ export class Engine extends IEngine {
       this.client.logger.error(`sendRequest() -> core.crypto.encode() for topic ${topic} failed`);
       throw error;
     }
+    let attestation;
     if (METHODS_TO_VERIFY.includes(method)) {
       const decryptedId = hashMessage(JSON.stringify(payload));
       const id = hashMessage(message);
-      this.client.core.verify.register({ id, decryptedId });
+      attestation = await this.client.core.verify.register({ id, decryptedId });
     }
     const opts = ENGINE_RPC_OPTS[method].req;
+    opts.attestation = attestation;
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
     this.client.core.history.set(topic, payload);

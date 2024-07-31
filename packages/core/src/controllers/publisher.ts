@@ -63,8 +63,8 @@ export class Publisher extends IPublisher {
 
         this.logger.trace({ id, attempts }, `publisher.publish - attempt ${attempts}`);
         const publish = await createExpiringPromise(
-          this.rpcPublish(topic, message, ttl, relay, prompt, tag, id).catch((e) =>
-            this.logger.warn(e),
+          this.rpcPublish(topic, message, ttl, relay, prompt, tag, id, opts?.attestation).catch(
+            (e) => this.logger.warn(e),
           ),
           this.publishTimeout,
           failedPublishMessage,
@@ -121,6 +121,7 @@ export class Publisher extends IPublisher {
     prompt?: boolean,
     tag?: number,
     id?: number,
+    attestation?: string,
   ) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.PublishParams> = {
@@ -131,9 +132,11 @@ export class Publisher extends IPublisher {
         ttl,
         prompt,
         tag,
+        attestation,
       },
       id,
     };
+    console.log("rpc publish request", request);
     if (isUndefined(request.params?.prompt)) delete request.params?.prompt;
     if (isUndefined(request.params?.tag)) delete request.params?.tag;
     this.logger.debug(`Outgoing Relay Payload`);

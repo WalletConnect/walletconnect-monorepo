@@ -21,6 +21,7 @@ export declare namespace RelayerTypes {
     internal?: {
       throwOnFailedPublish?: boolean;
     };
+    attestation?: string
   }
 
   export interface SubscribeOptions {

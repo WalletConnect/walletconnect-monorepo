@@ -16,7 +16,7 @@ export abstract class IVerify {
 
   constructor(public projectId: string, public logger: Logger) {}
 
-  public abstract register(params: { id: string; decryptedId: string }): Promise<void>;
+  public abstract register(params: { id: string; decryptedId: string }): Promise<string>;
 
   public abstract resolve(params: {
     attestationId: string;

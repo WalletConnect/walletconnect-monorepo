@@ -39,30 +39,31 @@ export class Verify extends IVerify {
         origin: "https://8951-78-130-198-143.ngrok-free.app/",
       },
     });
-    const { srcdoc } = { srcdoc: "" };
+    const { srcdoc } = await response.json();
 
-    console.log("srcdoc", await response.json());
+    console.log("srcdoc", srcdoc);
     const attestatiatonJwt = await new Promise((resolve) => {
       const iframe = document.createElement("iframe");
       iframe.srcdoc = srcdoc;
+      iframe.src = "https://verify.walletconnect.com";
       iframe.style.display = "none";
       const listener = (event: MessageEvent) => {
         console.log("message event received", event);
-        if (event.origin === "verify.walletconnect.com") {
-          const data = JSON.parse(event.data);
-          if (data.type === "verify_attestation") {
-            // best-practice field
-            window.removeEventListener("message", listener);
-            document.body.removeChild(iframe);
-            console.log("attestation", data.attestation);
-            resolve(data.attestation);
-          }
+        if (!event.data) return;
+        const data = JSON.parse(event.data);
+        if (data.type === "verify_attestation") {
+          // best-practice field
+          // window.removeEventListener("message", listener);
+          // document.body.removeChild(iframe);
+          console.log("attestation", data.attestation);
+          resolve(data.attestation);
         }
       };
       document.body.appendChild(iframe);
       window.addEventListener("message", listener);
     });
     console.log("attestatiatonJwt", attestatiatonJwt);
+    return attestatiatonJwt as string;
   };
 
   public resolve: IVerify["resolve"] = async (params) => {
