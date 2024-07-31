@@ -104,7 +104,7 @@ export class Pairing implements IPairing {
     });
     this.core.expirer.set(topic, expiry);
     await this.pairings.set(topic, pairing);
-    await this.core.relayer.subscribe(topic);
+    this.core.relayer.subscribe(topic);
 
     return { topic, uri };
   };

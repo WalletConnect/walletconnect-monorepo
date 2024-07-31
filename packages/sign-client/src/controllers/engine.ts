@@ -159,7 +159,8 @@ export class Engine extends IEngine {
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     const connectParams = {
       ...params,
       requiredNamespaces: params.requiredNamespaces || {},
@@ -250,7 +251,8 @@ export class Engine extends IEngine {
   };
 
   public pair: IEngine["pair"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       return await this.client.core.pairing.pair(params);
     } catch (error) {
@@ -260,7 +262,8 @@ export class Engine extends IEngine {
   };
 
   public approve: IEngine["approve"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       await this.isValidApprove(params);
     } catch (error) {
@@ -352,7 +355,8 @@ export class Engine extends IEngine {
   };
 
   public reject: IEngine["reject"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       await this.isValidReject(params);
     } catch (error) {
@@ -381,7 +385,8 @@ export class Engine extends IEngine {
   };
 
   public update: IEngine["update"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       await this.isValidUpdate(params);
     } catch (error) {
@@ -421,7 +426,8 @@ export class Engine extends IEngine {
   };
 
   public extend: IEngine["extend"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       await this.isValidExtend(params);
     } catch (error) {
@@ -452,7 +458,7 @@ export class Engine extends IEngine {
   };
 
   public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
-    await this.isInitialized();
+    this.isInitialized();
     try {
       await this.isValidRequest(params);
     } catch (error) {
@@ -461,6 +467,11 @@ export class Engine extends IEngine {
     }
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
     const session = this.client.session.get(topic);
+
+    if (session?.transportType === "relay") {
+      await this.confirmOnlineStateOrThrow();
+    }
+
     const clientRpcId = payloadId();
     const relayRpcId = getBigIntRpcId().toString() as any;
     const { done, resolve, reject } = createDelayedPromise<T>(
@@ -475,7 +486,7 @@ export class Engine extends IEngine {
       },
     );
 
-    if (this.isLinkModeEnabled(session.peer.metadata)) {
+    if (session.transportType === "link-mode") {
       const appLink = session.peer.metadata.redirect?.universal;
       const linkModeWallets = this.client.core.linkModeSupportedApps;
       if (appLink && linkModeWallets.includes(appLink)) {
@@ -548,11 +559,16 @@ export class Engine extends IEngine {
   };
 
   public respond: IEngine["respond"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
     await this.isValidRespond(params);
     const { topic, response } = params;
     const { id } = response;
     const session = this.client.session.get(topic);
+
+    if (session.transportType === "relay") {
+      await this.confirmOnlineStateOrThrow();
+    }
+
     const appLink = this.getAppLinkIfEnabled(session.peer.metadata);
 
     if (isJsonRpcResult(response)) {
@@ -570,7 +586,8 @@ export class Engine extends IEngine {
   };
 
   public ping: IEngine["ping"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       await this.isValidPing(params);
     } catch (error) {
@@ -603,7 +620,8 @@ export class Engine extends IEngine {
   };
 
   public emit: IEngine["emit"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     await this.isValidEmit(params);
     const { topic, event, chainId } = params;
     const relayRpcId = getBigIntRpcId().toString() as any;
@@ -617,7 +635,8 @@ export class Engine extends IEngine {
   };
 
   public disconnect: IEngine["disconnect"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     await this.isValidDisconnect(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
@@ -655,6 +674,15 @@ export class Engine extends IEngine {
     this.isInitialized();
     this.isValidAuthenticate(params);
 
+    const isLinkMode =
+      walletUniversalLink && this.client.core.linkModeSupportedApps.includes(walletUniversalLink);
+
+    const transportType: RelayerTypes.TransportType = isLinkMode ? "link-mode" : "relay";
+
+    if (transportType === "relay") {
+      await this.confirmOnlineStateOrThrow();
+    }
+
     const {
       chains,
       statement = "",
@@ -686,8 +714,9 @@ export class Engine extends IEngine {
       this.client.auth.authKeys.set(AUTH_PUBLIC_KEY_NAME, { responseTopic, publicKey }),
       this.client.auth.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic }),
     ]);
+
     // Subscribe to response topic
-    await this.client.core.relayer.subscribe(responseTopic);
+    this.client.core.relayer.subscribe(responseTopic);
 
     this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
 
@@ -709,11 +738,6 @@ export class Engine extends IEngine {
       expiry && expiry > ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl
         ? expiry
         : ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl;
-
-    const isLinkMode =
-      walletUniversalLink && this.client.core.linkModeSupportedApps.includes(walletUniversalLink);
-
-    const transportType: RelayerTypes.TransportType = isLinkMode ? "link-mode" : "relay";
 
     const request = {
       authPayload: {
@@ -865,7 +889,7 @@ export class Engine extends IEngine {
           transportType,
         };
 
-        await this.client.core.relayer.subscribe(sessionTopic);
+        this.client.core.relayer.subscribe(sessionTopic);
         await this.client.session.set(sessionTopic, session);
         if (pairingTopic) {
           await this.client.core.pairing.updateMetadata({
@@ -967,6 +991,15 @@ export class Engine extends IEngine {
       throw new Error(`Could not find pending auth request with id ${id}`);
     }
 
+    const transportType =
+      pendingRequest.transportType || this.isLinkModeEnabled(pendingRequest.requester.metadata)
+        ? "link-mode"
+        : "relay";
+
+    if (transportType === "relay") {
+      await this.confirmOnlineStateOrThrow();
+    }
+
     const receiverPublicKey = pendingRequest.requester.publicKey;
     const senderPublicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(receiverPublicKey);
@@ -1020,11 +1053,6 @@ export class Engine extends IEngine {
       receiverPublicKey,
     );
 
-    const transportType =
-      pendingRequest.transportType || this.isLinkModeEnabled(pendingRequest.requester.metadata)
-        ? "link-mode"
-        : "relay";
-
     let session: SessionTypes.Struct | undefined;
     if (approvedMethods?.length > 0) {
       session = {
@@ -1052,7 +1080,7 @@ export class Engine extends IEngine {
         transportType,
       };
 
-      await this.client.core.relayer.subscribe(sessionTopic);
+      this.client.core.relayer.subscribe(sessionTopic);
       await this.client.session.set(sessionTopic, session);
       await this.client.core.pairing.updateMetadata({
         topic: pendingRequest.pairingTopic,
@@ -1080,7 +1108,7 @@ export class Engine extends IEngine {
   };
 
   public rejectSessionAuthenticate: IEngine["rejectSessionAuthenticate"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
 
     const { id, reason } = params;
 
@@ -1088,6 +1116,10 @@ export class Engine extends IEngine {
 
     if (!pendingRequest) {
       throw new Error(`Could not find pending auth request with id ${id}`);
+    }
+
+    if (pendingRequest.transportType === "relay") {
+      await this.confirmOnlineStateOrThrow();
     }
 
     const receiverPublicKey = pendingRequest.requester.publicKey;
@@ -1425,11 +1457,14 @@ export class Engine extends IEngine {
     ]);
   };
 
-  private async isInitialized() {
+  private isInitialized() {
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
     }
+  }
+
+  private async confirmOnlineStateOrThrow() {
     await this.client.core.relayer.confirmOnlineStateOrThrow();
   }
 
