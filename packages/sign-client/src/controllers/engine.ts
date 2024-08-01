@@ -713,7 +713,7 @@ export class Engine extends IEngine {
     ]);
 
     // Subscribe to response topic
-    this.client.core.relayer.subscribe(responseTopic);
+    await this.client.core.relayer.subscribe(responseTopic);
 
     this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
 
@@ -886,7 +886,7 @@ export class Engine extends IEngine {
           transportType,
         };
 
-        this.client.core.relayer.subscribe(sessionTopic);
+        await this.client.core.relayer.subscribe(sessionTopic);
         await this.client.session.set(sessionTopic, session);
         if (pairingTopic) {
           await this.client.core.pairing.updateMetadata({
@@ -1077,7 +1077,7 @@ export class Engine extends IEngine {
         transportType,
       };
 
-      this.client.core.relayer.subscribe(sessionTopic);
+      await this.client.core.relayer.subscribe(sessionTopic);
       await this.client.session.set(sessionTopic, session);
       await this.client.core.pairing.updateMetadata({
         topic: pendingRequest.pairingTopic,
