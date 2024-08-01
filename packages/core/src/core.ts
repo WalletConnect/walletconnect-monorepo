@@ -108,7 +108,7 @@ export class Core extends ICore {
       projectId: this.projectId,
     });
     this.pairing = new Pairing(this, this.logger);
-    this.verify = new Verify(this.projectId || "", this.logger);
+    this.verify = new Verify(this.projectId || "", this.logger, this.storage);
     this.echoClient = new EchoClient(this.projectId || "", this.logger);
   }
 

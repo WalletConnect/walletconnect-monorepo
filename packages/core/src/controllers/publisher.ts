@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
@@ -44,7 +45,18 @@ export class Publisher extends IPublisher {
     const prompt = opts?.prompt || false;
     const tag = opts?.tag || 0;
     const id = opts?.id || (getBigIntRpcId().toString() as any);
-    const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
+    const params = {
+      topic,
+      message,
+      opts: {
+        ttl,
+        relay,
+        prompt,
+        tag,
+        id,
+        attestation: opts?.attestation,
+      },
+    };
     const failedPublishMessage = `Failed to publish payload, please try again. id:${id} tag:${tag}`;
     const startPublish = Date.now();
     let result;

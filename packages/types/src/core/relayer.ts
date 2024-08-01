@@ -44,6 +44,7 @@ export declare namespace RelayerTypes {
     topic: string;
     message: string;
     publishedAt: number;
+    attestation?: string;
   }
 
   export interface RpcUrlParams {

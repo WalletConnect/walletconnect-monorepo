@@ -5,6 +5,8 @@ import { hash, SHA256 } from "@stablelib/sha256";
 import * as x25519 from "@stablelib/x25519";
 import { CryptoTypes } from "@walletconnect/types";
 import { concat, fromString, toString } from "uint8arrays";
+import { decodeJWT } from "@walletconnect/relay-auth";
+import { getSubtleCrypto } from "@walletconnect/environment";
 
 export const BASE10 = "base10";
 export const BASE16 = "base16";
@@ -13,6 +15,15 @@ export const UTF8 = "utf8";
 
 export const TYPE_0 = 0;
 export const TYPE_1 = 1;
+
+export type P256KeyDataType = {
+  crv: "P-256";
+  ext: true;
+  key_ops: ["verify"];
+  kty: string;
+  x: string;
+  y: string;
+};
 
 const ZERO_INDEX = 0;
 const TYPE_LENGTH = 1;
@@ -159,4 +170,34 @@ export function isTypeOneEnvelope(
     typeof result.senderPublicKey === "string" &&
     typeof result.receiverPublicKey === "string"
   );
+}
+
+export function getCryptoKeyFromKeyData(keyData: P256KeyDataType): Promise<CryptoKey> {
+  return getSubtleCrypto().importKey(
+    "jwk",
+    keyData,
+    { name: "ECDSA", namedCurve: keyData.crv },
+    keyData.ext,
+    keyData.key_ops,
+  );
+}
+
+export async function verifyP256Jwt<T>(token: string, publicKey: CryptoKey) {
+  const payload = decodeJWT(token) as unknown as {
+    payload: T;
+    signature: ArrayBuffer;
+    data: ArrayBuffer;
+  };
+  const alg = {
+    name: "ECDSA",
+    hash: {
+      name: "SHA-256",
+    },
+    namedCurve: "P-256",
+  };
+  const verified = await getSubtleCrypto().verify(alg, publicKey, payload.signature, payload.data);
+  return {
+    payload,
+    verified,
+  };
 }

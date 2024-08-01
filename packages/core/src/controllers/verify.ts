@@ -1,50 +1,86 @@
+/* eslint-disable no-console */
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IVerify } from "@walletconnect/types";
-import { isBrowser, isNode, isReactNative } from "@walletconnect/utils";
+import {
+  getCryptoKeyFromKeyData,
+  isNode,
+  P256KeyDataType,
+  verifyP256Jwt,
+} from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
 import { TRUSTED_VERIFY_URLS, VERIFY_CONTEXT, VERIFY_SERVER, VERIFY_SERVER_V2 } from "../constants";
+import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 
+type jwk = {
+  publicKey: P256KeyDataType;
+  expiresAt: number;
+};
 export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
-  private verifyUrl: string;
-  private iframe?: HTMLIFrameElement;
-  private initialized = false;
   private abortController: AbortController;
   private isDevEnv;
-  // the queue is only used during the loading phase of the iframe to ensure all attestations are posted
-  private queue: string[] = [];
-  // flag to disable verify when the iframe fails to load on main & fallback urls.
-  // this means Verify API is not enabled for the current projectId and there's no point in trying to initialize it again.
-  private verifyDisabled = false;
   private verifyUrlV2 = VERIFY_SERVER_V2;
+  private publicKey?: jwk;
 
-  constructor(public projectId: string, public logger: Logger) {
-    super(projectId, logger);
+  constructor(public projectId: string, public logger: Logger, public store: IKeyValueStorage) {
+    super(projectId, logger, store);
     this.logger = generateChildLogger(logger, this.name);
-    this.verifyUrl = VERIFY_SERVER;
     this.abortController = new AbortController();
     this.isDevEnv = isNode() && process.env.IS_VITEST;
     console.log("Verify v2 init", this.verifyUrlV2);
+    this.init();
   }
+
+  get storeKey(): string {
+    return `verify:public:key`;
+  }
+
+  public init = async () => {
+    this.publicKey = await this.store.getItem(this.storeKey);
+    console.log("persistedKey", this.publicKey);
+    if (this.publicKey && toMiliseconds(this.publicKey?.expiresAt) < Date.now()) {
+      console.log("public key expired");
+      await this.removePublicKey();
+    }
+    if (this.publicKey) return;
+    const key = await this.fetchPublicKey();
+    console.log("public key", key);
+    await this.persistPublicKey(key);
+  };
 
   public register: IVerify["register"] = async (params) => {
     console.log("register", params);
     const { id, decryptedId } = params;
     const url = `${this.verifyUrlV2}/attestation?projectId=${this.projectId}`;
-    const response = await fetch(url, {
-      method: "POST",
-      body: JSON.stringify({ id, decryptedId }),
-      headers: {
-        origin: "https://8951-78-130-198-143.ngrok-free.app/",
-      },
-    });
-    const { srcdoc } = await response.json();
+    let src = "";
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        body: JSON.stringify({ id, decryptedId }),
+        headers: {
+          origin: "https://8951-78-130-198-143.ngrok-free.app/",
+        },
+      });
+      const { srcdoc } = await response.json();
+      src = srcdoc;
+    } catch (e) {
+      console.error("error", e);
+      return;
+    }
+    console.log("srcdoc", src);
 
-    console.log("srcdoc", srcdoc);
+    const abortTimeout = this.startAbortTimer(ONE_SECOND * 2);
     const attestatiatonJwt = await new Promise((resolve) => {
+      const abortListener = () => {
+        document.body.removeChild(iframe);
+        window.removeEventListener("message", listener);
+        this.abortController.signal.removeEventListener("abort", abortListener);
+      };
+
+      this.abortController.signal.addEventListener("abort", abortListener);
       const iframe = document.createElement("iframe");
-      iframe.srcdoc = srcdoc;
+      iframe.srcdoc = src;
       iframe.src = "https://verify.walletconnect.com";
       iframe.style.display = "none";
       const listener = (event: MessageEvent) => {
@@ -53,10 +89,12 @@ export class Verify extends IVerify {
         const data = JSON.parse(event.data);
         if (data.type === "verify_attestation") {
           // best-practice field
-          // window.removeEventListener("message", listener);
-          // document.body.removeChild(iframe);
+          clearInterval(abortTimeout);
+          window.removeEventListener("message", listener);
+          document.body.removeChild(iframe);
+          this.abortController.signal.removeEventListener("abort", abortListener);
           console.log("attestation", data.attestation);
-          resolve(data.attestation);
+          resolve(data.attestation === null ? "" : data.attestation);
         }
       };
       document.body.appendChild(iframe);
@@ -68,9 +106,35 @@ export class Verify extends IVerify {
 
   public resolve: IVerify["resolve"] = async (params) => {
     if (this.isDevEnv) return "";
+    const { attestationId, hash } = params;
 
+    console.log("resolve attestation", params);
+
+    if (attestationId === "") {
+      console.log("resolve: attestationId is empty string");
+      return;
+    }
+
+    if (attestationId) {
+      const data = await this.isValidJwtAttestation(attestationId);
+      console.log("resolve data", data);
+
+      if (data?.hasExpired) {
+        console.log("resolve: jwt attestation expired");
+        return;
+      }
+
+      if (data?.valid) {
+        return {
+          origin: data.payload.origin,
+          isScam: data.payload.isScam,
+        };
+      }
+    }
+    if (!hash) return;
+    console.log("resolve hash", hash);
     const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
-    return this.fetchAttestation(params.attestationId, verifyUrl);
+    return this.fetchAttestation(hash, verifyUrl);
   };
 
   get context(): string {
@@ -88,65 +152,6 @@ export class Verify extends IVerify {
     return result.status === 200 ? await result.json() : undefined;
   };
 
-  // private addToQueue = (attestationId: string) => {
-  //   this.queue.push(attestationId);
-  // };
-
-  // private processQueue = () => {
-  //   if (this.queue.length === 0) return;
-  //   this.queue.forEach((attestationId) => this.sendPost(attestationId));
-  //   this.queue = [];
-  // };
-
-  // private sendPost = (attestationId: string) => {
-  //   try {
-  //     if (!this.iframe) return;
-  //     this.iframe.contentWindow?.postMessage(attestationId, "*"); // setting targetOrigin to "*" fixes the `Failed to execute 'postMessage' on 'DOMWindow': The target origin provided...` while the iframe is still loading
-  //     this.logger.info(`postMessage sent: ${attestationId} ${this.verifyUrl}`);
-  //   } catch (e) {}
-  // };
-
-  // private createIframe = async () => {
-  //   let iframeOnLoadResolve: () => void;
-  //   const onMessage = (event: MessageEvent) => {
-  //     if (event.data === "verify_ready") {
-  //       this.onInit();
-  //       window.removeEventListener("message", onMessage);
-  //       iframeOnLoadResolve();
-  //     }
-  //   };
-  //   await Promise.race([
-  //     new Promise<void>((resolve) => {
-  //       const existingIframe = document.getElementById(VERIFY_CONTEXT);
-  //       if (existingIframe) {
-  //         this.iframe = existingIframe as HTMLIFrameElement;
-  //         this.onInit();
-  //         return resolve();
-  //       }
-
-  //       window.addEventListener("message", onMessage);
-  //       const iframe = document.createElement("iframe");
-  //       iframe.id = VERIFY_CONTEXT;
-  //       iframe.src = `${this.verifyUrl}/${this.projectId}`;
-  //       iframe.style.display = "none";
-  //       document.body.append(iframe);
-  //       this.iframe = iframe;
-  //       iframeOnLoadResolve = resolve;
-  //     }),
-  //     new Promise((_, reject) =>
-  //       setTimeout(() => {
-  //         window.removeEventListener("message", onMessage);
-  //         reject("verify iframe load timeout");
-  //       }, toMiliseconds(FIVE_SECONDS)),
-  //     ),
-  //   ]);
-  // };
-
-  // private onInit = () => {
-  //   this.initialized = true;
-  //   this.processQueue();
-  // };
-
   private startAbortTimer(timer: number) {
     this.abortController = new AbortController();
     return setTimeout(() => this.abortController.abort(), toMiliseconds(timer));
@@ -161,5 +166,47 @@ export class Verify extends IVerify {
       url = VERIFY_SERVER;
     }
     return url;
+  };
+
+  private fetchPublicKey = async () => {
+    this.logger.info(`fetching public key from: ${this.verifyUrlV2}`);
+    const timeout = this.startAbortTimer(FIVE_SECONDS);
+    const result = await fetch(`${this.verifyUrlV2}/public-key`, {
+      signal: this.abortController.signal,
+    });
+    clearTimeout(timeout);
+    return (await result.json()) as jwk;
+  };
+
+  private persistPublicKey = async (publicKey: jwk) => {
+    console.log(`persisting public key to local storage`, publicKey);
+    await this.store.setItem(this.storeKey, publicKey);
+    this.publicKey = publicKey;
+  };
+
+  private removePublicKey = async () => {
+    console.log(`removing public key from local storage`);
+    await this.store.removeItem(this.storeKey);
+    this.publicKey = undefined;
+  };
+
+  private isValidJwtAttestation = async (attestation: string) => {
+    if (!this.publicKey) {
+      console.log("public key not found");
+      return;
+    }
+    const cryptoKey = await getCryptoKeyFromKeyData(this.publicKey.publicKey);
+    const result = await verifyP256Jwt<{
+      exp: number;
+      id: string;
+      origin: string;
+      isScam: boolean;
+    }>(attestation, cryptoKey);
+
+    return {
+      valid: result.verified,
+      hasExpired: toMiliseconds(result.payload.payload.exp) < Date.now(),
+      payload: result.payload.payload,
+    };
   };
 }
