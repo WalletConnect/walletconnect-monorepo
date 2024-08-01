@@ -48,7 +48,6 @@ import {
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_DEFAULT_RELAY_URL,
-  RELAYER_FAILOVER_RELAY_URL,
   SUBSCRIBER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
   RELAYER_TRANSPORT_CUTOFF,
@@ -118,16 +117,8 @@ export class Relayer extends IRelayer {
     this.logger.trace(`Initialized`);
     this.registerEventListeners();
     await Promise.all([this.messages.init(), this.subscriber.init()]);
-    try {
-      await this.transportOpen();
-    } catch {
-      this.logger.warn(
-        `Connection via ${this.relayUrl} failed, attempting to connect via failover domain ${RELAYER_FAILOVER_RELAY_URL}...`,
-      );
-      await this.restartTransport(RELAYER_FAILOVER_RELAY_URL);
-    }
+    await this.transportOpen();
     this.initialized = true;
-
     setTimeout(async () => {
       if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
         this.logger.info(`No topics subscribed to after init, closing transport`);
@@ -308,7 +299,10 @@ export class Relayer extends IRelayer {
         ).catch((e) => {
           reject(e);
         });
-        await this.subscriber.start();
+        this.subscriber.start().catch((error) => {
+          this.logger.error(error);
+          this.onDisconnectHandler();
+        });
         this.hasExperiencedNetworkDisruption = false;
         resolve();
       });
@@ -502,11 +496,13 @@ export class Relayer extends IRelayer {
   };
 
   private onConnectHandler = () => {
+    this.logger.trace("relayer connected");
     this.startPingTimeout();
     this.events.emit(RELAYER_EVENTS.connect);
   };
 
   private onDisconnectHandler = () => {
+    this.logger.trace("relayer disconnected");
     this.onProviderDisconnect();
   };
 
