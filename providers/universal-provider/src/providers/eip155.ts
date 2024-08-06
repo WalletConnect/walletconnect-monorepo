@@ -13,7 +13,7 @@ import {
 
 import { getChainId, getGlobal, getRpcUrl } from "../utils";
 import EventEmitter from "events";
-import { PROVIDER_EVENTS } from "../constants";
+import { BUNDLER_URL, PROVIDER_EVENTS } from "../constants";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
 class Eip155Provider implements IProvider {
@@ -204,11 +204,9 @@ class Eip155Provider implements IProvider {
 
   private async getCallStatus(args: RequestParams) {
     const session = this.client.session.get(args.topic);
-    if (
-      session?.sessionProperties &&
-      Object.keys(session.sessionProperties).includes("bundler_url")
-    ) {
-      const bundlerUrl = session.sessionProperties.bundler_url;
+    const bundlerName = session.sessionProperties?.bundler_name;
+    if (bundlerName) {
+      const bundlerUrl = this.getBundlerUrl(args.chainId, bundlerName);
       try {
         return await this.getUserOperationReceipt(bundlerUrl, args);
       } catch (error) {
@@ -235,6 +233,10 @@ class Eip155Provider implements IProvider {
     });
 
     return await response.json();
+  }
+
+  private getBundlerUrl(cap2ChainId: string, bundlerName: string) {
+    return `${BUNDLER_URL}?projectId=${this.client.core.projectId}&chainId=${cap2ChainId}&bundler=${bundlerName}`;
   }
 }
 

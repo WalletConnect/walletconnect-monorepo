@@ -29,7 +29,7 @@ import {
   TEST_REQUIRED_NAMESPACES,
 } from "./shared/constants";
 import { getChainId, getGlobal, getRpcUrl, setGlobal } from "../src/utils";
-import { RPC_URL } from "../src/constants";
+import { BUNDLER_URL, RPC_URL } from "../src/constants";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { parseChainId } from "@walletconnect/utils";
 
@@ -611,13 +611,13 @@ describe("UniversalProvider", function () {
                 events,
               },
             },
-            sessionProperties: { bundler_url: "http://localhost:3000" },
+            sessionProperties: { bundler_name: "pimlico" },
           },
         );
         const testResult = { result: "test result " };
         // @ts-ignore
         dapp.rpcProviders.eip155.getUserOperationReceipt = (bundlerUrl: string, args: any) => {
-          expect(bundlerUrl).to.eql("http://localhost:3000");
+          expect(bundlerUrl).to.include(BUNDLER_URL);
           expect(args.request.method).to.eql("wallet_getCallsStatus");
           return testResult;
         };
@@ -670,7 +670,7 @@ describe("UniversalProvider", function () {
                 events,
               },
             },
-            sessionProperties: { bundler_url: "http://localhost:3000" },
+            sessionProperties: { bundler_name: "pimlico" },
           },
         );
         const testResult = { result: "test result " };
