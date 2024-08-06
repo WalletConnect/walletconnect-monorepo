@@ -3,11 +3,13 @@ import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/lo
 import { IVerify } from "@walletconnect/types";
 import {
   getCryptoKeyFromKeyData,
+  isBrowser,
   isNode,
   P256KeyDataType,
   verifyP256Jwt,
 } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
+import { getDocument } from "@walletconnect/window-getters";
 
 import { TRUSTED_VERIFY_URLS, VERIFY_CONTEXT, VERIFY_SERVER, VERIFY_SERVER_V2 } from "../constants";
 import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
@@ -37,6 +39,7 @@ export class Verify extends IVerify {
   }
 
   public init = async () => {
+    if (!isBrowser()) return;
     this.publicKey = await this.store.getItem(this.storeKey);
     console.log("persistedKey", this.publicKey);
     if (this.publicKey && toMiliseconds(this.publicKey?.expiresAt) < Date.now()) {
@@ -50,6 +53,7 @@ export class Verify extends IVerify {
   };
 
   public register: IVerify["register"] = async (params) => {
+    if (!isBrowser()) return;
     console.log("register", params);
     const { id, decryptedId } = params;
     const url = `${this.verifyUrlV2}/attestation?projectId=${this.projectId}`;
@@ -69,7 +73,7 @@ export class Verify extends IVerify {
       return;
     }
     console.log("srcdoc", src);
-
+    const document = getDocument() as Document;
     const abortTimeout = this.startAbortTimer(ONE_SECOND * 2);
     const attestatiatonJwt = await new Promise((resolve) => {
       const abortListener = () => {
