@@ -49,6 +49,10 @@ describe("Authenticated Sessions", () => {
       Promise.race<void>([
         new Promise((resolve) => {
           wallet.on("session_authenticate", async (payload) => {
+            const verifyContext = payload.verifyContext;
+            expect(verifyContext).to.exist;
+            expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+
             // validate that the dapp has both `session_authenticate` & `session_proposal` stored
             // and expirer configured
             const pendingProposals = dapp.proposal.getAll();
@@ -297,6 +301,10 @@ describe("Authenticated Sessions", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
+          const verifyContext = payload.verifyContext;
+          expect(verifyContext).to.exist;
+          expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+
           // validate that the dapp has both `session_authenticate` & `session_proposal` stored
           // and expirer configured
           const pendingProposals = dapp.proposal.getAll();
