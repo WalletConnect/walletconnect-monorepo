@@ -52,6 +52,6 @@
     "@aws-sdk/client-cloudwatch": "3.450.0",
     "@walletconnect/jsonrpc-provider": "1.0.14",
     "@walletconnect/jsonrpc-ws-connection": "1.0.14",
-    "@walletconnect/relay-api": "1.0.10"
+    "@walletconnect/relay-api": "1.0.11-canary.0"
   }
 }
