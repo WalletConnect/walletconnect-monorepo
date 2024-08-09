@@ -1555,18 +1555,18 @@ export class Engine extends IEngine {
         ...(sessionProperties && { sessionProperties }),
         ...(sessionConfig && { sessionConfig }),
       };
-      await this.sendResult<"wc_sessionSettle">({
-        id: payload.id,
-        topic,
-        result: true,
-        throwOnFailedPublish: true,
-      });
       const target = engineEvent("session_connect");
       const listeners = this.events.listenerCount(target);
       if (listeners === 0) {
         throw new Error(`emitting ${target} without any listeners 997`);
       }
       this.events.emit(engineEvent("session_connect"), { session });
+      await this.sendResult<"wc_sessionSettle">({
+        id: payload.id,
+        topic,
+        result: true,
+        throwOnFailedPublish: true,
+      });
     } catch (err: any) {
       await this.sendError({
         id,
