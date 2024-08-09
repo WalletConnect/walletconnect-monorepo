@@ -6,6 +6,7 @@ import * as x25519 from "@stablelib/x25519";
 import { CryptoTypes } from "@walletconnect/types";
 import { concat, fromString, toString } from "uint8arrays";
 import { decodeJWT } from "@walletconnect/relay-auth";
+import { webcrypto } from "crypto";
 import { getSubtleCrypto } from "@walletconnect/environment";
 
 export const BASE10 = "base10";
@@ -173,7 +174,7 @@ export function isTypeOneEnvelope(
 }
 
 export function getCryptoKeyFromKeyData(keyData: P256KeyDataType): Promise<CryptoKey> {
-  return getSubtleCrypto().importKey(
+  return getSubtle().importKey(
     "jwk",
     keyData,
     { name: "ECDSA", namedCurve: keyData.crv },
@@ -195,9 +196,13 @@ export async function verifyP256Jwt<T>(token: string, publicKey: CryptoKey) {
     },
     namedCurve: "P-256",
   };
-  const verified = await getSubtleCrypto().verify(alg, publicKey, payload.signature, payload.data);
+  const verified = await getSubtle().verify(alg, publicKey, payload.signature, payload.data);
   return {
     payload,
     verified,
   };
+}
+
+export function getSubtle() {
+  return getSubtleCrypto() || webcrypto.subtle;
 }
