@@ -14,6 +14,10 @@ import {
   validateDecoding,
   isTypeOneEnvelope,
   generateRandomBytes32,
+  verifyJwt,
+  verifyP256Jwt,
+  getCryptoKeyFromKeyData,
+  P256KeyDataType,
 } from "../src";
 
 import { TEST_KEY_PAIRS, TEST_SHARED_KEY, TEST_HASHED_KEY, TEST_SYM_KEY } from "./shared";
@@ -107,5 +111,29 @@ describe("Crypto", () => {
   });
   it("calls generateRandomBytes32", () => {
     expect(generateRandomBytes32()).toBeTruthy();
+  });
+  it("should validate verify v2 jwt", async () => {
+    const jwt =
+      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjI0MjE3NDAsImlkIjoiNTk5NzQ1ZjJkMTJlNjIxNTFlZDg4ZmMyOWFiYTBkMjVmZWJlYWFlMjliNzU4ZDdmMGNhZGRhOTg0YzkwZjI4YSIsIm9yaWdpbiI6Imh0dHBzOi8vODk1MS03OC0xMzAtMTk4LTE0My5uZ3Jvay1mcmVlLmFwcCIsImlzU2NhbSI6bnVsbH0._pCu1gaZcEo4yjgyDwQZFXS8Q_SA4xdH51dji3bJjpviW73ieEHxWg4zg0Uc0W1Q62AZWW4o-W5id4yZy88dTw";
+    const publicKey = {
+      publicKey: {
+        crv: "P-256",
+        ext: true,
+        key_ops: ["verify"],
+        kty: "EC",
+        x: "CbL4DOYOb1ntd-8OmExO-oS0DWCMC00DntrymJoB8tk",
+        y: "KTFwjHtQxGTDR91VsOypcdBfvbo6sAMj5p4Wb-9hRA0",
+      },
+      expiresAt: 1725091080,
+    };
+    const keyData = await getCryptoKeyFromKeyData(publicKey.publicKey as P256KeyDataType);
+    const result = await verifyP256Jwt(jwt, keyData);
+    expect(result).to.exist;
+    expect(result.verified).to.exist;
+    expect(result.verified).to.be.true;
+    expect(result.payload).to.exist;
+    expect(result.payload.payload).to.exist;
+    expect(result.payload.data).to.exist;
+    expect(result.payload.signature).to.exist;
   });
 });
