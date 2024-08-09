@@ -80,6 +80,7 @@ export class Verify extends IVerify {
           clearInterval(abortTimeout);
           document.body.removeChild(iframe);
           this.abortController.signal.removeEventListener("abort", abortListener);
+          window.removeEventListener("message", listener);
           resolve(data.attestation === null ? "" : data.attestation);
         }
       };
@@ -167,14 +168,16 @@ export class Verify extends IVerify {
       const validation = await this.validateAttestation(attestation, key);
       return validation;
     } catch (e) {
-      this.logger.warn(e, "error validating attestation");
+      this.logger.warn(e);
+      this.logger.warn("error validating attestation");
     }
     const newKey = await this.fetchAndPersistPublicKey();
     try {
       const validation = await this.validateAttestation(attestation, newKey);
       return validation;
     } catch (e) {
-      this.logger.warn(e, "error validating attestation");
+      this.logger.warn(e);
+      this.logger.warn("error validating attestation");
     }
     return undefined;
   };
