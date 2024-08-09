@@ -39,17 +39,12 @@ export class Verify extends IVerify {
   }
 
   public init = async () => {
-    if (!isBrowser()) return;
     this.publicKey = await this.store.getItem(this.storeKey);
     console.log("persistedKey", this.publicKey);
     if (this.publicKey && toMiliseconds(this.publicKey?.expiresAt) < Date.now()) {
       console.log("public key expired");
       await this.removePublicKey();
     }
-    if (this.publicKey) return;
-    const key = await this.fetchPublicKey();
-    console.log("public key", key);
-    await this.persistPublicKey(key);
   };
 
   public register: IVerify["register"] = async (params) => {
@@ -62,9 +57,6 @@ export class Verify extends IVerify {
       const response = await fetch(url, {
         method: "POST",
         body: JSON.stringify({ id, decryptedId }),
-        headers: {
-          origin: "https://8951-78-130-198-143.ngrok-free.app/",
-        },
       });
       const { srcdoc } = await response.json();
       src = srcdoc;
@@ -78,23 +70,20 @@ export class Verify extends IVerify {
     const attestatiatonJwt = await new Promise((resolve) => {
       const abortListener = () => {
         document.body.removeChild(iframe);
-        window.removeEventListener("message", listener);
-        this.abortController.signal.removeEventListener("abort", abortListener);
       };
 
-      this.abortController.signal.addEventListener("abort", abortListener);
+      this.abortController.signal.addEventListener("abort", abortListener, {
+        signal: this.abortController.signal,
+      });
       const iframe = document.createElement("iframe");
       iframe.srcdoc = src;
-      iframe.src = "https://verify.walletconnect.com";
       iframe.style.display = "none";
       const listener = (event: MessageEvent) => {
         console.log("message event received", event);
         if (!event.data) return;
         const data = JSON.parse(event.data);
         if (data.type === "verify_attestation") {
-          // best-practice field
           clearInterval(abortTimeout);
-          window.removeEventListener("message", listener);
           document.body.removeChild(iframe);
           this.abortController.signal.removeEventListener("abort", abortListener);
           console.log("attestation", data.attestation);
@@ -102,7 +91,7 @@ export class Verify extends IVerify {
         }
       };
       document.body.appendChild(iframe);
-      window.addEventListener("message", listener);
+      window.addEventListener("message", listener, { signal: this.abortController.signal });
     });
     console.log("attestatiatonJwt", attestatiatonJwt);
     return attestatiatonJwt as string;
@@ -115,25 +104,14 @@ export class Verify extends IVerify {
     console.log("resolve attestation", params);
 
     if (attestationId === "") {
-      console.log("resolve: attestationId is empty string");
+      console.log("AttestationId is empty, skipping resolve");
       return;
     }
 
     if (attestationId) {
-      const data = await this.isValidJwtAttestation(attestationId);
-      console.log("resolve data", data);
-
-      if (data?.hasExpired) {
-        console.log("resolve: jwt attestation expired");
-        return;
-      }
-
-      if (data?.valid) {
-        return {
-          origin: data.payload.origin,
-          isScam: data.payload.isScam,
-        };
-      }
+      const validation = await this.isValidJwtAttestation(attestationId);
+      console.log("resolve validation", validation);
+      if (validation) return validation;
     }
     if (!hash) return;
     console.log("resolve hash", hash);
@@ -195,22 +173,59 @@ export class Verify extends IVerify {
   };
 
   private isValidJwtAttestation = async (attestation: string) => {
-    if (!this.publicKey) {
-      console.log("public key not found");
-      return;
+    const key = await this.getPublicKey();
+    try {
+      const validation = await this.validateAttestation(attestation, key);
+      return validation;
+    } catch (e) {
+      console.error("error validating attestation", e);
     }
-    const cryptoKey = await getCryptoKeyFromKeyData(this.publicKey.publicKey);
+    const newKey = await this.fetchAndPersistPublicKey();
+    try {
+      const validation = await this.validateAttestation(attestation, newKey);
+      return validation;
+    } catch (e) {
+      console.error("error validating attestation", e);
+    }
+    return undefined;
+  };
+
+  private getPublicKey = async () => {
+    if (this.publicKey) return this.publicKey;
+    return await this.fetchAndPersistPublicKey();
+  };
+
+  private fetchAndPersistPublicKey = async () => {
+    const key = await this.fetchPublicKey();
+    console.log("public key", key);
+    await this.persistPublicKey(key);
+    return key;
+  };
+
+  private validateAttestation = async (attestation: string, key: jwk) => {
+    const cryptoKey = await getCryptoKeyFromKeyData(key?.publicKey);
     const result = await verifyP256Jwt<{
       exp: number;
       id: string;
       origin: string;
       isScam: boolean;
     }>(attestation, cryptoKey);
-
-    return {
+    console.log("validateAttestation result", result);
+    const validation = {
       valid: result.verified,
       hasExpired: toMiliseconds(result.payload.payload.exp) < Date.now(),
       payload: result.payload.payload,
     };
+    if (validation.hasExpired) {
+      console.log("resolve: jwt attestation expired");
+      throw new Error("JWT attestation expired");
+    }
+
+    return validation.valid
+      ? {
+          origin: validation.payload.origin,
+          isScam: validation.payload.isScam,
+        }
+      : undefined;
   };
 }

@@ -1469,7 +1469,6 @@ export class Engine extends IEngine {
         params.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
       const proposal = { id, pairingTopic: topic, expiryTimestamp, ...params };
       await this.setProposal(id, proposal);
-      // if attestation === "" means verify is disabled
       const verifyContext = await this.getVerifyContext({
         attestationId: attestation,
         hash: hashMessage(JSON.stringify(payload)),
