@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
@@ -148,7 +147,6 @@ export class Publisher extends IPublisher {
       },
       id,
     };
-    console.log("rpc publish request", request);
     if (isUndefined(request.params?.prompt)) delete request.params?.prompt;
     if (isUndefined(request.params?.tag)) delete request.params?.tag;
     this.logger.debug(`Outgoing Relay Payload`);

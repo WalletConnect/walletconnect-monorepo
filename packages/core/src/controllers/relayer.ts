@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { EventEmitter } from "events";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import {
@@ -445,7 +444,6 @@ export class Relayer extends IRelayer {
   private async onProviderPayload(payload: JsonRpcPayload) {
     this.logger.debug(`Incoming Relay Payload`);
     this.logger.trace({ type: "payload", direction: "incoming", payload });
-    console.log("onProviderPayload", payload);
     if (isJsonRpcRequest(payload)) {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;

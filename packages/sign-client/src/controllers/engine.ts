@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import {
   EXPIRER_EVENTS,
   PAIRING_EVENTS,
@@ -1304,7 +1303,6 @@ export class Engine extends IEngine {
 
   private registerRelayerEvents() {
     this.client.core.relayer.on(RELAYER_EVENTS.message, (event: RelayerTypes.MessageEvent) => {
-      console.log("Relayer message", event);
       // capture any messages that arrive before the client is initialized so we can process them after initialization is complete
       if (!this.initialized || this.relayMessageCache.length > 0) {
         this.relayMessageCache.push(event);
@@ -2441,23 +2439,23 @@ export class Engine extends IEngine {
       },
     };
 
-    // try {
-    const result = await this.client.core.verify.resolve({
-      attestationId,
-      hash,
-      verifyUrl: metadata.verifyUrl,
-    });
-    if (result) {
-      context.verified.origin = result.origin;
-      context.verified.isScam = result.isScam;
-      context.verified.validation =
-        result.origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
+    try {
+      const result = await this.client.core.verify.resolve({
+        attestationId,
+        hash,
+        verifyUrl: metadata.verifyUrl,
+      });
+      if (result) {
+        context.verified.origin = result.origin;
+        context.verified.isScam = result.isScam;
+        context.verified.validation =
+          result.origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
+      }
+    } catch (e) {
+      this.client.logger.warn(e);
     }
-    // } catch (e) {
-    //   this.client.logger.info(e);
-    // }
 
-    this.client.logger.info(`Verify context: ${JSON.stringify(context)}`);
+    this.client.logger.debug(`Verify context: ${JSON.stringify(context)}`);
     return context;
   };
 

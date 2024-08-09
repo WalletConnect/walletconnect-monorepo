@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IVerify } from "@walletconnect/types";
 import {
@@ -30,7 +29,6 @@ export class Verify extends IVerify {
     this.logger = generateChildLogger(logger, this.name);
     this.abortController = new AbortController();
     this.isDevEnv = isNode() && process.env.IS_VITEST;
-    console.log("Verify v2 init", this.verifyUrlV2);
     this.init();
   }
 
@@ -40,16 +38,14 @@ export class Verify extends IVerify {
 
   public init = async () => {
     this.publicKey = await this.store.getItem(this.storeKey);
-    console.log("persistedKey", this.publicKey);
     if (this.publicKey && toMiliseconds(this.publicKey?.expiresAt) < Date.now()) {
-      console.log("public key expired");
+      this.logger.debug("verify v2 public key expired");
       await this.removePublicKey();
     }
   };
 
   public register: IVerify["register"] = async (params) => {
     if (!isBrowser()) return;
-    console.log("register", params);
     const { id, decryptedId } = params;
     const url = `${this.verifyUrlV2}/attestation?projectId=${this.projectId}`;
     let src = "";
@@ -60,11 +56,10 @@ export class Verify extends IVerify {
       });
       const { srcdoc } = await response.json();
       src = srcdoc;
+      this.logger.debug("srcdoc fetched", src);
     } catch (e) {
-      console.error("error", e);
       return;
     }
-    console.log("srcdoc", src);
     const document = getDocument() as Document;
     const abortTimeout = this.startAbortTimer(ONE_SECOND * 2);
     const attestatiatonJwt = await new Promise((resolve) => {
@@ -79,21 +74,19 @@ export class Verify extends IVerify {
       iframe.srcdoc = src;
       iframe.style.display = "none";
       const listener = (event: MessageEvent) => {
-        console.log("message event received", event);
         if (!event.data) return;
         const data = JSON.parse(event.data);
         if (data.type === "verify_attestation") {
           clearInterval(abortTimeout);
           document.body.removeChild(iframe);
           this.abortController.signal.removeEventListener("abort", abortListener);
-          console.log("attestation", data.attestation);
           resolve(data.attestation === null ? "" : data.attestation);
         }
       };
       document.body.appendChild(iframe);
       window.addEventListener("message", listener, { signal: this.abortController.signal });
     });
-    console.log("attestatiatonJwt", attestatiatonJwt);
+    this.logger.debug("jwt attestation", attestatiatonJwt);
     return attestatiatonJwt as string;
   };
 
@@ -101,20 +94,16 @@ export class Verify extends IVerify {
     if (this.isDevEnv) return "";
     const { attestationId, hash } = params;
 
-    console.log("resolve attestation", params);
-
     if (attestationId === "") {
-      console.log("AttestationId is empty, skipping resolve");
+      this.logger.debug("resolve: attestationId is empty, skipping");
       return;
     }
 
     if (attestationId) {
       const validation = await this.isValidJwtAttestation(attestationId);
-      console.log("resolve validation", validation);
       if (validation) return validation;
     }
     if (!hash) return;
-    console.log("resolve hash", hash);
     const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
     return this.fetchAttestation(hash, verifyUrl);
   };
@@ -124,7 +113,7 @@ export class Verify extends IVerify {
   }
 
   private fetchAttestation = async (attestationId: string, url: string) => {
-    this.logger.info(`resolving attestation: ${attestationId} from url: ${url}`);
+    this.logger.debug(`resolving attestation: ${attestationId} from url: ${url}`);
     // set artificial timeout to prevent hanging
     const timeout = this.startAbortTimer(ONE_SECOND * 5);
     const result = await fetch(`${url}/attestation/${attestationId}`, {
@@ -151,7 +140,7 @@ export class Verify extends IVerify {
   };
 
   private fetchPublicKey = async () => {
-    this.logger.info(`fetching public key from: ${this.verifyUrlV2}`);
+    this.logger.debug(`fetching public key from: ${this.verifyUrlV2}`);
     const timeout = this.startAbortTimer(FIVE_SECONDS);
     const result = await fetch(`${this.verifyUrlV2}/public-key`, {
       signal: this.abortController.signal,
@@ -161,13 +150,13 @@ export class Verify extends IVerify {
   };
 
   private persistPublicKey = async (publicKey: jwk) => {
-    console.log(`persisting public key to local storage`, publicKey);
+    this.logger.debug(`persisting public key to local storage`, publicKey);
     await this.store.setItem(this.storeKey, publicKey);
     this.publicKey = publicKey;
   };
 
   private removePublicKey = async () => {
-    console.log(`removing public key from local storage`);
+    this.logger.debug(`removing verify v2 public key from storage`);
     await this.store.removeItem(this.storeKey);
     this.publicKey = undefined;
   };
@@ -178,14 +167,14 @@ export class Verify extends IVerify {
       const validation = await this.validateAttestation(attestation, key);
       return validation;
     } catch (e) {
-      console.error("error validating attestation", e);
+      this.logger.warn(e, "error validating attestation");
     }
     const newKey = await this.fetchAndPersistPublicKey();
     try {
       const validation = await this.validateAttestation(attestation, newKey);
       return validation;
     } catch (e) {
-      console.error("error validating attestation", e);
+      this.logger.warn(e, "error validating attestation");
     }
     return undefined;
   };
@@ -197,7 +186,6 @@ export class Verify extends IVerify {
 
   private fetchAndPersistPublicKey = async () => {
     const key = await this.fetchPublicKey();
-    console.log("public key", key);
     await this.persistPublicKey(key);
     return key;
   };
@@ -210,14 +198,13 @@ export class Verify extends IVerify {
       origin: string;
       isScam: boolean;
     }>(attestation, cryptoKey);
-    console.log("validateAttestation result", result);
     const validation = {
       valid: result.verified,
       hasExpired: toMiliseconds(result.payload.payload.exp) < Date.now(),
       payload: result.payload.payload,
     };
     if (validation.hasExpired) {
-      console.log("resolve: jwt attestation expired");
+      this.logger.warn("resolve: jwt attestation expired");
       throw new Error("JWT attestation expired");
     }
 
