@@ -42,6 +42,9 @@ export class Verify extends IVerify {
       this.logger.debug("verify v2 public key expired");
       await this.removePublicKey();
     }
+    if (!this.publicKey) {
+      await this.fetchAndPersistPublicKey();
+    }
   };
 
   public register: IVerify["register"] = async (params) => {
@@ -95,7 +98,7 @@ export class Verify extends IVerify {
     } catch (e) {
       this.logger.warn(e);
     }
-    return null;
+    return "";
   };
 
   public resolve: IVerify["resolve"] = async (params) => {
@@ -148,13 +151,18 @@ export class Verify extends IVerify {
   };
 
   private fetchPublicKey = async () => {
-    this.logger.debug(`fetching public key from: ${this.verifyUrlV2}`);
-    const timeout = this.startAbortTimer(FIVE_SECONDS);
-    const result = await fetch(`${this.verifyUrlV2}/public-key`, {
-      signal: this.abortController.signal,
-    });
-    clearTimeout(timeout);
-    return (await result.json()) as jwk;
+    try {
+      this.logger.debug(`fetching public key from: ${this.verifyUrlV2}`);
+      const timeout = this.startAbortTimer(FIVE_SECONDS);
+      const result = await fetch(`${this.verifyUrlV2}/public-key`, {
+        signal: this.abortController.signal,
+      });
+      clearTimeout(timeout);
+      return (await result.json()) as jwk;
+    } catch (e) {
+      this.logger.warn(e);
+    }
+    return undefined;
   };
 
   private persistPublicKey = async (publicKey: jwk) => {
@@ -172,16 +180,20 @@ export class Verify extends IVerify {
   private isValidJwtAttestation = async (attestation: string) => {
     const key = await this.getPublicKey();
     try {
-      const validation = await this.validateAttestation(attestation, key);
-      return validation;
+      if (key) {
+        const validation = await this.validateAttestation(attestation, key);
+        return validation;
+      }
     } catch (e) {
       this.logger.warn(e);
       this.logger.warn("error validating attestation");
     }
     const newKey = await this.fetchAndPersistPublicKey();
     try {
-      const validation = await this.validateAttestation(attestation, newKey);
-      return validation;
+      if (newKey) {
+        const validation = await this.validateAttestation(attestation, newKey);
+        return validation;
+      }
     } catch (e) {
       this.logger.warn(e);
       this.logger.warn("error validating attestation");
@@ -196,6 +208,7 @@ export class Verify extends IVerify {
 
   private fetchAndPersistPublicKey = async () => {
     const key = await this.fetchPublicKey();
+    if (!key) return;
     await this.persistPublicKey(key);
     return key;
   };
