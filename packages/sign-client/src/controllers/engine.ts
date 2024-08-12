@@ -304,6 +304,12 @@ export class Engine extends IEngine {
     };
     await this.client.session.set(sessionTopic, session);
     try {
+      await this.sendRequest({
+        topic: sessionTopic,
+        method: "wc_sessionSettle",
+        params: sessionSettle,
+        throwOnFailedPublish: true,
+      });
       await this.sendResult<"wc_sessionPropose">({
         id,
         topic: pairingTopic,
@@ -313,12 +319,6 @@ export class Engine extends IEngine {
           },
           responderPublicKey: selfPublicKey,
         },
-        throwOnFailedPublish: true,
-      });
-      await this.sendRequest({
-        topic: sessionTopic,
-        method: "wc_sessionSettle",
-        params: sessionSettle,
         throwOnFailedPublish: true,
       });
     } catch (error) {
