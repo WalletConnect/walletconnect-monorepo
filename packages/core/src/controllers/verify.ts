@@ -58,37 +58,44 @@ export class Verify extends IVerify {
       src = srcdoc;
       this.logger.debug("srcdoc fetched", src);
     } catch (e) {
+      this.logger.warn(e);
       return;
     }
-    const document = getDocument() as Document;
-    const abortTimeout = this.startAbortTimer(ONE_SECOND * 2);
-    const attestatiatonJwt = await new Promise((resolve) => {
-      const abortListener = () => {
-        document.body.removeChild(iframe);
-      };
-
-      this.abortController.signal.addEventListener("abort", abortListener, {
-        signal: this.abortController.signal,
-      });
-      const iframe = document.createElement("iframe");
-      iframe.srcdoc = src;
-      iframe.style.display = "none";
-      const listener = (event: MessageEvent) => {
-        if (!event.data) return;
-        const data = JSON.parse(event.data);
-        if (data.type === "verify_attestation") {
-          clearInterval(abortTimeout);
-          document.body.removeChild(iframe);
-          this.abortController.signal.removeEventListener("abort", abortListener);
+    try {
+      const document = getDocument() as Document;
+      const abortTimeout = this.startAbortTimer(ONE_SECOND * 3);
+      const attestatiatonJwt = await new Promise((resolve) => {
+        const abortListener = () => {
           window.removeEventListener("message", listener);
-          resolve(data.attestation === null ? "" : data.attestation);
-        }
-      };
-      document.body.appendChild(iframe);
-      window.addEventListener("message", listener, { signal: this.abortController.signal });
-    });
-    this.logger.debug("jwt attestation", attestatiatonJwt);
-    return attestatiatonJwt as string;
+          document.body.removeChild(iframe);
+          throw new Error("attestation aborted");
+        };
+        this.abortController.signal.addEventListener("abort", abortListener, {
+          signal: this.abortController.signal,
+        });
+        const iframe = document.createElement("iframe");
+        iframe.srcdoc = src;
+        iframe.style.display = "none";
+        const listener = (event: MessageEvent) => {
+          if (!event.data) return;
+          const data = JSON.parse(event.data);
+          if (data.type === "verify_attestation") {
+            clearInterval(abortTimeout);
+            document.body.removeChild(iframe);
+            this.abortController.signal.removeEventListener("abort", abortListener);
+            window.removeEventListener("message", listener);
+            resolve(data.attestation === null ? "" : data.attestation);
+          }
+        };
+        document.body.appendChild(iframe);
+        window.addEventListener("message", listener, { signal: this.abortController.signal });
+      });
+      this.logger.debug("jwt attestation", attestatiatonJwt);
+      return attestatiatonJwt as string;
+    } catch (e) {
+      this.logger.warn(e);
+    }
+    return null;
   };
 
   public resolve: IVerify["resolve"] = async (params) => {
