@@ -67,7 +67,7 @@ export class Verify extends IVerify {
     try {
       const document = getDocument() as Document;
       const abortTimeout = this.startAbortTimer(ONE_SECOND * 3);
-      const attestatiatonJwt = await new Promise((resolve) => {
+      const attestationJwt = await new Promise((resolve) => {
         const abortListener = () => {
           window.removeEventListener("message", listener);
           document.body.removeChild(iframe);
@@ -93,8 +93,8 @@ export class Verify extends IVerify {
         document.body.appendChild(iframe);
         window.addEventListener("message", listener, { signal: this.abortController.signal });
       });
-      this.logger.debug("jwt attestation", attestatiatonJwt);
-      return attestatiatonJwt as string;
+      this.logger.debug("jwt attestation", attestationJwt);
+      return attestationJwt as string;
     } catch (e) {
       this.logger.warn(e);
     }
