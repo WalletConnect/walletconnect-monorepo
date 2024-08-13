@@ -304,6 +304,12 @@ export class Engine extends IEngine {
     };
     await this.client.session.set(sessionTopic, session);
     try {
+      await this.sendRequest({
+        topic: sessionTopic,
+        method: "wc_sessionSettle",
+        params: sessionSettle,
+        throwOnFailedPublish: true,
+      });
       await this.sendResult<"wc_sessionPropose">({
         id,
         topic: pairingTopic,
@@ -313,12 +319,6 @@ export class Engine extends IEngine {
           },
           responderPublicKey: selfPublicKey,
         },
-        throwOnFailedPublish: true,
-      });
-      await this.sendRequest({
-        topic: sessionTopic,
-        method: "wc_sessionSettle",
-        params: sessionSettle,
         throwOnFailedPublish: true,
       });
     } catch (error) {
@@ -1555,18 +1555,18 @@ export class Engine extends IEngine {
         ...(sessionProperties && { sessionProperties }),
         ...(sessionConfig && { sessionConfig }),
       };
-      await this.sendResult<"wc_sessionSettle">({
-        id: payload.id,
-        topic,
-        result: true,
-        throwOnFailedPublish: true,
-      });
       const target = engineEvent("session_connect");
       const listeners = this.events.listenerCount(target);
       if (listeners === 0) {
         throw new Error(`emitting ${target} without any listeners 997`);
       }
       this.events.emit(engineEvent("session_connect"), { session });
+      await this.sendResult<"wc_sessionSettle">({
+        id: payload.id,
+        topic,
+        result: true,
+        throwOnFailedPublish: true,
+      });
     } catch (err: any) {
       await this.sendError({
         id,
