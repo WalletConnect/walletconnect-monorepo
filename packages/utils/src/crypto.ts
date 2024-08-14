@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ChaCha20Poly1305 } from "@stablelib/chacha20poly1305";
 import { HKDF } from "@stablelib/hkdf";
 import { randomBytes } from "@stablelib/random";
@@ -5,9 +6,8 @@ import { hash, SHA256 } from "@stablelib/sha256";
 import * as x25519 from "@stablelib/x25519";
 import { CryptoTypes } from "@walletconnect/types";
 import { concat, fromString, toString } from "uint8arrays";
+import { ec as EC } from "elliptic";
 import { decodeJWT } from "@walletconnect/relay-auth";
-import { webcrypto } from "crypto";
-import { getSubtleCrypto } from "@walletconnect/environment";
 
 export const BASE10 = "base10";
 export const BASE16 = "base16";
@@ -173,36 +173,69 @@ export function isTypeOneEnvelope(
   );
 }
 
-export function getCryptoKeyFromKeyData(keyData: P256KeyDataType): Promise<CryptoKey> {
-  return getSubtle().importKey(
-    "jwk",
-    keyData,
-    { name: "ECDSA", namedCurve: keyData.crv },
-    keyData.ext,
-    keyData.key_ops,
-  );
-}
-
-export async function verifyP256Jwt<T>(token: string, publicKey: CryptoKey) {
-  const payload = decodeJWT(token) as unknown as {
-    payload: T;
-    signature: ArrayBuffer;
-    data: ArrayBuffer;
-  };
-  const alg = {
-    name: "ECDSA",
-    hash: {
-      name: "SHA-256",
+export async function getCryptoKeyFromKeyData(keyData: P256KeyDataType): Promise<any> {
+  const ec = new EC("p256");
+  const key = ec.keyFromPublic(
+    {
+      x: Buffer.from(keyData.x, "base64").toString("hex"),
+      y: Buffer.from(keyData.y, "base64").toString("hex"),
     },
-    namedCurve: "P-256",
-  };
-  const verified = await getSubtle().verify(alg, publicKey, payload.signature, payload.data);
-  return {
-    payload,
-    verified,
-  };
+    "hex",
+  );
+  return key;
 }
 
-export function getSubtle() {
-  return getSubtleCrypto() || webcrypto.subtle;
+// Utility function to decode Base64 URL
+function base64UrlToBase64(base64Url: string) {
+  let base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = base64.length % 4;
+  if (padding > 0) {
+    base64 += "=".repeat(4 - padding);
+  }
+  return base64;
+}
+
+function base64UrlDecode(base64Url: string) {
+  return Buffer.from(base64UrlToBase64(base64Url), "base64");
+}
+
+export async function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
+  console.log("verifying...", token, keyData);
+
+  const [headerBase64Url, payloadBase64Url, signatureBase64Url] = token.split(".");
+
+  // Decode the signature
+  const signatureBuffer = base64UrlDecode(signatureBase64Url);
+
+  // Check if signature length is correct (64 bytes for P-256)
+  if (signatureBuffer.length !== 64) {
+    throw new Error("Invalid signature length");
+  }
+
+  // Extract r and s from the signature
+  const r = signatureBuffer.slice(0, 32).toString("hex");
+  const s = signatureBuffer.slice(32, 64).toString("hex");
+
+  // Create the signing input
+  const signingInput = `${headerBase64Url}.${payloadBase64Url}`;
+
+  const sha256 = new SHA256();
+  const buffer = sha256.update(Buffer.from(signingInput)).digest();
+
+  const key = await getCryptoKeyFromKeyData(keyData);
+
+  // Convert the hash to hex format
+  const hashHex = Buffer.from(buffer).toString("hex");
+
+  // Verify the signature
+  const isValid = key.verify(hashHex, { r, s });
+
+  if (!isValid) {
+    throw new Error("Invalid signature");
+  }
+  const data = decodeJWT(token) as unknown as { payload: T };
+  return {
+    ...data.payload,
+    isVerified: isValid,
+  };
 }

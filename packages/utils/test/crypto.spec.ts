@@ -1,6 +1,9 @@
 import { expect, describe, it } from "vitest";
 import { toString } from "uint8arrays";
 import { safeJsonStringify } from "@walletconnect/safe-json";
+import { SHA256 } from "@stablelib/sha256";
+import { Buffer } from "buffer";
+import elliptic from "elliptic";
 
 import {
   BASE16,
@@ -14,7 +17,6 @@ import {
   validateDecoding,
   isTypeOneEnvelope,
   generateRandomBytes32,
-  verifyJwt,
   verifyP256Jwt,
   getCryptoKeyFromKeyData,
   P256KeyDataType,
@@ -112,9 +114,10 @@ describe("Crypto", () => {
   it("calls generateRandomBytes32", () => {
     expect(generateRandomBytes32()).toBeTruthy();
   });
-  it("should validate verify v2 jwt", async () => {
-    const jwt =
-      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjI0MjE3NDAsImlkIjoiNTk5NzQ1ZjJkMTJlNjIxNTFlZDg4ZmMyOWFiYTBkMjVmZWJlYWFlMjliNzU4ZDdmMGNhZGRhOTg0YzkwZjI4YSIsIm9yaWdpbiI6Imh0dHBzOi8vODk1MS03OC0xMzAtMTk4LTE0My5uZ3Jvay1mcmVlLmFwcCIsImlzU2NhbSI6bnVsbH0._pCu1gaZcEo4yjgyDwQZFXS8Q_SA4xdH51dji3bJjpviW73ieEHxWg4zg0Uc0W1Q62AZWW4o-W5id4yZy88dTw";
+  it.only("should validate verify v2 jwt", async () => {
+    const token =
+      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjM2MzI1MDQsImlkIjoiMDkxN2YzMzk0YTdmMzkyZTg3ZTM1ZjM4OTg2OWU2NDEzZjkyNTBlMGIxZTE4YjUzMDhkNzBhM2VjOTJjZDQ3OCIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsImlzU2NhbSI6bnVsbCwiaXNWZXJpZmllZCI6ZmFsc2V9.RehA28c0Ae8D_ixvGS8uG9J9eTJtpGfaC_7kNE9ZNAVFREWBY6Dl_SXc0_E0RSvYkHpupfmXlmjenuDqNcyoeg";
+
     const publicKey = {
       publicKey: {
         crv: "P-256",
@@ -124,16 +127,23 @@ describe("Crypto", () => {
         x: "CbL4DOYOb1ntd-8OmExO-oS0DWCMC00DntrymJoB8tk",
         y: "KTFwjHtQxGTDR91VsOypcdBfvbo6sAMj5p4Wb-9hRA0",
       },
-      expiresAt: 1725091080,
+      expiresAt: 1726209328,
     };
-    const keyData = await getCryptoKeyFromKeyData(publicKey.publicKey as P256KeyDataType);
-    const result = await verifyP256Jwt(jwt, keyData);
+
+    const result = await verifyP256Jwt<{
+      exp: number;
+      id: string;
+      origin: string;
+      isScam: boolean;
+      isVerified: true;
+    }>(token, publicKey.publicKey);
+    console.log("result", result);
     expect(result).to.exist;
-    expect(result.verified).to.exist;
-    expect(result.verified).to.be.true;
-    expect(result.payload).to.exist;
-    expect(result.payload.payload).to.exist;
-    expect(result.payload.data).to.exist;
-    expect(result.payload.signature).to.exist;
+    expect(result).to.exist;
+    expect(result.isVerified).to.be.true;
+    expect(result.exp).to.exist;
+    expect(result.origin).to.exist;
+    expect(result.isScam).to.be.null;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   });
 });

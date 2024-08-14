@@ -1,12 +1,6 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { IVerify } from "@walletconnect/types";
-import {
-  getCryptoKeyFromKeyData,
-  isBrowser,
-  isNode,
-  P256KeyDataType,
-  verifyP256Jwt,
-} from "@walletconnect/utils";
+import { isBrowser, isNode, P256KeyDataType, verifyP256Jwt } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import { getDocument } from "@walletconnect/window-getters";
 
@@ -185,7 +179,7 @@ export class Verify extends IVerify {
         return validation;
       }
     } catch (e) {
-      this.logger.warn(e);
+      console.error(e);
       this.logger.warn("error validating attestation");
     }
     const newKey = await this.fetchAndPersistPublicKey();
@@ -214,28 +208,29 @@ export class Verify extends IVerify {
   };
 
   private validateAttestation = async (attestation: string, key: jwk) => {
-    const cryptoKey = await getCryptoKeyFromKeyData(key?.publicKey);
+    console.log("cryptoKey", key);
     const result = await verifyP256Jwt<{
       exp: number;
       id: string;
       origin: string;
       isScam: boolean;
-    }>(attestation, cryptoKey);
+      isVerified: boolean;
+    }>(attestation, key.publicKey);
+    console.log("decoded result", result);
     const validation = {
-      valid: result.verified,
-      hasExpired: toMiliseconds(result.payload.payload.exp) < Date.now(),
-      payload: result.payload.payload,
+      valid: true,
+      hasExpired: toMiliseconds(result.exp) < Date.now(),
+      payload: result,
     };
+
     if (validation.hasExpired) {
       this.logger.warn("resolve: jwt attestation expired");
       throw new Error("JWT attestation expired");
     }
 
-    return validation.valid
-      ? {
-          origin: validation.payload.origin,
-          isScam: validation.payload.isScam,
-        }
-      : undefined;
+    return {
+      origin: validation.payload.origin,
+      isScam: validation.payload.isScam,
+    };
   };
 }
