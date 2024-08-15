@@ -44,7 +44,7 @@
     "@walletconnect/window-metadata": "1.0.1",
     "detect-browser": "5.3.0",
     "uint8arrays": "5.1.0",
-    "elliptic": "^6.5.7"
+    "elliptic": "6.5.7"
   },
   "devDependencies": {
     "@types/elliptic": "^6.4.18",
