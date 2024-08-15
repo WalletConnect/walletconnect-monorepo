@@ -1,4 +1,3 @@
-import * as qs from "query-string";
 import { EngineTypes, RelayerTypes } from "@walletconnect/types";
 
 // -- uri -------------------------------------------------- //
@@ -27,7 +26,13 @@ export function parseUri(str: string): EngineTypes.UriParameters {
   const path: string = str.substring(pathStart + 1, pathEnd);
   const requiredValues = path.split("@");
   const queryString: string = typeof pathEnd !== "undefined" ? str.substring(pathEnd) : "";
-  const queryParams = qs.parse(queryString);
+
+  const urlSearchParams = new URLSearchParams(queryString);
+  const queryParams: Record<string, string> = {};
+  urlSearchParams.forEach((value, key) => {
+    queryParams[key] = value;
+  });
+
   const methods =
     typeof queryParams.methods === "string" ? queryParams.methods.split(",") : undefined;
   const result = {
@@ -61,13 +66,23 @@ export function formatRelayParams(relay: RelayerTypes.ProtocolOptions, delimiter
 }
 
 export function formatUri(params: EngineTypes.UriParameters): string {
-  return (
-    `${params.protocol}:${params.topic}@${params.version}?` +
-    qs.stringify({
-      symKey: params.symKey,
-      ...formatRelayParams(params.relay),
-      expiryTimestamp: params.expiryTimestamp,
-      ...(params.methods ? { methods: params.methods.join(",") } : {}),
-    })
-  );
+  const urlSearchParams = new URLSearchParams();
+
+  const relayParams = formatRelayParams(params.relay);
+  Object.keys(relayParams)
+    .sort()
+    .forEach((key) => {
+      urlSearchParams.set(key, relayParams[key]);
+    });
+
+  urlSearchParams.set("symKey", params.symKey);
+  if (params.expiryTimestamp)
+    urlSearchParams.set("expiryTimestamp", params.expiryTimestamp.toString());
+
+  if (params.methods) {
+    urlSearchParams.set("methods", params.methods.join(","));
+  }
+
+  const queryString = urlSearchParams.toString();
+  return `${params.protocol}:${params.topic}@${params.version}?${queryString}`;
 }

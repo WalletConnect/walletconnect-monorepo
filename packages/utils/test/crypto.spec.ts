@@ -1,5 +1,5 @@
 import { expect, describe, it } from "vitest";
-import { toString } from "uint8arrays";
+import { toString } from "uint8arrays/to-string";
 import { safeJsonStringify } from "@walletconnect/safe-json";
 import { SHA256 } from "@stablelib/sha256";
 import { Buffer } from "buffer";

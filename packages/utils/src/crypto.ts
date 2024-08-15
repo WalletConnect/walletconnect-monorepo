@@ -4,7 +4,9 @@ import { randomBytes } from "@stablelib/random";
 import { hash, SHA256 } from "@stablelib/sha256";
 import * as x25519 from "@stablelib/x25519";
 import { CryptoTypes } from "@walletconnect/types";
-import { concat, fromString, toString } from "uint8arrays";
+import { toString } from "uint8arrays/to-string";
+import { concat } from "uint8arrays/concat";
+import { fromString } from "uint8arrays/from-string";
 import { ec as EC } from "elliptic";
 import { decodeJWT } from "@walletconnect/relay-auth";
 

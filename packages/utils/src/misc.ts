@@ -10,7 +10,6 @@ import { getDocument, getLocation, getNavigator } from "@walletconnect/window-ge
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
-import * as qs from "query-string";
 
 // -- constants -----------------------------------------//
 export const REACT_NATIVE_PRODUCT = "ReactNative";
@@ -77,13 +76,18 @@ export function getBundleId(): string | undefined {
 // -- query -----------------------------------------------//
 
 export function appendToQueryString(queryString: string, newQueryParams: any): string {
-  let queryParams = qs.parse(queryString);
+  const urlSearchParams = new URLSearchParams(queryString);
 
-  queryParams = { ...queryParams, ...newQueryParams };
+  for (const key in newQueryParams) {
+    if (newQueryParams.hasOwnProperty(key)) {
+      const value = newQueryParams[key];
+      if (value !== undefined) {
+        urlSearchParams.set(key, value);
+      }
+    }
+  }
 
-  queryString = qs.stringify(queryParams);
-
-  return queryString;
+  return urlSearchParams.toString();
 }
 
 // -- metadata ----------------------------------------------//

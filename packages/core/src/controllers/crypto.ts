@@ -18,7 +18,7 @@ import {
   decodeTypeByte,
   BASE16,
 } from "@walletconnect/utils";
-import { toString } from "uint8arrays";
+import { toString } from "uint8arrays/to-string";
 
 import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants";
 import { KeyChain } from "./keychain";
