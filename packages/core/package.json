@@ -45,12 +45,13 @@
     "@walletconnect/types": "2.14.0",
     "@walletconnect/utils": "2.14.0",
     "events": "3.3.0",
-    "isomorphic-unfetch": "3.1.0",
     "lodash.isequal": "4.5.0",
     "uint8arrays": "3.1.0"
   },
   "devDependencies": {
-    "@types/lodash.isequal": "4.5.6",
-    "node-fetch": "3.3.0"
+    "@types/lodash.isequal": "4.5.6"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
