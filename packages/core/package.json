@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/core",
   "description": "Core for WalletConnect Protocol",
-  "version": "2.14.0",
+  "version": "2.15.0",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -38,19 +38,20 @@
     "@walletconnect/jsonrpc-ws-connection": "1.0.14",
     "@walletconnect/keyvaluestorage": "1.1.1",
     "@walletconnect/logger": "2.1.2",
-    "@walletconnect/relay-api": "1.0.10",
+    "@walletconnect/relay-api": "1.0.11",
     "@walletconnect/relay-auth": "1.0.4",
     "@walletconnect/safe-json": "1.0.2",
     "@walletconnect/time": "1.0.2",
-    "@walletconnect/types": "2.14.0",
-    "@walletconnect/utils": "2.14.0",
+    "@walletconnect/types": "2.15.0",
+    "@walletconnect/utils": "2.15.0",
     "events": "3.3.0",
-    "isomorphic-unfetch": "3.1.0",
     "lodash.isequal": "4.5.0",
     "uint8arrays": "5.1.0"
   },
   "devDependencies": {
-    "@types/lodash.isequal": "4.5.6",
-    "node-fetch": "3.3.0"
+    "@types/lodash.isequal": "4.5.6"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
