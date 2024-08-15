@@ -488,6 +488,9 @@ export class Subscriber extends ISubscriber {
   }
 
   private async restartToComplete() {
+    if (!this.relayer.connected || !this.relayer.connecting) {
+      await this.relayer.transportOpen();
+    }
     if (!this.restartInProgress) return;
 
     await new Promise<void>((resolve) => {

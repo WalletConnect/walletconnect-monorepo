@@ -50,7 +50,6 @@ import {
   RELAYER_DEFAULT_RELAY_URL,
   SUBSCRIBER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
-  RELAYER_TRANSPORT_CUTOFF,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
@@ -117,15 +116,15 @@ export class Relayer extends IRelayer {
     this.logger.trace(`Initialized`);
     this.registerEventListeners();
     await Promise.all([this.messages.init(), this.subscriber.init()]);
-    await this.transportOpen();
+    // await this.transportOpen();
     this.initialized = true;
-    setTimeout(async () => {
-      if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
-        this.logger.info(`No topics subscribed to after init, closing transport`);
-        await this.transportClose();
-        this.transportExplicitlyClosed = false;
-      }
-    }, RELAYER_TRANSPORT_CUTOFF);
+    // setTimeout(async () => {
+    //   if (this.subscriber.topics.length === 0 && this.subscriber.pending.size === 0) {
+    //     this.logger.info(`No topics subscribed to after init, closing transport`);
+    //     await this.transportClose();
+    //     this.transportExplicitlyClosed = false;
+    //   }
+    // }, RELAYER_TRANSPORT_CUTOFF);
   }
 
   get context() {
@@ -156,6 +155,9 @@ export class Relayer extends IRelayer {
 
   public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
     this.isInitialized();
+    console.log("Relayer.subscribe", topic, opts);
+    await this.toEstablishConnection();
+    console.log("Relayer.subscribe - established connection");
     let id = this.subscriber.topicMap.get(topic)?.[0] || "";
     let resolvePromise: () => void;
     const onSubCreated = (subscription: SubscriberTypes.Active) => {
@@ -171,11 +173,14 @@ export class Relayer extends IRelayer {
         this.subscriber.on(SUBSCRIBER_EVENTS.created, onSubCreated);
       }),
       new Promise<void>(async (resolve) => {
+        console.log("Relayer.subscribe - subscribing");
         const result = await this.subscriber.subscribe(topic, opts);
+        console.log("Relayer.subscribe - subscribed", result);
         id = result || id;
         resolve();
       }),
     ]);
+    console.log("Relayer.subscribe - done", id);
     return id;
   }
 
@@ -279,9 +284,11 @@ export class Relayer extends IRelayer {
       this.relayUrl = relayUrl;
       await this.transportDisconnect();
     }
+    // if (this.initialized) {
     // Always create new socket instance when trying to connect because if the socket was dropped due to `socket hang up` exception
     // It wont be able to reconnect
     await this.createProvider();
+    // }
     this.connectionAttemptInProgress = true;
     this.transportExplicitlyClosed = false;
     try {

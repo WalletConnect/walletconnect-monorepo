@@ -69,12 +69,14 @@ describe("Relayer", () => {
     it("initializes a JsonRpcProvider", async () => {
       expect(relayer.provider).to.be.empty;
       await relayer.init();
+      await relayer.transportOpen();
       expect(relayer.provider).not.to.be.empty;
       expect(relayer.provider instanceof JsonRpcProvider).to.be.true;
     });
-    it("registers event listeners", async () => {
+    it("registers provider event listeners", async () => {
       const emitSpy = Sinon.spy();
       await relayer.init();
+      await relayer.transportOpen();
       relayer.events.emit = emitSpy;
       relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.connect);
       expect(emitSpy.calledOnceWith(RELAYER_EVENTS.connect)).to.be.true;
@@ -129,36 +131,35 @@ describe("Relayer", () => {
     });
 
     it("returns the id provided by calling `subscriber.subscribe` with the passed topic", async () => {
-      const spy = Sinon.spy(() => "mock-id");
+      const spy = Sinon.spy((topic) => {
+        relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic });
+        return topic;
+      });
       relayer.subscriber.subscribe = spy;
+
+      const testTopic = "abc123";
       let id;
-      await Promise.all([
-        new Promise<void>(async (resolve) => {
-          id = await relayer.subscribe("abc123");
-          resolve();
-        }),
-        new Promise<void>((resolve) => {
-          relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic: "abc123" });
-          resolve();
-        }),
-      ]);
+      await new Promise<void>(async (resolve) => {
+        id = await relayer.subscribe(testTopic);
+        resolve();
+      });
       // @ts-expect-error
-      expect(spy.calledOnceWith("abc123")).to.be.true;
-      expect(id).to.eq("mock-id");
+      expect(spy.calledOnceWith(testTopic)).to.be.true;
+      expect(id).to.eq(testTopic);
     });
 
     it("should subscribe multiple topics", async () => {
-      const spy = Sinon.spy(() => "mock-id");
+      const spy = Sinon.spy((topic) => {
+        relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic });
+        return topic;
+      });
       relayer.subscriber.subscribe = spy;
       const subscriber = relayer.subscriber as ISubscriber;
       // record the number of listeners before subscribing
       const startNumListeners = subscriber.events.listenerCount(SUBSCRIBER_EVENTS.created);
       const topicsToSubscribe = Array.from(Array(5).keys()).map(() => generateRandomBytes32());
       const subscribePromises = topicsToSubscribe.map((topic) => relayer.subscribe(topic));
-      const onSubscriptionCreatedPromises = topicsToSubscribe.map((topic) =>
-        relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic }),
-      );
-      await Promise.all([...subscribePromises, ...onSubscriptionCreatedPromises]);
+      await Promise.all([...subscribePromises]);
       // expect the number of listeners to be the same as before subscribing to confirm proper cleanup
       expect(subscriber.events.listenerCount(SUBSCRIBER_EVENTS.created)).to.eq(startNumListeners);
     });
@@ -211,6 +212,7 @@ describe("Relayer", () => {
           projectId: TEST_CORE_OPTIONS.projectId,
         });
         await relayer.init();
+        await relayer.transportOpen();
       });
       afterEach(async () => {
         await disconnectSocket(relayer);
@@ -232,7 +234,7 @@ describe("Relayer", () => {
         },
       };
 
-      it("does nothing if payload is not a valid JsonRpcRequest", () => {
+      it("does nothing if payload is not a valid JsonRpcRequest.", () => {
         const spy = Sinon.spy();
         relayer.events.emit = spy;
         relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.payload, {});
@@ -270,6 +272,7 @@ describe("Relayer", () => {
           projectId: TEST_CORE_OPTIONS.projectId,
         });
         await relayer.init();
+        await relayer.transportOpen();
       });
 
       afterEach(async () => {
@@ -286,27 +289,28 @@ describe("Relayer", () => {
         expect(relayer.core.crypto.randomSessionIdentifier).to.eq(randomSessionIdentifier);
       });
 
-      it("should close transport 10 seconds after init if NOT active", async () => {
+      it("should not start wss connection on init without subscriber topics", async () => {
         relayer = new Relayer({
           core,
           relayUrl: TEST_CORE_OPTIONS.relayUrl,
           projectId: TEST_CORE_OPTIONS.projectId,
         });
         await relayer.init();
-        await throttle(RELAYER_TRANSPORT_CUTOFF + 1_000); // +1 sec buffer
+        await throttle(1_000); // +1 sec buffer
         expect(relayer.connected).to.be.false;
       });
 
-      it("should NOT close transport 10 seconds after init if active", async () => {
+      it("should start transport on subscribe attempt", async () => {
         relayer = new Relayer({
           core,
           relayUrl: TEST_CORE_OPTIONS.relayUrl,
           projectId: TEST_CORE_OPTIONS.projectId,
         });
         await relayer.init();
+        expect(relayer.connected).to.be.false;
         const topic = generateRandomBytes32();
-        await relayer.subscriber.subscribe(topic);
-        await throttle(RELAYER_TRANSPORT_CUTOFF + 1_000); // +1 sec buffer
+        await relayer.subscribe(topic);
+        await throttle(1_000); // +1 sec buffer
         expect(relayer.connected).to.be.true;
       });
       it(`should connect to ${RELAYER_DEFAULT_RELAY_URL} relay url`, async () => {
@@ -315,6 +319,7 @@ describe("Relayer", () => {
           projectId: TEST_CORE_OPTIONS.projectId,
         });
         await relayer.init();
+        await relayer.transportOpen();
         const wsConnection = relayer.provider.connection as unknown as WebSocket;
         expect(relayer.connected).to.be.true;
         expect(wsConnection.url.startsWith(RELAYER_DEFAULT_RELAY_URL)).to.be.true;
