@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { ChaCha20Poly1305 } from "@stablelib/chacha20poly1305";
 import { HKDF } from "@stablelib/hkdf";
 import { randomBytes } from "@stablelib/random";
@@ -173,7 +172,7 @@ export function isTypeOneEnvelope(
   );
 }
 
-export async function getCryptoKeyFromKeyData(keyData: P256KeyDataType): Promise<any> {
+export function getCryptoKeyFromKeyData(keyData: P256KeyDataType): EC.KeyPair {
   const ec = new EC("p256");
   const key = ec.keyFromPublic(
     {
@@ -185,7 +184,6 @@ export async function getCryptoKeyFromKeyData(keyData: P256KeyDataType): Promise
   return key;
 }
 
-// Utility function to decode Base64 URL
 function base64UrlToBase64(base64Url: string) {
   let base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
   const padding = base64.length % 4;
@@ -199,9 +197,7 @@ function base64UrlDecode(base64Url: string) {
   return Buffer.from(base64UrlToBase64(base64Url), "base64");
 }
 
-export async function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
-  console.log("verifying...", token, keyData);
-
+export function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
   const [headerBase64Url, payloadBase64Url, signatureBase64Url] = token.split(".");
 
   // Decode the signature
@@ -222,7 +218,7 @@ export async function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) 
   const sha256 = new SHA256();
   const buffer = sha256.update(Buffer.from(signingInput)).digest();
 
-  const key = await getCryptoKeyFromKeyData(keyData);
+  const key = getCryptoKeyFromKeyData(keyData);
 
   // Convert the hash to hex format
   const hashHex = Buffer.from(buffer).toString("hex");

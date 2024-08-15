@@ -1,25 +1,42 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
-import { IVerify } from "@walletconnect/types";
+import { ICore, IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, P256KeyDataType, verifyP256Jwt } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import { getDocument } from "@walletconnect/window-getters";
 
-import { TRUSTED_VERIFY_URLS, VERIFY_CONTEXT, VERIFY_SERVER, VERIFY_SERVER_V2 } from "../constants";
+import {
+  CORE_STORAGE_PREFIX,
+  CORE_VERSION,
+  TRUSTED_VERIFY_URLS,
+  VERIFY_CONTEXT,
+  VERIFY_SERVER,
+  VERIFY_SERVER_V2,
+} from "../constants";
 import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 
-type jwk = {
+type Jwk = {
   publicKey: P256KeyDataType;
   expiresAt: number;
+};
+type JwkPayload = {
+  exp: number;
+  id: string;
+  origin: string;
+  isScam: boolean;
+  isVerified: boolean;
 };
 export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
   private abortController: AbortController;
   private isDevEnv;
   private verifyUrlV2 = VERIFY_SERVER_V2;
-  private publicKey?: jwk;
+  private storagePrefix = CORE_STORAGE_PREFIX;
+  private version = CORE_VERSION;
+  private publicKey?: Jwk;
+  private fetchPromise?: Promise<Jwk>;
 
-  constructor(public projectId: string, public logger: Logger, public store: IKeyValueStorage) {
-    super(projectId, logger, store);
+  constructor(public core: ICore, public logger: Logger, public store: IKeyValueStorage) {
+    super(core, logger, store);
     this.logger = generateChildLogger(logger, this.name);
     this.abortController = new AbortController();
     this.isDevEnv = isNode() && process.env.IS_VITEST;
@@ -27,7 +44,9 @@ export class Verify extends IVerify {
   }
 
   get storeKey(): string {
-    return `verify:public:key`;
+    return (
+      this.storagePrefix + this.version + this.core.customStoragePrefix + "//" + `verify:public:key`
+    );
   }
 
   public init = async () => {
@@ -44,7 +63,7 @@ export class Verify extends IVerify {
   public register: IVerify["register"] = async (params) => {
     if (!isBrowser()) return;
     const { id, decryptedId } = params;
-    const url = `${this.verifyUrlV2}/attestation?projectId=${this.projectId}`;
+    const url = `${this.verifyUrlV2}/attestation?projectId=${this.core.projectId}`;
     let src = "";
     try {
       const response = await fetch(url, {
@@ -121,7 +140,7 @@ export class Verify extends IVerify {
     this.logger.debug(`resolving attestation: ${attestationId} from url: ${url}`);
     // set artificial timeout to prevent hanging
     const timeout = this.startAbortTimer(ONE_SECOND * 5);
-    const result = await fetch(`${url}/attestation/${attestationId}`, {
+    const result = await fetch(`${url}/attestation/${attestationId}?v2Supported=true`, {
       signal: this.abortController.signal,
     });
     clearTimeout(timeout);
@@ -152,14 +171,14 @@ export class Verify extends IVerify {
         signal: this.abortController.signal,
       });
       clearTimeout(timeout);
-      return (await result.json()) as jwk;
+      return (await result.json()) as Jwk;
     } catch (e) {
       this.logger.warn(e);
     }
     return undefined;
   };
 
-  private persistPublicKey = async (publicKey: jwk) => {
+  private persistPublicKey = async (publicKey: Jwk) => {
     this.logger.debug(`persisting public key to local storage`, publicKey);
     await this.store.setItem(this.storeKey, publicKey);
     this.publicKey = publicKey;
@@ -175,21 +194,21 @@ export class Verify extends IVerify {
     const key = await this.getPublicKey();
     try {
       if (key) {
-        const validation = await this.validateAttestation(attestation, key);
+        const validation = this.validateAttestation(attestation, key);
         return validation;
       }
     } catch (e) {
-      console.error(e);
+      this.logger.error(e);
       this.logger.warn("error validating attestation");
     }
     const newKey = await this.fetchAndPersistPublicKey();
     try {
       if (newKey) {
-        const validation = await this.validateAttestation(attestation, newKey);
+        const validation = this.validateAttestation(attestation, newKey);
         return validation;
       }
     } catch (e) {
-      this.logger.warn(e);
+      this.logger.error(e);
       this.logger.warn("error validating attestation");
     }
     return undefined;
@@ -201,24 +220,24 @@ export class Verify extends IVerify {
   };
 
   private fetchAndPersistPublicKey = async () => {
-    const key = await this.fetchPublicKey();
-    if (!key) return;
-    await this.persistPublicKey(key);
+    if (this.fetchPromise) {
+      await this.fetchPromise;
+      return this.publicKey;
+    }
+    this.fetchPromise = new Promise(async (resolve) => {
+      const key = await this.fetchPublicKey();
+      if (!key) return;
+      await this.persistPublicKey(key);
+      resolve(key);
+    });
+    const key = await this.fetchPromise;
+    this.fetchPromise = undefined;
     return key;
   };
 
-  private validateAttestation = async (attestation: string, key: jwk) => {
-    console.log("cryptoKey", key);
-    const result = await verifyP256Jwt<{
-      exp: number;
-      id: string;
-      origin: string;
-      isScam: boolean;
-      isVerified: boolean;
-    }>(attestation, key.publicKey);
-    console.log("decoded result", result);
+  private validateAttestation = (attestation: string, key: Jwk) => {
+    const result = verifyP256Jwt<JwkPayload>(attestation, key.publicKey);
     const validation = {
-      valid: true,
       hasExpired: toMiliseconds(result.exp) < Date.now(),
       payload: result,
     };
