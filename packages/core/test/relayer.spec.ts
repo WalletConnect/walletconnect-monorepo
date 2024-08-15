@@ -222,7 +222,12 @@ describe("Relayer", () => {
         method: "mock" + RELAYER_SUBSCRIBER_SUFFIX,
         params: {
           id: "abc123",
-          data: { topic: "ababab", message: "deadbeef", publishedAt: 1677151760537 },
+          data: {
+            topic: "ababab",
+            message: "deadbeef",
+            publishedAt: 1677151760537,
+            attestation: undefined,
+          },
         },
       };
 
@@ -250,6 +255,7 @@ describe("Relayer", () => {
             topic: validPayload.params.data.topic,
             message: validPayload.params.data.message,
             publishedAt: validPayload.params.data.publishedAt,
+            attestation: validPayload.params.data.attestation,
           }),
         ).to.be.true;
       });

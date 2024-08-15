@@ -52,6 +52,7 @@ export declare namespace EngineTypes {
   interface EventCallback<T extends JsonRpcRequest | JsonRpcResponse> {
     topic: string;
     payload: T;
+    attestation?: string;
   }
 
   interface ConnectParams {
@@ -250,6 +251,7 @@ export interface EnginePrivate {
   onSessionProposeRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
+    attestation?: string,
   ): Promise<void>;
 
   onSessionProposeResponse(
@@ -305,6 +307,7 @@ export interface EnginePrivate {
   onSessionRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>,
+    attestation?: string,
   ): Promise<void>;
 
   onSessionRequestResponse(
@@ -320,6 +323,7 @@ export interface EnginePrivate {
   onSessionAuthenticateRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionAuthenticate"]>,
+    attestation?: string,
   ): Promise<void>;
 
   onSessionAuthenticateResponse(
