@@ -1,6 +1,9 @@
 import { expect, describe, it } from "vitest";
 import { toString } from "uint8arrays";
 import { safeJsonStringify } from "@walletconnect/safe-json";
+import { SHA256 } from "@stablelib/sha256";
+import { Buffer } from "buffer";
+import elliptic from "elliptic";
 
 import {
   BASE16,
@@ -14,6 +17,9 @@ import {
   validateDecoding,
   isTypeOneEnvelope,
   generateRandomBytes32,
+  verifyP256Jwt,
+  getCryptoKeyFromKeyData,
+  P256KeyDataType,
 } from "../src";
 
 import { TEST_KEY_PAIRS, TEST_SHARED_KEY, TEST_HASHED_KEY, TEST_SYM_KEY } from "./shared";
@@ -107,5 +113,89 @@ describe("Crypto", () => {
   });
   it("calls generateRandomBytes32", () => {
     expect(generateRandomBytes32()).toBeTruthy();
+  });
+  it("should validate verify v2 jwt", async () => {
+    const token =
+      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjM2MzI1MDQsImlkIjoiMDkxN2YzMzk0YTdmMzkyZTg3ZTM1ZjM4OTg2OWU2NDEzZjkyNTBlMGIxZTE4YjUzMDhkNzBhM2VjOTJjZDQ3OCIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsImlzU2NhbSI6bnVsbCwiaXNWZXJpZmllZCI6ZmFsc2V9.RehA28c0Ae8D_ixvGS8uG9J9eTJtpGfaC_7kNE9ZNAVFREWBY6Dl_SXc0_E0RSvYkHpupfmXlmjenuDqNcyoeg";
+
+    const publicKey = {
+      publicKey: {
+        crv: "P-256",
+        ext: true,
+        key_ops: ["verify"],
+        kty: "EC",
+        x: "CbL4DOYOb1ntd-8OmExO-oS0DWCMC00DntrymJoB8tk",
+        y: "KTFwjHtQxGTDR91VsOypcdBfvbo6sAMj5p4Wb-9hRA0",
+      },
+      expiresAt: 1726209328,
+    };
+
+    const result = verifyP256Jwt<{
+      exp: number;
+      id: string;
+      origin: string;
+      isScam: boolean;
+      isVerified: true;
+    }>(token, publicKey.publicKey);
+    console.log("result", result);
+    expect(result).to.exist;
+    expect(result).to.exist;
+    expect(result.isVerified).to.be.true;
+    expect(result.exp).to.exist;
+    expect(result.origin).to.exist;
+    expect(result.isScam).to.be.null;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  });
+  it("should fail to validate invalid jwt with public key", async () => {
+    const token =
+      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.oiMDkxN2YzMzk0YTdmMzkyZTg3ZTM1ZjM4OTg2OWU2NDEzZjkyNTBlMGIxZTE4YjUzMDhkNzBhM2VjOTJjZDQ3OCIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsImlzU2NhbSI6bnVsbCwiaXNWZXJpZmllZCI6ZmFsc2V9.RehA28c0Ae8D_ixvGS8uG9J9eTJtpGfaC_7kNE9ZNAVFREWBY6Dl_SXc0_E0RSvYkHpupfmXlmjenuDqNcyoeg";
+
+    const publicKey = {
+      publicKey: {
+        crv: "P-256",
+        ext: true,
+        key_ops: ["verify"],
+        kty: "EC",
+        x: "CbL4DOYOb1ntd-8OmExO-oS0DWCMC00DntrymJoB8tk",
+        y: "KTFwjHtQxGTDR91VsOypcdBfvbo6sAMj5p4Wb-9hRA0",
+      },
+      expiresAt: 1726209328,
+    };
+
+    expect(() =>
+      verifyP256Jwt<{
+        exp: number;
+        id: string;
+        origin: string;
+        isScam: boolean;
+        isVerified: true;
+      }>(token, publicKey.publicKey),
+    ).to.throw();
+  });
+  it("should fail to validate validate verify v2 jwt with invalid public key", async () => {
+    const token =
+      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjM2MzI1MDQsImlkIjoiMDkxN2YzMzk0YTdmMzkyZTg3ZTM1ZjM4OTg2OWU2NDEzZjkyNTBlMGIxZTE4YjUzMDhkNzBhM2VjOTJjZDQ3OCIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsImlzU2NhbSI6bnVsbCwiaXNWZXJpZmllZCI6ZmFsc2V9.RehA28c0Ae8D_ixvGS8uG9J9eTJtpGfaC_7kNE9ZNAVFREWBY6Dl_SXc0_E0RSvYkHpupfmXlmjenuDqNcyoeg";
+
+    const publicKey = {
+      publicKey: {
+        crv: "P-256",
+        ext: true,
+        key_ops: ["verify"],
+        kty: "EC",
+        x: "CbL4DOYOb1ntd-8OmExO-oS0DWCMC00Dn",
+        y: "KTFwjHtQxGTDR91VsOypcdBfvbo6sAMj5p4Wb-9hRA0",
+      },
+      expiresAt: 1726209328,
+    };
+
+    expect(() =>
+      verifyP256Jwt<{
+        exp: number;
+        id: string;
+        origin: string;
+        isScam: boolean;
+        isVerified: true;
+      }>(token, publicKey.publicKey),
+    ).to.throw();
   });
 });
