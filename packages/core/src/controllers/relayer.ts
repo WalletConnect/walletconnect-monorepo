@@ -448,12 +448,13 @@ export class Relayer extends IRelayer {
     if (isJsonRpcRequest(payload)) {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
-      const { topic, message, publishedAt } = event.data;
+      const { topic, message, publishedAt, attestation } = event.data;
       const messageEvent: RelayerTypes.MessageEvent = {
         topic,
         message,
         publishedAt,
         transportType: "relay",
+        attestation,
       };
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });

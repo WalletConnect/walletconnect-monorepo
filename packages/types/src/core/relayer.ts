@@ -21,6 +21,7 @@ export declare namespace RelayerTypes {
     internal?: {
       throwOnFailedPublish?: boolean;
     };
+    attestation?: string;
   }
 
   export interface SubscribeOptions {
@@ -47,6 +48,7 @@ export declare namespace RelayerTypes {
     message: string;
     publishedAt: number;
     transportType: TransportType;
+    attestation?: string;
   }
 
   export interface RpcUrlParams {

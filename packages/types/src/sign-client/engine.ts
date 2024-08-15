@@ -53,6 +53,7 @@ export declare namespace EngineTypes {
     topic: string;
     payload: T;
     transportType: RelayerTypes.MessageEvent["transportType"];
+    attestation?: string;
   }
 
   interface ConnectParams {
@@ -254,6 +255,7 @@ export interface EnginePrivate {
   onSessionProposeRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
+    attestation?: string,
   ): Promise<void>;
 
   onSessionProposeResponse(
@@ -310,6 +312,7 @@ export interface EnginePrivate {
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>,
     transportType: RelayerTypes.MessageEvent["transportType"],
+    attestation?: string,
   ): Promise<void>;
 
   onSessionRequestResponse(
@@ -326,6 +329,7 @@ export interface EnginePrivate {
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionAuthenticate"]>,
     transportType: RelayerTypes.MessageEvent["transportType"],
+    attestation?: string,
   ): Promise<void>;
 
   onSessionAuthenticateResponse(

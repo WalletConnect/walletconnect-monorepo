@@ -227,6 +227,7 @@ describe("Relayer", () => {
             message: "deadbeef",
             publishedAt: 1677151760537,
             transportType: "relay",
+            attestation: undefined,
           },
         },
       };
@@ -256,6 +257,7 @@ describe("Relayer", () => {
             message: validPayload.params.data.message,
             publishedAt: validPayload.params.data.publishedAt,
             transportType: validPayload.params.data.transportType,
+            attestation: validPayload.params.data.attestation,
           }),
         ).to.be.true;
       });

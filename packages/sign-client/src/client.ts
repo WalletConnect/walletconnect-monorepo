@@ -251,8 +251,6 @@ export class SignClient extends ISignClient {
       await this.pendingRequest.init();
       await this.engine.init();
       await this.auth.init();
-      this.core.verify.init({ verifyUrl: this.metadata.verifyUrl });
-
       this.logger.info(`SignClient Initialization Success`);
       this.engine.processRelayMessageCache();
       this.registerLinkModeListeners();

@@ -7,7 +7,7 @@ export declare namespace PublisherTypes {
   export interface Params {
     topic: string;
     message: string;
-    opts: Omit<Required<RelayerTypes.PublishOptions>, "internal">;
+    opts: Omit<RelayerTypes.PublishOptions, "internal">;
   }
 }
 
