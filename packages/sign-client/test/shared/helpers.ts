@@ -12,9 +12,9 @@ export async function deleteClients(clients: {
     client.core.events.removeAllListeners();
     client.core.relayer.events.removeAllListeners();
     client.core.heartbeat.stop();
-    client.core.relayer.provider.events.removeAllListeners();
+    client.core.relayer?.provider?.events?.removeAllListeners();
     client.core.relayer.subscriber.events.removeAllListeners();
-    client.core.relayer.provider.connection.events.removeAllListeners();
+    client.core.relayer?.provider?.connection?.events?.removeAllListeners();
     client.events.removeAllListeners();
   }
   delete clients.A;

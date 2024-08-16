@@ -61,6 +61,7 @@ export class Subscriber extends ISubscriber {
       this.logger.trace(`Initialized`);
       this.registerEventListeners();
       this.clientId = await this.relayer.core.crypto.getClientId();
+      await this.restore();
     }
   };
 
@@ -488,7 +489,7 @@ export class Subscriber extends ISubscriber {
   }
 
   private async restartToComplete() {
-    if (!this.relayer.connected || !this.relayer.connecting) {
+    if (!this.relayer.connected && !this.relayer.connecting) {
       await this.relayer.transportOpen();
     }
     if (!this.restartInProgress) return;
