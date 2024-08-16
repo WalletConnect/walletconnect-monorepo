@@ -65,6 +65,11 @@ export abstract class ICore extends IEvents {
   }
 
   public abstract start(): Promise<void>;
-  public abstract dispatchEnvelope(params: { url: string }): void;
+  public abstract dispatchEnvelope(params: {
+    topic: string;
+    message: string;
+    sessionExists: boolean;
+  }): void;
+
   public abstract addLinkModeSupportedApp(universalLink: string): void;
 }

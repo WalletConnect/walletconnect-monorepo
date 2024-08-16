@@ -897,12 +897,14 @@ export class Engine extends IEngine {
         session = this.client.session.get(sessionTopic);
       }
 
-      if (this.client.metadata.redirect?.linkMode && responder.metadata.redirect?.linkMode) {
-        const linkModeApps = this.client.core.linkModeSupportedApps;
-        if (walletUniversalLink && !linkModeApps?.includes(walletUniversalLink)) {
-          // save wallet link in array of apps that support linkMode
-          this.client.core.addLinkModeSupportedApp(walletUniversalLink);
-        }
+      if (
+        this.client.metadata.redirect?.linkMode &&
+        responder.metadata.redirect?.linkMode &&
+        walletUniversalLink &&
+        walletUniversalLink === responder.metadata.redirect?.universal
+      ) {
+        // save wallet link in array of apps that support linkMode
+        this.client.core.addLinkModeSupportedApp(walletUniversalLink);
       }
 
       resolve({
@@ -987,10 +989,7 @@ export class Engine extends IEngine {
       throw new Error(`Could not find pending auth request with id ${id}`);
     }
 
-    const transportType =
-      pendingRequest.transportType || this.isLinkModeEnabled(pendingRequest.requester.metadata)
-        ? "link-mode"
-        : "relay";
+    const transportType = pendingRequest.transportType || "relay";
 
     if (transportType === "relay") {
       await this.confirmOnlineStateOrThrow();
