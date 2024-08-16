@@ -4,6 +4,7 @@ import {
   formatJsonRpcResult,
   getBigIntRpcId,
   IJsonRpcProvider,
+  isJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
   JsonRpcPayload,
@@ -454,6 +455,8 @@ export class Relayer extends IRelayer {
       this.events.emit(event.id, messageEvent);
       await this.acknowledgePayload(payload);
       await this.onMessageEvent(messageEvent);
+    } else if (isJsonRpcError(payload)) {
+      this.onProviderErrorHandler(`${payload.error.data}: ${payload.error.message}`);
     } else if (isJsonRpcResponse(payload)) {
       this.events.emit(RELAYER_EVENTS.message_ack, payload);
     }
@@ -487,12 +490,13 @@ export class Relayer extends IRelayer {
     this.onProviderDisconnect();
   };
 
-  private onProviderErrorHandler = (error: Error) => {
-    this.logger.error(error);
+  private onProviderErrorHandler = (error: unknown) => {
+    this.logger.error(error instanceof Error ? error.message : error);
     this.events.emit(RELAYER_EVENTS.error, error);
     // close the transport when a fatal error is received as there's no way to recover from it
     // usual cases are missing/invalid projectId, expired jwt token, invalid origin etc
-    this.logger.info("Fatal socket error received, closing transport");
+    this.logger.error("Fatal socket error received, closing transport");
+    this.transportExplicitlyClosed = true;
     this.transportClose();
   };
 

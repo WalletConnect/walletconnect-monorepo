@@ -259,6 +259,29 @@ describe("Relayer", () => {
           }),
         ).to.be.true;
       });
+      it("should handle error payload and emit error event", async () => {
+        const errorPayload = {
+          id: 1,
+          jsonrpc: "2.0",
+          error: {
+            code: 123,
+            data: "mock data",
+            message: "mock error",
+          },
+        };
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            relayer.events.on(RELAYER_EVENTS.error, (error: unknown) => {
+              expect(error).to.equal(`${errorPayload.error.data}: ${errorPayload.error.message}`);
+              resolve();
+            });
+          }),
+          new Promise<void>((resolve) => {
+            relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.payload, errorPayload);
+            resolve();
+          }),
+        ]);
+      });
     });
     describe("transport", () => {
       beforeEach(async () => {
