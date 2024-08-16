@@ -15,6 +15,7 @@ export declare namespace AuthTypes {
     requester: Participant;
     authPayload: PayloadParams;
     expiryTimestamp: number;
+    transportType?: RelayerTypes.TransportType;
   }
 
   type AuthResponseEventArgs =
@@ -132,7 +133,7 @@ export declare namespace AuthTypes {
     expiryTimestamp: number;
     authPayload: PayloadParams;
     verifyContext: Verify.Context;
-    transportType: RelayerTypes.TransportType;
+    transportType?: RelayerTypes.TransportType;
   }
 
   interface ApproveSessionAuthenticateParams {
@@ -161,7 +162,7 @@ export declare namespace AuthTypes {
     requester: Participant;
     authPayload: PayloadParams;
     expiryTimestamp: number;
-    transportType: RelayerTypes.TransportType;
+    transportType?: RelayerTypes.TransportType;
   }
 
   interface SessionAuthenticateRequest extends SessionAuthenticateRequestParams {

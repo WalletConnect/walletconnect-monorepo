@@ -47,7 +47,7 @@ export declare namespace RelayerTypes {
     topic: string;
     message: string;
     publishedAt: number;
-    transportType: TransportType;
+    transportType?: TransportType;
     attestation?: string;
   }
 
