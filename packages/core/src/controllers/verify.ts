@@ -10,7 +10,7 @@ import {
   TRUSTED_VERIFY_URLS,
   VERIFY_CONTEXT,
   VERIFY_SERVER,
-  VERIFY_SERVER_V2,
+  VERIFY_SERVER_V3,
 } from "../constants";
 import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 
@@ -29,7 +29,7 @@ export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
   private abortController: AbortController;
   private isDevEnv;
-  private verifyUrlV2 = VERIFY_SERVER_V2;
+  private verifyUrlV3 = VERIFY_SERVER_V3;
   private storagePrefix = CORE_STORAGE_PREFIX;
   private version = CORE_VERSION;
   private publicKey?: Jwk;
@@ -62,24 +62,12 @@ export class Verify extends IVerify {
 
   public register: IVerify["register"] = async (params) => {
     if (!isBrowser()) return;
+    const origin = window.location.origin;
     const { id, decryptedId } = params;
-    const url = `${this.verifyUrlV2}/attestation?projectId=${this.core.projectId}`;
-    let src = "";
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        body: JSON.stringify({ id, decryptedId }),
-      });
-      const { srcdoc } = await response.json();
-      src = srcdoc;
-      this.logger.debug("srcdoc fetched", src);
-    } catch (e) {
-      this.logger.warn(e);
-      return;
-    }
+    const src = `${this.verifyUrlV3}/attestation?projectId=${this.core.projectId}&origin=${origin}&id=${id}&decryptedId=${decryptedId}`;
     try {
       const document = getDocument() as Document;
-      const abortTimeout = this.startAbortTimer(ONE_SECOND * 3);
+      const abortTimeout = this.startAbortTimer(ONE_SECOND * 5);
       const attestationJwt = await new Promise((resolve) => {
         const abortListener = () => {
           window.removeEventListener("message", listener);
@@ -90,7 +78,7 @@ export class Verify extends IVerify {
           signal: this.abortController.signal,
         });
         const iframe = document.createElement("iframe");
-        iframe.srcdoc = src;
+        iframe.src = src;
         iframe.style.display = "none";
         const listener = (event: MessageEvent) => {
           if (!event.data) return;
@@ -165,9 +153,9 @@ export class Verify extends IVerify {
 
   private fetchPublicKey = async () => {
     try {
-      this.logger.debug(`fetching public key from: ${this.verifyUrlV2}`);
+      this.logger.debug(`fetching public key from: ${this.verifyUrlV3}`);
       const timeout = this.startAbortTimer(FIVE_SECONDS);
-      const result = await fetch(`${this.verifyUrlV2}/public-key`, {
+      const result = await fetch(`${this.verifyUrlV3}/public-key`, {
         signal: this.abortController.signal,
       });
       clearTimeout(timeout);
