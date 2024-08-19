@@ -910,6 +910,10 @@ export class Engine extends IEngine {
       ) {
         // save wallet link in array of apps that support linkMode
         this.client.core.addLinkModeSupportedApp(walletUniversalLink);
+
+        this.client.session.update(sessionTopic, {
+          transportType: "link-mode",
+        });
       }
 
       resolve({
