@@ -470,14 +470,17 @@ export class Relayer extends IRelayer {
     await this.recordMessageEvent(messageEvent);
   }
 
-  public async onLinkMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
+  public async onLinkMessageEvent(
+    messageEvent: RelayerTypes.MessageEvent,
+    opts: { sessionExists: boolean },
+  ) {
     const { topic } = messageEvent;
 
-    //TODO: Check this logic. Shouldn't create a new pairing if a session exists
-    // expires in 7 days
-    const expiry = Math.floor(Date.now() / 1000) + 604800;
-    const pairing = { topic, expiry, relay: { protocol: "irn" }, active: false };
-    await this.core.pairing.pairings.set(topic, pairing);
+    if (!opts.sessionExists) {
+      const expiry = Math.floor(Date.now() / 1000) + 604800;
+      const pairing = { topic, expiry, relay: { protocol: "irn" }, active: false };
+      await this.core.pairing.pairings.set(topic, pairing);
+    }
 
     this.events.emit(RELAYER_EVENTS.message, messageEvent);
     await this.recordMessageEvent(messageEvent);

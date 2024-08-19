@@ -52,7 +52,7 @@ export declare namespace EngineTypes {
   interface EventCallback<T extends JsonRpcRequest | JsonRpcResponse> {
     topic: string;
     payload: T;
-    transportType: RelayerTypes.MessageEvent["transportType"];
+    transportType?: RelayerTypes.MessageEvent["transportType"];
     attestation?: string;
   }
 
@@ -311,7 +311,7 @@ export interface EnginePrivate {
   onSessionRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>,
-    transportType: RelayerTypes.MessageEvent["transportType"],
+    transportType?: RelayerTypes.MessageEvent["transportType"],
     attestation?: string,
   ): Promise<void>;
 
@@ -328,7 +328,7 @@ export interface EnginePrivate {
   onSessionAuthenticateRequest(
     topic: string,
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionAuthenticate"]>,
-    transportType: RelayerTypes.MessageEvent["transportType"],
+    transportType?: RelayerTypes.MessageEvent["transportType"],
     attestation?: string,
   ): Promise<void>;
 

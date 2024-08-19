@@ -6,7 +6,7 @@ import {
   pino,
 } from "@walletconnect/logger";
 import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
-import { getAppMetadata, isReactNative } from "@walletconnect/utils";
+import { getAppMetadata, getSearchParamFromURL, isReactNative } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
 import { AuthStore, Engine, PendingRequest, Proposal, Session } from "./controllers";
@@ -261,26 +261,37 @@ export class SignClient extends ISignClient {
     }
   }
 
-  private async registerLinkModeListeners() {
+  private handleLinkModeMessage = ({ url }: { url: string }) => {
+    if (!url || !url.includes("wc_ev") || !url.includes("topic")) return;
+
+    const topic = getSearchParamFromURL(url, "topic") || "";
+    const message = decodeURIComponent(getSearchParamFromURL(url, "wc_ev") || "");
+
+    const sessionExists = this.session.keys.includes(topic);
+
+    if (sessionExists) {
+      const session = this.session.get(topic);
+      if (session?.transportType === "relay") {
+        this.session.update(topic, { transportType: "link-mode" });
+      }
+    }
+
+    this.core.dispatchEnvelope({ topic, message, sessionExists });
+  };
+
+  private registerLinkModeListeners = async () => {
     if (process.env.IS_VITEST || (isReactNative() && this.metadata.redirect?.linkMode)) {
       // global.Linking is set by react-native-compat
       if (typeof (global as any)?.Linking !== "undefined") {
         // set URL listener
-        (global as any).Linking.addEventListener(
-          "url",
-          (url, target) => {
-            console.log("Linking URL receveid, emitting", target);
-            this.core.dispatchEnvelope(url);
-          },
-          this.name,
-        );
+        (global as any).Linking.addEventListener("url", this.handleLinkModeMessage, this.name);
 
         // check for initial URL -> cold boots
         const initialUrl = await (global as any).Linking.getInitialURL();
         if (initialUrl) {
-          this.core.dispatchEnvelope({ url: initialUrl });
+          this.handleLinkModeMessage({ url: initialUrl });
         }
       }
     }
-  }
+  };
 }

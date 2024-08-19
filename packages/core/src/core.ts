@@ -30,7 +30,6 @@ import {
   WALLETCONNECT_CLIENT_ID,
   WALLETCONNECT_LINK_MODE_APPS,
 } from "./constants";
-import { getSearchParamFromURL } from "@walletconnect/utils";
 
 export class Core extends ICore {
   public readonly protocol = CORE_PROTOCOL;
@@ -159,15 +158,16 @@ export class Core extends ICore {
 
   // ---------- Link-mode ----------------------------------------------- //
 
-  public dispatchEnvelope = ({ url }: { url: string }) => {
-    console.log(
-      "dispatchEnvelope received! ignoring:",
-      !url || !url.includes("wc_ev") || !url.includes("topic"),
-    );
-    if (!url || !url.includes("wc_ev") || !url.includes("topic")) return;
-
-    const topic = getSearchParamFromURL(url, "topic") || "";
-    const message = decodeURIComponent(getSearchParamFromURL(url, "wc_ev") || "");
+  public dispatchEnvelope = ({
+    topic,
+    message,
+    sessionExists,
+  }: {
+    topic: string;
+    message: string;
+    sessionExists: boolean;
+  }) => {
+    if (!topic || !message) return;
 
     const payload = {
       topic,
@@ -175,7 +175,8 @@ export class Core extends ICore {
       publishedAt: Date.now(),
       transportType: "link-mode" as const,
     };
-    this.relayer.onLinkMessageEvent(payload);
+
+    this.relayer.onLinkMessageEvent(payload, { sessionExists });
   };
 
   // ---------- Private ----------------------------------------------- //
