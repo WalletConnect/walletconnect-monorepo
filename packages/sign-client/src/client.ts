@@ -262,11 +262,18 @@ export class SignClient extends ISignClient {
   }
 
   private async registerLinkModeListeners() {
-    if (isReactNative() && this.metadata.redirect?.linkMode) {
+    if (process.env.IS_VITEST || (isReactNative() && this.metadata.redirect?.linkMode)) {
       // global.Linking is set by react-native-compat
       if (typeof (global as any)?.Linking !== "undefined") {
         // set URL listener
-        (global as any).Linking.addEventListener("url", this.core.dispatchEnvelope);
+        (global as any).Linking.addEventListener(
+          "url",
+          (url, target) => {
+            console.log("Linking URL receveid, emitting", target);
+            this.core.dispatchEnvelope(url);
+          },
+          this.name,
+        );
 
         // check for initial URL -> cold boots
         const initialUrl = await (global as any).Linking.getInitialURL();

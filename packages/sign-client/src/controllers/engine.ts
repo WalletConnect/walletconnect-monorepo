@@ -467,6 +467,7 @@ export class Engine extends IEngine {
     if (session?.transportType === "relay") {
       await this.confirmOnlineStateOrThrow();
     }
+    console.log("request transport type", session?.transportType);
 
     const clientRpcId = payloadId();
     const relayRpcId = getBigIntRpcId().toString() as any;
@@ -486,6 +487,7 @@ export class Engine extends IEngine {
       const appLink = session.peer.metadata.redirect?.universal;
       const linkModeWallets = this.client.core.linkModeSupportedApps;
       if (appLink && linkModeWallets.includes(appLink)) {
+        console.log("linkModeWallets", linkModeWallets);
         await this.sendRequest({
           clientRpcId,
           relayRpcId,
@@ -566,7 +568,7 @@ export class Engine extends IEngine {
     }
 
     const appLink = this.getAppLinkIfEnabled(session.peer.metadata);
-
+    console.log("respond", this.client.name, appLink);
     if (isJsonRpcResult(response)) {
       await this.sendResult({
         id,
@@ -902,6 +904,8 @@ export class Engine extends IEngine {
         if (walletUniversalLink && !linkModeApps?.includes(walletUniversalLink)) {
           // save wallet link in array of apps that support linkMode
           this.client.core.addLinkModeSupportedApp(walletUniversalLink);
+          console.log("Added wallet to linkMode supported apps", walletUniversalLink);
+          console.log("LinkMode supported apps", this.client.core.linkModeSupportedApps);
         }
       }
 
@@ -991,7 +995,7 @@ export class Engine extends IEngine {
       pendingRequest.transportType || this.isLinkModeEnabled(pendingRequest.requester.metadata)
         ? "link-mode"
         : "relay";
-
+    console.log("approve SA transportType", transportType);
     if (transportType === "relay") {
       await this.confirmOnlineStateOrThrow();
     }
@@ -1084,6 +1088,8 @@ export class Engine extends IEngine {
       });
     }
 
+    await this.client.auth.requests.delete(id, { message: "fulfilled", code: 0 });
+    await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
     await this.sendResult<"wc_sessionAuthenticate">({
       topic: responseTopic,
       id,
@@ -1098,8 +1104,6 @@ export class Engine extends IEngine {
       throwOnFailedPublish: true,
       appLink: this.getAppLinkIfEnabled(pendingRequest.requester.metadata),
     });
-    await this.client.auth.requests.delete(id, { message: "fulfilled", code: 0 });
-    await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
     return { session };
   };
 
@@ -1337,8 +1341,9 @@ export class Engine extends IEngine {
     this.client.core.history.set(topic, payload);
 
     if (isLinkMode) {
+      console.log("sendRequest linkmode", this.client.name, appLink, payload.id);
       const redirectURL = getLinkModeURL(appLink, topic, message);
-      await (global as any).Linking.openURL(redirectURL);
+      await (global as any).Linking.openURL(redirectURL, this.client.name);
     } else {
       const opts = ENGINE_RPC_OPTS[method].req;
       if (expiry) opts.ttl = expiry;
@@ -1386,8 +1391,9 @@ export class Engine extends IEngine {
     }
 
     if (isLinkMode) {
+      console.log("sendResult linkmode", this.client.name, appLink, payload.id);
       const redirectURL = getLinkModeURL(appLink, topic, message);
-      await (global as any).Linking.openURL(redirectURL);
+      await (global as any).Linking.openURL(redirectURL, this.client.name);
     } else {
       const opts = ENGINE_RPC_OPTS[record.request.method].res;
       if (throwOnFailedPublish) {
@@ -1432,7 +1438,8 @@ export class Engine extends IEngine {
 
     if (isLinkMode) {
       const redirectURL = getLinkModeURL(appLink, topic, message);
-      await (global as any).Linking.openURL(redirectURL);
+      await (global as any).Linking.openURL(redirectURL, this.client.name);
+      redirectURL;
     } else {
       const opts = rpcOpts || ENGINE_RPC_OPTS[record.request.method].res;
       // await is intentionally omitted to speed up performance
@@ -1475,6 +1482,7 @@ export class Engine extends IEngine {
 
   private registerRelayerEvents() {
     this.client.core.relayer.on(RELAYER_EVENTS.message, (event: RelayerTypes.MessageEvent) => {
+      console.log("relay message", event.publishedAt);
       // capture any messages that arrive before the client is initialized so we can process them after initialization is complete
       if (!this.initialized || this.relayMessageCache.length > 0) {
         this.relayMessageCache.push(event);
@@ -1496,7 +1504,7 @@ export class Engine extends IEngine {
       receiverPublicKey: publicKey,
       encoding: transportType === "link-mode" ? BASE64URL : BASE64,
     });
-
+    console.log("on relay message", payload.id, transportType);
     try {
       if (isJsonRpcRequest(payload)) {
         this.client.core.history.set(topic, payload);

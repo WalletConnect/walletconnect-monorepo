@@ -160,6 +160,10 @@ export class Core extends ICore {
   // ---------- Link-mode ----------------------------------------------- //
 
   public dispatchEnvelope = ({ url }: { url: string }) => {
+    console.log(
+      "dispatchEnvelope received! ignoring:",
+      !url || !url.includes("wc_ev") || !url.includes("topic"),
+    );
     if (!url || !url.includes("wc_ev") || !url.includes("topic")) return;
 
     const topic = getSearchParamFromURL(url, "topic") || "";
