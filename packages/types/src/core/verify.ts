@@ -1,6 +1,4 @@
 import { Logger } from "@walletconnect/logger";
-import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
-import { ICore } from "./core";
 
 export declare namespace Verify {
   export interface Context {
@@ -16,16 +14,14 @@ export declare namespace Verify {
 export abstract class IVerify {
   public abstract readonly context: string;
 
-  constructor(public core: ICore, public logger: Logger, public store: IKeyValueStorage) {}
+  constructor(public projectId: string, public logger: Logger) {}
 
-  public abstract register(params: {
-    id: string;
-    decryptedId: string;
-  }): Promise<string | undefined>;
+  public abstract init(params?: { verifyUrl?: string }): Promise<void>;
+
+  public abstract register(params: { attestationId: string }): Promise<void>;
 
   public abstract resolve(params: {
-    attestationId?: string;
-    hash?: string;
+    attestationId: string;
     verifyUrl?: string;
   }): Promise<{ origin: string; isScam?: boolean }>;
 }
