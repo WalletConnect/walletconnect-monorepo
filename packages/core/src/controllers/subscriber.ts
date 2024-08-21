@@ -63,6 +63,7 @@ export class Subscriber extends ISubscriber {
       this.clientId = await this.relayer.core.crypto.getClientId();
       await this.restore();
     }
+    this.initialized = true;
   };
 
   get context() {
@@ -92,15 +93,14 @@ export class Subscriber extends ISubscriber {
   }
 
   public subscribe: ISubscriber["subscribe"] = async (topic, opts) => {
-    await this.restartToComplete();
     this.isInitialized();
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
     try {
       const relay = getRelayProtocolName(opts);
-      const params = { topic, relay };
+      const params = { topic, relay, transportType: opts?.transportType };
       this.pending.set(topic, params);
-      const id = await this.rpcSubscribe(topic, relay);
+      const id = await this.rpcSubscribe(topic, relay, opts?.transportType);
       if (typeof id === "string") {
         this.onSubscribe(id, params);
         this.logger.debug(`Successfully Subscribed Topic`);
@@ -218,7 +218,14 @@ export class Subscriber extends ISubscriber {
     }
   }
 
-  private async rpcSubscribe(topic: string, relay: RelayerTypes.ProtocolOptions) {
+  private async rpcSubscribe(
+    topic: string,
+    relay: RelayerTypes.ProtocolOptions,
+    transportType: RelayerTypes.TransportType = "relay",
+  ) {
+    if (transportType !== "link-mode") {
+      await this.restartToComplete();
+    }
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
       method: api.subscribe,
@@ -229,13 +236,19 @@ export class Subscriber extends ISubscriber {
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
+      const subId = hashMessage(topic + this.clientId);
+      // only attempt to subscribe if there is internet connection
+      if (transportType === "link-mode" && !this.relayer.connected) {
+        return subId;
+      }
       const subscribe = await createExpiringPromise(
         this.relayer.request(request).catch((e) => this.logger.warn(e)),
         this.subscribeTimeout,
       );
       const result = await subscribe;
+
       // return null to indicate that the subscription failed
-      return result ? hashMessage(topic + this.clientId) : null;
+      return result ? subId : null;
     } catch (err) {
       this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
@@ -246,7 +259,7 @@ export class Subscriber extends ISubscriber {
   private async rpcBatchSubscribe(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
     const relay = subscriptions[0].relay;
-    const api = getRelayProtocolApi(relay.protocol);
+    const api = getRelayProtocolApi(relay!.protocol);
     const request: RequestArguments<RelayJsonRpc.BatchSubscribeParams> = {
       method: api.batchSubscribe,
       params: {
@@ -269,7 +282,7 @@ export class Subscriber extends ISubscriber {
   private async rpcBatchFetchMessages(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
     const relay = subscriptions[0].relay;
-    const api = getRelayProtocolApi(relay.protocol);
+    const api = getRelayProtocolApi(relay!.protocol);
     const request: RequestArguments<RelayJsonRpc.BatchFetchMessagesParams> = {
       method: api.batchFetchMessages,
       params: {

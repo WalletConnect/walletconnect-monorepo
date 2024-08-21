@@ -294,7 +294,8 @@ export class Engine extends IEngine {
       ...(sessionProperties && { sessionProperties }),
       ...(sessionConfig && { sessionConfig }),
     };
-    await this.client.core.relayer.subscribe(sessionTopic);
+    const transportType = "relay";
+    await this.client.core.relayer.subscribe(sessionTopic, { transportType });
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
@@ -698,6 +699,7 @@ export class Engine extends IEngine {
 
     const { topic: pairingTopic, uri: connectionUri } = await this.client.core.pairing.create({
       methods: ["wc_sessionAuthenticate"],
+      transportType,
     });
 
     this.client.logger.info({
@@ -714,7 +716,7 @@ export class Engine extends IEngine {
     ]);
 
     // Subscribe to response topic
-    await this.client.core.relayer.subscribe(responseTopic);
+    await this.client.core.relayer.subscribe(responseTopic, { transportType });
 
     this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
 
@@ -887,7 +889,7 @@ export class Engine extends IEngine {
           transportType,
         };
 
-        await this.client.core.relayer.subscribe(sessionTopic);
+        await this.client.core.relayer.subscribe(sessionTopic, { transportType });
         await this.client.session.set(sessionTopic, session);
         if (pairingTopic) {
           await this.client.core.pairing.updateMetadata({
@@ -1083,7 +1085,7 @@ export class Engine extends IEngine {
         transportType,
       };
 
-      await this.client.core.relayer.subscribe(sessionTopic);
+      await this.client.core.relayer.subscribe(sessionTopic, { transportType });
       await this.client.session.set(sessionTopic, session);
       await this.client.core.pairing.updateMetadata({
         topic: pendingRequest.pairingTopic,
@@ -1587,12 +1589,12 @@ export class Engine extends IEngine {
   };
 
   private onRelayEventResponse: EnginePrivate["onRelayEventResponse"] = async (event) => {
-    const { topic, payload } = event;
+    const { topic, payload, transportType } = event;
     const record = await this.client.core.history.get(topic, payload.id);
     const resMethod = record.request.method as JsonRpcTypes.WcMethod;
     switch (resMethod) {
       case "wc_sessionPropose":
-        return this.onSessionProposeResponse(topic, payload);
+        return this.onSessionProposeResponse(topic, payload, transportType);
       case "wc_sessionSettle":
         return this.onSessionSettleResponse(topic, payload);
       case "wc_sessionUpdate":
@@ -1672,6 +1674,7 @@ export class Engine extends IEngine {
   private onSessionProposeResponse: EnginePrivate["onSessionProposeResponse"] = async (
     topic,
     payload,
+    transportType,
   ) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
@@ -1700,7 +1703,9 @@ export class Engine extends IEngine {
         method: "onSessionProposeResponse",
         sessionTopic,
       });
-      const subscriptionId = await this.client.core.relayer.subscribe(sessionTopic);
+      const subscriptionId = await this.client.core.relayer.subscribe(sessionTopic, {
+        transportType,
+      });
       this.client.logger.trace({
         type: "method",
         method: "onSessionProposeResponse",

@@ -261,6 +261,7 @@ export interface EnginePrivate {
   onSessionProposeResponse(
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionPropose"]> | JsonRpcError,
+    transportType?: RelayerTypes.MessageEvent["transportType"],
   ): Promise<void>;
 
   onSessionSettleRequest(

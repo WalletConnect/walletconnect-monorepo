@@ -89,6 +89,9 @@ describe("Sign Client Link Mode", () => {
         },
       });
 
+      expect(dapp.core.relayer.connected).to.be.false;
+      expect(wallet.core.relayer.connected).to.be.false;
+
       await Promise.all([
         Promise.race<void>([
           new Promise((resolve) => {
@@ -135,6 +138,9 @@ describe("Sign Client Link Mode", () => {
       ]);
       const { session } = await response();
 
+      expect(dapp.core.relayer.connected).to.be.false;
+      expect(wallet.core.relayer.connected).to.be.false;
+
       await Promise.all([
         new Promise<void>((resolve) => {
           wallet.on("session_request", async (params) => {
@@ -157,6 +163,10 @@ describe("Sign Client Link Mode", () => {
           resolve();
         }),
       ]);
+
+      expect(dapp.core.relayer.connected).to.be.false;
+      expect(wallet.core.relayer.connected).to.be.false;
+
       await throttle(2000);
     });
   });

@@ -25,7 +25,8 @@ export declare namespace RelayerTypes {
   }
 
   export interface SubscribeOptions {
-    relay: ProtocolOptions;
+    relay?: ProtocolOptions;
+    transportType?: "relay" | "link-mode";
   }
 
   export interface UnsubscribeOptions {
