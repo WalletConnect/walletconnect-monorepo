@@ -484,37 +484,34 @@ export class Engine extends IEngine {
       },
     );
 
-    if (session.transportType === "link-mode") {
-      const appLink = session.peer.metadata.redirect?.universal;
-      const linkModeWallets = this.client.core.linkModeSupportedApps;
-      if (appLink && linkModeWallets.includes(appLink)) {
-        console.log("linkModeWallets", linkModeWallets);
-        await this.sendRequest({
-          clientRpcId,
-          relayRpcId,
-          topic,
-          method: "wc_sessionRequest",
-          params: {
-            request: {
-              ...request,
-              expiryTimestamp: calcExpiry(expiry),
-            },
-            chainId,
+    const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
+    if (appLink) {
+      console.log("linkMode request", appLink);
+      await this.sendRequest({
+        clientRpcId,
+        relayRpcId,
+        topic,
+        method: "wc_sessionRequest",
+        params: {
+          request: {
+            ...request,
+            expiryTimestamp: calcExpiry(expiry),
           },
-          expiry,
-          throwOnFailedPublish: true,
-          appLink,
-        }).catch((error) => reject(error));
-
-        this.client.events.emit("session_request_sent", {
-          topic,
-          request,
           chainId,
-          id: clientRpcId,
-        });
-        const result = await done();
-        return result;
-      }
+        },
+        expiry,
+        throwOnFailedPublish: true,
+        appLink,
+      }).catch((error) => reject(error));
+
+      this.client.events.emit("session_request_sent", {
+        topic,
+        request,
+        chainId,
+        id: clientRpcId,
+      });
+      const result = await done();
+      return result;
     }
 
     return await Promise.all([
@@ -568,7 +565,7 @@ export class Engine extends IEngine {
       await this.confirmOnlineStateOrThrow();
     }
 
-    const appLink = this.getAppLinkIfEnabled(session.peer.metadata);
+    const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
     console.log("respond", this.client.name, appLink);
     if (isJsonRpcResult(response)) {
       await this.sendResult({
@@ -1107,7 +1104,7 @@ export class Engine extends IEngine {
       },
       encodeOpts,
       throwOnFailedPublish: true,
-      appLink: this.getAppLinkIfEnabled(pendingRequest.requester.metadata),
+      appLink: this.getAppLinkIfEnabled(pendingRequest.requester.metadata, transportType),
     });
     return { session };
   };
@@ -1143,7 +1140,10 @@ export class Engine extends IEngine {
       error: reason,
       encodeOpts,
       rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.reject,
-      appLink: this.getAppLinkIfEnabled(pendingRequest.requester.metadata),
+      appLink: this.getAppLinkIfEnabled(
+        pendingRequest.requester.metadata,
+        pendingRequest.transportType,
+      ),
     });
     await this.client.auth.requests.delete(id, { message: "rejected", code: 0 });
     await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
@@ -1321,8 +1321,8 @@ export class Engine extends IEngine {
     } = args;
     const payload = formatJsonRpcRequest(method, params, clientRpcId);
 
-    let message;
-    const isLinkMode = appLink && typeof (global as any)?.Linking !== "undefined";
+    let message: string;
+    const isLinkMode = !!appLink;
 
     try {
       const encoding = isLinkMode ? BASE64URL : BASE64;
@@ -2711,8 +2711,11 @@ export class Engine extends IEngine {
     }
   };
 
-  private isLinkModeEnabled = (peerMetadata?: CoreTypes.Metadata): boolean => {
-    if (!peerMetadata) return false;
+  private isLinkModeEnabled = (
+    peerMetadata?: CoreTypes.Metadata,
+    transportType?: RelayerTypes.TransportType,
+  ): boolean => {
+    if (!peerMetadata || transportType !== "link-mode") return false;
 
     return (
       this.client.metadata?.redirect?.linkMode === true &&
@@ -2726,7 +2729,12 @@ export class Engine extends IEngine {
     );
   };
 
-  private getAppLinkIfEnabled = (peerMetadata?: CoreTypes.Metadata): string | undefined => {
-    return this.isLinkModeEnabled(peerMetadata) ? peerMetadata?.redirect?.universal : undefined;
+  private getAppLinkIfEnabled = (
+    peerMetadata?: CoreTypes.Metadata,
+    transportType?: RelayerTypes.TransportType,
+  ): string | undefined => {
+    return this.isLinkModeEnabled(peerMetadata, transportType)
+      ? peerMetadata?.redirect?.universal
+      : undefined;
   };
 }

@@ -270,10 +270,7 @@ export class SignClient extends ISignClient {
     const sessionExists = this.session.keys.includes(topic);
 
     if (sessionExists) {
-      const session = this.session.get(topic);
-      if (session?.transportType === "relay") {
-        this.session.update(topic, { transportType: "link-mode" });
-      }
+      this.session.update(topic, { transportType: "link-mode" });
     }
 
     this.core.dispatchEnvelope({ topic, message, sessionExists });
