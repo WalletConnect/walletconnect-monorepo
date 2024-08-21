@@ -736,7 +736,7 @@ export class Engine extends IEngine {
         ? expiry
         : ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl;
 
-    const request = {
+    const request: AuthTypes.SessionAuthenticateRequestParams = {
       authPayload: {
         type: type ?? "caip122",
         chains,
@@ -752,7 +752,6 @@ export class Engine extends IEngine {
       },
       requester: { publicKey, metadata: this.client.metadata },
       expiryTimestamp: calcExpiry(authRequestExpiry),
-      transportType,
     };
 
     // ----- build namespaces for fallback session proposal ----- //
@@ -971,10 +970,10 @@ export class Engine extends IEngine {
     await this.setAuthRequest(id, {
       request: {
         ...request,
-        transportType: isLinkMode ? "link-mode" : "relay",
         verifyContext: {} as any,
       },
       pairingTopic,
+      transportType,
     });
 
     // TODO: check if it's ok to return linkmode url
@@ -1280,7 +1279,7 @@ export class Engine extends IEngine {
   };
 
   private setAuthRequest: EnginePrivate["setAuthRequest"] = async (id, params) => {
-    const { request, pairingTopic } = params;
+    const { request, pairingTopic, transportType = "relay" } = params;
     this.client.core.expirer.set(id, request.expiryTimestamp);
     await this.client.auth.requests.set(id, {
       authPayload: request.authPayload,
@@ -1289,7 +1288,7 @@ export class Engine extends IEngine {
       id,
       pairingTopic,
       verifyContext: request.verifyContext,
-      transportType: request.transportType,
+      transportType,
     });
   };
 
@@ -2086,9 +2085,12 @@ export class Engine extends IEngine {
         authPayload,
         verifyContext,
         expiryTimestamp,
-        transportType,
       };
-      await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
+      await this.setAuthRequest(payload.id, {
+        request: pendingRequest,
+        pairingTopic: topic,
+        transportType,
+      });
 
       if (transportType === "link-mode" && requester.metadata.redirect?.universal) {
         // save app as supported for link mode

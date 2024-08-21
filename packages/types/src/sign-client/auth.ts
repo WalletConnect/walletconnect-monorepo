@@ -162,7 +162,6 @@ export declare namespace AuthTypes {
     requester: Participant;
     authPayload: PayloadParams;
     expiryTimestamp: number;
-    transportType?: RelayerTypes.TransportType;
   }
 
   interface SessionAuthenticateRequest extends SessionAuthenticateRequestParams {

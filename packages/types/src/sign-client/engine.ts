@@ -231,6 +231,7 @@ export interface EnginePrivate {
     params: {
       request: AuthTypes.SessionAuthenticateRequest;
       pairingTopic: string;
+      transportType?: RelayerTypes.MessageEvent["transportType"];
     },
   ): Promise<void>;
 
