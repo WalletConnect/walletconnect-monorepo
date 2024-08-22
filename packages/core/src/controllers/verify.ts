@@ -74,9 +74,7 @@ export class Verify extends IVerify {
           document.body.removeChild(iframe);
           throw new Error("attestation aborted");
         };
-        this.abortController.signal.addEventListener("abort", abortListener, {
-          signal: this.abortController.signal,
-        });
+        this.abortController.signal.addEventListener("abort", abortListener);
         const iframe = document.createElement("iframe");
         iframe.src = src;
         iframe.style.display = "none";
