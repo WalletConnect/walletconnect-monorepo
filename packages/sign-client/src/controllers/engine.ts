@@ -68,7 +68,6 @@ import {
   isValidRequest,
   isValidRequestExpiry,
   hashMessage,
-  isBrowser,
   isValidRequiredNamespaces,
   isValidResponse,
   isValidString,
@@ -89,6 +88,7 @@ import {
   validateSignedCacao,
   getNamespacedDidChainId,
   parseChainId,
+  isBrowser,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -362,6 +362,13 @@ export class Engine extends IEngine {
     try {
       event.addTrace(EVENT_CLIENT_SESSION_TRACES.publishing_session_approve);
 
+      await this.sendRequest({
+        topic: sessionTopic,
+        method: "wc_sessionSettle",
+        params: sessionSettle,
+        throwOnFailedPublish: true,
+      });
+
       await this.sendResult<"wc_sessionPropose">({
         id,
         topic: pairingTopic,
@@ -410,10 +417,7 @@ export class Engine extends IEngine {
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
     return {
       topic: sessionTopic,
-      acknowledged: () =>
-        new Promise((resolve) =>
-          setTimeout(() => resolve(this.client.session.get(sessionTopic)), 5_00),
-        ), // artificial delay to allow for the session to be processed by the peer
+      acknowledged: () => Promise.resolve(this.client.session.get(sessionTopic)),
     };
   };
 
@@ -1327,6 +1331,7 @@ export class Engine extends IEngine {
       this.client.logger.error(`sendRequest() -> core.crypto.encode() for topic ${topic} failed`);
       throw error;
     }
+
     const opts = ENGINE_RPC_OPTS[method].req;
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
@@ -1443,7 +1448,7 @@ export class Engine extends IEngine {
   }
 
   private async onRelayMessage(event: RelayerTypes.MessageEvent) {
-    const { topic, message } = event;
+    const { topic, message, attestation } = event;
 
     // Retrieve the public key (if defined) to decrypt possible `auth_request` response
     const { publicKey } = this.client.auth.authKeys.keys.includes(AUTH_PUBLIC_KEY_NAME)
@@ -1457,7 +1462,7 @@ export class Engine extends IEngine {
     try {
       if (isJsonRpcRequest(payload)) {
         this.client.core.history.set(topic, payload);
-        this.onRelayEventRequest({ topic, payload });
+        this.onRelayEventRequest({ topic, payload, attestation });
       } else if (isJsonRpcResponse(payload)) {
         await this.client.core.history.resolve(payload);
         await this.onRelayEventResponse({ topic, payload });
@@ -1696,18 +1701,18 @@ export class Engine extends IEngine {
         ...(sessionProperties && { sessionProperties }),
         ...(sessionConfig && { sessionConfig }),
       };
-      await this.sendResult<"wc_sessionSettle">({
-        id: payload.id,
-        topic,
-        result: true,
-        throwOnFailedPublish: true,
-      });
       const target = engineEvent("session_connect");
       const listeners = this.events.listenerCount(target);
       if (listeners === 0) {
         throw new Error(`emitting ${target} without any listeners 997`);
       }
       this.events.emit(engineEvent("session_connect"), { session });
+      await this.sendResult<"wc_sessionSettle">({
+        id: payload.id,
+        topic,
+        result: true,
+        throwOnFailedPublish: true,
+      });
     } catch (err: any) {
       await this.sendError({
         id,

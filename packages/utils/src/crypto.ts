@@ -14,6 +14,15 @@ export const UTF8 = "utf8";
 export const TYPE_0 = 0;
 export const TYPE_1 = 1;
 
+export type P256KeyDataType = {
+  crv: "P-256";
+  ext: true;
+  key_ops: ["verify"];
+  kty: string;
+  x: string;
+  y: string;
+};
+
 const ZERO_INDEX = 0;
 const TYPE_LENGTH = 1;
 const IV_LENGTH = 12;
