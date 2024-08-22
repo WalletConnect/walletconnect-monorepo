@@ -18,7 +18,7 @@ export class EventClient extends IEventClient {
   private readonly storageVersion = EVENTS_STORAGE_VERSION;
 
   private events = new Map<string, EventClientTypes.Event>();
-  private toPersist = false;
+  private shouldPersist = false;
   constructor(public core: ICore, public logger: Logger, telemetryEnabled = true) {
     super(core, logger, telemetryEnabled);
     this.logger = generateChildLogger(logger, this.context);
@@ -66,7 +66,7 @@ export class EventClient extends IEventClient {
 
     if (this.telemetryEnabled) {
       this.events.set(eventId, eventObj);
-      this.toPersist = true;
+      this.shouldPersist = true;
     }
 
     return eventObj;
@@ -92,12 +92,12 @@ export class EventClient extends IEventClient {
   public deleteEvent: IEventClient["deleteEvent"] = (params) => {
     const { eventId } = params;
     this.events.delete(eventId);
-    this.toPersist = true;
+    this.shouldPersist = true;
   };
 
   private setEventListeners = () => {
     this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
-      if (this.toPersist) await this.persist();
+      if (this.shouldPersist) await this.persist();
       // cleanup events older than EVENTS_STORAGE_CLEANUP_INTERVAL
       this.events.forEach((event) => {
         if (
@@ -105,7 +105,7 @@ export class EventClient extends IEventClient {
           EVENTS_STORAGE_CLEANUP_INTERVAL
         ) {
           this.events.delete(event.eventId);
-          this.toPersist = true;
+          this.shouldPersist = true;
         }
       });
     });
@@ -118,32 +118,26 @@ export class EventClient extends IEventClient {
     };
   };
 
-  private addTrace = async (eventId: string, trace: string) => {
+  private addTrace = (eventId: string, trace: string) => {
     const event = this.events.get(eventId);
     if (!event) return;
-    return await new Promise<void>((resolve) => {
-      event.props.properties.trace.push(trace);
-      this.events.set(eventId, event);
-      this.toPersist = true;
-      resolve();
-    });
+    event.props.properties.trace.push(trace);
+    this.events.set(eventId, event);
+    this.shouldPersist = true;
   };
 
-  private setError = async (eventId: string, errorType: string) => {
+  private setError = (eventId: string, errorType: string) => {
     const event = this.events.get(eventId);
     if (!event) return;
-    return await new Promise<void>((resolve) => {
-      event.props.type = errorType;
-      event.timestamp = Date.now();
-      this.events.set(eventId, event);
-      this.toPersist = true;
-      resolve();
-    });
+    event.props.type = errorType;
+    event.timestamp = Date.now();
+    this.events.set(eventId, event);
+    this.shouldPersist = true;
   };
 
   private persist = async () => {
     await this.core.storage.setItem(this.storageKey, Array.from(this.events.values()));
-    this.toPersist = false;
+    this.shouldPersist = false;
   };
 
   private restore = async () => {
@@ -178,19 +172,17 @@ export class EventClient extends IEventClient {
     if (eventsToSend.length === 0) return;
 
     try {
-      const response = await fetch(EVENTS_CLIENT_API_URL, {
-        method: "POST",
-        body: JSON.stringify(eventsToSend),
-        headers: {
-          "x-project-id": `${this.core.projectId}`,
-          "x-sdk-type": "events_sdk",
-          "x-sdk-version": `js-${RELAYER_SDK_VERSION}`,
+      const response = await fetch(
+        `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}`,
+        {
+          method: "POST",
+          body: JSON.stringify(eventsToSend),
         },
-      });
+      );
       if (response.ok) {
         for (const event of eventsToSend) {
           this.events.delete(event.eventId);
-          this.toPersist = true;
+          this.shouldPersist = true;
         }
       }
     } catch (error) {
