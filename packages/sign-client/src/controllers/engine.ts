@@ -360,15 +360,20 @@ export class Engine extends IEngine {
     event.addTrace(EVENT_CLIENT_SESSION_TRACES.store_session);
 
     try {
-      event.addTrace(EVENT_CLIENT_SESSION_TRACES.publishing_session_approve);
-
+      event.addTrace(EVENT_CLIENT_SESSION_TRACES.publishing_session_settle);
       await this.sendRequest({
         topic: sessionTopic,
         method: "wc_sessionSettle",
         params: sessionSettle,
         throwOnFailedPublish: true,
+      }).catch((error) => {
+        event?.setError(EVENT_CLIENT_SESSION_ERRORS.session_settle_publish_failure);
+        throw error;
       });
 
+      event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_settle_publish_success);
+
+      event.addTrace(EVENT_CLIENT_SESSION_TRACES.publishing_session_approve);
       await this.sendResult<"wc_sessionPropose">({
         id,
         topic: pairingTopic,
@@ -385,19 +390,6 @@ export class Engine extends IEngine {
       });
 
       event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_approve_publish_success);
-      event.addTrace(EVENT_CLIENT_SESSION_TRACES.publishing_session_settle);
-
-      await this.sendRequest({
-        topic: sessionTopic,
-        method: "wc_sessionSettle",
-        params: sessionSettle,
-        throwOnFailedPublish: true,
-      }).catch((error) => {
-        event?.setError(EVENT_CLIENT_SESSION_ERRORS.session_settle_publish_failure);
-        throw error;
-      });
-
-      event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_settle_publish_success);
     } catch (error) {
       this.client.logger.error(error);
       // if the publish fails, delete the session and throw an error
@@ -807,7 +799,6 @@ export class Engine extends IEngine {
       // delete this auth request on response
       // we're using payload from the wallet to establish the session so we don't need to keep this around
       await this.deletePendingAuthRequest(id, { message: "fulfilled", code: 0 });
-
       if (payload.error) {
         // wallets that do not support wc_sessionAuthenticate will return an error
         // we should not reject the promise in this case as the fallback session proposal will be used
@@ -906,7 +897,6 @@ export class Engine extends IEngine {
     // set the ids for both requests
     const id = payloadId();
     const fallbackId = payloadId();
-
     // subscribe to response events
     this.events.once<"session_connect">(engineEvent("session_connect"), onSessionConnect);
     this.events.once(engineEvent("session_request", id), onAuthenticate);
