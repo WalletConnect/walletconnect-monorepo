@@ -122,12 +122,7 @@ export class Pairing implements IPairing {
       },
     });
 
-    try {
-      this.isValidPair(params, event);
-    } catch (error) {
-      event.setError(EVENT_CLIENT_PAIRING_ERRORS.malformed_pairing_uri);
-      throw error;
-    }
+    this.isValidPair(params, event);
 
     const { topic, symKey, relay, expiryTimestamp, methods } = parseUri(params.uri);
 
