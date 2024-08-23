@@ -16,7 +16,7 @@ import { SignClient } from "../../src";
 
 const environment = process.env.ENVIRONMENT || "dev";
 const region = process.env.REGION || "unknown";
-const logger = "trace";
+const logger = process.env.LOGGER || "error";
 const log = (log: string) => {
   // eslint-disable-next-line no-console
   console.log(log);
