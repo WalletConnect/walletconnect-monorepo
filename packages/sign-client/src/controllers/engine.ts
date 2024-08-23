@@ -903,11 +903,11 @@ export class Engine extends IEngine {
       if (
         this.client.metadata.redirect?.linkMode &&
         responder.metadata.redirect?.linkMode &&
-        walletUniversalLink &&
-        walletUniversalLink === responder.metadata.redirect?.universal
+        responder.metadata.redirect?.universal &&
+        walletUniversalLink
       ) {
         // save wallet link in array of apps that support linkMode
-        this.client.core.addLinkModeSupportedApp(walletUniversalLink);
+        this.client.core.addLinkModeSupportedApp(responder.metadata.redirect.universal);
 
         this.client.session.update(sessionTopic, {
           transportType: "link-mode",
