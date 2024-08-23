@@ -3,6 +3,7 @@ import { ICore, IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, P256KeyDataType, verifyP256Jwt } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import { getDocument } from "@walletconnect/window-getters";
+import { decodeJWT } from "@walletconnect/relay-auth";
 
 import {
   CORE_STORAGE_PREFIX,
@@ -82,6 +83,9 @@ export class Verify extends IVerify {
           if (!event.data) return;
           const data = JSON.parse(event.data);
           if (data.type === "verify_attestation") {
+            const decoded = decodeJWT(data.attestation) as unknown as { payload: JwkPayload };
+            if (decoded.payload.id !== id) return;
+
             clearInterval(abortTimeout);
             document.body.removeChild(iframe);
             this.abortController.signal.removeEventListener("abort", abortListener);
@@ -102,16 +106,18 @@ export class Verify extends IVerify {
 
   public resolve: IVerify["resolve"] = async (params) => {
     if (this.isDevEnv) return "";
-    const { attestationId, hash } = params;
-
+    const { attestationId, hash, encryptedId } = params;
     if (attestationId === "") {
       this.logger.debug("resolve: attestationId is empty, skipping");
       return;
     }
 
     if (attestationId) {
-      const validation = await this.isValidJwtAttestation(attestationId);
-      if (validation) return validation;
+      const decoded = decodeJWT(attestationId) as unknown as { payload: JwkPayload };
+      if (decoded.payload.id === encryptedId) {
+        const validation = await this.isValidJwtAttestation(attestationId);
+        if (validation) return validation;
+      }
     }
     if (!hash) return;
     const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
