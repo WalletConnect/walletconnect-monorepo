@@ -6,7 +6,7 @@ import { IEvents } from "@walletconnect/events";
 import { Logger } from "@walletconnect/logger";
 import { IProvider } from "./providers";
 
-export interface UniversalProviderOpts {
+export interface UniversalProviderOpts extends SignClientTypes.Options {
   projectId?: string;
   metadata?: Metadata;
   logger?: string | Logger;
