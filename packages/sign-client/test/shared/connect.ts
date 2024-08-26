@@ -178,21 +178,9 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   if (!pairingA) throw new Error("expect pairing A to be defined");
   if (!pairingB) throw new Error("expect pairing B to be defined");
 
-  // update pairing state beforehand
-  pairingA = A.pairing.get(pairingA.topic);
-  pairingB = B.pairing.get(pairingB.topic);
-
-  // topic
-  expect(pairingA.topic).to.eql(pairingB.topic);
-  // relay
-  expect(pairingA.relay).to.eql(TEST_RELAY_OPTIONS);
-  expect(pairingA.relay).to.eql(pairingB.relay);
-  // active
-  expect(pairingA.active).to.eql(true);
-  expect(pairingA.active).to.eql(pairingB.active);
   // metadata
-  expect(pairingA.peerMetadata).to.eql(sessionA.peer.metadata);
-  expect(pairingB.peerMetadata).to.eql(sessionB.peer.metadata);
+  expect(sessionA.peer.metadata).to.eql(sessionB.self.metadata);
+  expect(sessionA.self.metadata).to.eql(sessionB.peer.metadata);
   await throttle(200); // allow for relay to update
   return { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs };
 }

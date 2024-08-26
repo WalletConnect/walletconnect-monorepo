@@ -400,12 +400,8 @@ export class Engine extends IEngine {
 
     this.client.core.eventClient.deleteEvent({ eventId: event.eventId });
 
-    await this.client.core.pairing.updateMetadata({
-      topic: pairingTopic,
-      metadata: proposer.metadata,
-    });
     await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
-    await this.client.core.pairing.activate({ topic: pairingTopic });
+    await this.client.core.pairing.disconnect({ topic: pairingTopic });
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
     return {
       topic: sessionTopic,
@@ -617,8 +613,6 @@ export class Engine extends IEngine {
         }),
         done(),
       ]);
-    } else if (this.client.core.pairing.pairings.keys.includes(topic)) {
-      await this.client.core.pairing.ping({ topic });
     }
   };
 
@@ -649,14 +643,6 @@ export class Engine extends IEngine {
         throwOnFailedPublish: true,
       });
       await this.deleteSession({ topic, emitEvent: false });
-    } else if (this.client.core.pairing.pairings.keys.includes(topic)) {
-      await this.client.core.pairing.disconnect({ topic });
-    } else {
-      const { message } = getInternalError(
-        "MISMATCHED_TOPIC",
-        `Session or pairing topic not found: ${topic}`,
-      );
-      throw new Error(message);
     }
   };
 
@@ -1649,7 +1635,7 @@ export class Engine extends IEngine {
         method: "onSessionProposeResponse",
         subscriptionId,
       });
-      await this.client.core.pairing.activate({ topic });
+      await this.client.core.pairing.disconnect({ topic });
     } else if (isJsonRpcError(payload)) {
       await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
       const target = engineEvent("session_connect");

@@ -141,42 +141,6 @@ describe("Pairing", () => {
     });
   });
 
-  describe("ping", () => {
-    it("clients can ping each other", async () => {
-      const { uri, topic } = await coreA.pairing.create();
-      let gotPing = false;
-
-      coreB.pairing.events.on("pairing_ping", () => {
-        gotPing = true;
-      });
-
-      await coreB.pairing.pair({ uri });
-      await coreA.pairing.ping({ topic });
-      await waitForEvent(() => gotPing);
-
-      expect(gotPing).toBe(true);
-    });
-  });
-
-  describe("disconnect", () => {
-    it("can disconnect a known pairing", async () => {
-      const { uri, topic } = await coreA.pairing.create();
-      let hasDeleted = false;
-
-      coreA.pairing.events.on("pairing_delete", () => {
-        hasDeleted = true;
-      });
-
-      await coreB.pairing.pair({ uri });
-      await coreB.pairing.disconnect({ topic });
-      await waitForEvent(() => hasDeleted);
-
-      expect(coreA.pairing.pairings.keys.length).toBe(0);
-      expect(coreB.pairing.pairings.keys.length).toBe(0);
-      expect(coreA.pairing.pairings.keys).to.deep.equal(coreB.pairing.pairings.keys);
-    });
-  });
-
   describe("validations", () => {
     describe("pair", () => {
       it("throws when no params are passed", async () => {

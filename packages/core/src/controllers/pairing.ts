@@ -192,17 +192,7 @@ export class Pairing implements IPairing {
 
   public ping: IPairing["ping"] = async (params) => {
     this.isInitialized();
-    await this.isValidPing(params);
-    const { topic } = params;
-    if (this.pairings.keys.includes(topic)) {
-      const id = await this.sendRequest(topic, "wc_pairingPing", {});
-      const { done, resolve, reject } = createDelayedPromise<void>();
-      this.events.once(engineEvent("pairing_ping", id), ({ error }) => {
-        if (error) reject(error);
-        else resolve();
-      });
-      await done();
-    }
+    throw new Error("Method deprecated.");
   };
 
   public updateExpiry: IPairing["updateExpiry"] = async ({ topic, expiry }) => {
@@ -225,7 +215,6 @@ export class Pairing implements IPairing {
     await this.isValidDisconnect(params);
     const { topic } = params;
     if (this.pairings.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_pairingDelete", getSdkError("USER_DISCONNECTED"));
       await this.deletePairing(topic);
     }
   };
@@ -239,15 +228,6 @@ export class Pairing implements IPairing {
     this.core.history.set(topic, payload);
     this.core.relayer.publish(topic, message, opts);
     return payload.id;
-  };
-
-  private sendResult: IPairingPrivate["sendResult"] = async (id, topic, result) => {
-    const payload = formatJsonRpcResult(id, result);
-    const message = await this.core.crypto.encode(topic, payload);
-    const record = await this.core.history.get(topic, id);
-    const opts = PAIRING_RPC_OPTS[record.request.method].res;
-    await this.core.relayer.publish(topic, message, opts);
-    await this.core.history.resolve(payload);
   };
 
   private sendError: IPairingPrivate["sendError"] = async (id, topic, error) => {
@@ -315,72 +295,14 @@ export class Pairing implements IPairing {
 
   private onRelayEventRequest: IPairingPrivate["onRelayEventRequest"] = (event) => {
     const { topic, payload } = event;
-    const reqMethod = payload.method as PairingJsonRpcTypes.WcMethod;
-
-    switch (reqMethod) {
-      case "wc_pairingPing":
-        return this.onPairingPingRequest(topic, payload);
-      case "wc_pairingDelete":
-        return this.onPairingDeleteRequest(topic, payload);
-      default:
-        return this.onUnknownRpcMethodRequest(topic, payload);
-    }
+    return this.onUnknownRpcMethodRequest(topic, payload);
   };
 
   private onRelayEventResponse: IPairingPrivate["onRelayEventResponse"] = async (event) => {
     const { topic, payload } = event;
     const record = await this.core.history.get(topic, payload.id);
     const resMethod = record.request.method as PairingJsonRpcTypes.WcMethod;
-
-    switch (resMethod) {
-      case "wc_pairingPing":
-        return this.onPairingPingResponse(topic, payload);
-      default:
-        return this.onUnknownRpcMethodResponse(resMethod);
-    }
-  };
-
-  private onPairingPingRequest: IPairingPrivate["onPairingPingRequest"] = async (
-    topic,
-    payload,
-  ) => {
-    const { id } = payload;
-    try {
-      this.isValidPing({ topic });
-      await this.sendResult<"wc_pairingPing">(id, topic, true);
-      this.events.emit(PAIRING_EVENTS.ping, { id, topic });
-    } catch (err: any) {
-      await this.sendError(id, topic, err);
-      this.logger.error(err);
-    }
-  };
-
-  private onPairingPingResponse: IPairingPrivate["onPairingPingResponse"] = (_topic, payload) => {
-    const { id } = payload;
-    // put at the end of the stack to avoid a race condition
-    // where pairing_ping listener is not yet initialized
-    setTimeout(() => {
-      if (isJsonRpcResult(payload)) {
-        this.events.emit(engineEvent("pairing_ping", id), {});
-      } else if (isJsonRpcError(payload)) {
-        this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
-      }
-    }, 500);
-  };
-
-  private onPairingDeleteRequest: IPairingPrivate["onPairingDeleteRequest"] = async (
-    topic,
-    payload,
-  ) => {
-    const { id } = payload;
-    try {
-      this.isValidDisconnect({ topic });
-      await this.deletePairing(topic);
-      this.events.emit(PAIRING_EVENTS.delete, { id, topic });
-    } catch (err: any) {
-      await this.sendError(id, topic, err);
-      this.logger.error(err);
-    }
+    return this.onUnknownRpcMethodResponse(resMethod);
   };
 
   private onUnknownRpcMethodRequest: IPairingPrivate["onUnknownRpcMethodRequest"] = async (

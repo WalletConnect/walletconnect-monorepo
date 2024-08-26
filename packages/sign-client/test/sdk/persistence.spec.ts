@@ -39,12 +39,12 @@ describe("Sign Client Persistence", () => {
           await Promise.all([
             new Promise((resolve) => {
               // ping
-              clients.B.core.pairing.events.on("pairing_ping", (event: any) => {
+              clients.B.on("session_ping", (event: any) => {
                 resolve(event);
               });
             }),
             new Promise((resolve) => {
-              clients.A.core.pairing.events.on("pairing_ping", (event: any) => {
+              clients.A.on("session_ping", (event: any) => {
                 resolve(event);
               });
             }),
