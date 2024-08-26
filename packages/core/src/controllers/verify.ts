@@ -69,11 +69,11 @@ export class Verify extends IVerify {
     try {
       const document = getDocument() as Document;
       const abortTimeout = this.startAbortTimer(ONE_SECOND * 5);
-      const attestationJwt = await new Promise((resolve) => {
+      const attestationJwt = await new Promise(async (resolve, reject) => {
         const abortListener = () => {
           window.removeEventListener("message", listener);
           document.body.removeChild(iframe);
-          throw new Error("attestation aborted");
+          reject("attestation aborted");
         };
         this.abortController.signal.addEventListener("abort", abortListener);
         const iframe = document.createElement("iframe");
