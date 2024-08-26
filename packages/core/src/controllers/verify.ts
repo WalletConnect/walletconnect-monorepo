@@ -79,6 +79,7 @@ export class Verify extends IVerify {
         const iframe = document.createElement("iframe");
         iframe.src = src;
         iframe.style.display = "none";
+        iframe.addEventListener("error", abortListener, { signal: this.abortController.signal });
         const listener = (event: MessageEvent) => {
           if (!event.data) return;
           const data = JSON.parse(event.data);
