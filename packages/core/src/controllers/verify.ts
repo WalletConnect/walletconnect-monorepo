@@ -114,10 +114,9 @@ export class Verify extends IVerify {
 
     if (attestationId) {
       const decoded = decodeJWT(attestationId) as unknown as { payload: JwkPayload };
-      if (decoded.payload.id === encryptedId) {
-        const validation = await this.isValidJwtAttestation(attestationId);
-        if (validation) return validation;
-      }
+      if (decoded.payload.id !== encryptedId) return;
+      const validation = await this.isValidJwtAttestation(attestationId);
+      if (validation) return validation;
     }
     if (!hash) return;
     const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
