@@ -53,6 +53,7 @@ export declare namespace EngineTypes {
     topic: string;
     payload: T;
     attestation?: string;
+    encryptedId?: string;
   }
 
   interface ConnectParams {
@@ -248,11 +249,12 @@ export interface EnginePrivate {
 
   cleanup(): Promise<void>;
 
-  onSessionProposeRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>,
-    attestation?: string,
-  ): Promise<void>;
+  onSessionProposeRequest(params: {
+    topic: string;
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>;
+    attestation?: string;
+    encryptedId?: string;
+  }): Promise<void>;
 
   onSessionProposeResponse(
     topic: string,
@@ -304,11 +306,12 @@ export interface EnginePrivate {
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionDelete"]>,
   ): Promise<void>;
 
-  onSessionRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>,
-    attestation?: string,
-  ): Promise<void>;
+  onSessionRequest(params: {
+    topic: string;
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>;
+    attestation?: string;
+    encryptedId?: string;
+  }): Promise<void>;
 
   onSessionRequestResponse(
     topic: string,
@@ -320,11 +323,12 @@ export interface EnginePrivate {
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionEvent"]>,
   ): Promise<void>;
 
-  onSessionAuthenticateRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionAuthenticate"]>,
-    attestation?: string,
-  ): Promise<void>;
+  onSessionAuthenticateRequest(params: {
+    topic: string;
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionAuthenticate"]>;
+    attestation?: string;
+    encryptedId?: string;
+  }): Promise<void>;
 
   onSessionAuthenticateResponse(
     topic: string,
