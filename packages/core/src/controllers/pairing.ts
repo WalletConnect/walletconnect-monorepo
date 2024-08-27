@@ -29,7 +29,7 @@ import {
   isJsonRpcRequest,
   isJsonRpcResponse,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES, THIRTY_DAYS, toMiliseconds } from "@walletconnect/time";
+import { FIVE_MINUTES, toMiliseconds } from "@walletconnect/time";
 import EventEmitter from "events";
 import {
   PAIRING_CONTEXT,
