@@ -51,6 +51,7 @@ export class Verify extends IVerify {
   }
 
   public init = async () => {
+    if (this.isDevEnv) return;
     this.publicKey = await this.store.getItem(this.storeKey);
     if (this.publicKey && toMiliseconds(this.publicKey?.expiresAt) < Date.now()) {
       this.logger.debug("verify v2 public key expired");
@@ -62,7 +63,7 @@ export class Verify extends IVerify {
   };
 
   public register: IVerify["register"] = async (params) => {
-    if (!isBrowser()) return;
+    if (!isBrowser() || this.isDevEnv) return;
     const origin = window.location.origin;
     const { id, decryptedId } = params;
     const src = `${this.verifyUrlV3}/attestation?projectId=${this.core.projectId}&origin=${origin}&id=${id}&decryptedId=${decryptedId}`;
