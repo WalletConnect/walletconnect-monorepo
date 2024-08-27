@@ -179,7 +179,7 @@ export class Pairing implements IPairing {
 
   public activate: IPairing["activate"] = async ({ topic }) => {
     this.isInitialized();
-    const expiry = calcExpiry(THIRTY_DAYS);
+    const expiry = calcExpiry(FIVE_MINUTES);
     this.core.expirer.set(topic, expiry);
     await this.pairings.update(topic, { active: true, expiry });
   };
