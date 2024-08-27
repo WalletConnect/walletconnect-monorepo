@@ -1,4 +1,10 @@
 import {
+  EVENT_CLIENT_AUTHENTICATE_ERRORS,
+  EVENT_CLIENT_AUTHENTICATE_TRACES,
+  EVENT_CLIENT_PAIRING_ERRORS,
+  EVENT_CLIENT_PAIRING_TRACES,
+  EVENT_CLIENT_SESSION_ERRORS,
+  EVENT_CLIENT_SESSION_TRACES,
   EXPIRER_EVENTS,
   PAIRING_EVENTS,
   RELAYER_DEFAULT_PROTOCOL,
@@ -35,6 +41,7 @@ import {
   SessionTypes,
   PairingTypes,
   AuthTypes,
+  EventClientTypes,
 } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -254,23 +261,58 @@ export class Engine extends IEngine {
   };
 
   public approve: IEngine["approve"] = async (params) => {
-    await this.isInitialized();
+    const configEvent = this.client.core.eventClient.createEvent({
+      properties: {
+        topic: params?.id?.toString(),
+        trace: [EVENT_CLIENT_SESSION_TRACES.session_approve_started],
+      },
+    });
+    try {
+      await this.isInitialized();
+    } catch (error) {
+      configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.no_internet_connection);
+      throw error;
+    }
+    try {
+      await this.isValidProposalId(params?.id);
+    } catch (error) {
+      this.client.logger.error(`approve() -> proposal.get(${params?.id}) failed`);
+      configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found);
+      throw error;
+    }
     try {
       await this.isValidApprove(params);
     } catch (error) {
       this.client.logger.error("approve() -> isValidApprove() failed");
-      throw error;
-    }
-    const { id, relayProtocol, namespaces, sessionProperties, sessionConfig } = params;
-    let proposal;
-    try {
-      proposal = this.client.proposal.get(id);
-    } catch (error) {
-      this.client.logger.error(`approve() -> proposal.get(${id}) failed`);
+      configEvent.setError(
+        EVENT_CLIENT_SESSION_ERRORS.session_approve_namespace_validation_failure,
+      );
       throw error;
     }
 
+    const { id, relayProtocol, namespaces, sessionProperties, sessionConfig } = params;
+
+    const proposal = this.client.proposal.get(id);
+
+    this.client.core.eventClient.deleteEvent({ eventId: configEvent.eventId });
+
     const { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
+
+    let event = this.client.core.eventClient?.getEvent({
+      topic: pairingTopic,
+    }) as EventClientTypes.Event;
+    if (!event) {
+      event = this.client.core.eventClient?.createEvent({
+        type: EVENT_CLIENT_SESSION_TRACES.session_approve_started,
+        properties: {
+          topic: pairingTopic,
+          trace: [
+            EVENT_CLIENT_SESSION_TRACES.session_approve_started,
+            EVENT_CLIENT_SESSION_TRACES.session_namespaces_validation_success,
+          ],
+        },
+      });
+    }
 
     const selfPublicKey = await this.client.core.crypto.generateKeyPair();
     const peerPublicKey = proposer.publicKey;
@@ -286,7 +328,18 @@ export class Engine extends IEngine {
       ...(sessionProperties && { sessionProperties }),
       ...(sessionConfig && { sessionConfig }),
     };
-    await this.client.core.relayer.subscribe(sessionTopic);
+
+    event.addTrace(EVENT_CLIENT_SESSION_TRACES.subscribing_session_topic);
+
+    try {
+      await this.client.core.relayer.subscribe(sessionTopic);
+    } catch (error) {
+      event.setError(EVENT_CLIENT_SESSION_ERRORS.subscribe_session_topic_failure);
+      throw error;
+    }
+
+    event.addTrace(EVENT_CLIENT_SESSION_TRACES.subscribe_session_topic_success);
+
     const session = {
       ...sessionSettle,
       topic: sessionTopic,
@@ -302,13 +355,24 @@ export class Engine extends IEngine {
       controller: selfPublicKey,
     };
     await this.client.session.set(sessionTopic, session);
+
+    event.addTrace(EVENT_CLIENT_SESSION_TRACES.store_session);
+
     try {
+      event.addTrace(EVENT_CLIENT_SESSION_TRACES.publishing_session_settle);
       await this.sendRequest({
         topic: sessionTopic,
         method: "wc_sessionSettle",
         params: sessionSettle,
         throwOnFailedPublish: true,
+      }).catch((error) => {
+        event?.setError(EVENT_CLIENT_SESSION_ERRORS.session_settle_publish_failure);
+        throw error;
       });
+
+      event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_settle_publish_success);
+
+      event.addTrace(EVENT_CLIENT_SESSION_TRACES.publishing_session_approve);
       await this.sendResult<"wc_sessionPropose">({
         id,
         topic: pairingTopic,
@@ -319,7 +383,12 @@ export class Engine extends IEngine {
           responderPublicKey: selfPublicKey,
         },
         throwOnFailedPublish: true,
+      }).catch((error) => {
+        event?.setError(EVENT_CLIENT_SESSION_ERRORS.session_approve_publish_failure);
+        throw error;
       });
+
+      event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_approve_publish_success);
     } catch (error) {
       this.client.logger.error(error);
       // if the publish fails, delete the session and throw an error
@@ -327,6 +396,8 @@ export class Engine extends IEngine {
       await this.client.core.relayer.unsubscribe(sessionTopic);
       throw error;
     }
+
+    this.client.core.eventClient.deleteEvent({ eventId: event.eventId });
 
     await this.client.core.pairing.updateMetadata({
       topic: pairingTopic,
@@ -727,7 +798,6 @@ export class Engine extends IEngine {
       // delete this auth request on response
       // we're using payload from the wallet to establish the session so we don't need to keep this around
       await this.deletePendingAuthRequest(id, { message: "fulfilled", code: 0 });
-
       if (payload.error) {
         // wallets that do not support wc_sessionAuthenticate will return an error
         // we should not reject the promise in this case as the fallback session proposal will be used
@@ -826,7 +896,6 @@ export class Engine extends IEngine {
     // set the ids for both requests
     const id = payloadId();
     const fallbackId = payloadId();
-
     // subscribe to response events
     this.events.once<"session_connect">(engineEvent("session_connect"), onSessionConnect);
     this.events.once(engineEvent("session_request", id), onAuthenticate);
@@ -873,13 +942,28 @@ export class Engine extends IEngine {
   public approveSessionAuthenticate: IEngine["approveSessionAuthenticate"] = async (
     sessionAuthenticateResponseParams,
   ) => {
-    this.isInitialized();
-
     const { id, auths } = sessionAuthenticateResponseParams;
+
+    const event = this.client.core.eventClient.createEvent({
+      properties: {
+        topic: id.toString(),
+        trace: [EVENT_CLIENT_AUTHENTICATE_TRACES.authenticated_session_approve_started],
+      },
+    });
+
+    try {
+      this.isInitialized();
+    } catch (error) {
+      event.setError(EVENT_CLIENT_AUTHENTICATE_ERRORS.no_internet_connection);
+      throw error;
+    }
 
     const pendingRequest = this.getPendingAuthRequest(id);
 
     if (!pendingRequest) {
+      event.setError(
+        EVENT_CLIENT_AUTHENTICATE_ERRORS.authenticated_session_pending_request_not_found,
+      );
       throw new Error(`Could not find pending auth request with id ${id}`);
     }
 
@@ -898,6 +982,8 @@ export class Engine extends IEngine {
     for (const cacao of auths) {
       const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
       if (!isValid) {
+        event.setError(EVENT_CLIENT_AUTHENTICATE_ERRORS.invalid_cacao);
+
         const invalidErr = getSdkError(
           "SESSION_SETTLEMENT_FAILED",
           "Signature verification failed",
@@ -912,6 +998,8 @@ export class Engine extends IEngine {
 
         throw new Error(invalidErr.message);
       }
+
+      event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.cacaos_verified);
 
       const { p: payload } = cacao;
       const recap = getRecapFromResources(payload.resources);
@@ -935,6 +1023,9 @@ export class Engine extends IEngine {
       senderPublicKey,
       receiverPublicKey,
     );
+
+    event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.create_authenticated_session_topic);
+
     let session: SessionTypes.Struct | undefined;
     if (approvedMethods?.length > 0) {
       session = {
@@ -961,29 +1052,59 @@ export class Engine extends IEngine {
         ),
       };
 
-      await this.client.core.relayer.subscribe(sessionTopic);
+      event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.subscribing_authenticated_session_topic);
+
+      try {
+        await this.client.core.relayer.subscribe(sessionTopic);
+      } catch (error) {
+        event.setError(
+          EVENT_CLIENT_AUTHENTICATE_ERRORS.subscribe_authenticated_session_topic_failure,
+        );
+        throw error;
+      }
+
+      event.addTrace(
+        EVENT_CLIENT_AUTHENTICATE_TRACES.subscribe_authenticated_session_topic_success,
+      );
+
       await this.client.session.set(sessionTopic, session);
+
+      event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.store_authenticated_session);
+
       await this.client.core.pairing.updateMetadata({
         topic: pendingRequest.pairingTopic,
         metadata: pendingRequest.requester.metadata,
       });
     }
 
-    await this.sendResult<"wc_sessionAuthenticate">({
-      topic: responseTopic,
-      id,
-      result: {
-        cacaos: auths,
-        responder: {
-          publicKey: senderPublicKey,
-          metadata: this.client.metadata,
+    event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.publishing_authenticated_session_approve);
+
+    try {
+      await this.sendResult<"wc_sessionAuthenticate">({
+        topic: responseTopic,
+        id,
+        result: {
+          cacaos: auths,
+          responder: {
+            publicKey: senderPublicKey,
+            metadata: this.client.metadata,
+          },
         },
-      },
-      encodeOpts,
-      throwOnFailedPublish: true,
-    });
+        encodeOpts,
+        throwOnFailedPublish: true,
+      });
+    } catch (error) {
+      event.setError(
+        EVENT_CLIENT_AUTHENTICATE_ERRORS.authenticated_session_approve_publish_failure,
+      );
+      throw error;
+    }
+
     await this.client.auth.requests.delete(id, { message: "fulfilled", code: 0 });
     await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
+
+    this.client.core.eventClient.deleteEvent({ eventId: event.eventId });
+
     return { session };
   };
 
@@ -1103,6 +1224,13 @@ export class Engine extends IEngine {
   };
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async (id, expirerHasDeleted) => {
+    if (expirerHasDeleted) {
+      try {
+        const proposal = this.client.proposal.get(id);
+        const event = this.client.core.eventClient.getEvent({ topic: proposal.pairingTopic });
+        event?.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_expired);
+      } catch (error) {}
+    }
     await Promise.all([
       this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED")),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
@@ -1469,17 +1597,26 @@ export class Engine extends IEngine {
     const { topic, payload, attestation, encryptedId } = args;
     const { params, id } = payload;
     try {
+      const event = this.client.core.eventClient.getEvent({ topic });
       this.isValidConnect({ ...payload.params });
       const expiryTimestamp =
         params.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
       const proposal = { id, pairingTopic: topic, expiryTimestamp, ...params };
       await this.setProposal(id, proposal);
+
       const verifyContext = await this.getVerifyContext({
         attestationId: attestation,
         hash: hashMessage(JSON.stringify(payload)),
         encryptedId,
         metadata: proposal.proposer.metadata,
       });
+
+      if (this.client.events.listenerCount("session_proposal") === 0) {
+        console.warn("No listener for session_proposal event");
+        event?.setError(EVENT_CLIENT_PAIRING_ERRORS.proposal_listener_not_found);
+      }
+      event?.addTrace(EVENT_CLIENT_PAIRING_TRACES.emit_session_proposal);
+
       this.client.events.emit("session_proposal", { id, params: proposal, verifyContext });
     } catch (err: any) {
       await this.sendError({
