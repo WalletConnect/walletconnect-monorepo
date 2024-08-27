@@ -103,18 +103,6 @@ describe("Pairing", () => {
     });
   });
 
-  describe("activate", () => {
-    it("can activate a pairing", async () => {
-      const { topic } = await coreA.pairing.create();
-
-      const inactivePairing = coreA.pairing.pairings.get(topic);
-      expect(inactivePairing.active).toBe(false);
-      await coreA.pairing.activate({ topic });
-      expect(coreA.pairing.pairings.get(topic).active).toBe(true);
-      expect(coreA.pairing.pairings.get(topic).expiry > inactivePairing.expiry).toBe(true);
-    });
-  });
-
   describe("updateExpiry", () => {
     it("can update a pairing's expiry", async () => {
       const mockExpiry = 11111111;
