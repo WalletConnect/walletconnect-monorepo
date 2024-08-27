@@ -1327,7 +1327,12 @@ export class Engine extends IEngine {
     try {
       if (isJsonRpcRequest(payload)) {
         this.client.core.history.set(topic, payload);
-        this.onRelayEventRequest({ topic, payload, attestation });
+        this.onRelayEventRequest({
+          topic,
+          payload,
+          attestation,
+          encryptedId: hashMessage(message),
+        });
       } else if (isJsonRpcResponse(payload)) {
         await this.client.core.history.resolve(payload);
         await this.onRelayEventResponse({ topic, payload });
@@ -1370,7 +1375,7 @@ export class Engine extends IEngine {
   };
 
   private processRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
-    const { topic, payload, attestation } = event;
+    const { topic, payload, attestation, encryptedId } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
     if (this.shouldIgnorePairingRequest({ topic, requestMethod: reqMethod })) {
@@ -1379,7 +1384,7 @@ export class Engine extends IEngine {
 
     switch (reqMethod) {
       case "wc_sessionPropose":
-        return await this.onSessionProposeRequest(topic, payload, attestation);
+        return await this.onSessionProposeRequest({ topic, payload, attestation, encryptedId });
       case "wc_sessionSettle":
         return await this.onSessionSettleRequest(topic, payload);
       case "wc_sessionUpdate":
@@ -1391,11 +1396,16 @@ export class Engine extends IEngine {
       case "wc_sessionDelete":
         return await this.onSessionDeleteRequest(topic, payload);
       case "wc_sessionRequest":
-        return await this.onSessionRequest(topic, payload, attestation);
+        return await this.onSessionRequest({ topic, payload, attestation, encryptedId });
       case "wc_sessionEvent":
         return await this.onSessionEventRequest(topic, payload);
       case "wc_sessionAuthenticate":
-        return await this.onSessionAuthenticateRequest(topic, payload, attestation);
+        return await this.onSessionAuthenticateRequest({
+          topic,
+          payload,
+          attestation,
+          encryptedId,
+        });
       default:
         return this.client.logger.info(`Unsupported request method ${reqMethod}`);
     }
@@ -1455,11 +1465,8 @@ export class Engine extends IEngine {
 
   // ---------- Relay Events Handlers --------------------------------- //
 
-  private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = async (
-    topic,
-    payload,
-    attestation,
-  ) => {
+  private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = async (args) => {
+    const { topic, payload, attestation, encryptedId } = args;
     const { params, id } = payload;
     try {
       this.isValidConnect({ ...payload.params });
@@ -1470,6 +1477,7 @@ export class Engine extends IEngine {
       const verifyContext = await this.getVerifyContext({
         attestationId: attestation,
         hash: hashMessage(JSON.stringify(payload)),
+        encryptedId,
         metadata: proposal.proposer.metadata,
       });
       this.client.events.emit("session_proposal", { id, params: proposal, verifyContext });
@@ -1766,11 +1774,8 @@ export class Engine extends IEngine {
     }
   };
 
-  private onSessionRequest: EnginePrivate["onSessionRequest"] = async (
-    topic,
-    payload,
-    attestation,
-  ) => {
+  private onSessionRequest: EnginePrivate["onSessionRequest"] = async (args) => {
+    const { topic, payload, attestation, encryptedId } = args;
     const { id, params } = payload;
     try {
       await this.isValidRequest({ topic, ...params });
@@ -1778,6 +1783,7 @@ export class Engine extends IEngine {
       const verifyContext = await this.getVerifyContext({
         attestationId: attestation,
         hash: hashMessage(JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id))),
+        encryptedId,
         metadata: session.peer.metadata,
       });
       const request = {
@@ -1869,15 +1875,15 @@ export class Engine extends IEngine {
   };
 
   private onSessionAuthenticateRequest: EnginePrivate["onSessionAuthenticateRequest"] = async (
-    topic,
-    payload,
-    attestation,
+    args,
   ) => {
+    const { topic, payload, attestation, encryptedId } = args;
     try {
       const { requester, authPayload, expiryTimestamp } = payload.params;
       const verifyContext = await this.getVerifyContext({
         attestationId: attestation,
         hash: hashMessage(JSON.stringify(payload)),
+        encryptedId,
         metadata: this.client.metadata,
       });
       const pendingRequest = {
@@ -2028,9 +2034,9 @@ export class Engine extends IEngine {
     const proposals = this.client.proposal.getAll();
     const proposal = proposals.find((p) => p.pairingTopic === pairing.topic);
     if (!proposal) return;
-    this.onSessionProposeRequest(
-      pairing.topic,
-      formatJsonRpcRequest(
+    this.onSessionProposeRequest({
+      topic: pairing.topic,
+      payload: formatJsonRpcRequest(
         "wc_sessionPropose",
         {
           requiredNamespaces: proposal.requiredNamespaces,
@@ -2041,7 +2047,7 @@ export class Engine extends IEngine {
         },
         proposal.id,
       ),
-    );
+    });
   };
 
   // ---------- Validation Helpers ------------------------------------ //
@@ -2428,9 +2434,10 @@ export class Engine extends IEngine {
   private getVerifyContext = async (params: {
     attestationId?: string;
     hash?: string;
+    encryptedId?: string;
     metadata: CoreTypes.Metadata;
   }) => {
-    const { attestationId, hash, metadata } = params;
+    const { attestationId, hash, encryptedId, metadata } = params;
     const context: Verify.Context = {
       verified: {
         verifyUrl: metadata.verifyUrl || VERIFY_SERVER,
@@ -2443,6 +2450,7 @@ export class Engine extends IEngine {
       const result = await this.client.core.verify.resolve({
         attestationId,
         hash,
+        encryptedId,
         verifyUrl: metadata.verifyUrl,
       });
       if (result) {
