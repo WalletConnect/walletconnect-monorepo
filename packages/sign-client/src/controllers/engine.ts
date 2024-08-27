@@ -865,13 +865,6 @@ export class Engine extends IEngine {
 
         await this.client.core.relayer.subscribe(sessionTopic);
         await this.client.session.set(sessionTopic, session);
-        if (pairingTopic) {
-          await this.client.core.pairing.updateMetadata({
-            topic: pairingTopic,
-            metadata: responder.metadata,
-          });
-        }
-
         session = this.client.session.get(sessionTopic);
       }
       resolve({
@@ -1088,7 +1081,7 @@ export class Engine extends IEngine {
     }
 
     await this.client.auth.requests.delete(id, { message: "fulfilled", code: 0 });
-    await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
+    await this.client.core.pairing.disconnect({ topic: pendingRequest.pairingTopic });
 
     this.client.core.eventClient.deleteEvent({ eventId: event.eventId });
 
