@@ -17,8 +17,6 @@ import {
   generateRandomBytes32,
   formatUri,
   getSdkError,
-  engineEvent,
-  createDelayedPromise,
   isValidParams,
   isValidUrl,
   isValidString,
@@ -27,13 +25,9 @@ import {
   TYPE_1,
 } from "@walletconnect/utils";
 import {
-  formatJsonRpcRequest,
-  formatJsonRpcResult,
   formatJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
-  isJsonRpcResult,
-  isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, THIRTY_DAYS, toMiliseconds } from "@walletconnect/time";
 import EventEmitter from "events";
@@ -192,7 +186,7 @@ export class Pairing implements IPairing {
 
   public ping: IPairing["ping"] = async (params) => {
     this.isInitialized();
-    throw new Error("Method deprecated.");
+    throw new Error("Pairing method deprecated. params: " + JSON.stringify(params));
   };
 
   public updateExpiry: IPairing["updateExpiry"] = async ({ topic, expiry }) => {
@@ -220,15 +214,6 @@ export class Pairing implements IPairing {
   };
 
   // ---------- Private Helpers ----------------------------------------------- //
-
-  private sendRequest: IPairingPrivate["sendRequest"] = async (topic, method, params) => {
-    const payload = formatJsonRpcRequest(method, params);
-    const message = await this.core.crypto.encode(topic, payload);
-    const opts = PAIRING_RPC_OPTS[method].req;
-    this.core.history.set(topic, payload);
-    this.core.relayer.publish(topic, message, opts);
-    return payload.id;
-  };
 
   private sendError: IPairingPrivate["sendError"] = async (id, topic, error) => {
     const payload = formatJsonRpcError(id, error);
@@ -376,15 +361,6 @@ export class Pairing implements IPairing {
         throw new Error(message);
       }
     }
-  };
-
-  private isValidPing = async (params: { topic: string }) => {
-    if (!isValidParams(params)) {
-      const { message } = getInternalError("MISSING_OR_INVALID", `ping() params: ${params}`);
-      throw new Error(message);
-    }
-    const { topic } = params;
-    await this.isValidPairingTopic(topic);
   };
 
   private isValidDisconnect = async (params: { topic: string }) => {

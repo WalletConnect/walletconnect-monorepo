@@ -1002,7 +1002,8 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
           const approved = buildApprovedNamespaces({
@@ -1031,12 +1032,11 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri: uri.replace("methods", "") });
         resolve();
       }),
-    ]);
-
-    const res = await response();
+      response(),
+    ]).then((res) => res[2]);
     const session = res.session;
     await throttle(1000);
-
+    console.log("session", session.acknowledged);
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
@@ -1063,7 +1063,6 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
-
     await deleteClients({ A: dapp, B: wallet });
   });
 
@@ -1090,7 +1089,8 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
           const approved = buildApprovedNamespaces({
@@ -1119,9 +1119,8 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-
-    const res = await response();
+      response(),
+    ]).then((res) => res[2]);
     const session = res.session;
     await throttle(1000);
 
@@ -1244,7 +1243,7 @@ describe("Authenticated Sessions", () => {
     //@ts-expect-error
     wallet.core.pairing.registeredMethods = [];
     wallet.core.pairing.register({ methods: toRegisterMethods });
-    await Promise.all([
+    const result = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
           // validate that the dapp has both `session_authenticate` & `session_proposal` stored
@@ -1284,8 +1283,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const { auths, session } = await response();
+      response(),
+    ]).then((res) => res[2]);
+    const { auths, session } = result;
     expect(auths).to.be.undefined;
     expect(session).to.exist;
     expect(session.namespaces.eip155).to.exist;

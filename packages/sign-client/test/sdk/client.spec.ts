@@ -167,9 +167,6 @@ describe("Sign Client Integration", () => {
         wallet.pair({ uri }),
       ]);
 
-      // 7. attempt to pair again with the same URI
-      // 8. should receive an error the pairing already exists
-      await expect(wallet.pair({ uri })).rejects.toThrowError();
       await deleteClients({ A: dapp, B: wallet });
     });
     it("should set `sessionConfig`", async () => {

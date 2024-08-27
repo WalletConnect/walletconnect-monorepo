@@ -188,41 +188,6 @@ describe("Pairing", () => {
       });
     });
 
-    describe("ping", () => {
-      it("throws when no params are passed", async () => {
-        // @ts-expect-error - ignore TS error to test runtime validation
-        await expect(coreA.pairing.ping()).rejects.toThrowError(
-          "Missing or invalid. ping() params: undefined",
-        );
-      });
-
-      it("throws when invalid topic is provided", async () => {
-        // @ts-expect-error - ignore TS error to test runtime validation
-        await expect(coreA.pairing.ping({ topic: 123 })).rejects.toThrowError(
-          "Missing or invalid. pairing topic should be a string: 123",
-        );
-      });
-
-      it("throws when empty topic is provided", async () => {
-        await expect(coreA.pairing.ping({ topic: "" })).rejects.toThrowError(
-          "Missing or invalid. pairing topic should be a string: ",
-        );
-      });
-
-      it("throws when no topic is provided", async () => {
-        // @ts-expect-error - ignore TS error to test runtime validation
-        await expect(coreA.pairing.ping({ topic: undefined })).rejects.toThrowError(
-          "Missing or invalid. pairing topic should be a string: undefined",
-        );
-      });
-
-      it("throws when non existent topic is provided", async () => {
-        await expect(coreA.pairing.ping({ topic: "none" })).rejects.toThrowError(
-          "No matching key. pairing topic doesn't exist: none",
-        );
-      });
-    });
-
     describe("disconnect", () => {
       it("throws when no params are passed", async () => {
         // @ts-expect-error - ignore TS error to test runtime validation
