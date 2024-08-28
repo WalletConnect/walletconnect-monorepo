@@ -222,7 +222,7 @@ export class Subscriber extends ISubscriber {
   private async rpcSubscribe(
     topic: string,
     relay: RelayerTypes.ProtocolOptions,
-    transportType: RelayerTypes.TransportType = "relay",
+    transportType: RelayerTypes.TransportType = TRANSPORT_TYPES.relay,
   ) {
     if (transportType === TRANSPORT_TYPES.relay) {
       await this.restartToComplete();

@@ -1050,7 +1050,6 @@ export class Engine extends IEngine {
       transportType,
     });
 
-    // TODO: check if it's ok to return linkmode url
     return {
       uri: linkModeURL ?? connectionUri,
       response: done,
@@ -1574,7 +1573,6 @@ export class Engine extends IEngine {
     if (isLinkMode) {
       const redirectURL = getLinkModeURL(appLink, topic, message);
       await (global as any).Linking.openURL(redirectURL, this.client.name);
-      redirectURL;
     } else {
       const opts = rpcOpts || ENGINE_RPC_OPTS[record.request.method].res;
       // await is intentionally omitted to speed up performance
