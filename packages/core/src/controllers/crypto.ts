@@ -130,6 +130,7 @@ export class Crypto implements ICrypto {
 
   public decode: ICrypto["decode"] = async (topic, encoded, opts) => {
     this.isInitialized();
+    // eslint-disable-next-line no-console
     console.log("decode", { encoded: encoded.substring(0, 10), encoding: opts?.encoding });
     const params = validateDecoding(encoded, opts);
     if (isTypeTwoEnvelope(params)) {

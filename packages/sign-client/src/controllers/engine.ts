@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
   EVENT_CLIENT_AUTHENTICATE_ERRORS,
   EVENT_CLIENT_AUTHENTICATE_TRACES,

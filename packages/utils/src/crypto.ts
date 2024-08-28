@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ChaCha20Poly1305 } from "@stablelib/chacha20poly1305";
 import { HKDF } from "@stablelib/hkdf";
 import { randomBytes } from "@stablelib/random";
