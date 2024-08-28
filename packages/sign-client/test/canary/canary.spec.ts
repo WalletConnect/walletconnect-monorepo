@@ -16,7 +16,7 @@ import { SignClient } from "../../src";
 
 const environment = process.env.ENVIRONMENT || "dev";
 const region = process.env.REGION || "unknown";
-
+const logger = process.env.LOGGER || "error";
 const log = (log: string) => {
   // eslint-disable-next-line no-console
   console.log(log);
@@ -29,11 +29,13 @@ describe("Canary", () => {
       const start = Date.now();
       const A = await SignClient.init({
         ...TEST_SIGN_CLIENT_OPTIONS_A,
+        logger,
       });
       const handshakeLatencyMs = Date.now() - start;
 
       const B = await SignClient.init({
         ...TEST_SIGN_CLIENT_OPTIONS_B,
+        logger,
       });
       const clients = { A, B };
       log(

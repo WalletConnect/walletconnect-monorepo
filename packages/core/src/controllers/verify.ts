@@ -3,6 +3,7 @@ import { ICore, IVerify } from "@walletconnect/types";
 import { isBrowser, isNode, P256KeyDataType, verifyP256Jwt } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import { getDocument } from "@walletconnect/window-getters";
+import { decodeJWT } from "@walletconnect/relay-auth";
 
 import {
   CORE_STORAGE_PREFIX,
@@ -10,7 +11,7 @@ import {
   TRUSTED_VERIFY_URLS,
   VERIFY_CONTEXT,
   VERIFY_SERVER,
-  VERIFY_SERVER_V2,
+  VERIFY_SERVER_V3,
 } from "../constants";
 import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 
@@ -29,7 +30,7 @@ export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
   private abortController: AbortController;
   private isDevEnv;
-  private verifyUrlV2 = VERIFY_SERVER_V2;
+  private verifyUrlV3 = VERIFY_SERVER_V3;
   private storagePrefix = CORE_STORAGE_PREFIX;
   private version = CORE_VERSION;
   private publicKey?: Jwk;
@@ -50,6 +51,7 @@ export class Verify extends IVerify {
   }
 
   public init = async () => {
+    if (this.isDevEnv) return;
     this.publicKey = await this.store.getItem(this.storeKey);
     if (this.publicKey && toMiliseconds(this.publicKey?.expiresAt) < Date.now()) {
       this.logger.debug("verify v2 public key expired");
@@ -61,41 +63,31 @@ export class Verify extends IVerify {
   };
 
   public register: IVerify["register"] = async (params) => {
-    if (!isBrowser()) return;
+    if (!isBrowser() || this.isDevEnv) return;
+    const origin = window.location.origin;
     const { id, decryptedId } = params;
-    const url = `${this.verifyUrlV2}/attestation?projectId=${this.core.projectId}`;
-    let src = "";
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        body: JSON.stringify({ id, decryptedId }),
-      });
-      const { srcdoc } = await response.json();
-      src = srcdoc;
-      this.logger.debug("srcdoc fetched", src);
-    } catch (e) {
-      this.logger.warn(e);
-      return;
-    }
+    const src = `${this.verifyUrlV3}/attestation?projectId=${this.core.projectId}&origin=${origin}&id=${id}&decryptedId=${decryptedId}`;
     try {
       const document = getDocument() as Document;
-      const abortTimeout = this.startAbortTimer(ONE_SECOND * 3);
-      const attestationJwt = await new Promise((resolve) => {
+      const abortTimeout = this.startAbortTimer(ONE_SECOND * 5);
+      const attestationJwt = await new Promise((resolve, reject) => {
         const abortListener = () => {
           window.removeEventListener("message", listener);
           document.body.removeChild(iframe);
-          throw new Error("attestation aborted");
+          reject("attestation aborted");
         };
-        this.abortController.signal.addEventListener("abort", abortListener, {
-          signal: this.abortController.signal,
-        });
+        this.abortController.signal.addEventListener("abort", abortListener);
         const iframe = document.createElement("iframe");
-        iframe.srcdoc = src;
+        iframe.src = src;
         iframe.style.display = "none";
+        iframe.addEventListener("error", abortListener, { signal: this.abortController.signal });
         const listener = (event: MessageEvent) => {
           if (!event.data) return;
           const data = JSON.parse(event.data);
           if (data.type === "verify_attestation") {
+            const decoded = decodeJWT(data.attestation) as unknown as { payload: JwkPayload };
+            if (decoded.payload.id !== id) return;
+
             clearInterval(abortTimeout);
             document.body.removeChild(iframe);
             this.abortController.signal.removeEventListener("abort", abortListener);
@@ -116,14 +108,15 @@ export class Verify extends IVerify {
 
   public resolve: IVerify["resolve"] = async (params) => {
     if (this.isDevEnv) return "";
-    const { attestationId, hash } = params;
-
+    const { attestationId, hash, encryptedId } = params;
     if (attestationId === "") {
       this.logger.debug("resolve: attestationId is empty, skipping");
       return;
     }
 
     if (attestationId) {
+      const decoded = decodeJWT(attestationId) as unknown as { payload: JwkPayload };
+      if (decoded.payload.id !== encryptedId) return;
       const validation = await this.isValidJwtAttestation(attestationId);
       if (validation) return validation;
     }
@@ -165,9 +158,9 @@ export class Verify extends IVerify {
 
   private fetchPublicKey = async () => {
     try {
-      this.logger.debug(`fetching public key from: ${this.verifyUrlV2}`);
+      this.logger.debug(`fetching public key from: ${this.verifyUrlV3}`);
       const timeout = this.startAbortTimer(FIVE_SECONDS);
-      const result = await fetch(`${this.verifyUrlV2}/public-key`, {
+      const result = await fetch(`${this.verifyUrlV3}/public-key`, {
         signal: this.abortController.signal,
       });
       clearTimeout(timeout);

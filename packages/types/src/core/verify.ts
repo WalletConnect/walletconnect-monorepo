@@ -26,6 +26,7 @@ export abstract class IVerify {
   public abstract resolve(params: {
     attestationId?: string;
     hash?: string;
+    encryptedId?: string;
     verifyUrl?: string;
   }): Promise<{ origin: string; isScam?: boolean }>;
 }

@@ -290,6 +290,7 @@ export class UniversalProvider implements IUniversalProvider {
     this.client =
       this.providerOpts.client ||
       (await SignClient.init({
+        core: this.providerOpts.core,
         logger: this.providerOpts.logger || LOGGER,
         relayUrl: this.providerOpts.relayUrl || RELAY_URL,
         projectId: this.providerOpts.projectId,
@@ -297,6 +298,8 @@ export class UniversalProvider implements IUniversalProvider {
         storageOptions: this.providerOpts.storageOptions,
         storage: this.providerOpts.storage,
         name: this.providerOpts.name,
+        customStoragePrefix: this.providerOpts.customStoragePrefix,
+        telemetryEnabled: this.providerOpts.telemetryEnabled,
       }));
 
     this.logger.trace(`SignClient Initialized`);

@@ -19,6 +19,7 @@ import {
   Expirer,
   Verify,
   EchoClient,
+  EventClient,
 } from "./controllers";
 import {
   CORE_CONTEXT,
@@ -51,6 +52,7 @@ export class Core extends ICore {
   public verify: ICore["verify"];
   public echoClient: ICore["echoClient"];
   public linkModeSupportedApps: ICore["linkModeSupportedApps"];
+  public eventClient: ICore["eventClient"];
 
   private initialized = false;
   private logChunkController: ChunkLoggerController | null;
@@ -113,6 +115,7 @@ export class Core extends ICore {
     this.verify = new Verify(this, this.logger, this.storage);
     this.echoClient = new EchoClient(this.projectId || "", this.logger);
     this.linkModeSupportedApps = [];
+    this.eventClient = new EventClient(this, this.logger, opts?.telemetryEnabled);
   }
 
   get context() {

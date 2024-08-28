@@ -1,9 +1,6 @@
 import { expect, describe, it } from "vitest";
 import { toString } from "uint8arrays";
 import { safeJsonStringify } from "@walletconnect/safe-json";
-import { SHA256 } from "@stablelib/sha256";
-import { Buffer } from "buffer";
-import elliptic from "elliptic";
 
 import {
   BASE16,
@@ -21,8 +18,6 @@ import {
   generateRandomBytes32,
   BASE64URL,
   verifyP256Jwt,
-  getCryptoKeyFromKeyData,
-  P256KeyDataType,
 } from "../src";
 
 import { TEST_KEY_PAIRS, TEST_SHARED_KEY, TEST_HASHED_KEY, TEST_SYM_KEY } from "./shared";
