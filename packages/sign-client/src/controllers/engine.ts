@@ -2123,6 +2123,7 @@ export class Engine extends IEngine {
         hash: hashMessage(JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id))),
         encryptedId,
         metadata: session.peer.metadata,
+        transportType,
       });
       const request = {
         id,
@@ -2232,6 +2233,7 @@ export class Engine extends IEngine {
         hash: hashMessage(JSON.stringify(payload)),
         encryptedId,
         metadata: this.client.metadata,
+        transportType,
       });
       const pendingRequest = {
         requester,
@@ -2793,8 +2795,9 @@ export class Engine extends IEngine {
     hash?: string;
     encryptedId?: string;
     metadata: CoreTypes.Metadata;
+    transportType?: RelayerTypes.TransportType;
   }) => {
-    const { attestationId, hash, encryptedId, metadata } = params;
+    const { attestationId, hash, encryptedId, metadata, transportType } = params;
     const context: Verify.Context = {
       verified: {
         verifyUrl: metadata.verifyUrl || VERIFY_SERVER,
@@ -2804,6 +2807,7 @@ export class Engine extends IEngine {
     };
 
     try {
+      if (transportType === TRANSPORT_TYPES.link_mode) return context;
       const result = await this.client.core.verify.resolve({
         attestationId,
         hash,
