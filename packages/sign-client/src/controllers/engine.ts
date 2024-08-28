@@ -280,7 +280,8 @@ export class Engine extends IEngine {
       },
     });
     try {
-      await this.isInitialized();
+      this.isInitialized();
+      await this.confirmOnlineStateOrThrow();
     } catch (error) {
       configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.no_internet_connection);
       throw error;
