@@ -19,7 +19,13 @@ import {
   Logger,
 } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { ONE_MINUTE, ONE_SECOND, THIRTY_SECONDS, toMiliseconds } from "@walletconnect/time";
+import {
+  FIVE_MINUTES,
+  ONE_MINUTE,
+  ONE_SECOND,
+  THIRTY_SECONDS,
+  toMiliseconds,
+} from "@walletconnect/time";
 import {
   ICore,
   IMessageTracker,
@@ -38,6 +44,7 @@ import {
   getBundleId,
   getInternalError,
   isNode,
+  calcExpiry,
 } from "@walletconnect/utils";
 
 import {
@@ -348,6 +355,22 @@ export class Relayer extends IRelayer {
     this.logger.trace(`Batch of ${sortedMessages.length} message events processed`);
   }
 
+  public async onLinkMessageEvent(
+    messageEvent: RelayerTypes.MessageEvent,
+    opts: { sessionExists: boolean },
+  ) {
+    const { topic } = messageEvent;
+
+    if (!opts.sessionExists) {
+      const expiry = calcExpiry(FIVE_MINUTES);
+      const pairing = { topic, expiry, relay: { protocol: "irn" }, active: false };
+      await this.core.pairing.pairings.set(topic, pairing);
+    }
+
+    this.events.emit(RELAYER_EVENTS.message, messageEvent);
+    await this.recordMessageEvent(messageEvent);
+  }
+
   // ---------- Private ----------------------------------------------- //
   /*
    * In Node, we must detect when the connection is stalled and terminate it.
@@ -468,22 +491,6 @@ export class Relayer extends IRelayer {
 
   private async onMessageEvent(messageEvent: RelayerTypes.MessageEvent) {
     if (await this.shouldIgnoreMessageEvent(messageEvent)) return;
-    this.events.emit(RELAYER_EVENTS.message, messageEvent);
-    await this.recordMessageEvent(messageEvent);
-  }
-
-  public async onLinkMessageEvent(
-    messageEvent: RelayerTypes.MessageEvent,
-    opts: { sessionExists: boolean },
-  ) {
-    const { topic } = messageEvent;
-
-    if (!opts.sessionExists) {
-      const expiry = Math.floor(Date.now() / 1000) + 604800;
-      const pairing = { topic, expiry, relay: { protocol: "irn" }, active: false };
-      await this.core.pairing.pairings.set(topic, pairing);
-    }
-
     this.events.emit(RELAYER_EVENTS.message, messageEvent);
     await this.recordMessageEvent(messageEvent);
   }
