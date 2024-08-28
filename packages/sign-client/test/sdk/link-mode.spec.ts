@@ -1,28 +1,9 @@
-import {
-  formatJsonRpcError,
-  formatJsonRpcResult,
-  JsonRpcError,
-} from "@walletconnect/jsonrpc-utils";
-import {
-  buildAuthObject,
-  generateRandomBytes32,
-  getSdkError,
-  populateAuthPayload,
-} from "@walletconnect/utils";
+import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { buildAuthObject, populateAuthPayload } from "@walletconnect/utils";
 import { beforeAll, describe, expect, it } from "vitest";
 import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 import { SignClient } from "../../src";
-import {
-  initTwoClients,
-  testConnectMethod,
-  deleteClients,
-  throttle,
-  TEST_REQUEST_PARAMS,
-  TEST_SIGN_CLIENT_OPTIONS_B,
-  TEST_SIGN_CLIENT_OPTIONS_A,
-  TEST_SIGN_CLIENT_OPTIONS,
-  TEST_APP_METADATA_B,
-} from "../shared";
+import { throttle, TEST_SIGN_CLIENT_OPTIONS, TEST_APP_METADATA_B } from "../shared";
 
 describe("Sign Client Link Mode", () => {
   let cryptoWallet: CryptoWallet;

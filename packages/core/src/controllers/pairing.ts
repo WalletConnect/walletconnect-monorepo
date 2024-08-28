@@ -48,6 +48,7 @@ import {
   PAIRING_EVENTS,
   EVENT_CLIENT_PAIRING_TRACES,
   EVENT_CLIENT_PAIRING_ERRORS,
+  TRANSPORT_TYPES,
 } from "../constants";
 import { Store } from "../controllers/store";
 
@@ -294,7 +295,7 @@ export class Pairing implements IPairing {
       if (!this.pairings.keys.includes(topic)) return;
 
       // Do not handle link-mode messages
-      if (transportType === "link-mode") return;
+      if (transportType === TRANSPORT_TYPES.link_mode) return;
 
       // messages of certain types should be ignored as they are handled by their respective SDKs
       if (this.ignoredPayloadTypes.includes(this.core.crypto.getPayloadType(message))) return;

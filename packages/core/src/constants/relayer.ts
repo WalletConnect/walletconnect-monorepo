@@ -38,3 +38,8 @@ export const RELAYER_SDK_VERSION = "2.15.1";
 
 // delay to wait before closing the transport connection after init if not active
 export const RELAYER_TRANSPORT_CUTOFF = 10_000;
+
+export const TRANSPORT_TYPES = {
+  link_mode: "link_mode",
+  relay: "relay",
+} as const;

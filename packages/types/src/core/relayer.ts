@@ -24,9 +24,11 @@ export declare namespace RelayerTypes {
     attestation?: string;
   }
 
+  export type TransportType = "relay" | "link_mode";
+
   export interface SubscribeOptions {
     relay?: ProtocolOptions;
-    transportType?: "relay" | "link-mode";
+    transportType?: TransportType;
   }
 
   export interface UnsubscribeOptions {
@@ -41,9 +43,6 @@ export declare namespace RelayerTypes {
     message: string;
     opts?: RelayerTypes.PublishOptions;
   }
-
-  export type TransportType = "relay" | "link-mode";
-
   export interface MessageEvent {
     topic: string;
     message: string;

@@ -10,6 +10,7 @@ import {
   PAIRING_EVENTS,
   RELAYER_DEFAULT_PROTOCOL,
   RELAYER_EVENTS,
+  TRANSPORT_TYPES,
   VERIFY_SERVER,
 } from "@walletconnect/core";
 
@@ -93,6 +94,8 @@ import {
   getLinkModeURL,
   BASE64,
   BASE64URL,
+  getSearchParamFromURL,
+  isReactNative,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -154,6 +157,7 @@ export class Engine extends IEngine {
       this.registerRelayerEvents();
       this.registerExpirerEvents();
       this.registerPairingEvents();
+      await this.registerLinkModeListeners();
       this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       this.initialized = true;
       setTimeout(() => {
@@ -232,7 +236,7 @@ export class Engine extends IEngine {
             pairingTopic: proposal.pairingTopic,
             requiredNamespaces: proposal.requiredNamespaces,
             optionalNamespaces: proposal.optionalNamespaces,
-            transportType: "relay" as RelayerTypes.TransportType,
+            transportType: TRANSPORT_TYPES.relay,
           };
           await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
@@ -337,7 +341,7 @@ export class Engine extends IEngine {
       ...(sessionProperties && { sessionProperties }),
       ...(sessionConfig && { sessionConfig }),
     };
-    const transportType = "relay";
+    const transportType = TRANSPORT_TYPES.relay;
     event.addTrace(EVENT_CLIENT_SESSION_TRACES.subscribing_session_topic);
     try {
       await this.client.core.relayer.subscribe(sessionTopic, { transportType });
@@ -361,7 +365,7 @@ export class Engine extends IEngine {
         metadata: proposer.metadata,
       },
       controller: selfPublicKey,
-      transportType: "relay" as RelayerTypes.TransportType,
+      transportType: TRANSPORT_TYPES.relay,
     };
     await this.client.session.set(sessionTopic, session);
 
@@ -535,7 +539,7 @@ export class Engine extends IEngine {
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
     const session = this.client.session.get(topic);
 
-    if (session?.transportType === "relay") {
+    if (session?.transportType === TRANSPORT_TYPES.relay) {
       await this.confirmOnlineStateOrThrow();
     }
     console.log("request transport type", session?.transportType);
@@ -631,7 +635,7 @@ export class Engine extends IEngine {
     const { id } = response;
     const session = this.client.session.get(topic);
 
-    if (session.transportType === "relay") {
+    if (session.transportType === TRANSPORT_TYPES.relay) {
       await this.confirmOnlineStateOrThrow();
     }
 
@@ -743,9 +747,11 @@ export class Engine extends IEngine {
     const isLinkMode =
       walletUniversalLink && this.client.core.linkModeSupportedApps.includes(walletUniversalLink);
 
-    const transportType: RelayerTypes.TransportType = isLinkMode ? "link-mode" : "relay";
+    const transportType: RelayerTypes.TransportType = isLinkMode
+      ? TRANSPORT_TYPES.link_mode
+      : TRANSPORT_TYPES.relay;
 
-    if (transportType === "relay") {
+    if (transportType === TRANSPORT_TYPES.relay) {
       await this.confirmOnlineStateOrThrow();
     }
 
@@ -979,7 +985,7 @@ export class Engine extends IEngine {
         this.client.core.addLinkModeSupportedApp(responder.metadata.redirect.universal);
 
         this.client.session.update(sessionTopic, {
-          transportType: "link-mode",
+          transportType: TRANSPORT_TYPES.link_mode,
         });
       }
 
@@ -1079,8 +1085,8 @@ export class Engine extends IEngine {
       throw new Error(`Could not find pending auth request with id ${id}`);
     }
 
-    const transportType = pendingRequest.transportType || "relay";
-    if (transportType === "relay") {
+    const transportType = pendingRequest.transportType || TRANSPORT_TYPES.relay;
+    if (transportType === TRANSPORT_TYPES.relay) {
       await this.confirmOnlineStateOrThrow();
     }
 
@@ -1237,7 +1243,7 @@ export class Engine extends IEngine {
       throw new Error(`Could not find pending auth request with id ${id}`);
     }
 
-    if (pendingRequest.transportType === "relay") {
+    if (pendingRequest.transportType === TRANSPORT_TYPES.relay) {
       await this.confirmOnlineStateOrThrow();
     }
 
@@ -1404,7 +1410,7 @@ export class Engine extends IEngine {
   };
 
   private setAuthRequest: EnginePrivate["setAuthRequest"] = async (id, params) => {
-    const { request, pairingTopic, transportType = "relay" } = params;
+    const { request, pairingTopic, transportType = TRANSPORT_TYPES.relay } = params;
     this.client.core.expirer.set(id, request.expiryTimestamp);
     await this.client.auth.requests.set(id, {
       authPayload: request.authPayload,
@@ -1631,7 +1637,7 @@ export class Engine extends IEngine {
 
     const payload = await this.client.core.crypto.decode(topic, message, {
       receiverPublicKey: publicKey,
-      encoding: transportType === "link-mode" ? BASE64URL : BASE64,
+      encoding: transportType === TRANSPORT_TYPES.link_mode ? BASE64URL : BASE64,
     });
     console.log("on relay message", payload.id, transportType);
     try {
@@ -1901,7 +1907,7 @@ export class Engine extends IEngine {
         },
         ...(sessionProperties && { sessionProperties }),
         ...(sessionConfig && { sessionConfig }),
-        transportType: "relay" as RelayerTypes.TransportType,
+        transportType: TRANSPORT_TYPES.relay,
       };
       const target = engineEvent("session_connect");
       const listeners = this.events.listenerCount(target);
@@ -2126,7 +2132,10 @@ export class Engine extends IEngine {
       };
       await this.setPendingSessionRequest(request);
 
-      if (transportType === "link-mode" && session.peer.metadata.redirect?.universal) {
+      if (
+        transportType === TRANSPORT_TYPES.link_mode &&
+        session.peer.metadata.redirect?.universal
+      ) {
         // save app as supported for link mode
         this.client.core.addLinkModeSupportedApp(session.peer.metadata.redirect?.universal);
       }
@@ -2238,7 +2247,7 @@ export class Engine extends IEngine {
         transportType,
       });
 
-      if (transportType === "link-mode" && requester.metadata.redirect?.universal) {
+      if (transportType === TRANSPORT_TYPES.link_mode && requester.metadata.redirect?.universal) {
         // save app as supported for link mode
         this.client.core.addLinkModeSupportedApp(requester.metadata.redirect.universal);
       }
@@ -2865,7 +2874,7 @@ export class Engine extends IEngine {
     peerMetadata?: CoreTypes.Metadata,
     transportType?: RelayerTypes.TransportType,
   ): boolean => {
-    if (!peerMetadata || transportType !== "link-mode") return false;
+    if (!peerMetadata || transportType !== TRANSPORT_TYPES.link_mode) return false;
 
     return (
       this.client.metadata?.redirect?.linkMode === true &&
@@ -2886,5 +2895,38 @@ export class Engine extends IEngine {
     return this.isLinkModeEnabled(peerMetadata, transportType)
       ? peerMetadata?.redirect?.universal
       : undefined;
+  };
+
+  private handleLinkModeMessage = ({ url }: { url: string }) => {
+    if (!url || !url.includes("wc_ev") || !url.includes("topic")) return;
+
+    const topic = getSearchParamFromURL(url, "topic") || "";
+    const message = decodeURIComponent(getSearchParamFromURL(url, "wc_ev") || "");
+
+    const sessionExists = this.client.session.keys.includes(topic);
+
+    if (sessionExists) {
+      this.client.session.update(topic, { transportType: TRANSPORT_TYPES.link_mode });
+    }
+
+    this.client.core.dispatchEnvelope({ topic, message, sessionExists });
+  };
+
+  private registerLinkModeListeners = async () => {
+    if (process?.env?.IS_VITEST || (isReactNative() && this.client.metadata.redirect?.linkMode)) {
+      console.log("registering link mode listeners");
+      const linking = (global as any)?.Linking;
+      // global.Linking is set by react-native-compat
+      if (typeof linking !== "undefined") {
+        // set URL listener
+        linking.addEventListener("url", this.handleLinkModeMessage, this.client.name);
+
+        // check for initial URL -> cold boots
+        const initialUrl = await linking.getInitialURL();
+        if (initialUrl) {
+          this.handleLinkModeMessage({ url: initialUrl });
+        }
+      }
+    }
   };
 }

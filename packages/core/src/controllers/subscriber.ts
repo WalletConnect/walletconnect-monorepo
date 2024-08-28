@@ -27,6 +27,7 @@ import {
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
   RELAYER_EVENTS,
+  TRANSPORT_TYPES,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -223,7 +224,7 @@ export class Subscriber extends ISubscriber {
     relay: RelayerTypes.ProtocolOptions,
     transportType: RelayerTypes.TransportType = "relay",
   ) {
-    if (transportType !== "link-mode") {
+    if (transportType === TRANSPORT_TYPES.relay) {
       await this.restartToComplete();
     }
     const api = getRelayProtocolApi(relay.protocol);
@@ -238,7 +239,7 @@ export class Subscriber extends ISubscriber {
     try {
       const subId = hashMessage(topic + this.clientId);
       // only attempt to subscribe if there is internet connection
-      if (transportType === "link-mode" && !this.relayer.connected) {
+      if (transportType === TRANSPORT_TYPES.link_mode && !this.relayer.connected) {
         return subId;
       }
       const subscribe = await createExpiringPromise(

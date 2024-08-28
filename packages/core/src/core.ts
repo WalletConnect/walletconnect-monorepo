@@ -28,6 +28,7 @@ import {
   CORE_STORAGE_OPTIONS,
   CORE_VERSION,
   RELAYER_DEFAULT_RELAY_URL,
+  TRANSPORT_TYPES,
   WALLETCONNECT_CLIENT_ID,
   WALLETCONNECT_LINK_MODE_APPS,
 } from "./constants";
@@ -176,7 +177,7 @@ export class Core extends ICore {
       topic,
       message,
       publishedAt: Date.now(),
-      transportType: "link-mode" as const,
+      transportType: TRANSPORT_TYPES.link_mode,
     };
 
     this.relayer.onLinkMessageEvent(payload, { sessionExists });
