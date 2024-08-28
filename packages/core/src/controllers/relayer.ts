@@ -57,6 +57,7 @@ import {
   RELAYER_DEFAULT_RELAY_URL,
   SUBSCRIBER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
+  TRANSPORT_TYPES,
 } from "../constants";
 import { MessageTracker } from "./messages";
 import { Publisher } from "./publisher";
@@ -152,7 +153,7 @@ export class Relayer extends IRelayer {
       message,
       // We don't have `publishedAt` from the relay server on outgoing, so use current time to satisfy type.
       publishedAt: Date.now(),
-      transportType: "relay",
+      transportType: TRANSPORT_TYPES.relay,
     });
   }
 
@@ -476,7 +477,7 @@ export class Relayer extends IRelayer {
         topic,
         message,
         publishedAt,
-        transportType: "relay",
+        transportType: TRANSPORT_TYPES.relay,
         attestation,
       };
       this.logger.debug(`Emitting Relayer Payload`);

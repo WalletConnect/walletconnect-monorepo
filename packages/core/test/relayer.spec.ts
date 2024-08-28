@@ -11,6 +11,7 @@ import {
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
   SUBSCRIBER_EVENTS,
+  TRANSPORT_TYPES,
 } from "../src";
 import { disconnectSocket, TEST_CORE_OPTIONS, throttle } from "./shared";
 import { ICore, IRelayer, ISubscriber } from "@walletconnect/types";
@@ -227,7 +228,7 @@ describe("Relayer", () => {
             topic: "ababab",
             message: "deadbeef",
             publishedAt: 1677151760537,
-            transportType: "relay",
+            transportType: TRANSPORT_TYPES.relay,
             attestation: undefined,
           },
         },
