@@ -235,6 +235,7 @@ export class Pairing implements IPairing {
       this.core.crypto.deleteSymKey(topic),
       expirerHasDeleted ? Promise.resolve() : this.core.expirer.del(topic),
     ]);
+    this.events.emit(PAIRING_EVENTS.delete, { topic });
   };
 
   private isInitialized() {
