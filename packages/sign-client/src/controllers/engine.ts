@@ -2264,6 +2264,7 @@ export class Engine extends IEngine {
 
       const receiverPublicKey = payload.params.requester.publicKey;
       const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+      const appLink = this.getAppLinkIfEnabled(payload.params.requester.metadata, transportType);
 
       const encodeOpts = {
         type: TYPE_1,
@@ -2276,6 +2277,7 @@ export class Engine extends IEngine {
         error: err,
         encodeOpts,
         rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.autoReject,
+        appLink,
       });
     }
   };
