@@ -854,7 +854,7 @@ describe("Sign Integration", () => {
         core: new Core(TEST_CORE_OPTIONS),
         metadata: TEST_METADATA,
       });
-      await Promise.all([
+      const res = await Promise.all([
         new Promise<void>((resolve) => {
           web3Wallet.on("session_authenticate", async (payload) => {
             const verifyContext = payload.verifyContext;
@@ -892,8 +892,9 @@ describe("Sign Integration", () => {
           await web3Wallet.pair({ uri });
           resolve();
         }),
-      ]);
-      const { session, auths } = await response();
+        response(),
+      ]).then((res) => res[2]);
+      const { session, auths } = res;
       expect(auths).to.exist;
       expect(auths).to.be.an("array");
       const walletSessions = web3Wallet.getActiveSessions();
@@ -952,7 +953,7 @@ describe("Sign Integration", () => {
         core: new Core(TEST_CORE_OPTIONS),
         metadata: TEST_METADATA,
       });
-      await Promise.all([
+      const res = await Promise.all([
         new Promise<void>((resolve) => {
           web3Wallet.on("session_proposal", (payload) => {
             const approved = buildApprovedNamespaces({
@@ -981,8 +982,9 @@ describe("Sign Integration", () => {
           await web3Wallet.pair({ uri });
           resolve();
         }),
-      ]);
-      const { session, auths } = await response();
+        response(),
+      ]).then((res) => res[2]);
+      const { session, auths } = res;
       expect(auths).to.be.undefined;
       const walletSessions = web3Wallet.getActiveSessions();
       expect(walletSessions).to.exist;
