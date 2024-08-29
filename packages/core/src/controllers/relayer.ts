@@ -93,6 +93,7 @@ export class Relayer extends IRelayer {
    * meaning if we don't receive a message in 30 seconds, the connection can be considered dead
    */
   private heartBeatTimeout = toMiliseconds(THIRTY_SECONDS + ONE_SECOND);
+  private reconnectTimeout: NodeJS.Timeout | undefined;
 
   constructor(opts: RelayerOptions) {
     super(opts);
@@ -295,9 +296,14 @@ export class Relayer extends IRelayer {
           this.provider.connect(),
           toMiliseconds(ONE_MINUTE),
           `Socket stalled when trying to connect to ${this.relayUrl}`,
-        ).catch((e) => {
-          reject(e);
-        });
+        )
+          .catch((e) => {
+            reject(e);
+          })
+          .finally(() => {
+            clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = undefined;
+          });
         this.subscriber.start().catch((error) => {
           this.logger.error(error);
           this.onDisconnectHandler();
@@ -536,7 +542,8 @@ export class Relayer extends IRelayer {
     this.events.emit(RELAYER_EVENTS.disconnect);
     this.connectionAttemptInProgress = false;
     if (this.transportExplicitlyClosed) return;
-    setTimeout(async () => {
+    if (this.reconnectTimeout) return;
+    this.reconnectTimeout = setTimeout(async () => {
       await this.transportOpen().catch((error) => this.logger.error(error));
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }

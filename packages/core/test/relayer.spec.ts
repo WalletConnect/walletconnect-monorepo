@@ -283,6 +283,23 @@ describe("Relayer", () => {
         // the identifier should be the same
         expect(relayer.core.crypto.randomSessionIdentifier).to.eq(randomSessionIdentifier);
       });
+      it("should connect once regardless of the number of disconnect events", async () => {
+        const disconnectsToEmit = 10;
+        let disconnectsReceived = 0;
+        let connectReceived = 0;
+        relayer.on(RELAYER_EVENTS.connect, () => {
+          connectReceived++;
+        });
+        relayer.on(RELAYER_EVENTS.disconnect, () => {
+          disconnectsReceived++;
+        });
+        await Promise.all(
+          Array.from(Array(disconnectsToEmit).keys()).map(() => relayer.onDisconnectHandler()),
+        );
+        await throttle(1000);
+        expect(connectReceived).to.eq(1);
+        expect(disconnectsReceived).to.eq(disconnectsToEmit);
+      });
 
       it("should close transport 10 seconds after init if NOT active", async () => {
         relayer = new Relayer({
