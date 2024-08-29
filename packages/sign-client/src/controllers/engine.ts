@@ -2929,7 +2929,10 @@ export class Engine extends IEngine {
         // check for initial URL -> cold boots
         const initialUrl = await linking.getInitialURL();
         if (initialUrl) {
-          this.handleLinkModeMessage({ url: initialUrl });
+          // wait to process the message to allow event listeners to be registered by the implementing app
+          setTimeout(() => {
+            this.handleLinkModeMessage({ url: initialUrl });
+          }, 50);
         }
       }
     }
