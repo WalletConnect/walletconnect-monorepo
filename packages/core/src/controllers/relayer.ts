@@ -286,11 +286,11 @@ export class Relayer extends IRelayer {
       this.relayUrl = relayUrl;
       await this.transportDisconnect();
     }
-    // if (this.initialized) {
+
     // Always create new socket instance when trying to connect because if the socket was dropped due to `socket hang up` exception
     // It wont be able to reconnect
     await this.createProvider();
-    // }
+
     this.connectionAttemptInProgress = true;
     this.transportExplicitlyClosed = false;
     try {
