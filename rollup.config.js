@@ -8,6 +8,7 @@ const plugins = [
   nodeResolve({ preferBuiltins: false, browser: true }),
   json(),
   commonjs(),
+  json(),
   esbuild({
     minify: true,
     tsconfig: "./tsconfig.json",

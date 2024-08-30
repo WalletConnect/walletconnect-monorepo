@@ -1,0 +1,64 @@
+{
+  "name": "@walletconnect/tezos-provider",
+  "description": "Tezos Provider for WalletConnect Protocol",
+  "version": "2.13.3",
+  "author": "WalletConnect, Inc. <walletconnect.com>",
+  "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/walletconnect/walletconnect-monorepo",
+    "directory": "packages/tezos-provider"
+  },
+  "license": "Apache-2.0",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es.js",
+  "unpkg": "dist/index.umd.js",
+  "types": "dist/types/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "module": "./dist/index.es.js",
+      "default": "./dist/index.cjs.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "wallet",
+    "walletconnect"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:pre": "npm run clean",
+    "build:types": "tsc",
+    "build:source": "rollup --config rollup.config.js",
+    "build": "npm run build:pre; npm run build:source; npm run build:types",
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
+    "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
+  },
+  "dependencies": {
+    "@airgap/beacon-types": "^4.2.2",
+    "@taquito/rpc": "^20.0.1",
+    "@taquito/taquito": "^20.0.1",
+    "@walletconnect/jsonrpc-http-connection": "1.0.8",
+    "@walletconnect/jsonrpc-provider": "1.0.14",
+    "@walletconnect/jsonrpc-types": "1.0.4",
+    "@walletconnect/jsonrpc-utils": "1.0.8",
+    "@walletconnect/modal": "2.6.2",
+    "@walletconnect/sign-client": "2.13.3",
+    "@walletconnect/types": "2.13.3",
+    "@walletconnect/universal-provider": "2.13.3",
+    "@walletconnect/utils": "2.13.3",
+    "events": "3.3.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-json": "^6.1.0",
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "uint8arrays": "3.1.0",
+    "web3": "1.7.5"
+  }
+}
