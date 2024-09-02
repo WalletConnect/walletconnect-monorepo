@@ -746,7 +746,9 @@ export class Engine extends IEngine {
     this.isValidAuthenticate(params);
 
     const isLinkMode =
-      walletUniversalLink && this.client.core.linkModeSupportedApps.includes(walletUniversalLink);
+      walletUniversalLink &&
+      this.client.core.linkModeSupportedApps.includes(walletUniversalLink) &&
+      this.client.metadata.redirect?.linkMode;
 
     const transportType: RelayerTypes.TransportType = isLinkMode
       ? TRANSPORT_TYPES.link_mode
