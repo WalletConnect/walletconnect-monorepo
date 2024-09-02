@@ -5,6 +5,8 @@ import { hash, SHA256 } from "@stablelib/sha256";
 import * as x25519 from "@stablelib/x25519";
 import { CryptoTypes } from "@walletconnect/types";
 import { concat, fromString, toString } from "uint8arrays";
+import { ec as EC } from "elliptic";
+import { decodeJWT } from "@walletconnect/relay-auth";
 
 export const BASE10 = "base10";
 export const BASE16 = "base16";
@@ -13,6 +15,15 @@ export const UTF8 = "utf8";
 
 export const TYPE_0 = 0;
 export const TYPE_1 = 1;
+
+export type P256KeyDataType = {
+  crv: "P-256";
+  ext: true;
+  key_ops: ["verify"];
+  kty: string;
+  x: string;
+  y: string;
+};
 
 const ZERO_INDEX = 0;
 const TYPE_LENGTH = 1;
@@ -159,4 +170,68 @@ export function isTypeOneEnvelope(
     typeof result.senderPublicKey === "string" &&
     typeof result.receiverPublicKey === "string"
   );
+}
+
+export function getCryptoKeyFromKeyData(keyData: P256KeyDataType): EC.KeyPair {
+  const ec = new EC("p256");
+  const key = ec.keyFromPublic(
+    {
+      x: Buffer.from(keyData.x, "base64").toString("hex"),
+      y: Buffer.from(keyData.y, "base64").toString("hex"),
+    },
+    "hex",
+  );
+  return key;
+}
+
+function base64UrlToBase64(base64Url: string) {
+  let base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = base64.length % 4;
+  if (padding > 0) {
+    base64 += "=".repeat(4 - padding);
+  }
+  return base64;
+}
+
+function base64UrlDecode(base64Url: string) {
+  return Buffer.from(base64UrlToBase64(base64Url), "base64");
+}
+
+export function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
+  const [headerBase64Url, payloadBase64Url, signatureBase64Url] = token.split(".");
+
+  // Decode the signature
+  const signatureBuffer = base64UrlDecode(signatureBase64Url);
+
+  // Check if signature length is correct (64 bytes for P-256)
+  if (signatureBuffer.length !== 64) {
+    throw new Error("Invalid signature length");
+  }
+
+  // Extract r and s from the signature
+  const r = signatureBuffer.slice(0, 32).toString("hex");
+  const s = signatureBuffer.slice(32, 64).toString("hex");
+
+  // Create the signing input
+  const signingInput = `${headerBase64Url}.${payloadBase64Url}`;
+
+  const sha256 = new SHA256();
+  const buffer = sha256.update(Buffer.from(signingInput)).digest();
+
+  const key = getCryptoKeyFromKeyData(keyData);
+
+  // Convert the hash to hex format
+  const hashHex = Buffer.from(buffer).toString("hex");
+
+  // Verify the signature
+  const isValid = key.verify(hashHex, { r, s });
+
+  if (!isValid) {
+    throw new Error("Invalid signature");
+  }
+  const data = decodeJWT(token) as unknown as { payload: T };
+  return {
+    ...data.payload,
+    isVerified: isValid,
+  };
 }

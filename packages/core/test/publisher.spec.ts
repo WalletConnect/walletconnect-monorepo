@@ -175,6 +175,7 @@ describe("Publisher", () => {
           prompt: false,
           ttl: PUBLISHER_DEFAULT_TTL,
           tag: 0,
+          attestation: undefined,
         },
         id,
       });
@@ -192,6 +193,7 @@ describe("Publisher", () => {
           prompt: opts.prompt,
           ttl: opts.ttl,
           tag: opts.tag,
+          attestation: undefined,
         },
         id: opts.id,
       });

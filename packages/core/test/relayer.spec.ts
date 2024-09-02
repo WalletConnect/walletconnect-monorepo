@@ -222,7 +222,12 @@ describe("Relayer", () => {
         method: "mock" + RELAYER_SUBSCRIBER_SUFFIX,
         params: {
           id: "abc123",
-          data: { topic: "ababab", message: "deadbeef", publishedAt: 1677151760537 },
+          data: {
+            topic: "ababab",
+            message: "deadbeef",
+            publishedAt: 1677151760537,
+            attestation: undefined,
+          },
         },
       };
 
@@ -250,6 +255,7 @@ describe("Relayer", () => {
             topic: validPayload.params.data.topic,
             message: validPayload.params.data.message,
             publishedAt: validPayload.params.data.publishedAt,
+            attestation: validPayload.params.data.attestation,
           }),
         ).to.be.true;
       });
@@ -276,6 +282,23 @@ describe("Relayer", () => {
         expect(relayer.connected).to.be.true;
         // the identifier should be the same
         expect(relayer.core.crypto.randomSessionIdentifier).to.eq(randomSessionIdentifier);
+      });
+      it("should connect once regardless of the number of disconnect events", async () => {
+        const disconnectsToEmit = 10;
+        let disconnectsReceived = 0;
+        let connectReceived = 0;
+        relayer.on(RELAYER_EVENTS.connect, () => {
+          connectReceived++;
+        });
+        relayer.on(RELAYER_EVENTS.disconnect, () => {
+          disconnectsReceived++;
+        });
+        await Promise.all(
+          Array.from(Array(disconnectsToEmit).keys()).map(() => relayer.onDisconnectHandler()),
+        );
+        await throttle(1000);
+        expect(connectReceived).to.eq(1);
+        expect(disconnectsReceived).to.eq(disconnectsToEmit);
       });
 
       it("should close transport 10 seconds after init if NOT active", async () => {
