@@ -238,10 +238,10 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subId = hashMessage(topic + this.clientId);
-      // only attempt to subscribe if there is internet connection
-      if (transportType === TRANSPORT_TYPES.link_mode && !this.relayer.connected) {
-        return subId;
-      }
+      // only attempt to subscribe transport type is not link mode
+      // this will prompt the heartbeat to subscribe it from this.pending list once there is a connection
+      if (transportType === TRANSPORT_TYPES.link_mode) return;
+
       const subscribe = await createExpiringPromise(
         this.relayer.request(request).catch((e) => this.logger.warn(e)),
         this.subscribeTimeout,
