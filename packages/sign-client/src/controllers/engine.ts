@@ -2233,7 +2233,7 @@ export class Engine extends IEngine {
         attestationId: attestation,
         hash: hashMessage(JSON.stringify(payload)),
         encryptedId,
-        metadata: this.client.metadata,
+        metadata: requester.metadata,
         transportType,
       });
       const pendingRequest = {
