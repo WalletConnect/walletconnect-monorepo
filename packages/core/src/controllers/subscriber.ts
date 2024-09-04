@@ -3,7 +3,7 @@ import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { ONE_MINUTE, Watch, toMiliseconds } from "@walletconnect/time";
+import { ONE_SECOND, ONE_MINUTE, Watch, toMiliseconds } from "@walletconnect/time";
 import {
   IRelayer,
   ISubscriber,
@@ -238,9 +238,15 @@ export class Subscriber extends ISubscriber {
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
       const subId = hashMessage(topic + this.clientId);
-      // only attempt to subscribe transport type is not link mode
-      // this will prompt the heartbeat to subscribe it from this.pending list once there is a connection
-      if (transportType === TRANSPORT_TYPES.link_mode) return;
+      // in link mode, allow the app to update its network state (i.e. active airplane mode) with small delay before attempting to subscribe
+      if (transportType === TRANSPORT_TYPES.link_mode) {
+        setTimeout(() => {
+          if (this.relayer.connected || this.relayer.connecting) {
+            this.relayer.request(request).catch((e) => this.logger.warn(e));
+          }
+        }, toMiliseconds(ONE_SECOND));
+        return subId;
+      }
 
       const subscribe = await createExpiringPromise(
         this.relayer.request(request).catch((e) => this.logger.warn(e)),
