@@ -2093,7 +2093,7 @@ export class Engine extends IEngine {
     const { id } = payload;
     try {
       this.isValidDisconnect({ topic, reason: payload.params });
-      await Promise.all([
+      Promise.all([
         new Promise((resolve) => {
           // RPC request needs to happen before deletion as it utalises session encryption
           this.client.core.relayer.once(RELAYER_EVENTS.publish, async () => {
@@ -2107,7 +2107,7 @@ export class Engine extends IEngine {
           throwOnFailedPublish: true,
         }),
         this.cleanupPendingSentRequestsForTopic({ topic, error: getSdkError("USER_DISCONNECTED") }),
-      ]);
+      ]).catch((err) => this.client.logger.error(err));
     } catch (err: any) {
       this.client.logger.error(err);
     }
