@@ -230,8 +230,5 @@ export function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
     throw new Error("Invalid signature");
   }
   const data = decodeJWT(token) as unknown as { payload: T };
-  return {
-    ...data.payload,
-    isVerified: isValid,
-  };
+  return data.payload;
 }

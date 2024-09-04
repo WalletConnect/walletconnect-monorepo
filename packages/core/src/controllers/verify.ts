@@ -118,7 +118,13 @@ export class Verify extends IVerify {
       const decoded = decodeJWT(attestationId) as unknown as { payload: JwkPayload };
       if (decoded.payload.id !== encryptedId) return;
       const validation = await this.isValidJwtAttestation(attestationId);
-      if (validation) return validation;
+      if (validation) {
+        if (!validation.isVerified) {
+          this.logger.warn("resolve: jwt attestation: origin url not verified");
+          return;
+        }
+        return validation;
+      }
     }
     if (!hash) return;
     const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
@@ -243,6 +249,7 @@ export class Verify extends IVerify {
     return {
       origin: validation.payload.origin,
       isScam: validation.payload.isScam,
+      isVerified: validation.payload.isVerified,
     };
   };
 }
