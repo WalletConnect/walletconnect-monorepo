@@ -99,29 +99,11 @@ describe("Sign Client Integration", () => {
       expect(clients.B.metadata.redirect?.universal).to.exist;
       await deleteClients(clients);
     });
-    it("connect (with old pairing)", async () => {
-      const {
-        clients,
-        pairingA: { topic: pairingTopic },
-      } = await initTwoPairedClients({}, {}, { logger: "error" });
-      const { A, B } = clients;
-      expect(A.pairing.keys).to.eql(B.pairing.keys);
-      await throttle(200);
-      await testConnectMethod(clients, {
-        pairingTopic,
-      });
-      await deleteClients(clients);
-    });
-    it("should remove duplicate pairing", async () => {
+    it("should remove pairing on session creation", async () => {
       const { clients } = await initTwoPairedClients({}, {}, { logger: "error" });
       const { A, B } = clients;
       expect(A.pairing.keys).to.eql(B.pairing.keys);
-      expect(A.pairing.keys.length).to.eql(1);
-      await throttle(1000);
-      await testConnectMethod(clients);
-      await throttle(1000);
-      expect(A.pairing.keys).to.eql(B.pairing.keys);
-      expect(A.pairing.keys.length).to.eql(1);
+      expect(A.pairing.keys.length).to.eql(0);
       await deleteClients(clients);
     });
     it("should receive session acknowledge", async () => {
@@ -133,32 +115,6 @@ describe("Sign Client Integration", () => {
       const session = clients.B.session.get(topic);
       expect(session.acknowledged).to.be.true;
       expect(acknowledged).to.be.true;
-      await deleteClients(clients);
-    });
-    it("should cleanup duplicate pairings", async () => {
-      const { clients, sessionA, pairingA } = await initTwoPairedClients(
-        {},
-        {},
-        { logger: "error" },
-      );
-      expect(pairingA).to.be.exist;
-      expect(sessionA).to.be.exist;
-      expect(pairingA.topic).to.eq(sessionA.pairingTopic);
-      const sessionB = clients.B.session.get(sessionA.topic);
-      expect(sessionB).to.be.exist;
-      expect(sessionB.pairingTopic).to.eq(sessionA.pairingTopic);
-      await clients.A.disconnect({
-        topic: sessionA.topic,
-        reason: getSdkError("USER_DISCONNECTED"),
-      });
-      expect(clients.A.pairing.getAll().length).to.eq(1);
-      const { pairingA: pairingAfter, sessionA: sessionAfter } = await testConnectMethod(clients);
-      await throttle(1_000);
-      expect(pairingA.topic).to.not.eq(pairingAfter.topic);
-      expect(sessionA.topic).to.not.eq(sessionAfter.topic);
-      expect(sessionA.pairingTopic).to.not.eq(sessionAfter.pairingTopic);
-      expect(sessionAfter.pairingTopic).to.eq(pairingAfter.topic);
-      expect(clients.A.pairing.getAll().length).to.eq(1);
       await deleteClients(clients);
     });
     it("should emit session_proposal on every pair attempt with same URI as long as the proposal has not yet been approved or rejected", async () => {
@@ -211,9 +167,6 @@ describe("Sign Client Integration", () => {
         wallet.pair({ uri }),
       ]);
 
-      // 7. attempt to pair again with the same URI
-      // 8. should receive an error the pairing already exists
-      await expect(wallet.pair({ uri })).rejects.toThrowError();
       await deleteClients({ A: dapp, B: wallet });
     });
     it("should set `sessionConfig`", async () => {
@@ -306,24 +259,6 @@ describe("Sign Client Integration", () => {
   });
 
   describe("disconnect", () => {
-    describe("pairing", () => {
-      it("deletes the pairing on disconnect", async () => {
-        const {
-          clients,
-          pairingA: { topic },
-        } = await initTwoPairedClients({}, {}, { logger: "error" });
-        const reason = getSdkError("USER_DISCONNECTED");
-        await clients.A.disconnect({ topic, reason });
-        expect(() => clients.A.pairing.get(topic)).to.throw(
-          `Missing or invalid. Record was recently deleted - pairing: ${topic}`,
-        );
-        const promise = clients.A.ping({ topic });
-        await expect(promise).rejects.toThrowError(
-          `No matching key. session or pairing topic doesn't exist: ${topic}`,
-        );
-        await deleteClients(clients);
-      });
-    });
     describe("session", () => {
       it("deletes the session on disconnect", async () => {
         const {
@@ -409,33 +344,13 @@ describe("Sign Client Integration", () => {
   });
 
   describe("ping", () => {
-    it("throws if the topic is not a known pairing or session topic", async () => {
+    it("throws if the topic is not a known session topic", async () => {
       const clients = await initTwoClients();
       const fakeTopic = "nonsense";
       await expect(clients.A.ping({ topic: fakeTopic })).rejects.toThrowError(
         `No matching key. session or pairing topic doesn't exist: ${fakeTopic}`,
       );
       await deleteClients(clients);
-    });
-    describe("pairing", () => {
-      describe("with existing pairing", () => {
-        it("A pings B", async () => {
-          const {
-            clients,
-            pairingA: { topic },
-          } = await initTwoPairedClients({}, {}, { logger: "error" });
-          await clients.A.ping({ topic });
-          await deleteClients(clients);
-        });
-        it("B pings A", async () => {
-          const {
-            clients,
-            pairingA: { topic },
-          } = await initTwoPairedClients({}, {}, { logger: "error" });
-          await clients.B.ping({ topic });
-          await deleteClients(clients);
-        });
-      });
     });
     describe("session", () => {
       describe("with existing session", () => {

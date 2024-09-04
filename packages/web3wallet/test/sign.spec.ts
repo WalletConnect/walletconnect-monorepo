@@ -727,79 +727,6 @@ describe("Sign Integration", () => {
       await disconnect(dapp.core);
     });
 
-    it("should decrypt payload with pairing topic", async () => {
-      const initMetadata: CoreTypes.Metadata = {
-        name: "Test Dapp",
-        description: "Test Dapp Description",
-        url: "https://walletconnect.com",
-        icons: ["https://walletconnect.com/walletconnect-logo.png"],
-      };
-      const dappTable = "./test/tmp/dapp";
-      const walletTable = "./test/tmp/wallet";
-      const dapp = await SignClient.init({
-        ...TEST_CORE_OPTIONS,
-        name: "Dapp",
-        metadata: initMetadata,
-        storageOptions: {
-          database: dappTable,
-        },
-      });
-      const wallet = await Web3Wallet.init({
-        core: new Core({
-          ...TEST_CORE_OPTIONS,
-          storageOptions: { database: walletTable },
-        }),
-        name: "wallet",
-        metadata: initMetadata,
-      });
-
-      const { uri: uriString = "", approval } = await dapp.connect({});
-      let encryptedMessage = "";
-      let decryptedMessage: JsonRpcPayload = {} as any;
-      let pairingTopic = "";
-      await Promise.all([
-        new Promise<void>((resolve) => {
-          wallet.core.relayer.on(RELAYER_EVENTS.message, async (payload) => {
-            const { topic, message } = payload;
-            const decrypted = await wallet.core.crypto.decode(topic, message);
-            expect(decrypted).to.be.exist;
-            if (decrypted?.method === "wc_sessionPropose" && isJsonRpcRequest(decrypted)) {
-              encryptedMessage = message;
-              decryptedMessage = decrypted;
-              pairingTopic = topic;
-              resolve();
-            }
-          });
-        }),
-        new Promise<void>((resolve) => {
-          wallet.on("session_proposal", async (sessionProposal) => {
-            const { id, params, verifyContext } = sessionProposal;
-            expect(verifyContext.verified.validation).to.eq("UNKNOWN");
-            expect(verifyContext.verified.isScam).to.eq(undefined);
-            await wallet.approveSession({
-              id,
-              namespaces: TEST_NAMESPACES,
-            });
-            resolve();
-          });
-        }),
-        new Promise(async (resolve) => {
-          resolve(await approval());
-        }),
-        wallet.pair({ uri: uriString }),
-      ]);
-
-      const decrypted = await Web3Wallet.notifications.decryptMessage({
-        topic: pairingTopic,
-        encryptedMessage,
-        storageOptions: { database: walletTable },
-      });
-      expect(decrypted).to.be.exist;
-      expect(decrypted).to.be.a("object");
-      expect(decrypted).to.toMatchObject(decryptedMessage);
-      await disconnect(wallet.core);
-      await disconnect(dapp.core);
-    });
     it("should decrypt payload with session topic", async () => {
       const initMetadata: CoreTypes.Metadata = {
         name: "Test Dapp",
@@ -927,7 +854,7 @@ describe("Sign Integration", () => {
         core: new Core(TEST_CORE_OPTIONS),
         metadata: TEST_METADATA,
       });
-      await Promise.all([
+      const res = await Promise.all([
         new Promise<void>((resolve) => {
           web3Wallet.on("session_authenticate", async (payload) => {
             const verifyContext = payload.verifyContext;
@@ -965,8 +892,9 @@ describe("Sign Integration", () => {
           await web3Wallet.pair({ uri });
           resolve();
         }),
-      ]);
-      const { session, auths } = await response();
+        response(),
+      ]).then((res) => res[2]);
+      const { session, auths } = res;
       expect(auths).to.exist;
       expect(auths).to.be.an("array");
       const walletSessions = web3Wallet.getActiveSessions();
@@ -1025,7 +953,7 @@ describe("Sign Integration", () => {
         core: new Core(TEST_CORE_OPTIONS),
         metadata: TEST_METADATA,
       });
-      await Promise.all([
+      const res = await Promise.all([
         new Promise<void>((resolve) => {
           web3Wallet.on("session_proposal", (payload) => {
             const approved = buildApprovedNamespaces({
@@ -1054,8 +982,9 @@ describe("Sign Integration", () => {
           await web3Wallet.pair({ uri });
           resolve();
         }),
-      ]);
-      const { session, auths } = await response();
+        response(),
+      ]).then((res) => res[2]);
+      const { session, auths } = res;
       expect(auths).to.be.undefined;
       const walletSessions = web3Wallet.getActiveSessions();
       expect(walletSessions).to.exist;

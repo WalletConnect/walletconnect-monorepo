@@ -72,10 +72,6 @@ describe("Persistence", () => {
       expect(coreA.pairing.pairings.keys.length).toBe(0);
       expect(coreB.pairing.pairings.keys.length).toBe(0);
 
-      // topic was added to history
-      expect(searchRecords(coreA.history.records, topic)).toBe(true);
-      expect(searchRecords(coreB.history.records, topic)).toBe(true);
-
       // keychain was updated
       expect(coreA.crypto.keychain.keychain.has(topic)).toBe(false);
       expect(coreB.crypto.keychain.keychain.has(topic)).toBe(false);

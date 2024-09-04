@@ -103,18 +103,6 @@ describe("Pairing", () => {
     });
   });
 
-  describe("activate", () => {
-    it("can activate a pairing", async () => {
-      const { topic } = await coreA.pairing.create();
-
-      const inactivePairing = coreA.pairing.pairings.get(topic);
-      expect(inactivePairing.active).toBe(false);
-      await coreA.pairing.activate({ topic });
-      expect(coreA.pairing.pairings.get(topic).active).toBe(true);
-      expect(coreA.pairing.pairings.get(topic).expiry > inactivePairing.expiry).toBe(true);
-    });
-  });
-
   describe("updateExpiry", () => {
     it("can update a pairing's expiry", async () => {
       const mockExpiry = 11111111;
@@ -138,42 +126,6 @@ describe("Pairing", () => {
       expect(coreA.pairing.pairings.get(topic).peerMetadata).toBeUndefined();
       await coreA.pairing.updateMetadata({ topic, metadata: mockMetadata });
       expect(coreA.pairing.pairings.get(topic).peerMetadata).toEqual(mockMetadata);
-    });
-  });
-
-  describe("ping", () => {
-    it("clients can ping each other", async () => {
-      const { uri, topic } = await coreA.pairing.create();
-      let gotPing = false;
-
-      coreB.pairing.events.on("pairing_ping", () => {
-        gotPing = true;
-      });
-
-      await coreB.pairing.pair({ uri });
-      await coreA.pairing.ping({ topic });
-      await waitForEvent(() => gotPing);
-
-      expect(gotPing).toBe(true);
-    });
-  });
-
-  describe("disconnect", () => {
-    it("can disconnect a known pairing", async () => {
-      const { uri, topic } = await coreA.pairing.create();
-      let hasDeleted = false;
-
-      coreA.pairing.events.on("pairing_delete", () => {
-        hasDeleted = true;
-      });
-
-      await coreB.pairing.pair({ uri });
-      await coreB.pairing.disconnect({ topic });
-      await waitForEvent(() => hasDeleted);
-
-      expect(coreA.pairing.pairings.keys.length).toBe(0);
-      expect(coreB.pairing.pairings.keys.length).toBe(0);
-      expect(coreA.pairing.pairings.keys).to.deep.equal(coreB.pairing.pairings.keys);
     });
   });
 
@@ -221,41 +173,6 @@ describe("Pairing", () => {
             uri: "wc:e9d6ef98-6b65-490b-8726-a21e1afb181d@1?bridge=https%3A%2F%2Fwalletconnect.com&relay-protocol=irn",
           }),
         ).rejects.toThrowError("Missing or invalid. pair() uri#symKey");
-      });
-    });
-
-    describe("ping", () => {
-      it("throws when no params are passed", async () => {
-        // @ts-expect-error - ignore TS error to test runtime validation
-        await expect(coreA.pairing.ping()).rejects.toThrowError(
-          "Missing or invalid. ping() params: undefined",
-        );
-      });
-
-      it("throws when invalid topic is provided", async () => {
-        // @ts-expect-error - ignore TS error to test runtime validation
-        await expect(coreA.pairing.ping({ topic: 123 })).rejects.toThrowError(
-          "Missing or invalid. pairing topic should be a string: 123",
-        );
-      });
-
-      it("throws when empty topic is provided", async () => {
-        await expect(coreA.pairing.ping({ topic: "" })).rejects.toThrowError(
-          "Missing or invalid. pairing topic should be a string: ",
-        );
-      });
-
-      it("throws when no topic is provided", async () => {
-        // @ts-expect-error - ignore TS error to test runtime validation
-        await expect(coreA.pairing.ping({ topic: undefined })).rejects.toThrowError(
-          "Missing or invalid. pairing topic should be a string: undefined",
-        );
-      });
-
-      it("throws when non existent topic is provided", async () => {
-        await expect(coreA.pairing.ping({ topic: "none" })).rejects.toThrowError(
-          "No matching key. pairing topic doesn't exist: none",
-        );
       });
     });
 

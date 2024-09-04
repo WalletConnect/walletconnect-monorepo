@@ -45,7 +45,7 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+    const res = await Promise.all([
       Promise.race<void>([
         new Promise((resolve) => {
           wallet.on("session_authenticate", async (payload) => {
@@ -110,8 +110,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const session = (await response()).session;
+      response(),
+    ]).then((res) => res[2]);
+    const session = res.session;
     const walletSession = wallet.session.get(session.topic);
     // approved namespaces on both sides must be equal
     expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
@@ -177,7 +178,7 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
           // validate that the dapp has both `session_authenticate` & `session_proposal` stored
@@ -231,8 +232,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const session = (await response()).session;
+      response(),
+    ]).then((res) => res[2]);
+    const session = res.session;
     const walletSession = wallet.session.get(session.topic);
     // approved namespaces on both sides must be equal
     expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
@@ -298,7 +300,7 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
           const verifyContext = payload.verifyContext;
@@ -356,8 +358,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const session = (await response()).session;
+      response(),
+    ]).then((res) => res[2]);
+    const session = res.session;
     const walletSession = wallet.session.get(session.topic);
     // approved namespaces on both sides must be equal
     expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
@@ -418,7 +421,7 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
           const authPayload = populateAuthPayload({
@@ -451,8 +454,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const session = (await response()).session;
+      response(),
+    ]).then((res) => res[2]);
+    const session = res.session;
     const walletSession = wallet.session.get(session.topic);
     // approved namespaces on both sides must be equal
     expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
@@ -511,7 +515,7 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
           const authPayload = populateAuthPayload({
@@ -550,8 +554,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const { session, auths } = await response();
+      response(),
+    ]).then((res) => res[2]);
+    const { session, auths } = res;
     const walletSession = wallet.session.get(session.topic);
     // approved namespaces on both sides must be equal
     expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
@@ -611,7 +616,7 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
           const authPayload = populateAuthPayload({
@@ -650,8 +655,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const { session, auths } = await response();
+      response(),
+    ]).then((res) => res[2]);
+    const { session, auths } = res;
     const walletSession = wallet.session.get(session.topic);
     expect(auths?.length).to.eq(supportedChains.length);
     // approved namespaces on both sides must be equal
@@ -712,7 +718,7 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
           const authPayload = populateAuthPayload({
@@ -750,8 +756,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const { session, auths } = await response();
+      response(),
+    ]).then((res) => res[2]);
+    const { session, auths } = res;
     const walletSession = wallet.session.get(session.topic);
     expect(auths?.length).to.eq(supportedChains.length);
     // approved namespaces on both sides must be equal
@@ -812,7 +819,7 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
           const authPayload = populateAuthPayload({
@@ -851,8 +858,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const { session, auths } = await response();
+      response(),
+    ]).then((res) => res[2]);
+    const { session, auths } = res;
     const walletSession = wallet.session.get(session.topic);
     expect(auths?.length).to.eq(supportedChains.length);
     // approved namespaces on both sides must be equal
@@ -906,7 +914,7 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
           const auths: any[] = [];
@@ -938,8 +946,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const { session, auths } = await response();
+      response(),
+    ]).then((res) => res[2]);
+    const { session, auths } = res;
     const walletSession = wallet.session.get(session.topic);
     // approved namespaces on both sides must be equal
     expect(JSON.stringify(session.namespaces)).to.eq(JSON.stringify(walletSession.namespaces));
@@ -971,10 +980,10 @@ describe("Authenticated Sessions", () => {
     ]);
 
     // Ensure that pairing metadata has been set correctly on both peers.
-    expect(wallet.pairing.get(walletSession.pairingTopic).peerMetadata).to.deep.eq(
+    expect(wallet.session.get(walletSession.topic).peer.metadata).to.deep.eq(
       TEST_SIGN_CLIENT_OPTIONS.metadata,
     );
-    expect(dapp.pairing.get(session.pairingTopic).peerMetadata).to.deep.eq(TEST_APP_METADATA_B);
+    expect(dapp.session.get(session.topic).peer.metadata).to.deep.eq(TEST_APP_METADATA_B);
 
     await deleteClients({ A: dapp, B: wallet });
   });
@@ -1002,7 +1011,8 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
           const approved = buildApprovedNamespaces({
@@ -1031,12 +1041,10 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri: uri.replace("methods", "") });
         resolve();
       }),
-    ]);
-
-    const res = await response();
+      response(),
+    ]).then((res) => res[2]);
     const session = res.session;
     await throttle(1000);
-
     await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_request", async (payload) => {
@@ -1063,7 +1071,6 @@ describe("Authenticated Sessions", () => {
         resolve();
       }),
     ]);
-
     await deleteClients({ A: dapp, B: wallet });
   });
 
@@ -1090,7 +1097,8 @@ describe("Authenticated Sessions", () => {
       name: "wallet",
       metadata: TEST_APP_METADATA_B,
     });
-    await Promise.all([
+
+    const res = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
           const approved = buildApprovedNamespaces({
@@ -1119,9 +1127,8 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-
-    const res = await response();
+      response(),
+    ]).then((res) => res[2]);
     const session = res.session;
     await throttle(1000);
 
@@ -1244,7 +1251,7 @@ describe("Authenticated Sessions", () => {
     //@ts-expect-error
     wallet.core.pairing.registeredMethods = [];
     wallet.core.pairing.register({ methods: toRegisterMethods });
-    await Promise.all([
+    const result = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_proposal", async (payload) => {
           // validate that the dapp has both `session_authenticate` & `session_proposal` stored
@@ -1284,8 +1291,9 @@ describe("Authenticated Sessions", () => {
         wallet.pair({ uri });
         resolve();
       }),
-    ]);
-    const { auths, session } = await response();
+      response(),
+    ]).then((res) => res[2]);
+    const { auths, session } = result;
     expect(auths).to.be.undefined;
     expect(session).to.exist;
     expect(session.namespaces.eip155).to.exist;
