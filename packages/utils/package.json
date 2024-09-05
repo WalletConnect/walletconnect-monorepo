@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/utils",
   "description": "Utilities for WalletConnect Protocol",
-  "version": "2.15.2",
+  "version": "2.15.3",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -40,7 +40,7 @@
     "@walletconnect/relay-auth": "1.0.4",
     "@walletconnect/safe-json": "1.0.2",
     "@walletconnect/time": "1.0.2",
-    "@walletconnect/types": "2.15.2",
+    "@walletconnect/types": "2.15.3",
     "@walletconnect/window-getters": "1.0.1",
     "@walletconnect/window-metadata": "1.0.1",
     "detect-browser": "5.3.0",
