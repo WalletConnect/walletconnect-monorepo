@@ -11,6 +11,7 @@ import { IPairing } from "./pairing";
 import { Logger } from "@walletconnect/logger";
 import { IVerify } from "./verify";
 import { IEchoClient } from "./echo";
+import { IEventClient } from "./events";
 export declare namespace CoreTypes {
   interface Options {
     projectId?: string;
@@ -22,6 +23,7 @@ export declare namespace CoreTypes {
     storageOptions?: KeyValueStorageOptions;
     maxLogBlobSizeInBytes?: number;
     customStoragePrefix?: string;
+    telemetryEnabled?: boolean;
   }
 
   interface Metadata {
@@ -57,6 +59,7 @@ export abstract class ICore extends IEvents {
   public abstract pairing: IPairing;
   public abstract verify: IVerify;
   public abstract echoClient: IEchoClient;
+  public abstract eventClient: IEventClient;
 
   constructor(public opts?: CoreTypes.Options) {
     super();

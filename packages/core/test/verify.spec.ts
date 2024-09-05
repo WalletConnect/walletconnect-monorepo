@@ -1,5 +1,4 @@
 import { expect, describe, it } from "vitest";
-import fetch from "node-fetch";
 import { hashMessage } from "@walletconnect/utils";
 
 import { Core, VERIFY_SERVER } from "../src";
