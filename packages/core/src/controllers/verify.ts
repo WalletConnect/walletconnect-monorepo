@@ -57,9 +57,6 @@ export class Verify extends IVerify {
       this.logger.debug("verify v2 public key expired");
       await this.removePublicKey();
     }
-    if (!this.publicKey) {
-      await this.fetchAndPersistPublicKey();
-    }
   };
 
   public register: IVerify["register"] = async (params) => {
