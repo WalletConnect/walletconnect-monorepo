@@ -3,7 +3,7 @@ import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { ErrorResponse, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
-import { ONE_MINUTE, Watch, toMiliseconds } from "@walletconnect/time";
+import { ONE_SECOND, ONE_MINUTE, Watch, toMiliseconds } from "@walletconnect/time";
 import {
   IRelayer,
   ISubscriber,
@@ -27,6 +27,7 @@ import {
   SUBSCRIBER_STORAGE_VERSION,
   PENDING_SUB_RESOLUTION_TIMEOUT,
   RELAYER_EVENTS,
+  TRANSPORT_TYPES,
 } from "../constants";
 import { SubscriberTopicMap } from "./topicmap";
 
@@ -61,7 +62,9 @@ export class Subscriber extends ISubscriber {
       this.logger.trace(`Initialized`);
       this.registerEventListeners();
       this.clientId = await this.relayer.core.crypto.getClientId();
+      await this.restore();
     }
+    this.initialized = true;
   };
 
   get context() {
@@ -91,15 +94,14 @@ export class Subscriber extends ISubscriber {
   }
 
   public subscribe: ISubscriber["subscribe"] = async (topic, opts) => {
-    await this.restartToComplete();
     this.isInitialized();
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
     try {
       const relay = getRelayProtocolName(opts);
-      const params = { topic, relay };
+      const params = { topic, relay, transportType: opts?.transportType };
       this.pending.set(topic, params);
-      const id = await this.rpcSubscribe(topic, relay);
+      const id = await this.rpcSubscribe(topic, relay, opts?.transportType);
       if (typeof id === "string") {
         this.onSubscribe(id, params);
         this.logger.debug(`Successfully Subscribed Topic`);
@@ -217,7 +219,14 @@ export class Subscriber extends ISubscriber {
     }
   }
 
-  private async rpcSubscribe(topic: string, relay: RelayerTypes.ProtocolOptions) {
+  private async rpcSubscribe(
+    topic: string,
+    relay: RelayerTypes.ProtocolOptions,
+    transportType: RelayerTypes.TransportType = TRANSPORT_TYPES.relay,
+  ) {
+    if (transportType === TRANSPORT_TYPES.relay) {
+      await this.restartToComplete();
+    }
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
       method: api.subscribe,
@@ -228,13 +237,25 @@ export class Subscriber extends ISubscriber {
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
     try {
+      const subId = hashMessage(topic + this.clientId);
+      // in link mode, allow the app to update its network state (i.e. active airplane mode) with small delay before attempting to subscribe
+      if (transportType === TRANSPORT_TYPES.link_mode) {
+        setTimeout(() => {
+          if (this.relayer.connected || this.relayer.connecting) {
+            this.relayer.request(request).catch((e) => this.logger.warn(e));
+          }
+        }, toMiliseconds(ONE_SECOND));
+        return subId;
+      }
+
       const subscribe = await createExpiringPromise(
         this.relayer.request(request).catch((e) => this.logger.warn(e)),
         this.subscribeTimeout,
       );
       const result = await subscribe;
+
       // return null to indicate that the subscription failed
-      return result ? hashMessage(topic + this.clientId) : null;
+      return result ? subId : null;
     } catch (err) {
       this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
@@ -245,7 +266,7 @@ export class Subscriber extends ISubscriber {
   private async rpcBatchSubscribe(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
     const relay = subscriptions[0].relay;
-    const api = getRelayProtocolApi(relay.protocol);
+    const api = getRelayProtocolApi(relay!.protocol);
     const request: RequestArguments<RelayJsonRpc.BatchSubscribeParams> = {
       method: api.batchSubscribe,
       params: {
@@ -268,7 +289,7 @@ export class Subscriber extends ISubscriber {
   private async rpcBatchFetchMessages(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
     const relay = subscriptions[0].relay;
-    const api = getRelayProtocolApi(relay.protocol);
+    const api = getRelayProtocolApi(relay!.protocol);
     const request: RequestArguments<RelayJsonRpc.BatchFetchMessagesParams> = {
       method: api.batchFetchMessages,
       params: {
@@ -488,6 +509,9 @@ export class Subscriber extends ISubscriber {
   }
 
   private async restartToComplete() {
+    if (!this.relayer.connected && !this.relayer.connecting) {
+      await this.relayer.transportOpen();
+    }
     if (!this.restartInProgress) return;
 
     await new Promise<void>((resolve) => {

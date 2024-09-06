@@ -43,6 +43,7 @@ export declare namespace SessionTypes {
       metadata: SignClientTypes.Metadata;
     };
     authentication?: AuthTypes.Cacao[];
+    transportType?: RelayerTypes.TransportType;
   }
 }
 

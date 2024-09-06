@@ -420,6 +420,15 @@ export function getCommonValuesInArrays<T = string | number | boolean>(arr1: T[]
   return arr1.filter((value) => arr2.includes(value));
 }
 
+export function getSearchParamFromURL(url: string, param: any) {
+  const include = url.includes(param);
+  if (!include) return null;
+  const params = url.split(/([&,?,=])/);
+  const index = params.indexOf(param);
+  const value = params[index + 2];
+  return value;
+}
+
 export function uuidv4() {
   if (typeof crypto !== "undefined" && crypto?.randomUUID) {
     return crypto.randomUUID();
