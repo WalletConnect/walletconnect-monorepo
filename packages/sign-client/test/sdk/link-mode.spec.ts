@@ -77,9 +77,6 @@ describe("Sign Client Link Mode", () => {
         Promise.race<void>([
           new Promise((resolve) => {
             wallet.on("session_authenticate", async (payload) => {
-              console.log("session_authenticate, delaying..");
-              await throttle(1000);
-              console.log("session_authenticate, done");
               const authPayload = populateAuthPayload({
                 authPayload: payload.params.authPayload,
                 chains: requestedChains,
