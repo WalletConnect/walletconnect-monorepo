@@ -71,3 +71,11 @@ export function formatUri(params: EngineTypes.UriParameters): string {
     })
   );
 }
+
+export function getLinkModeURL(
+  universalLink: string,
+  topic: string,
+  encodedEnvelope: string,
+): string {
+  return `${universalLink}?wc_ev=${encodedEnvelope}&topic=${topic}`;
+}
