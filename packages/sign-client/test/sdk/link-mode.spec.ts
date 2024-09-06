@@ -27,7 +27,7 @@ describe("Sign Client Link Mode", () => {
   });
 
   describe("ping", () => {
-    it("should establish authenticated session with single signature. Case 1", async () => {
+    it("should establish authenticated session with single signature via link mode", async () => {
       const dapp = await SignClient.init({
         ...TEST_SIGN_CLIENT_OPTIONS,
         name: "dapp",

@@ -543,8 +543,6 @@ export class Engine extends IEngine {
     if (session?.transportType === TRANSPORT_TYPES.relay) {
       await this.confirmOnlineStateOrThrow();
     }
-    console.log("request transport type", session?.transportType);
-
     const clientRpcId = payloadId();
     const relayRpcId = getBigIntRpcId().toString() as any;
     const { done, resolve, reject } = createDelayedPromise<T>(
@@ -561,7 +559,6 @@ export class Engine extends IEngine {
 
     const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
     if (appLink) {
-      console.log("linkMode request", appLink);
       await this.sendRequest({
         clientRpcId,
         relayRpcId,
@@ -641,7 +638,6 @@ export class Engine extends IEngine {
     }
 
     const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
-    console.log("respond", this.client.name, appLink);
     if (isJsonRpcResult(response)) {
       await this.sendResult({
         id,
@@ -974,9 +970,6 @@ export class Engine extends IEngine {
 
         session = this.client.session.get(sessionTopic);
       }
-
-      console.log("Added wallet to linkMode supported apps", walletUniversalLink);
-      console.log("LinkMode supported apps", this.client.core.linkModeSupportedApps);
 
       if (
         this.client.metadata.redirect?.linkMode &&
@@ -1478,7 +1471,6 @@ export class Engine extends IEngine {
     this.client.core.history.set(topic, payload);
 
     if (isLinkMode) {
-      console.log("sendRequest linkmode", this.client.name, appLink, payload.id);
       const redirectURL = getLinkModeURL(appLink, topic, message);
       await (global as any).Linking.openURL(redirectURL, this.client.name);
     } else {
@@ -1528,7 +1520,6 @@ export class Engine extends IEngine {
     }
 
     if (isLinkMode) {
-      console.log("sendResult linkmode", this.client.name, appLink, payload.id);
       const redirectURL = getLinkModeURL(appLink, topic, message);
       await (global as any).Linking.openURL(redirectURL, this.client.name);
     } else {
@@ -1618,7 +1609,6 @@ export class Engine extends IEngine {
 
   private registerRelayerEvents() {
     this.client.core.relayer.on(RELAYER_EVENTS.message, (event: RelayerTypes.MessageEvent) => {
-      console.log("relay message", event.publishedAt);
       // capture any messages that arrive before the client is initialized so we can process them after initialization is complete
       if (!this.initialized || this.relayMessageCache.length > 0) {
         this.relayMessageCache.push(event);
@@ -1640,7 +1630,6 @@ export class Engine extends IEngine {
       receiverPublicKey: publicKey,
       encoding: transportType === TRANSPORT_TYPES.link_mode ? BASE64URL : BASE64,
     });
-    console.log("on relay message", payload.id, transportType);
     try {
       if (isJsonRpcRequest(payload)) {
         this.client.core.history.set(topic, payload);
@@ -2926,7 +2915,6 @@ export class Engine extends IEngine {
 
   private registerLinkModeListeners = async () => {
     if (process?.env?.IS_VITEST || (isReactNative() && this.client.metadata.redirect?.linkMode)) {
-      console.log("registering link mode listeners");
       const linking = (global as any)?.Linking;
       // global.Linking is set by react-native-compat
       if (typeof linking !== "undefined") {

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { ChaCha20Poly1305 } from "@stablelib/chacha20poly1305";
 import { HKDF } from "@stablelib/hkdf";
 import { randomBytes } from "@stablelib/random";
@@ -104,7 +103,6 @@ export function encodeTypeTwoEnvelope(
 }
 
 export function decrypt(params: CryptoTypes.DecryptParams): string {
-  console.log("decrypt", { encoding: params?.encoding });
   const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
   const { sealed, iv } = deserialize({ encoded: params.encoded, encoding: params?.encoding });
   const message = box.open(iv, sealed);
@@ -141,7 +139,6 @@ export function serialize(params: CryptoTypes.EncodingParams): string {
 
 export function deserialize(params: CryptoTypes.DecodingParams): CryptoTypes.EncodingParams {
   const { encoded, encoding = BASE64 } = params;
-  console.log("deserialize", { encoded: encoded.substring(0, 10), encoding });
   const bytes = fromString(encoded, encoding);
   const type = bytes.slice(ZERO_INDEX, TYPE_LENGTH);
   const slice1 = TYPE_LENGTH;

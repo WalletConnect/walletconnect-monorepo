@@ -128,7 +128,11 @@ export class Relayer extends IRelayer {
     this.initialized = true;
     // @ts-expect-error - .cached is private
     if (this.subscriber.cached.length > 0) {
-      await this.transportOpen().catch((error) => this.logger.warn(error));
+      try {
+        await this.transportOpen();
+      } catch (e) {
+        this.logger.warn(e);
+      }
     }
   }
 
