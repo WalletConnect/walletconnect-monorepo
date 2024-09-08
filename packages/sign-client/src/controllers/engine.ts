@@ -2914,7 +2914,10 @@ export class Engine extends IEngine {
   };
 
   private registerLinkModeListeners = async () => {
-    if (process?.env?.IS_VITEST || (isReactNative() && this.client.metadata.redirect?.linkMode)) {
+    if (
+      (typeof process !== "undefined" && process.env.IS_VITEST) ||
+      (isReactNative() && this.client.metadata.redirect?.linkMode)
+    ) {
       const linking = (global as any)?.Linking;
       // global.Linking is set by react-native-compat
       if (typeof linking !== "undefined") {
