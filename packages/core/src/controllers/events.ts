@@ -1,6 +1,6 @@
 import { generateChildLogger, Logger } from "@walletconnect/logger";
 import { ICore, IEventClient, EventClientTypes } from "@walletconnect/types";
-import { uuidv4 } from "@walletconnect/utils";
+import { formatUA, uuidv4 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
   EVENTS_CLIENT_API_URL,
@@ -16,12 +16,12 @@ export class EventClient extends IEventClient {
   public readonly context = EVENTS_STORAGE_CONTEXT;
   private readonly storagePrefix = CORE_STORAGE_PREFIX;
   private readonly storageVersion = EVENTS_STORAGE_VERSION;
-
   private events = new Map<string, EventClientTypes.Event>();
   private shouldPersist = false;
   constructor(public core: ICore, public logger: Logger, telemetryEnabled = true) {
     super(core, logger, telemetryEnabled);
     this.logger = generateChildLogger(logger, this.context);
+    this.telemetryEnabled = telemetryEnabled;
     if (telemetryEnabled) {
       this.restore().then(async () => {
         await this.submit();
@@ -38,6 +38,32 @@ export class EventClient extends IEventClient {
       this.storagePrefix + this.storageVersion + this.core.customStoragePrefix + "//" + this.context
     );
   }
+
+  public init: IEventClient["init"] = async () => {
+    if (typeof process !== "undefined" && process.env.IS_VITEST === "true") return;
+    try {
+      const initEvent = {
+        eventId: uuidv4(),
+        bundleId: this.core.projectId || "",
+        timestamp: Date.now(),
+        props: {
+          event: "INIT",
+          type: "",
+          properties: {
+            client_id: await this.core.crypto.getClientId(),
+            user_agent: formatUA(
+              this.core.relayer.protocol,
+              this.core.relayer.version,
+              RELAYER_SDK_VERSION,
+            ),
+          },
+        },
+      };
+      await this.sendPost([initEvent] as unknown as EventClientTypes.Event[]);
+    } catch (error) {
+      this.logger.warn(error);
+    }
+  };
 
   public createEvent: IEventClient["createEvent"] = (params) => {
     const {
@@ -172,13 +198,7 @@ export class EventClient extends IEventClient {
     if (eventsToSend.length === 0) return;
 
     try {
-      const response = await fetch(
-        `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}`,
-        {
-          method: "POST",
-          body: JSON.stringify(eventsToSend),
-        },
-      );
+      const response = await this.sendPost(eventsToSend);
       if (response.ok) {
         for (const event of eventsToSend) {
           this.events.delete(event.eventId);
@@ -188,5 +208,16 @@ export class EventClient extends IEventClient {
     } catch (error) {
       this.logger.warn(error);
     }
+  };
+
+  private sendPost = async (events: EventClientTypes.Event[]) => {
+    const response = await fetch(
+      `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}`,
+      {
+        method: "POST",
+        body: JSON.stringify(events),
+      },
+    );
+    return response;
   };
 }
