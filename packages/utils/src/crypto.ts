@@ -93,7 +93,7 @@ export function encrypt(params: CryptoTypes.EncryptParams): string {
 
 export function decrypt(params: CryptoTypes.DecryptParams): string {
   const key = fromString(params.symKey, BASE16);
-  const { sealed, iv } = deserialize(params.encoded);
+  const { sealed, iv } = deserialize(params);
   const box = chacha20poly1305(key, iv);
   const message = box.decrypt(sealed);
   if (message === null) throw new Error("Failed to decrypt");
