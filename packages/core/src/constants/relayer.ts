@@ -1,11 +1,8 @@
-import { ONE_SECOND } from "@walletconnect/time";
-
 export const RELAYER_DEFAULT_PROTOCOL = "irn";
 
 export const RELAYER_DEFAULT_LOGGER = "error";
 
-export const RELAYER_DEFAULT_RELAY_URL = "wss://relay.walletconnect.com";
-export const RELAYER_FAILOVER_RELAY_URL = "wss://relay.walletconnect.org";
+export const RELAYER_DEFAULT_RELAY_URL = "wss://relay.walletconnect.org";
 
 export const RELAYER_CONTEXT = "relayer";
 
@@ -29,7 +26,7 @@ export const RELAYER_PROVIDER_EVENTS = {
   error: "error",
 };
 
-export const RELAYER_RECONNECT_TIMEOUT = ONE_SECOND;
+export const RELAYER_RECONNECT_TIMEOUT = 0.1;
 
 export const RELAYER_STORAGE_OPTIONS = {
   database: ":memory:",
@@ -37,7 +34,12 @@ export const RELAYER_STORAGE_OPTIONS = {
 
 // Updated automatically via `new-version` npm script.
 
-export const RELAYER_SDK_VERSION = "2.13.3";
+export const RELAYER_SDK_VERSION = "2.16.1";
 
 // delay to wait before closing the transport connection after init if not active
 export const RELAYER_TRANSPORT_CUTOFF = 10_000;
+
+export const TRANSPORT_TYPES = {
+  link_mode: "link_mode",
+  relay: "relay",
+} as const;

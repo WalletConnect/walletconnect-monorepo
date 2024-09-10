@@ -16,6 +16,7 @@ import PolkadotProvider from "./providers/polkadot";
 import Eip155Provider from "./providers/eip155";
 import SolanaProvider from "./providers/solana";
 import CosmosProvider from "./providers/cosmos";
+import AlgorandProvider from "./providers/algorand";
 import CardanoProvider from "./providers/cardano";
 import ElrondProvider from "./providers/elrond";
 import MultiversXProvider from "./providers/multiversx";
@@ -141,14 +142,14 @@ export class UniversalProvider implements IUniversalProvider {
     return await this.pair(opts.pairingTopic);
   }
 
-  public async authenticate(opts: AuthenticateParams) {
+  public async authenticate(opts: AuthenticateParams, walletUniversalLink?: string) {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
     this.setNamespaces(opts);
     await this.cleanupPendingPairings();
 
-    const { uri, response } = await this.client.authenticate(opts);
+    const { uri, response } = await this.client.authenticate(opts, walletUniversalLink);
     if (uri) {
       this.uri = uri;
       this.events.emit("display_uri", uri);
@@ -290,6 +291,7 @@ export class UniversalProvider implements IUniversalProvider {
     this.client =
       this.providerOpts.client ||
       (await SignClient.init({
+        core: this.providerOpts.core,
         logger: this.providerOpts.logger || LOGGER,
         relayUrl: this.providerOpts.relayUrl || RELAY_URL,
         projectId: this.providerOpts.projectId,
@@ -297,6 +299,8 @@ export class UniversalProvider implements IUniversalProvider {
         storageOptions: this.providerOpts.storageOptions,
         storage: this.providerOpts.storage,
         name: this.providerOpts.name,
+        customStoragePrefix: this.providerOpts.customStoragePrefix,
+        telemetryEnabled: this.providerOpts.telemetryEnabled,
       }));
 
     this.logger.trace(`SignClient Initialized`);
@@ -337,6 +341,11 @@ export class UniversalProvider implements IUniversalProvider {
       switch (namespace) {
         case "eip155":
           this.rpcProviders[namespace] = new Eip155Provider({
+            namespace: combinedNamespace,
+          });
+          break;
+        case "algorand":
+          this.rpcProviders[namespace] = new AlgorandProvider({
             namespace: combinedNamespace,
           });
           break;

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { AuthTypes } from "@walletconnect/types";
 import { getCommonValuesInArrays } from "./misc";
 import { verifySignature } from "./signatures";

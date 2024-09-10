@@ -7,6 +7,7 @@ import { IProposal, ProposalTypes } from "./proposal";
 import { ISession, SessionTypes } from "./session";
 import { Verify } from "../core/verify";
 import { IAuth, AuthTypes } from "./auth";
+import { RelayerTypes } from "../core";
 
 export declare namespace SignClientTypes {
   type Event =
@@ -53,7 +54,10 @@ export declare namespace SignClientTypes {
       event: { name: string; data: any };
       chainId: string;
     }>;
-    session_authenticate: BaseEventArgs<AuthTypes.AuthRequestEventArgs>;
+    session_authenticate: {
+      verifyContext: Verify.Context;
+      transportType?: RelayerTypes.TransportType;
+    } & BaseEventArgs<AuthTypes.AuthRequestEventArgs>;
     proposal_expire: { id: number };
     session_request_expire: { id: number };
   }

@@ -204,9 +204,9 @@ export class SignClient extends ISignClient {
     }
   };
 
-  public authenticate: ISignClient["authenticate"] = async (params) => {
+  public authenticate: ISignClient["authenticate"] = async (params, walletUniversalLink) => {
     try {
-      return await this.engine.authenticate(params);
+      return await this.engine.authenticate(params, walletUniversalLink);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
@@ -249,9 +249,8 @@ export class SignClient extends ISignClient {
       await this.session.init();
       await this.proposal.init();
       await this.pendingRequest.init();
-      await this.engine.init();
       await this.auth.init();
-      this.core.verify.init({ verifyUrl: this.metadata.verifyUrl });
+      await this.engine.init();
       this.logger.info(`SignClient Initialization Success`);
       this.engine.processRelayMessageCache();
     } catch (error: any) {

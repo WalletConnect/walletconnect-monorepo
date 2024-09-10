@@ -125,7 +125,7 @@ describe("Sign Client Validation", () => {
   describe("approve", () => {
     it("throws when no params are passed", async () => {
       await expect(clients.A.approve()).rejects.toThrowError(
-        "Missing or invalid. approve() params: undefined",
+        "Missing or invalid. proposal id should be a number: undefined",
       );
     });
 

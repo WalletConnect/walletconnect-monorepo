@@ -31,6 +31,7 @@ import {
 import { getChainId, getGlobal, getRpcUrl, setGlobal } from "../src/utils";
 import { RPC_URL } from "../src/constants";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { parseChainId } from "@walletconnect/utils";
 
 const getDbName = (_prefix: string) => {
   return `./test/tmp/${_prefix}.db`;
@@ -1150,6 +1151,64 @@ describe("UniversalProvider", function () {
         expect(url).to.eql(
           getRpcUrl(getChainId(chains[i]), {} as Namespace, TEST_PROVIDER_OPTS.projectId),
         );
+      });
+
+      await deleteProviders({ A: dapp, B: wallet });
+    });
+    it("should init generic provider if provider for given namespace doesn't exist", async () => {
+      const dapp = await UniversalProvider.init({
+        ...TEST_PROVIDER_OPTS,
+        name: "dapp",
+      });
+      const wallet = await UniversalProvider.init({
+        ...TEST_PROVIDER_OPTS,
+        name: "wallet",
+      });
+      const tronChains = [
+        `tron:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ`,
+        `tron:8E9rvCKLFQia2Y35HXjjpWzj8weVo44K`,
+      ];
+      const zoraChains = [`zora:1`, `zora:2`];
+      await testConnectMethod(
+        {
+          dapp,
+          wallet,
+        },
+        {
+          requiredNamespaces: {},
+          optionalNamespaces: {},
+          namespaces: {
+            tron: {
+              accounts: tronChains.map((chain) => `${chain}:${walletAddress}`),
+              chains: tronChains,
+              methods,
+              events,
+            },
+            zora: {
+              accounts: zoraChains.map((chain) => `${chain}:${walletAddress}`),
+              chains: zoraChains,
+              methods,
+              events,
+            },
+          },
+        },
+      );
+      await throttle(1_000);
+      expect(dapp.rpcProviders).to.be.an("object");
+      expect(dapp.rpcProviders.generic).to.exist;
+      expect(dapp.rpcProviders.generic).to.be.an("object");
+
+      const httpProviders = dapp.rpcProviders.generic.httpProviders;
+
+      expect(Object.keys(httpProviders).length).is.greaterThan(0);
+      expect(Object.keys(httpProviders).length).to.eql(tronChains.length + zoraChains.length);
+
+      const allChains = [...tronChains, ...zoraChains];
+      Object.values(httpProviders).forEach((provider, i) => {
+        const url = provider.connection.url as string;
+        expect(url).to.include("https://");
+        expect(url).to.include(RPC_URL);
+        expect(url).to.eql(getRpcUrl(allChains[i], {} as Namespace, TEST_PROVIDER_OPTS.projectId));
       });
 
       await deleteProviders({ A: dapp, B: wallet });

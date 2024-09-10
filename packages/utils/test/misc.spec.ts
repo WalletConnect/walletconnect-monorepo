@@ -1,5 +1,12 @@
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
-import { calcExpiry, isExpired, formatRelayRpcUrl, hasOverlap, formatUA } from "../src";
+import {
+  calcExpiry,
+  isExpired,
+  formatRelayRpcUrl,
+  hasOverlap,
+  formatUA,
+  getSearchParamFromURL,
+} from "../src";
 
 const RELAY_URL = "wss://relay.walletconnect.com";
 
@@ -68,6 +75,15 @@ describe("Misc", () => {
     expect(hasOverlap(["dog"], ["dog", "cat"])).to.be.true;
     expect(hasOverlap(["dog", "cat"], ["dog"])).to.be.false;
     expect(hasOverlap(["dog"], [])).to.be.false;
+  });
+  it("getSearchParamFromURL", () => {
+    const url = "https://example.com?foo=bar&baz=qux";
+    const searchParam1 = "foo";
+    const expectedValue1 = "bar";
+    const searchParam2 = "baz";
+    const expectedValue2 = "qux";
+    expect(getSearchParamFromURL(url, searchParam1)).to.eql(expectedValue1);
+    expect(getSearchParamFromURL(url, searchParam2)).to.eql(expectedValue2);
   });
 
   describe("expiry utils", () => {
