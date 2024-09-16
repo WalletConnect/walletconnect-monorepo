@@ -193,4 +193,26 @@ describe("Events Client", () => {
     // @ts-expect-error - accessing private properties
     expect(core.eventClient.events.size).toBe(0);
   });
+
+  it("should send init event", async () => {
+    process.env.IS_VITEST = false as any;
+    const core = new Core({ ...TEST_CORE_OPTIONS, telemetryEnabled: false });
+    let initCalled = false;
+    // @ts-expect-error - accessing private properties
+    core.eventClient.sendEvent = async (payload: any) => {
+      initCalled = true;
+      expect(payload).toBeDefined();
+      expect(payload.length).to.eql(1);
+      expect(payload[0].props.event).to.eql("INIT");
+      expect(payload[0].props.properties.client_id).to.eql(await core.crypto.getClientId());
+    };
+    await core.start();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    if (!initCalled) {
+      throw new Error("init not called");
+    }
+
+    process.env.IS_VITEST = true as any;
+  });
 });

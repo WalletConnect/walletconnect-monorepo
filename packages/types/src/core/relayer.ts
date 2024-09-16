@@ -78,6 +78,10 @@ export interface RelayerClientMetadata {
 }
 
 export abstract class IRelayer extends IEvents {
+  public abstract protocol: string;
+
+  public abstract version: number;
+
   public abstract core: ICore;
 
   public abstract logger: Logger;

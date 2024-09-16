@@ -194,6 +194,7 @@ export class Core extends ICore {
       await this.relayer.init();
       await this.heartbeat.init();
       await this.pairing.init();
+      this.eventClient.init();
       this.linkModeSupportedApps = (await this.storage.getItem(WALLETCONNECT_LINK_MODE_APPS)) || [];
 
       this.initialized = true;
