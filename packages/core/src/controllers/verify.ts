@@ -1,6 +1,6 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { ICore, IVerify } from "@walletconnect/types";
-import { isBrowser, isNode, P256KeyDataType, verifyP256Jwt } from "@walletconnect/utils";
+import { isBrowser, isNode, isTestRun, P256KeyDataType, verifyP256Jwt } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import { getDocument } from "@walletconnect/window-getters";
 import { decodeJWT } from "@walletconnect/relay-auth";
@@ -40,7 +40,7 @@ export class Verify extends IVerify {
     super(core, logger, store);
     this.logger = generateChildLogger(logger, this.name);
     this.abortController = new AbortController();
-    this.isDevEnv = isNode() && process.env.IS_VITEST;
+    this.isDevEnv = isTestRun();
     this.init();
   }
 

@@ -1,6 +1,6 @@
 import { generateChildLogger, Logger } from "@walletconnect/logger";
 import { ICore, IEventClient, EventClientTypes } from "@walletconnect/types";
-import { formatUA, uuidv4 } from "@walletconnect/utils";
+import { formatUA, isTestRun, uuidv4 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
   EVENTS_CLIENT_API_URL,
@@ -40,11 +40,10 @@ export class EventClient extends IEventClient {
   }
 
   public init: IEventClient["init"] = async () => {
-    if (typeof process !== "undefined" && process.env.IS_VITEST === "true") return;
+    if (isTestRun()) return;
     try {
       const initEvent = {
         eventId: uuidv4(),
-        bundleId: this.core.projectId || "",
         timestamp: Date.now(),
         props: {
           event: "INIT",
@@ -59,7 +58,7 @@ export class EventClient extends IEventClient {
           },
         },
       };
-      await this.sendPost([initEvent] as unknown as EventClientTypes.Event[]);
+      await this.sendEvent([initEvent] as unknown as EventClientTypes.Event[]);
     } catch (error) {
       this.logger.warn(error);
     }
@@ -198,7 +197,7 @@ export class EventClient extends IEventClient {
     if (eventsToSend.length === 0) return;
 
     try {
-      const response = await this.sendPost(eventsToSend);
+      const response = await this.sendEvent(eventsToSend);
       if (response.ok) {
         for (const event of eventsToSend) {
           this.events.delete(event.eventId);
@@ -210,7 +209,7 @@ export class EventClient extends IEventClient {
     }
   };
 
-  private sendPost = async (events: EventClientTypes.Event[]) => {
+  private sendEvent = async (events: EventClientTypes.Event[]) => {
     const response = await fetch(
       `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}`,
       {

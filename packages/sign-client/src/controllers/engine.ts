@@ -96,6 +96,7 @@ import {
   BASE64URL,
   getSearchParamFromURL,
   isReactNative,
+  isTestRun,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -2914,10 +2915,7 @@ export class Engine extends IEngine {
   };
 
   private registerLinkModeListeners = async () => {
-    if (
-      (typeof process !== "undefined" && process.env.IS_VITEST) ||
-      (isReactNative() && this.client.metadata.redirect?.linkMode)
-    ) {
+    if (isTestRun() || (isReactNative() && this.client.metadata.redirect?.linkMode)) {
       const linking = (global as any)?.Linking;
       // global.Linking is set by react-native-compat
       if (typeof linking !== "undefined") {
