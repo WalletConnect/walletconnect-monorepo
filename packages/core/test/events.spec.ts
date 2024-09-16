@@ -199,7 +199,7 @@ describe("Events Client", () => {
     const core = new Core({ ...TEST_CORE_OPTIONS, telemetryEnabled: false });
     let initCalled = false;
     // @ts-expect-error - accessing private properties
-    core.eventClient.sendPost = async (payload: any) => {
+    core.eventClient.sendEvent = async (payload: any) => {
       initCalled = true;
       expect(payload).toBeDefined();
       expect(payload.length).to.eql(1);
