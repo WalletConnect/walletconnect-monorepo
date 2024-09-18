@@ -13,7 +13,8 @@ import {
 
 import { getChainId, getGlobal, getRpcUrl } from "../utils";
 import EventEmitter from "events";
-import { PROVIDER_EVENTS } from "../constants";
+import { BUNDLER_URL, PROVIDER_EVENTS } from "../constants";
+import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
 class Eip155Provider implements IProvider {
   public name = "eip155";
@@ -45,6 +46,8 @@ class Eip155Provider implements IProvider {
         return parseInt(this.getDefaultChain()) as unknown as T;
       case "wallet_getCapabilities":
         return (await this.getCapabilities(args)) as unknown as T;
+      case "wallet_getCallsStatus":
+        return (await this.getCallStatus(args)) as unknown as T;
       default:
         break;
     }
@@ -197,6 +200,54 @@ class Eip155Provider implements IProvider {
       console.warn("Failed to update session with capabilities", error);
     }
     return capabilities;
+  }
+
+  private async getCallStatus(args: RequestParams) {
+    const session = this.client.session.get(args.topic);
+    const bundlerName = session.sessionProperties?.bundler_name;
+    if (bundlerName) {
+      const bundlerUrl = this.getBundlerUrl(args.chainId, bundlerName);
+      try {
+        return await this.getUserOperationReceipt(bundlerUrl, args);
+      } catch (error) {
+        console.warn("Failed to fetch call status from bundler", error, bundlerUrl);
+      }
+    }
+    const customUrl = session.sessionProperties?.bundler_url;
+    if (customUrl) {
+      try {
+        return await this.getUserOperationReceipt(customUrl, args);
+      } catch (error) {
+        console.warn("Failed to fetch call status from custom bundler", error, customUrl);
+      }
+    }
+
+    if (this.namespace.methods.includes(args.request.method)) {
+      return await this.client.request(args as EngineTypes.RequestParams);
+    }
+
+    throw new Error("Fetching call status not approved by the wallet.");
+  }
+
+  private async getUserOperationReceipt(bundlerUrl: string, args: RequestParams) {
+    const url = new URL(bundlerUrl);
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        formatJsonRpcRequest("eth_getUserOperationReceipt", [args.request.params?.[0]]),
+      ),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user operation receipt - ${response.status}`);
+    }
+    return await response.json();
+  }
+
+  private getBundlerUrl(cap2ChainId: string, bundlerName: string) {
+    return `${BUNDLER_URL}?projectId=${this.client.core.projectId}&chainId=${cap2ChainId}&bundler=${bundlerName}`;
   }
 }
 
