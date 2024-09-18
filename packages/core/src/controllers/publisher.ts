@@ -44,7 +44,18 @@ export class Publisher extends IPublisher {
     const prompt = opts?.prompt || false;
     const tag = opts?.tag || 0;
     const id = opts?.id || (getBigIntRpcId().toString() as any);
-    const params = { topic, message, opts: { ttl, relay, prompt, tag, id } };
+    const params = {
+      topic,
+      message,
+      opts: {
+        ttl,
+        relay,
+        prompt,
+        tag,
+        id,
+        attestation: opts?.attestation,
+      },
+    };
     const failedPublishMessage = `Failed to publish payload, please try again. id:${id} tag:${tag}`;
     const startPublish = Date.now();
     let result;
@@ -63,8 +74,8 @@ export class Publisher extends IPublisher {
 
         this.logger.trace({ id, attempts }, `publisher.publish - attempt ${attempts}`);
         const publish = await createExpiringPromise(
-          this.rpcPublish(topic, message, ttl, relay, prompt, tag, id).catch((e) =>
-            this.logger.warn(e),
+          this.rpcPublish(topic, message, ttl, relay, prompt, tag, id, opts?.attestation).catch(
+            (e) => this.logger.warn(e),
           ),
           this.publishTimeout,
           failedPublishMessage,
@@ -121,6 +132,7 @@ export class Publisher extends IPublisher {
     prompt?: boolean,
     tag?: number,
     id?: number,
+    attestation?: string,
   ) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.PublishParams> = {
@@ -131,6 +143,7 @@ export class Publisher extends IPublisher {
         ttl,
         prompt,
         tag,
+        attestation,
       },
       id,
     };

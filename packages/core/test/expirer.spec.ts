@@ -37,6 +37,7 @@ describe("Expirer", () => {
   it("should expire payload", async () => {
     const core = new Core(TEST_CORE_OPTIONS);
     await core.start();
+    await core.relayer.transportOpen();
     // confirm the expirer is empty
     expect(core.expirer.length).to.eq(0);
     // set a payload

@@ -379,6 +379,11 @@ export async function handleDeeplinkRedirect({
     const env = getEnvironment();
 
     if (env === ENV_MAP.browser) {
+      if (!getDocument()?.hasFocus()) {
+        console.warn("Document does not have focus, skipping deeplink.");
+        return;
+      }
+
       if (link.startsWith("https://") || link.startsWith("http://")) {
         window.open(link, "_blank", "noreferrer noopener");
       } else {
@@ -413,4 +418,30 @@ export async function getDeepLink(store: IKeyValueStorage, key: string) {
 
 export function getCommonValuesInArrays<T = string | number | boolean>(arr1: T[], arr2: T[]): T[] {
   return arr1.filter((value) => arr2.includes(value));
+}
+
+export function getSearchParamFromURL(url: string, param: any) {
+  const include = url.includes(param);
+  if (!include) return null;
+  const params = url.split(/([&,?,=])/);
+  const index = params.indexOf(param);
+  const value = params[index + 2];
+  return value;
+}
+
+export function uuidv4() {
+  if (typeof crypto !== "undefined" && crypto?.randomUUID) {
+    return crypto.randomUUID();
+  }
+
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/gu, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+
+    return v.toString(16);
+  });
+}
+
+export function isTestRun() {
+  return typeof process !== "undefined" && process.env.IS_VITEST === "true";
 }

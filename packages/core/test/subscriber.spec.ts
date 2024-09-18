@@ -25,7 +25,7 @@ describe("Subscriber", () => {
   beforeEach(async () => {
     core = new Core(TEST_CORE_OPTIONS);
     await core.start();
-
+    await core.relayer.transportOpen();
     relayer = core.relayer;
     subscriber = relayer.subscriber;
     subscriber.relayer.provider.request = () => Promise.resolve({} as any);
@@ -133,6 +133,7 @@ describe("Subscriber", () => {
     });
     it("calls `provider.request` with the expected request shape", async () => {
       await subscriber.subscribe(topic);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       expect(
         requestSpy.calledOnceWith(
           Sinon.match({
