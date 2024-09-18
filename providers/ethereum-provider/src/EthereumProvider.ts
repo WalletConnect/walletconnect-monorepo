@@ -140,7 +140,7 @@ export function buildNamespaces(params: NamespacesParams): {
   };
 
   // make a list of events and methods that require additional permissions
-  // so we know if we should to include the required chains in the optional namespace
+  // so we know if we should include the required chains in the optional namespace
   const eventsRequiringPermissions = events?.filter((event) => !REQUIRED_EVENTS.includes(event));
   const methodsRequiringPermissions = methods?.filter((event) => !REQUIRED_METHODS.includes(event));
 
@@ -190,7 +190,7 @@ type ArrayOneOrMore<T> = {
 } & Array<T>;
 
 /**
- * @param {number[]} chains - The Chains your app intents to use and the peer MUST support. If the peer does not support these chains, the connection will be rejected.
+ * @param {number[]} chains - The Chains your app intends to use and the peer MUST support. If the peer does not support these chains, the connection will be rejected.
  * @param {number[]} optionalChains - The Chains your app MAY attempt to use and the peer MAY support. If the peer does not support these chains, the connection will still be established.
  * @description either chains or optionalChains must be provided
  */
@@ -207,7 +207,7 @@ export type ChainsProps =
 export type EthereumProviderOptions = {
   projectId: string;
   /**
-   * @note Methods that your app intents to use and the peer MUST support. If the peer does not support these methods, the connection will be rejected.
+   * @note Methods that your app intends to use and the peer MUST support. If the peer does not support these methods, the connection will be rejected.
    * @default ["eth_sendTransaction", "personal_sign"]
    */
   methods?: string[];
