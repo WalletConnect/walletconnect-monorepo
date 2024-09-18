@@ -1,6 +1,6 @@
 import { generateChildLogger, Logger } from "@walletconnect/logger";
 import { ICore, IEventClient, EventClientTypes } from "@walletconnect/types";
-import { formatUA, isTestRun, uuidv4 } from "@walletconnect/utils";
+import { formatUA, isTestRun, uuidv4, getAppMetadata } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
   EVENTS_CLIENT_API_URL,
@@ -45,6 +45,7 @@ export class EventClient extends IEventClient {
       const initEvent = {
         eventId: uuidv4(),
         timestamp: Date.now(),
+        domain: this.getAppDomain(),
         props: {
           event: "INIT",
           type: "",
@@ -83,12 +84,12 @@ export class EventClient extends IEventClient {
     };
     const eventObj = {
       eventId,
-      bundleId,
       timestamp,
       props,
+      bundleId,
+      domain: this.getAppDomain(),
       ...this.setMethods(eventId),
     };
-
     if (this.telemetryEnabled) {
       this.events.set(eventId, eventObj);
       this.shouldPersist = true;
@@ -210,13 +211,21 @@ export class EventClient extends IEventClient {
   };
 
   private sendEvent = async (events: EventClientTypes.Event[]) => {
+    // if domain isn't available, set `sp` as `desktop` so data would be extracted on api side
+    const platform = this.getAppDomain() ? "" : "desktop";
     const response = await fetch(
-      `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}`,
+      `${EVENTS_CLIENT_API_URL}?projectId=${
+        this.core.projectId
+      }&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}${platform ? `&sp=${platform}` : ""}`,
       {
         method: "POST",
         body: JSON.stringify(events),
       },
     );
     return response;
+  };
+
+  private getAppDomain = () => {
+    return getAppMetadata().url;
   };
 }
