@@ -213,6 +213,15 @@ class Eip155Provider implements IProvider {
         console.warn("Failed to fetch call status from bundler", error, bundlerUrl);
       }
     }
+    const customUrl = session.sessionProperties?.bundler_url;
+    if (customUrl) {
+      try {
+        return await this.getUserOperationReceipt(customUrl, args);
+      } catch (error) {
+        console.warn("Failed to fetch call status from custom bundler", error, customUrl);
+      }
+    }
+
     if (this.namespace.methods.includes(args.request.method)) {
       return await this.client.request(args as EngineTypes.RequestParams);
     }
@@ -231,7 +240,9 @@ class Eip155Provider implements IProvider {
         formatJsonRpcRequest("eth_getUserOperationReceipt", [args.request.params?.[0]]),
       ),
     });
-
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user operation receipt - ${response.status}`);
+    }
     return await response.json();
   }
 

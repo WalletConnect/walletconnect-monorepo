@@ -573,7 +573,67 @@ describe("UniversalProvider", function () {
           }),
         ]);
       });
-      it("should get call status request to bundler when bundler url is provided", async () => {
+      it("should get call status request to bundler when custom bundler url is provided", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1"];
+        const customBundlerUrl = "https://custom-bundler.com";
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              eip155: {
+                chains,
+                methods: ["wallet_getCallsStatus"],
+                events,
+              },
+            },
+            optionalNamespaces: {
+              eip155: {
+                chains,
+                methods: ["wallet_getCallsStatus"],
+                events,
+              },
+            },
+            namespaces: {
+              eip155: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                chains,
+                methods: ["wallet_getCallsStatus"],
+                events,
+              },
+            },
+            sessionProperties: { bundler_url: customBundlerUrl },
+          },
+        );
+        const testResult = { result: "test result " };
+        // @ts-ignore
+        dapp.rpcProviders.eip155.getUserOperationReceipt = (bundlerUrl: string, args: any) => {
+          expect(bundlerUrl).to.eql(customBundlerUrl);
+          expect(args.request.method).to.eql("wallet_getCallsStatus");
+          return testResult;
+        };
+        await Promise.all([
+          new Promise<void>(async (resolve) => {
+            const result = await dapp.request({
+              method: "wallet_getCallsStatus",
+              params: ["test params"],
+            });
+            expect(result).to.eql(testResult);
+            resolve();
+          }),
+        ]);
+      });
+      it("should get call status request to bundler when bundler name is provided", async () => {
         const dapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "dapp",
