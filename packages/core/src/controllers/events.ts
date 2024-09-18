@@ -212,11 +212,9 @@ export class EventClient extends IEventClient {
 
   private sendEvent = async (events: EventClientTypes.Event[]) => {
     // if domain isn't available, set `sp` as `desktop` so data would be extracted on api side
-    const platform = this.getAppDomain() ? "" : "desktop";
+    const platform = this.getAppDomain() ? "" : "&sp=desktop";
     const response = await fetch(
-      `${EVENTS_CLIENT_API_URL}?projectId=${
-        this.core.projectId
-      }&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}${platform ? `&sp=${platform}` : ""}`,
+      `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}${platform}`,
       {
         method: "POST",
         body: JSON.stringify(events),
