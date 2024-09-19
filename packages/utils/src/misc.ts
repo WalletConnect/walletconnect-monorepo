@@ -9,7 +9,6 @@ import {
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
-import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 import * as qs from "query-string";
 
 // -- constants -----------------------------------------//
@@ -383,11 +382,11 @@ export async function handleDeeplinkRedirect({
         console.warn("Document does not have focus, skipping deeplink.");
         return;
       }
-
+      console.log("Opening deeplink", link);
       if (link.startsWith("https://") || link.startsWith("http://")) {
         window.open(link, "_blank", "noreferrer noopener");
       } else {
-        window.open(link, "_self", "noreferrer noopener");
+        window.open(link, "_blank", "noreferrer noopener");
       }
     } else if (env === ENV_MAP.reactNative) {
       // global.Linking is set by react-native-compat
@@ -402,11 +401,9 @@ export async function handleDeeplinkRedirect({
   }
 }
 
-export async function getDeepLink(store: IKeyValueStorage, key: string) {
+//@ts-ignore
+export async function getDeepLink(key: string) {
   try {
-    const deepLink = await store.getItem(key);
-    if (deepLink) return deepLink;
-
     // check localStorage as fallback
     if (!isBrowser()) return;
     return localStorage.getItem(key) as string;
