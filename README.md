@@ -42,4 +42,4 @@ sudo xcode-select --reset
 
 ## License
 
-Apache 2.0
+[Apache 2.0](https://github.com/WalletConnect/walletconnect-monorepo/blob/v2.0/LICENSE)
