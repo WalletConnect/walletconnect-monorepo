@@ -386,7 +386,7 @@ export async function handleDeeplinkRedirect({
       if (link.startsWith("https://") || link.startsWith("http://")) {
         window.open(link, "_blank", "noreferrer noopener");
       } else {
-        window.open(link, "_blank", "noreferrer noopener");
+        window.open(link, isTelegram() ? "_blank" : "_self", "noreferrer noopener");
       }
     } else if (env === ENV_MAP.reactNative) {
       // global.Linking is set by react-native-compat
@@ -441,4 +441,15 @@ export function uuidv4() {
 
 export function isTestRun() {
   return typeof process !== "undefined" && process.env.IS_VITEST === "true";
+}
+
+export function isTelegram() {
+  return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Boolean((window as any).TelegramWebviewProxy) ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Boolean((window as any).Telegram) ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Boolean((window as any).TelegramWebviewProxyProto)
+  );
 }
