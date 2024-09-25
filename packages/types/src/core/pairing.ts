@@ -101,6 +101,8 @@ export abstract class IPairing {
 
   // for either peer to disconnect a pairing
   public abstract disconnect(params: { topic: string }): Promise<void>;
+
+  public abstract formatUriFromPairing(pairing: PairingTypes.Struct): string;
 }
 
 export interface IPairingPrivate {
