@@ -84,4 +84,4 @@ export const EVENTS_STORAGE_CONTEXT = "event-client";
 
 export const EVENTS_STORAGE_CLEANUP_INTERVAL = 86400;
 
-export const EVENTS_CLIENT_API_URL = "https://pulse.walletconnect.com/batch";
+export const EVENTS_CLIENT_API_URL = "https://pulse.walletconnect.org/batch";
