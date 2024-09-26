@@ -1,26 +1,16 @@
 import { EventEmitter } from "events";
 
-import KeyValueStorage from "@walletconnect/keyvaluestorage";
 import { HeartBeat } from "@walletconnect/heartbeat";
+import KeyValueStorage from "@walletconnect/keyvaluestorage";
 import {
+  ChunkLoggerController,
   generateChildLogger,
+  generatePlatformLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
-  generatePlatformLogger,
-  ChunkLoggerController,
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
-import {
-  Crypto,
-  Relayer,
-  Pairing,
-  JsonRpcHistory,
-  Expirer,
-  Verify,
-  EchoClient,
-  EventClient,
-} from "./controllers";
 import {
   CORE_CONTEXT,
   CORE_DEFAULT,
@@ -32,6 +22,16 @@ import {
   WALLETCONNECT_CLIENT_ID,
   WALLETCONNECT_LINK_MODE_APPS,
 } from "./constants";
+import {
+  Crypto,
+  EchoClient,
+  EventClient,
+  Expirer,
+  JsonRpcHistory,
+  Pairing,
+  Relayer,
+  Verify,
+} from "./controllers";
 
 export class Core extends ICore {
   public readonly protocol = CORE_PROTOCOL;
