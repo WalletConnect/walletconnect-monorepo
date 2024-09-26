@@ -1,14 +1,14 @@
-import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   calcExpiry,
-  isExpired,
   formatRelayRpcUrl,
-  hasOverlap,
   formatUA,
   getSearchParamFromURL,
+  hasOverlap,
+  isExpired,
 } from "../src";
 
-const RELAY_URL = "wss://relay.walletconnect.com";
+const RELAY_URL = "wss://relay.walletconnect.org";
 
 const PROJECT_ID = "27e484dcd9e3efcfd25a83a78777cdf1";
 
