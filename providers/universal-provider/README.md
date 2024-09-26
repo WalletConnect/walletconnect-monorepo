@@ -36,7 +36,8 @@ await provider.connect({
       chains: ["eip155:80001"],
       events: ["chainChanged", "accountsChanged"],
       rpcMap: {
-        80001: "https://rpc.walletconnect.com?chainId=eip155:80001&projectId=<your walletconnect project id>",
+        80001:
+          "https://rpc.walletconnect.org?chainId=eip155:80001&projectId=<your walletconnect project id>",
       },
     },
     pairingTopic: "<123...topic>", // optional topic to connect to
@@ -122,6 +123,5 @@ const updatedDefaultChainId = await web3.eth.getChainId();
 - The rest of the methods of the class are very similar, mainly centering around
   httpProvider and for the most part will be 90% similar to other providers
   given similar structure of chainId. For example `eip155:1` or
-  `solana:mainnetBeta`. 
-- Export provider under `providers/universal-provider/src/providers/index.ts` 
-
+  `solana:mainnetBeta`.
+- Export provider under `providers/universal-provider/src/providers/index.ts`
