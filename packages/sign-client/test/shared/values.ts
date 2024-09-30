@@ -1,4 +1,4 @@
-import { SignClientTypes, RelayerTypes } from "@walletconnect/types";
+import { RelayerTypes, SignClientTypes } from "@walletconnect/types";
 
 export const PACKAGE_NAME = "sign-client";
 

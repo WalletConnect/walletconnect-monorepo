@@ -10,7 +10,7 @@ export const SIGN_CLIENT_DEFAULT = {
   name: SIGN_CLIENT_CONTEXT,
   logger: "error",
   controller: false,
-  relayUrl: "wss://relay.walletconnect.com",
+  relayUrl: "wss://relay.walletconnect.org",
 };
 
 export const SIGN_CLIENT_EVENTS: Record<SignClientTypes.Event, SignClientTypes.Event> = {
