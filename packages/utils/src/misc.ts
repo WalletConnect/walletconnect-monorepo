@@ -368,12 +368,17 @@ export async function handleDeeplinkRedirect({
 
     const json = typeof wcDeepLink === "string" ? JSON.parse(wcDeepLink) : wcDeepLink;
     let deeplink = json?.href;
-
     if (typeof deeplink !== "string") return;
 
+    const payload = `requestId=${id}&sessionTopic=${topic}`;
     if (deeplink.endsWith("/")) deeplink = deeplink.slice(0, -1);
-
-    const link = `${deeplink}/wc?requestId=${id}&sessionTopic=${topic}`;
+    let link = `${deeplink}`;
+    if (deeplink.startsWith("https://t.me")) {
+      const startApp = deeplink.includes("?") ? "&startapp=" : "?startapp=";
+      link = `${link}${startApp}${toBase64(payload, true)}`;
+    } else {
+      link = `${link}/wc?${payload}`;
+    }
 
     const env = getEnvironment();
 
@@ -453,4 +458,13 @@ export function isTelegram() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Boolean((window as any).TelegramWebviewProxyProto)
   );
+}
+
+export function toBase64(input: string, removePadding = false): string {
+  const encoded = Buffer.from(input).toString("base64");
+  return removePadding ? encoded.replace(/[=]/g, "") : encoded;
+}
+
+export function fromBase64(encodedString: string): string {
+  return Buffer.from(encodedString, "base64").toString("utf-8");
 }
