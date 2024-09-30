@@ -451,12 +451,13 @@ export function isTestRun() {
 
 export function isTelegram() {
   return (
+    typeof window !== "undefined" &&
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Boolean((window as any).TelegramWebviewProxy) ||
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Boolean((window as any).Telegram) ||
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Boolean((window as any).TelegramWebviewProxyProto)
+    (Boolean((window as any).TelegramWebviewProxy) ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Boolean((window as any).Telegram) ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Boolean((window as any).TelegramWebviewProxyProto))
   );
 }
 
