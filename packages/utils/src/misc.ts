@@ -387,8 +387,7 @@ export async function handleDeeplinkRedirect({
         console.warn("Document does not have focus, skipping deeplink.");
         return;
       }
-      // eslint-disable-next-line no-console
-      console.log("Opening deeplink", link);
+
       if (link.startsWith("https://") || link.startsWith("http://")) {
         window.open(link, "_blank", "noreferrer noopener");
       } else {
