@@ -407,19 +407,18 @@ export async function handleDeeplinkRedirect({
   }
 }
 
-//@ts-ignore
 export async function getDeepLink(storage: IKeyValueStorage, key: string) {
+  let link: string | undefined = "";
   try {
-    let link: string | undefined = "";
     if (isBrowser()) {
       link = localStorage.getItem(key) as string;
     }
     link = await storage.getItem(key);
-    return link;
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);
   }
+  return link;
 }
 
 export function getCommonValuesInArrays<T = string | number | boolean>(arr1: T[], arr2: T[]): T[] {
