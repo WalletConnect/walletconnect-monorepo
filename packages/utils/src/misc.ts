@@ -368,19 +368,9 @@ export async function handleDeeplinkRedirect({
     if (!wcDeepLink) return;
 
     const json = typeof wcDeepLink === "string" ? JSON.parse(wcDeepLink) : wcDeepLink;
-    let deeplink = json?.href;
+    const deeplink = json?.href;
     if (typeof deeplink !== "string") return;
-
-    const payload = `requestId=${id}&sessionTopic=${topic}`;
-    if (deeplink.endsWith("/")) deeplink = deeplink.slice(0, -1);
-    let link = `${deeplink}`;
-    if (deeplink.startsWith("https://t.me")) {
-      const startApp = deeplink.includes("?") ? "&startapp=" : "?startapp=";
-      link = `${link}${startApp}${toBase64(payload, true)}`;
-    } else {
-      link = `${link}/wc?${payload}`;
-    }
-
+    const link = formatDeeplinkUrl(deeplink, id, topic);
     const env = getEnvironment();
 
     if (env === ENV_MAP.browser) {
@@ -405,6 +395,19 @@ export async function handleDeeplinkRedirect({
     // eslint-disable-next-line no-console
     console.error(err);
   }
+}
+
+export function formatDeeplinkUrl(deeplink: string, requestId: number, sessionTopic: string) {
+  const payload = `requestId=${requestId}&sessionTopic=${sessionTopic}`;
+  if (deeplink.endsWith("/")) deeplink = deeplink.slice(0, -1);
+  let link = `${deeplink}`;
+  if (deeplink.startsWith("https://t.me")) {
+    const startApp = deeplink.includes("?") ? "&startapp=" : "?startapp=";
+    link = `${link}${startApp}${toBase64(payload, true)}`;
+  } else {
+    link = `${link}/wc?${payload}`;
+  }
+  return link;
 }
 
 export async function getDeepLink(storage: IKeyValueStorage, key: string) {
