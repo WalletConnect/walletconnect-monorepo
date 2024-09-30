@@ -80,16 +80,21 @@ export class Verify extends IVerify {
         iframe.addEventListener("error", abortListener, { signal: this.abortController.signal });
         const listener = (event: MessageEvent) => {
           if (!event.data) return;
-          const data = JSON.parse(event.data);
-          if (data.type === "verify_attestation") {
-            const decoded = decodeJWT(data.attestation) as unknown as { payload: JwkPayload };
-            if (decoded.payload.id !== id) return;
+          if (typeof event.data !== "string") return;
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "verify_attestation") {
+              const decoded = decodeJWT(data.attestation) as unknown as { payload: JwkPayload };
+              if (decoded.payload.id !== id) return;
 
-            clearInterval(abortTimeout);
-            document.body.removeChild(iframe);
-            this.abortController.signal.removeEventListener("abort", abortListener);
-            window.removeEventListener("message", listener);
-            resolve(data.attestation === null ? "" : data.attestation);
+              clearInterval(abortTimeout);
+              document.body.removeChild(iframe);
+              this.abortController.signal.removeEventListener("abort", abortListener);
+              window.removeEventListener("message", listener);
+              resolve(data.attestation === null ? "" : data.attestation);
+            }
+          } catch (e) {
+            this.logger.warn(e);
           }
         };
         document.body.appendChild(iframe);
