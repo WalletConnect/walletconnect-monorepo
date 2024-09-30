@@ -412,6 +412,7 @@ export async function getDeepLink(storage: IKeyValueStorage, key: string) {
   try {
     if (isBrowser()) {
       link = localStorage.getItem(key) as string;
+      if (link) return link;
     }
     link = await storage.getItem(key);
   } catch (err) {
