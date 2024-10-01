@@ -7,7 +7,7 @@ import {
   getAccountsChains,
 } from "./namespaces";
 import { getSdkError, getInternalError } from "./errors";
-import { hasOverlap } from "./misc";
+import { fromBase64, hasOverlap } from "./misc";
 import { getChainsFromNamespace } from "./caip";
 
 export type ErrorObject = { message: string; code: number } | null;
@@ -91,14 +91,23 @@ export function isValidAccountId(value: any) {
 }
 
 export function isValidUrl(value: any) {
-  if (isValidString(value, false)) {
+  function validateUrl(blob: string) {
     try {
-      const url = new URL(value);
+      const url = new URL(blob);
       return typeof url !== "undefined";
     } catch (e) {
       return false;
     }
   }
+  try {
+    if (isValidString(value, false)) {
+      const isValid = validateUrl(value);
+      if (isValid) return true;
+
+      const decoded = fromBase64(value);
+      return validateUrl(decoded);
+    }
+  } catch (e) {}
   return false;
 }
 
