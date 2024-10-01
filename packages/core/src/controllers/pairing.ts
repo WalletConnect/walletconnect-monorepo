@@ -96,7 +96,7 @@ export class Pairing implements IPairing {
     const topic = await this.core.crypto.setSymKey(symKey);
     const expiry = calcExpiry(FIVE_MINUTES);
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
-    const pairing = { topic, expiry, relay, active: false };
+    const pairing = { topic, expiry, relay, active: false, methods: params?.methods };
     const uri = formatUri({
       protocol: this.core.protocol,
       version: this.core.version,
@@ -106,6 +106,7 @@ export class Pairing implements IPairing {
       expiryTimestamp: expiry,
       methods: params?.methods,
     });
+    this.events.emit(PAIRING_EVENTS.create, pairing);
     this.core.expirer.set(topic, expiry);
     await this.pairings.set(topic, pairing);
     await this.core.relayer.subscribe(topic, { transportType: params?.transportType });
@@ -229,6 +230,21 @@ export class Pairing implements IPairing {
       await this.sendRequest(topic, "wc_pairingDelete", getSdkError("USER_DISCONNECTED"));
       await this.deletePairing(topic);
     }
+  };
+
+  public formatUriFromPairing: IPairing["formatUriFromPairing"] = (pairing) => {
+    this.isInitialized();
+    const { topic, relay, expiry, methods } = pairing;
+    const symKey = this.core.crypto.keychain.get(topic);
+    return formatUri({
+      protocol: this.core.protocol,
+      version: this.core.version,
+      topic,
+      symKey,
+      relay,
+      expiryTimestamp: expiry,
+      methods,
+    });
   };
 
   // ---------- Private Helpers ----------------------------------------------- //

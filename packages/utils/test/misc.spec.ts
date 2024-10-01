@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   calcExpiry,
+  formatDeeplinkUrl,
   formatRelayRpcUrl,
   formatUA,
   getSearchParamFromURL,
   hasOverlap,
   isExpired,
+  toBase64,
 } from "../src";
 
 const RELAY_URL = "wss://relay.walletconnect.org";
@@ -119,6 +121,35 @@ describe("Misc", () => {
         vi.setSystemTime(new Date(expiry * 1000));
         expect(isExpired(expiry)).to.be.true;
       });
+    });
+  });
+  describe("deep links", () => {
+    it("should format universal link", () => {
+      const deepLink = "https://example.com";
+      const requestId = 123;
+      const sessionTopic = "randomSessionTopic";
+      const expectedDeepLink = `${deepLink}/wc?requestId=${requestId}&sessionTopic=${sessionTopic}`;
+      const formatted = formatDeeplinkUrl(deepLink, requestId, sessionTopic);
+      expect(formatted).to.eql(expectedDeepLink);
+    });
+    it("should format deep link", () => {
+      const deepLink = "trust://";
+      const requestId = 123;
+      const sessionTopic = "randomSessionTopic";
+      const expectedDeepLink = `${deepLink}wc?requestId=${requestId}&sessionTopic=${sessionTopic}`;
+      const formatted = formatDeeplinkUrl(deepLink, requestId, sessionTopic);
+      expect(formatted).to.eql(expectedDeepLink);
+    });
+    it("should format telegram universal link", async () => {
+      const deepLink = "https://t.me";
+      const requestId = 123;
+      const sessionTopic = "randomSessionTopic";
+      const partToEncode = `requestId=${requestId}&sessionTopic=${sessionTopic}`;
+      const expectedDeepLink = `${deepLink}?startapp=${toBase64(partToEncode, true)}`;
+      const formatted = formatDeeplinkUrl(deepLink, requestId, sessionTopic);
+      expect(formatted).to.eql(expectedDeepLink);
+      const decoded = atob(formatted.split("startapp=")[1]);
+      expect(decoded).to.eql(partToEncode);
     });
   });
 });

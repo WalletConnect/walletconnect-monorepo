@@ -141,6 +141,22 @@ describe("Pairing", () => {
     });
   });
 
+  describe("formatUriFromPairing", () => {
+    it("should generate pairing uri from pairing", async () => {
+      let generatedUri = "";
+      coreA.pairing.events.once("pairing_create", (payload) => {
+        generatedUri = coreA.pairing.formatUriFromPairing(payload);
+      });
+      const { uri } = await coreA.pairing.create({
+        methods: ["eth_sendTransaction", "personal_sign"],
+      });
+      expect(generatedUri).to.be.eq(uri);
+      const parsedUri = parseUri(uri);
+      const parsedGeneratedUri = parseUri(generatedUri);
+      expect(parsedGeneratedUri).to.deep.equal(parsedUri);
+    });
+  });
+
   describe("ping", () => {
     it("clients can ping each other", async () => {
       const { uri, topic } = await coreA.pairing.create();

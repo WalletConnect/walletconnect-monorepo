@@ -368,14 +368,9 @@ export async function handleDeeplinkRedirect({
     if (!wcDeepLink) return;
 
     const json = typeof wcDeepLink === "string" ? JSON.parse(wcDeepLink) : wcDeepLink;
-    let deeplink = json?.href;
-
+    const deeplink = json?.href;
     if (typeof deeplink !== "string") return;
-
-    if (deeplink.endsWith("/")) deeplink = deeplink.slice(0, -1);
-
-    const link = `${deeplink}/wc?requestId=${id}&sessionTopic=${topic}`;
-
+    const link = formatDeeplinkUrl(deeplink, id, topic);
     const env = getEnvironment();
 
     if (env === ENV_MAP.browser) {
@@ -387,7 +382,7 @@ export async function handleDeeplinkRedirect({
       if (link.startsWith("https://") || link.startsWith("http://")) {
         window.open(link, "_blank", "noreferrer noopener");
       } else {
-        window.open(link, "_self", "noreferrer noopener");
+        window.open(link, isTelegram() ? "_blank" : "_self", "noreferrer noopener");
       }
     } else if (env === ENV_MAP.reactNative) {
       // global.Linking is set by react-native-compat
@@ -402,18 +397,32 @@ export async function handleDeeplinkRedirect({
   }
 }
 
-export async function getDeepLink(store: IKeyValueStorage, key: string) {
-  try {
-    const deepLink = await store.getItem(key);
-    if (deepLink) return deepLink;
+export function formatDeeplinkUrl(deeplink: string, requestId: number, sessionTopic: string) {
+  const payload = `requestId=${requestId}&sessionTopic=${sessionTopic}`;
+  if (deeplink.endsWith("/")) deeplink = deeplink.slice(0, -1);
+  let link = `${deeplink}`;
+  if (deeplink.startsWith("https://t.me")) {
+    const startApp = deeplink.includes("?") ? "&startapp=" : "?startapp=";
+    link = `${link}${startApp}${toBase64(payload, true)}`;
+  } else {
+    link = `${link}/wc?${payload}`;
+  }
+  return link;
+}
 
-    // check localStorage as fallback
-    if (!isBrowser()) return;
-    return localStorage.getItem(key) as string;
+export async function getDeepLink(storage: IKeyValueStorage, key: string) {
+  let link: string | undefined = "";
+  try {
+    if (isBrowser()) {
+      link = localStorage.getItem(key) as string;
+      if (link) return link;
+    }
+    link = await storage.getItem(key);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);
   }
+  return link;
 }
 
 export function getCommonValuesInArrays<T = string | number | boolean>(arr1: T[], arr2: T[]): T[] {
@@ -444,4 +453,25 @@ export function uuidv4() {
 
 export function isTestRun() {
   return typeof process !== "undefined" && process.env.IS_VITEST === "true";
+}
+
+export function isTelegram() {
+  return (
+    typeof window !== "undefined" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (Boolean((window as any).TelegramWebviewProxy) ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Boolean((window as any).Telegram) ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Boolean((window as any).TelegramWebviewProxyProto))
+  );
+}
+
+export function toBase64(input: string, removePadding = false): string {
+  const encoded = Buffer.from(input).toString("base64");
+  return removePadding ? encoded.replace(/[=]/g, "") : encoded;
+}
+
+export function fromBase64(encodedString: string): string {
+  return Buffer.from(encodedString, "base64").toString("utf-8");
 }
