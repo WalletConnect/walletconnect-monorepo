@@ -1,4 +1,4 @@
-import { expect, describe, it, beforeEach, afterEach } from "vitest";
+import { expect, describe, it, beforeEach, afterEach, vi } from "vitest";
 import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 
@@ -162,6 +162,23 @@ describe("Relayer", () => {
       await Promise.all([...subscribePromises]);
       // expect the number of listeners to be the same as before subscribing to confirm proper cleanup
       expect(subscriber.events.listenerCount(SUBSCRIBER_EVENTS.created)).to.eq(startNumListeners);
+    });
+
+    it("should throw when subscribe reaches a publish timeout", async () => {
+      await relayer.transportOpen();
+      await relayer.toEstablishConnection();
+      relayer.subscriber.subscribeTimeout = 5_000;
+      relayer.request = () => {
+        return new Promise<void>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error("Subscription timeout"));
+          }, 100_000);
+        });
+      };
+      const topic = generateRandomBytes32();
+      await expect(relayer.subscribe(topic)).rejects.toThrow(
+        `Subscribing to ${topic} failed, please try again`,
+      );
     });
 
     it("should be able to resubscribe on topic that already exists", async () => {
