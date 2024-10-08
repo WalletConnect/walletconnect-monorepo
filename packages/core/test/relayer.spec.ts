@@ -125,16 +125,20 @@ describe("Relayer", () => {
         projectId: TEST_CORE_OPTIONS.projectId,
       });
       await relayer.init();
+      await relayer.transportOpen();
     });
     afterEach(async () => {
       await disconnectSocket(relayer);
     });
 
     it("returns the id provided by calling `subscriber.subscribe` with the passed topic", async () => {
-      const spy = Sinon.spy((topic) => {
-        relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic });
-        return topic;
-      });
+      const spy = Sinon.spy(
+        (topic) =>
+          new Promise((resolve) => {
+            relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic });
+            resolve(topic);
+          }),
+      );
       relayer.subscriber.subscribe = spy;
 
       const testTopic = "abc123";
@@ -149,10 +153,13 @@ describe("Relayer", () => {
     });
 
     it("should subscribe multiple topics", async () => {
-      const spy = Sinon.spy((topic) => {
-        relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic });
-        return topic;
-      });
+      const spy = Sinon.spy(
+        (topic) =>
+          new Promise((resolve) => {
+            relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic });
+            resolve(topic);
+          }),
+      );
       relayer.subscriber.subscribe = spy;
       const subscriber = relayer.subscriber as ISubscriber;
       // record the number of listeners before subscribing
