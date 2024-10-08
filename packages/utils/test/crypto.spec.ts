@@ -1,6 +1,9 @@
 import { expect, describe, it } from "vitest";
-import { toString } from "uint8arrays";
+import { toString, fromString } from "uint8arrays";
 import { safeJsonStringify } from "@walletconnect/safe-json";
+import * as x25519 from "@stablelib/x25519";
+import { x25519 as noble } from "@noble/curves/ed25519";
+import Sinon from "sinon";
 
 import {
   BASE16,
@@ -55,13 +58,56 @@ const TEST_ENCODED_TYPE_2 =
 const TEST_HASHED_MESSAGE = "15112289b5b794e68d1ea3cd91330db55582a37d0596f7b99ea8becdf9d10496";
 
 describe("Crypto", () => {
+  it("generateRandomBytes32", () => {
+    const bytes = generateRandomBytes32();
+    expect(bytes).to.not.be.undefined;
+    expect(bytes.length).to.eql(64); // hex
+  });
   it("generateKeyPair", () => {
     const keyPair = generateKeyPair();
     expect(keyPair).to.not.be.undefined;
     expect(keyPair.privateKey).to.not.be.undefined;
     expect(keyPair.publicKey).to.not.be.undefined;
+    expect(keyPair.privateKey.length).to.eql(64);
+    expect(keyPair.publicKey.length).to.eql(64);
   });
-
+  it("generateKeyPair (cross-test)", () => {
+    // Since pairs generated randomly, we cannot test them, only reasonable thing to test is
+    // interoperability between old library and new.
+    const keyPair = generateKeyPair();
+    const stableKeyPair = x25519.generateKeyPair();
+    const stablePrivateKey = toString(stableKeyPair.secretKey, BASE16);
+    const stablePublicKey = toString(stableKeyPair.publicKey, BASE16);
+    const sharedKeyA = x25519.sharedKey(
+      fromString(keyPair.privateKey, BASE16),
+      fromString(stablePublicKey, BASE16),
+      true,
+    );
+    const sharedKeyB = x25519.sharedKey(
+      fromString(stablePrivateKey, BASE16),
+      fromString(keyPair.publicKey, BASE16),
+      true,
+    );
+    expect(sharedKeyA).to.eql(sharedKeyB);
+  });
+  it("generateKeyPair (same random)", () => {
+    // Check if returns same key if random is same
+    const random = new Uint8Array(32).fill(1);
+    const randomValuesStub = Sinon.stub(crypto, "getRandomValues").returns(random);
+    const stableKeyPair = x25519.generateKeyPair({
+      isAvailable: true,
+      randomBytes(length: number) {
+        return new Uint8Array(length).fill(1);
+      },
+    });
+    const stablePrivateKey = toString(stableKeyPair.secretKey, BASE16);
+    const stablePublicKey = toString(stableKeyPair.publicKey, BASE16);
+    const keyPair = generateKeyPair();
+    expect(keyPair.privateKey).to.eql(stablePrivateKey);
+    expect(keyPair.publicKey).to.eql(stablePublicKey);
+    expect(randomValuesStub.calledOnce).toBe(true);
+    randomValuesStub.restore();
+  });
   it("deriveSymKey", () => {
     const symKeyA = deriveSymKey(TEST_SELF.privateKey, TEST_PEER.publicKey);
     expect(symKeyA).to.eql(TEST_SYM_KEY);

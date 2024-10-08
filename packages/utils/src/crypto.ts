@@ -1,8 +1,8 @@
-import { ChaCha20Poly1305 } from "@stablelib/chacha20poly1305";
-import { HKDF } from "@stablelib/hkdf";
-import { randomBytes } from "@stablelib/random";
-import { hash, SHA256 } from "@stablelib/sha256";
-import * as x25519 from "@stablelib/x25519";
+import { chacha20poly1305 } from "@noble/ciphers/chacha";
+import { hkdf } from "@noble/hashes/hkdf";
+import { randomBytes } from "@noble/hashes/utils";
+import { sha256 } from "@noble/hashes/sha256";
+import { x25519 } from "@noble/curves/ed25519";
 import { CryptoTypes } from "@walletconnect/types";
 import { concat, fromString, toString } from "uint8arrays";
 import { ec as EC } from "elliptic";
@@ -33,10 +33,11 @@ const IV_LENGTH = 12;
 const KEY_LENGTH = 32;
 
 export function generateKeyPair(): CryptoTypes.KeyPair {
-  const keyPair = x25519.generateKeyPair();
+  const privateKey = x25519.utils.randomPrivateKey();
+  const publicKey = x25519.getPublicKey(privateKey);
   return {
-    privateKey: toString(keyPair.secretKey, BASE16),
-    publicKey: toString(keyPair.publicKey, BASE16),
+    privateKey: toString(privateKey, BASE16),
+    publicKey: toString(publicKey, BASE16),
   };
 }
 
@@ -46,23 +47,21 @@ export function generateRandomBytes32(): string {
 }
 
 export function deriveSymKey(privateKeyA: string, publicKeyB: string): string {
-  const sharedKey = x25519.sharedKey(
+  const sharedKey = x25519.getSharedSecret(
     fromString(privateKeyA, BASE16),
     fromString(publicKeyB, BASE16),
-    true,
   );
-  const hkdf = new HKDF(SHA256, sharedKey);
-  const symKey = hkdf.expand(KEY_LENGTH);
+  const symKey = hkdf(sha256, sharedKey, undefined, undefined, KEY_LENGTH);
   return toString(symKey, BASE16);
 }
 
 export function hashKey(key: string): string {
-  const result = hash(fromString(key, BASE16));
+  const result = sha256(fromString(key, BASE16));
   return toString(result, BASE16);
 }
 
 export function hashMessage(message: string): string {
-  const result = hash(fromString(message, UTF8));
+  const result = sha256(fromString(message, UTF8));
   return toString(result, BASE16);
 }
 
@@ -86,9 +85,19 @@ export function encrypt(params: CryptoTypes.EncryptParams): string {
 
   const iv =
     typeof params.iv !== "undefined" ? fromString(params.iv, BASE16) : randomBytes(IV_LENGTH);
-  const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
-  const sealed = box.seal(iv, fromString(params.message, UTF8));
-  return serialize({ type, sealed, iv, senderPublicKey, encoding: params.encoding });
+  const key = fromString(params.symKey, BASE16);
+  const box = chacha20poly1305(key, iv);
+  const sealed = box.encrypt(fromString(params.message, UTF8));
+  return serialize({ type, sealed, iv, senderPublicKey });
+}
+
+export function decrypt(params: CryptoTypes.DecryptParams): string {
+  const key = fromString(params.symKey, BASE16);
+  const { sealed, iv } = deserialize(params);
+  const box = chacha20poly1305(key, iv);
+  const message = box.decrypt(sealed);
+  if (message === null) throw new Error("Failed to decrypt");
+  return toString(message, UTF8);
 }
 
 export function encodeTypeTwoEnvelope(
@@ -100,14 +109,6 @@ export function encodeTypeTwoEnvelope(
   const iv = randomBytes(IV_LENGTH);
   const sealed = fromString(message, UTF8);
   return serialize({ type, sealed, iv, encoding });
-}
-
-export function decrypt(params: CryptoTypes.DecryptParams): string {
-  const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
-  const { sealed, iv } = deserialize({ encoded: params.encoded, encoding: params?.encoding });
-  const message = box.open(iv, sealed);
-  if (message === null) throw new Error("Failed to decrypt");
-  return toString(message, UTF8);
 }
 
 export function decodeTypeTwoEnvelope(
@@ -253,13 +254,12 @@ export function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
   // Create the signing input
   const signingInput = `${headerBase64Url}.${payloadBase64Url}`;
 
-  const sha256 = new SHA256();
-  const buffer = sha256.update(Buffer.from(signingInput)).digest();
+  const buffer = sha256(signingInput);
 
   const key = getCryptoKeyFromKeyData(keyData);
 
   // Convert the hash to hex format
-  const hashHex = Buffer.from(buffer).toString("hex");
+  const hashHex = toString(buffer, BASE16);
 
   // Verify the signature
   const isValid = key.verify(hashHex, { r, s });
