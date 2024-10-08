@@ -224,7 +224,6 @@ export class Subscriber extends ISubscriber {
     relay: RelayerTypes.ProtocolOptions,
     opts?: RelayerTypes.SubscribeOptions,
   ) {
-    
     if (opts?.transportType === TRANSPORT_TYPES.relay) {
       await this.restartToComplete();
     }
@@ -248,18 +247,18 @@ export class Subscriber extends ISubscriber {
         }, toMiliseconds(ONE_SECOND));
         return subId;
       }
-      const subscribe = await createExpiringPromise(
+      const subscribe = createExpiringPromise(
         this.relayer.request(request).catch((e) => this.logger.warn(e)),
         this.subscribeTimeout,
+        `Subscribing to ${topic} failed, please try again`,
       );
       const result = await subscribe;
-
       // return null to indicate that the subscription failed
       return result ? subId : null;
     } catch (err) {
       this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
-      if(opts?.internal?.throwOnFailedPublish) {
+      if (opts?.internal?.throwOnFailedPublish) {
         throw err;
       }
     }
