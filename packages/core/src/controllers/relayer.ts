@@ -182,7 +182,12 @@ export class Relayer extends IRelayer {
         this.subscriber.on(SUBSCRIBER_EVENTS.created, onSubCreated);
       }),
       new Promise<void>(async (resolve) => {
-        const result = await this.subscriber.subscribe(topic, opts);
+        const result = await this.subscriber.subscribe(topic, {
+          internal: {
+            throwOnFailedPublish: true,
+          },
+          ...opts,
+        });
         id = result || id;
         resolve();
       }),
