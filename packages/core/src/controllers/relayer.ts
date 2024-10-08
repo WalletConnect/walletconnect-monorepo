@@ -167,6 +167,12 @@ export class Relayer extends IRelayer {
     if (opts?.transportType === "relay") {
       await this.toEstablishConnection();
     }
+    // throw unless explicitly set to false
+    const shouldThrowOnFailure =
+      typeof opts?.internal?.throwOnFailedPublish === "undefined"
+        ? true
+        : opts?.internal?.throwOnFailedPublish;
+
     let id = this.subscriber.topicMap.get(topic)?.[0] || "";
     let resolvePromise: () => void;
     const onSubCreated = (subscription: SubscriberTypes.Active) => {
@@ -181,8 +187,19 @@ export class Relayer extends IRelayer {
         resolvePromise = resolve;
         this.subscriber.on(SUBSCRIBER_EVENTS.created, onSubCreated);
       }),
-      new Promise<void>(async (resolve) => {
-        const result = await this.subscriber.subscribe(topic, opts);
+      new Promise<void>(async (resolve, reject) => {
+        const result = await this.subscriber
+          .subscribe(topic, {
+            internal: {
+              throwOnFailedPublish: shouldThrowOnFailure,
+            },
+            ...opts,
+          })
+          .catch((error) => {
+            if (shouldThrowOnFailure) {
+              reject(error);
+            }
+          });
         id = result || id;
         resolve();
       }),
