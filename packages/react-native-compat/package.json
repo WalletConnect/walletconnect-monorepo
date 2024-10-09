@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/react-native-compat",
   "description": "Shims for WalletConnect Protocol in React Native Projects",
-  "version": "2.17.0",
+  "version": "2.17.1",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -44,8 +44,8 @@
     "@react-native-async-storage/async-storage": "*",
     "@react-native-community/netinfo": "*",
     "expo-application": "*",
-    "react-native-get-random-values": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "react-native-get-random-values": "*"
   },
   "peerDependenciesMeta": {
     "expo-application": {
