@@ -236,6 +236,7 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
+    const shouldThrow = opts?.internal?.throwOnFailedPublish;
     try {
       const subId = hashMessage(topic + this.clientId);
       // in link mode, allow the app to update its network state (i.e. active airplane mode) with small delay before attempting to subscribe
@@ -253,12 +254,15 @@ export class Subscriber extends ISubscriber {
         `Subscribing to ${topic} failed, please try again`,
       );
       const result = await subscribe;
+      if (!result && shouldThrow) {
+        throw new Error(`Subscribing to ${topic} failed, please try again`);
+      }
       // return null to indicate that the subscription failed
       return result ? subId : null;
     } catch (err) {
       this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
-      if (opts?.internal?.throwOnFailedPublish) {
+      if (shouldThrow) {
         throw err;
       }
     }

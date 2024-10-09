@@ -188,6 +188,21 @@ describe("Relayer", () => {
       );
     });
 
+    it("should throw when subscribe publish fails", async () => {
+      await relayer.transportOpen();
+      await relayer.toEstablishConnection();
+      relayer.subscriber.subscribeTimeout = 5_000;
+      relayer.request = () => {
+        return new Promise<void>((resolve) => {
+          resolve();
+        });
+      };
+      const topic = generateRandomBytes32();
+      await expect(relayer.subscribe(topic)).rejects.toThrow(
+        `Subscribing to ${topic} failed, please try again`,
+      );
+    });
+
     it("should be able to resubscribe on topic that already exists", async () => {
       const topic = generateRandomBytes32();
       const id = await relayer.subscribe(topic);
