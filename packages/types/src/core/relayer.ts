@@ -24,8 +24,14 @@ export declare namespace RelayerTypes {
     attestation?: string;
   }
 
+  export type TransportType = "relay" | "link_mode";
+
   export interface SubscribeOptions {
-    relay: ProtocolOptions;
+    relay?: ProtocolOptions;
+    transportType?: TransportType;
+    internal?: {
+      throwOnFailedPublish?: boolean;
+    };
   }
 
   export interface UnsubscribeOptions {
@@ -44,6 +50,7 @@ export declare namespace RelayerTypes {
     topic: string;
     message: string;
     publishedAt: number;
+    transportType?: TransportType;
     attestation?: string;
   }
 
@@ -74,6 +81,10 @@ export interface RelayerClientMetadata {
 }
 
 export abstract class IRelayer extends IEvents {
+  public abstract protocol: string;
+
+  public abstract version: number;
+
   public abstract core: ICore;
 
   public abstract logger: Logger;
@@ -121,4 +132,8 @@ export abstract class IRelayer extends IEvents {
   public abstract restartTransport(relayUrl?: string): Promise<void>;
   public abstract confirmOnlineStateOrThrow(): Promise<void>;
   public abstract handleBatchMessageEvents(messages: RelayerTypes.MessageEvent[]): Promise<void>;
+  public abstract onLinkMessageEvent(
+    messageEvent: RelayerTypes.MessageEvent,
+    opts?: { sessionExists?: boolean },
+  ): Promise<void>;
 }

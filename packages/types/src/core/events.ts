@@ -30,6 +30,8 @@ export abstract class IEventClient {
 
   constructor(public core: ICore, public logger: Logger, public telemetryEnabled: boolean) {}
 
+  public abstract init(): Promise<void>;
+
   public abstract createEvent(params: {
     event?: "ERROR";
     type?: string;

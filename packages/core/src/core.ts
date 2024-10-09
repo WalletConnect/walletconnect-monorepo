@@ -1,26 +1,16 @@
 import { EventEmitter } from "events";
 
-import KeyValueStorage from "@walletconnect/keyvaluestorage";
 import { HeartBeat } from "@walletconnect/heartbeat";
+import KeyValueStorage from "@walletconnect/keyvaluestorage";
 import {
+  ChunkLoggerController,
   generateChildLogger,
+  generatePlatformLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
-  generatePlatformLogger,
-  ChunkLoggerController,
 } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 
-import {
-  Crypto,
-  Relayer,
-  Pairing,
-  JsonRpcHistory,
-  Expirer,
-  Verify,
-  EchoClient,
-  EventClient,
-} from "./controllers";
 import {
   CORE_CONTEXT,
   CORE_DEFAULT,
@@ -28,8 +18,20 @@ import {
   CORE_STORAGE_OPTIONS,
   CORE_VERSION,
   RELAYER_DEFAULT_RELAY_URL,
+  TRANSPORT_TYPES,
   WALLETCONNECT_CLIENT_ID,
+  WALLETCONNECT_LINK_MODE_APPS,
 } from "./constants";
+import {
+  Crypto,
+  EchoClient,
+  EventClient,
+  Expirer,
+  JsonRpcHistory,
+  Pairing,
+  Relayer,
+  Verify,
+} from "./controllers";
 
 export class Core extends ICore {
   public readonly protocol = CORE_PROTOCOL;
@@ -50,6 +52,7 @@ export class Core extends ICore {
   public pairing: ICore["pairing"];
   public verify: ICore["verify"];
   public echoClient: ICore["echoClient"];
+  public linkModeSupportedApps: ICore["linkModeSupportedApps"];
   public eventClient: ICore["eventClient"];
 
   private initialized = false;
@@ -112,6 +115,7 @@ export class Core extends ICore {
     this.pairing = new Pairing(this, this.logger);
     this.verify = new Verify(this, this.logger, this.storage);
     this.echoClient = new EchoClient(this.projectId || "", this.logger);
+    this.linkModeSupportedApps = [];
     this.eventClient = new EventClient(this, this.logger, opts?.telemetryEnabled);
   }
 
@@ -132,6 +136,12 @@ export class Core extends ICore {
     });
   }
 
+  public async addLinkModeSupportedApp(universalLink: string) {
+    if (this.linkModeSupportedApps.includes(universalLink)) return;
+    this.linkModeSupportedApps.push(universalLink);
+    await this.storage.setItem(WALLETCONNECT_LINK_MODE_APPS, this.linkModeSupportedApps);
+  }
+
   // ---------- Events ----------------------------------------------- //
 
   public on = (name: any, listener: any) => {
@@ -150,6 +160,29 @@ export class Core extends ICore {
     return this.events.removeListener(name, listener);
   };
 
+  // ---------- Link-mode ----------------------------------------------- //
+
+  public dispatchEnvelope = ({
+    topic,
+    message,
+    sessionExists,
+  }: {
+    topic: string;
+    message: string;
+    sessionExists: boolean;
+  }) => {
+    if (!topic || !message) return;
+
+    const payload = {
+      topic,
+      message,
+      publishedAt: Date.now(),
+      transportType: TRANSPORT_TYPES.link_mode,
+    };
+
+    this.relayer.onLinkMessageEvent(payload, { sessionExists });
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {
@@ -161,6 +194,9 @@ export class Core extends ICore {
       await this.relayer.init();
       await this.heartbeat.init();
       await this.pairing.init();
+      this.eventClient.init();
+      this.linkModeSupportedApps = (await this.storage.getItem(WALLETCONNECT_LINK_MODE_APPS)) || [];
+
       this.initialized = true;
       this.logger.info(`Core Initialization Success`);
     } catch (error) {

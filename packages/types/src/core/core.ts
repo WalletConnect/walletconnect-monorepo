@@ -35,6 +35,7 @@ export declare namespace CoreTypes {
     redirect?: {
       native?: string;
       universal?: string;
+      linkMode?: boolean;
     };
   }
 }
@@ -59,6 +60,7 @@ export abstract class ICore extends IEvents {
   public abstract pairing: IPairing;
   public abstract verify: IVerify;
   public abstract echoClient: IEchoClient;
+  public abstract linkModeSupportedApps: string[];
   public abstract eventClient: IEventClient;
 
   constructor(public opts?: CoreTypes.Options) {
@@ -66,4 +68,11 @@ export abstract class ICore extends IEvents {
   }
 
   public abstract start(): Promise<void>;
+  public abstract dispatchEnvelope(params: {
+    topic: string;
+    message: string;
+    sessionExists: boolean;
+  }): void;
+
+  public abstract addLinkModeSupportedApp(universalLink: string): void;
 }

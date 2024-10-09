@@ -141,14 +141,14 @@ export class UniversalProvider implements IUniversalProvider {
     return await this.pair(opts.pairingTopic);
   }
 
-  public async authenticate(opts: AuthenticateParams) {
+  public async authenticate(opts: AuthenticateParams, walletUniversalLink?: string) {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
     this.setNamespaces(opts);
     await this.cleanupPendingPairings();
 
-    const { uri, response } = await this.client.authenticate(opts);
+    const { uri, response } = await this.client.authenticate(opts, walletUniversalLink);
     if (uri) {
       this.uri = uri;
       this.events.emit("display_uri", uri);

@@ -2,7 +2,7 @@ import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { ICore } from "@walletconnect/types";
 import { Core, CORE_PROTOCOL, CORE_VERSION, PAIRING_EVENTS, SUBSCRIBER_EVENTS } from "../src";
 import { TEST_CORE_OPTIONS, disconnectSocket, waitForEvent } from "./shared";
-import { generateRandomBytes32, parseUri } from "@walletconnect/utils";
+import { generateRandomBytes32, parseUri, toBase64 } from "@walletconnect/utils";
 
 const createCoreClients: () => Promise<{ coreA: ICore; coreB: ICore }> = async () => {
   const coreA = new Core(TEST_CORE_OPTIONS);
@@ -46,6 +46,17 @@ describe("Pairing", () => {
     it("can pair via provided URI", async () => {
       const { uri } = await coreA.pairing.create();
       await coreB.pairing.pair({ uri });
+
+      expect(coreA.pairing.pairings.keys.length).toBe(1);
+      expect(coreB.pairing.pairings.keys.length).toBe(1);
+      expect(coreA.pairing.pairings.keys).to.deep.equal(coreB.pairing.pairings.keys);
+      expect(coreA.pairing.getPairings()[0].active).toBe(false);
+      expect(coreB.pairing.getPairings()[0].active).toBe(false);
+    });
+    it("can pair via base64 provided URI", async () => {
+      const { uri } = await coreA.pairing.create();
+      const encodedUri = toBase64(uri, true);
+      await coreB.pairing.pair({ uri: encodedUri });
 
       expect(coreA.pairing.pairings.keys.length).toBe(1);
       expect(coreB.pairing.pairings.keys.length).toBe(1);
@@ -138,6 +149,22 @@ describe("Pairing", () => {
       expect(coreA.pairing.pairings.get(topic).peerMetadata).toBeUndefined();
       await coreA.pairing.updateMetadata({ topic, metadata: mockMetadata });
       expect(coreA.pairing.pairings.get(topic).peerMetadata).toEqual(mockMetadata);
+    });
+  });
+
+  describe("formatUriFromPairing", () => {
+    it("should generate pairing uri from pairing", async () => {
+      let generatedUri = "";
+      coreA.pairing.events.once("pairing_create", (payload) => {
+        generatedUri = coreA.pairing.formatUriFromPairing(payload);
+      });
+      const { uri } = await coreA.pairing.create({
+        methods: ["eth_sendTransaction", "personal_sign"],
+      });
+      expect(generatedUri).to.be.eq(uri);
+      const parsedUri = parseUri(uri);
+      const parsedGeneratedUri = parseUri(generatedUri);
+      expect(parsedGeneratedUri).to.deep.equal(parsedUri);
     });
   });
 

@@ -48,6 +48,7 @@ import {
   PAIRING_EVENTS,
   EVENT_CLIENT_PAIRING_TRACES,
   EVENT_CLIENT_PAIRING_ERRORS,
+  TRANSPORT_TYPES,
 } from "../constants";
 import { Store } from "../controllers/store";
 
@@ -95,7 +96,7 @@ export class Pairing implements IPairing {
     const topic = await this.core.crypto.setSymKey(symKey);
     const expiry = calcExpiry(FIVE_MINUTES);
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
-    const pairing = { topic, expiry, relay, active: false };
+    const pairing = { topic, expiry, relay, active: false, methods: params?.methods };
     const uri = formatUri({
       protocol: this.core.protocol,
       version: this.core.version,
@@ -105,9 +106,10 @@ export class Pairing implements IPairing {
       expiryTimestamp: expiry,
       methods: params?.methods,
     });
+    this.events.emit(PAIRING_EVENTS.create, pairing);
     this.core.expirer.set(topic, expiry);
     await this.pairings.set(topic, pairing);
-    await this.core.relayer.subscribe(topic);
+    await this.core.relayer.subscribe(topic, { transportType: params?.transportType });
 
     return { topic, uri };
   };
@@ -230,6 +232,21 @@ export class Pairing implements IPairing {
     }
   };
 
+  public formatUriFromPairing: IPairing["formatUriFromPairing"] = (pairing) => {
+    this.isInitialized();
+    const { topic, relay, expiry, methods } = pairing;
+    const symKey = this.core.crypto.keychain.get(topic);
+    return formatUri({
+      protocol: this.core.protocol,
+      version: this.core.version,
+      topic,
+      symKey,
+      relay,
+      expiryTimestamp: expiry,
+      methods,
+    });
+  };
+
   // ---------- Private Helpers ----------------------------------------------- //
 
   private sendRequest: IPairingPrivate["sendRequest"] = async (topic, method, params) => {
@@ -288,10 +305,13 @@ export class Pairing implements IPairing {
 
   private registerRelayerEvents() {
     this.core.relayer.on(RELAYER_EVENTS.message, async (event: RelayerTypes.MessageEvent) => {
-      const { topic, message } = event;
+      const { topic, message, transportType } = event;
 
       // Do not handle if the topic is not related to known pairing topics.
       if (!this.pairings.keys.includes(topic)) return;
+
+      // Do not handle link-mode messages
+      if (transportType === TRANSPORT_TYPES.link_mode) return;
 
       // messages of certain types should be ignored as they are handled by their respective SDKs
       if (this.ignoredPayloadTypes.includes(this.core.crypto.getPayloadType(message))) return;

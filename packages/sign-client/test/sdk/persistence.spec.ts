@@ -32,6 +32,9 @@ describe("Sign Client Persistence", () => {
             },
           );
 
+          expect(clients.A.core.relayer.connected).toBe(false);
+          expect(clients.B.core.relayer.connected).toBe(false);
+
           const {
             pairingA: { topic },
           } = await testConnectMethod(clients);
@@ -66,6 +69,9 @@ describe("Sign Client Persistence", () => {
               storageOptions: { database: db_b },
             },
           );
+
+          expect(clients.A.core.relayer.connected).toBe(true);
+          expect(clients.B.core.relayer.connected).toBe(true);
 
           // ping
           await clients.A.ping({ topic });
