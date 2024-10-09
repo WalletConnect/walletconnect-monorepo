@@ -29,6 +29,9 @@ export declare namespace RelayerTypes {
   export interface SubscribeOptions {
     relay?: ProtocolOptions;
     transportType?: TransportType;
+    internal?: {
+      throwOnFailedPublish?: boolean;
+    };
   }
 
   export interface UnsubscribeOptions {

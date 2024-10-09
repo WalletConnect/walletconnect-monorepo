@@ -101,7 +101,7 @@ export class Subscriber extends ISubscriber {
       const relay = getRelayProtocolName(opts);
       const params = { topic, relay, transportType: opts?.transportType };
       this.pending.set(topic, params);
-      const id = await this.rpcSubscribe(topic, relay, opts?.transportType);
+      const id = await this.rpcSubscribe(topic, relay, opts);
       if (typeof id === "string") {
         this.onSubscribe(id, params);
         this.logger.debug(`Successfully Subscribed Topic`);
@@ -222,9 +222,9 @@ export class Subscriber extends ISubscriber {
   private async rpcSubscribe(
     topic: string,
     relay: RelayerTypes.ProtocolOptions,
-    transportType: RelayerTypes.TransportType = TRANSPORT_TYPES.relay,
+    opts?: RelayerTypes.SubscribeOptions,
   ) {
-    if (transportType === TRANSPORT_TYPES.relay) {
+    if (opts?.transportType === TRANSPORT_TYPES.relay) {
       await this.restartToComplete();
     }
     const api = getRelayProtocolApi(relay.protocol);
@@ -239,7 +239,7 @@ export class Subscriber extends ISubscriber {
     try {
       const subId = hashMessage(topic + this.clientId);
       // in link mode, allow the app to update its network state (i.e. active airplane mode) with small delay before attempting to subscribe
-      if (transportType === TRANSPORT_TYPES.link_mode) {
+      if (opts?.transportType === TRANSPORT_TYPES.link_mode) {
         setTimeout(() => {
           if (this.relayer.connected || this.relayer.connecting) {
             this.relayer.request(request).catch((e) => this.logger.warn(e));
@@ -247,18 +247,20 @@ export class Subscriber extends ISubscriber {
         }, toMiliseconds(ONE_SECOND));
         return subId;
       }
-
-      const subscribe = await createExpiringPromise(
+      const subscribe = createExpiringPromise(
         this.relayer.request(request).catch((e) => this.logger.warn(e)),
         this.subscribeTimeout,
+        `Subscribing to ${topic} failed, please try again`,
       );
       const result = await subscribe;
-
       // return null to indicate that the subscription failed
       return result ? subId : null;
     } catch (err) {
       this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+      if (opts?.internal?.throwOnFailedPublish) {
+        throw err;
+      }
     }
     return null;
   }
