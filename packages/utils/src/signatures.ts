@@ -1,6 +1,7 @@
 import { hashMessage } from "@ethersproject/hash";
 import { recoverAddress } from "@ethersproject/transactions";
 import { AuthTypes } from "@walletconnect/types";
+import { parseChainId } from "./caip";
 const DEFAULT_RPC_URL = "https://rpc.walletconnect.org/v1";
 
 export async function verifySignature(
@@ -49,6 +50,12 @@ export async function isValidEip1271Signature(
   projectId: string,
   baseRpcUrl?: string,
 ) {
+  const parsedChain = parseChainId(chainId);
+  if (!parsedChain.namespace || !parsedChain.reference) {
+    throw new Error(
+      `isValidEip1271Signature failed: chainId must be in CAIP-2 format, received: ${chainId}`,
+    );
+  }
   try {
     const eip1271MagicValue = "0x1626ba7e";
     const dynamicTypeOffset = "0000000000000000000000000000000000000000000000000000000000000040";
