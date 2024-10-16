@@ -56,8 +56,10 @@ describe("Relayer", () => {
       await relayer.init();
       expect(relayer.provider).to.be.empty;
       expect(relayer.connected).to.be.false;
+      // @ts-expect-error - private property
       relayer.hasExperiencedNetworkDisruption = true;
-      await relayer.transportClose();
+      // @ts-expect-error - private method
+      await relayer.transportDisconnect();
     });
     it("initializes a MessageTracker", async () => {
       relayer.messages.init = initSpy;
