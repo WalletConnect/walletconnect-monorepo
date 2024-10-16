@@ -51,6 +51,14 @@ describe("Relayer", () => {
       await disconnectSocket(relayer);
     });
 
+    it("should not throw unhandled on network disconnect when there is no provider instance", async () => {
+      relayer.messages.init = initSpy;
+      await relayer.init();
+      expect(relayer.provider).to.be.empty;
+      expect(relayer.connected).to.be.false;
+      relayer.hasExperiencedNetworkDisruption = true;
+      await relayer.transportClose();
+    });
     it("initializes a MessageTracker", async () => {
       relayer.messages.init = initSpy;
       await relayer.init();
