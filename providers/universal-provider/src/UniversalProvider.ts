@@ -21,6 +21,7 @@ import CardanoProvider from "./providers/cardano";
 import ElrondProvider from "./providers/elrond";
 import MultiversXProvider from "./providers/multiversx";
 import NearProvider from "./providers/near";
+import TezosProvider from "./providers/tezos";
 import GenericProvider from "./providers/generic";
 
 import {
@@ -380,6 +381,11 @@ export class UniversalProvider implements IUniversalProvider {
           break;
         case "near":
           this.rpcProviders[namespace] = new NearProvider({
+            namespace: combinedNamespace,
+          });
+          break;
+        case "tezos":
+          this.rpcProviders[namespace] = new TezosProvider({
             namespace: combinedNamespace,
           });
           break;
