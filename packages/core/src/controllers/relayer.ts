@@ -287,7 +287,7 @@ export class Relayer extends IRelayer {
       }
     }
 
-    if (this.hasExperiencedNetworkDisruption || this.connected) {
+    if (this.provider.disconnect && (this.hasExperiencedNetworkDisruption || this.connected)) {
       await createExpiringPromise(this.provider.disconnect(), 2000, "provider.disconnect()").catch(
         () => this.onProviderDisconnect(),
       );
