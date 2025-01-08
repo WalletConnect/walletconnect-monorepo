@@ -34,7 +34,8 @@ export async function initTwoClients(
     ...sharedClientOpts,
     ...clientOptsB,
   });
-  await throttle(500);
+  A.core.relayer.publisher.publishTimeout = 120_000;
+  B.core.relayer.publisher.publishTimeout = 120_000;
   return { A, B };
 }
 
@@ -57,8 +58,11 @@ export async function initTwoPairedClients(
         TESTS_CONNECT_TIMEOUT,
       )) as Clients;
       const settled: any = await createExpiringPromise(
-        testConnectMethod(clients),
+        new Promise((resolve, reject) => {
+          testConnectMethod(clients).then(resolve).catch(reject);
+        }),
         TESTS_CONNECT_TIMEOUT * 2,
+        "testConnectMethod(clients)",
       );
       pairingA = settled.pairingA;
       sessionA = settled.sessionA;

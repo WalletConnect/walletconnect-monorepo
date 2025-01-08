@@ -1,4 +1,4 @@
-import { expect, describe, it, beforeEach, afterEach } from "vitest";
+import { expect, describe, it, beforeEach, afterEach, vi } from "vitest";
 import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 
@@ -10,47 +10,50 @@ import {
   RELAYER_EVENTS,
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
-  RELAYER_TRANSPORT_CUTOFF,
   SUBSCRIBER_EVENTS,
+  TRANSPORT_TYPES,
 } from "../src";
-import { disconnectSocket, TEST_CORE_OPTIONS, throttle } from "./shared";
+import {
+  disconnectSocket,
+  TEST_MOBILE_APP_ID,
+  TEST_CORE_OPTIONS,
+  TEST_PROJECT_ID_MOBILE,
+  throttle,
+} from "./shared";
 import { ICore, IRelayer, ISubscriber } from "@walletconnect/types";
 import Sinon from "sinon";
 import { JsonRpcRequest } from "@walletconnect/jsonrpc-utils";
-import { generateRandomBytes32, hashMessage } from "@walletconnect/utils";
+import { createExpiringPromise, generateRandomBytes32, hashMessage } from "@walletconnect/utils";
+import * as utils from "@walletconnect/utils";
 
 describe("Relayer", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
 
-  let core: ICore;
-  let relayer: IRelayer;
-
-  beforeEach(async () => {
-    core = new Core(TEST_CORE_OPTIONS);
-    await core.start();
-    relayer = core.relayer;
-  });
-
-  afterEach(async () => {
-    await disconnectSocket(core.relayer);
-  });
+  let core;
+  let relayer;
 
   describe("init", () => {
     let initSpy: Sinon.SinonSpy;
-    beforeEach(() => {
+    beforeEach(async () => {
       initSpy = Sinon.spy();
-      relayer = new Relayer({
-        core,
-        logger,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_CORE_OPTIONS.projectId,
-      });
+      core = new Core(TEST_CORE_OPTIONS);
+      relayer = core.relayer;
+      await core.start();
     });
-
     afterEach(async () => {
       await disconnectSocket(relayer);
     });
 
+    it("should not throw unhandled on network disconnect when there is no provider instance", async () => {
+      relayer.messages.init = initSpy;
+      await relayer.init();
+      expect(relayer.provider).to.be.empty;
+      expect(relayer.connected).to.be.false;
+      // @ts-expect-error - private property
+      relayer.hasExperiencedNetworkDisruption = true;
+      // @ts-expect-error - private method
+      await relayer.transportDisconnect();
+    });
     it("initializes a MessageTracker", async () => {
       relayer.messages.init = initSpy;
       await relayer.init();
@@ -69,12 +72,14 @@ describe("Relayer", () => {
     it("initializes a JsonRpcProvider", async () => {
       expect(relayer.provider).to.be.empty;
       await relayer.init();
+      await relayer.transportOpen();
       expect(relayer.provider).not.to.be.empty;
       expect(relayer.provider instanceof JsonRpcProvider).to.be.true;
     });
-    it("registers event listeners", async () => {
+    it("registers provider event listeners", async () => {
       const emitSpy = Sinon.spy();
       await relayer.init();
+      await relayer.transportOpen();
       relayer.events.emit = emitSpy;
       relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.connect);
       expect(emitSpy.calledOnceWith(RELAYER_EVENTS.connect)).to.be.true;
@@ -82,18 +87,10 @@ describe("Relayer", () => {
   });
 
   describe("publish", () => {
-    let relayer;
     beforeEach(async () => {
-      relayer = new Relayer({
-        core,
-        logger,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_CORE_OPTIONS.projectId,
-      });
-      await relayer.init();
-    });
-    afterEach(async () => {
-      await disconnectSocket(relayer);
+      core = new Core(TEST_CORE_OPTIONS);
+      relayer = core.relayer;
+      await core.start();
     });
 
     const topic = "abc123";
@@ -114,53 +111,79 @@ describe("Relayer", () => {
   });
 
   describe("subscribe", () => {
-    let relayer;
     beforeEach(async () => {
-      relayer = new Relayer({
-        core,
-        logger,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_CORE_OPTIONS.projectId,
-      });
-      await relayer.init();
+      core = new Core(TEST_CORE_OPTIONS);
+      relayer = core.relayer;
+      await core.start();
     });
-    afterEach(async () => {
-      await disconnectSocket(relayer);
-    });
-
     it("returns the id provided by calling `subscriber.subscribe` with the passed topic", async () => {
-      const spy = Sinon.spy(() => "mock-id");
+      const spy = Sinon.spy(
+        (topic) =>
+          new Promise((resolve) => {
+            relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic });
+            resolve(topic);
+          }),
+      );
       relayer.subscriber.subscribe = spy;
+
+      const testTopic = "abc123";
       let id;
-      await Promise.all([
-        new Promise<void>(async (resolve) => {
-          id = await relayer.subscribe("abc123");
-          resolve();
-        }),
-        new Promise<void>((resolve) => {
-          relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic: "abc123" });
-          resolve();
-        }),
-      ]);
+      await new Promise<void>(async (resolve) => {
+        id = await relayer.subscribe(testTopic);
+        resolve();
+      });
       // @ts-expect-error
-      expect(spy.calledOnceWith("abc123")).to.be.true;
-      expect(id).to.eq("mock-id");
+      expect(spy.calledOnceWith(testTopic)).to.be.true;
+      expect(id).to.eq(testTopic);
     });
 
     it("should subscribe multiple topics", async () => {
-      const spy = Sinon.spy(() => "mock-id");
+      const spy = Sinon.spy(
+        (topic) =>
+          new Promise((resolve) => {
+            relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic });
+            resolve(topic);
+          }),
+      );
       relayer.subscriber.subscribe = spy;
       const subscriber = relayer.subscriber as ISubscriber;
       // record the number of listeners before subscribing
       const startNumListeners = subscriber.events.listenerCount(SUBSCRIBER_EVENTS.created);
       const topicsToSubscribe = Array.from(Array(5).keys()).map(() => generateRandomBytes32());
       const subscribePromises = topicsToSubscribe.map((topic) => relayer.subscribe(topic));
-      const onSubscriptionCreatedPromises = topicsToSubscribe.map((topic) =>
-        relayer.subscriber.events.emit(SUBSCRIBER_EVENTS.created, { topic }),
-      );
-      await Promise.all([...subscribePromises, ...onSubscriptionCreatedPromises]);
+      await Promise.all([...subscribePromises]);
       // expect the number of listeners to be the same as before subscribing to confirm proper cleanup
       expect(subscriber.events.listenerCount(SUBSCRIBER_EVENTS.created)).to.eq(startNumListeners);
+    });
+
+    it("should throw when subscribe reaches a publish timeout", async () => {
+      relayer.subscriber.subscribeTimeout = 5_000;
+      relayer.request = () => {
+        return new Promise<void>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error("Subscription timeout"));
+          }, 100_000);
+        });
+      };
+      const topic = generateRandomBytes32();
+      await expect(relayer.subscribe(topic)).rejects.toThrow(
+        `Subscribing to ${topic} failed, please try again`,
+      );
+    });
+
+    it("should throw when subscribe publish fails", async () => {
+      await relayer.transportOpen();
+      await relayer.toEstablishConnection();
+      relayer.subscriber.subscribeTimeout = 5_000;
+      relayer.request = () => {
+        return new Promise<void>((resolve) => {
+          resolve();
+        });
+      };
+      const topic = generateRandomBytes32();
+      await expect(relayer.subscribe(topic)).rejects.toThrow(
+        `Subscribing to ${topic} failed, please try again`,
+      );
     });
 
     it("should be able to resubscribe on topic that already exists", async () => {
@@ -181,18 +204,11 @@ describe("Relayer", () => {
   });
 
   describe("unsubscribe", () => {
-    let relayer;
     beforeEach(async () => {
-      relayer = new Relayer({
-        core,
-        logger,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_CORE_OPTIONS.projectId,
-      });
-      await relayer.init();
-    });
-    afterEach(async () => {
-      await disconnectSocket(relayer);
+      core = new Core(TEST_CORE_OPTIONS);
+      relayer = core.relayer;
+      await core.start();
+      await relayer.transportOpen();
     });
     it("calls `subscriber.unsubscribe` with the passed topic", async () => {
       const spy = Sinon.spy();
@@ -202,20 +218,6 @@ describe("Relayer", () => {
     });
 
     describe("onProviderPayload", () => {
-      let relayer;
-      beforeEach(async () => {
-        relayer = new Relayer({
-          core,
-          logger,
-          relayUrl: TEST_CORE_OPTIONS.relayUrl,
-          projectId: TEST_CORE_OPTIONS.projectId,
-        });
-        await relayer.init();
-      });
-      afterEach(async () => {
-        await disconnectSocket(relayer);
-      });
-
       const validPayload: JsonRpcRequest = {
         id: 123,
         jsonrpc: "2.0",
@@ -226,12 +228,13 @@ describe("Relayer", () => {
             topic: "ababab",
             message: "deadbeef",
             publishedAt: 1677151760537,
+            transportType: TRANSPORT_TYPES.relay,
             attestation: undefined,
           },
         },
       };
 
-      it("does nothing if payload is not a valid JsonRpcRequest", () => {
+      it("does nothing if payload is not a valid JsonRpcRequest.", () => {
         const spy = Sinon.spy();
         relayer.events.emit = spy;
         relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.payload, {});
@@ -255,6 +258,7 @@ describe("Relayer", () => {
             topic: validPayload.params.data.topic,
             message: validPayload.params.data.message,
             publishedAt: validPayload.params.data.publishedAt,
+            transportType: validPayload.params.data.transportType,
             attestation: validPayload.params.data.attestation,
           }),
         ).to.be.true;
@@ -262,49 +266,75 @@ describe("Relayer", () => {
     });
     describe("transport", () => {
       beforeEach(async () => {
-        relayer = new Relayer({
-          core,
-          relayUrl: TEST_CORE_OPTIONS.relayUrl,
-          projectId: TEST_CORE_OPTIONS.projectId,
-        });
-        await relayer.init();
+        core = new Core(TEST_CORE_OPTIONS);
+        relayer = core.relayer;
+        await core.start();
       });
-
-      afterEach(async () => {
-        await disconnectSocket(relayer);
-      });
-
       it("should restart transport after connection drop", async () => {
         const randomSessionIdentifier = relayer.core.crypto.randomSessionIdentifier;
-        await relayer.provider.connection.close();
-        expect(relayer.connected).to.be.false;
-        await throttle(1000);
-        expect(relayer.connected).to.be.true;
+        await relayer.transportOpen();
+        const timeout = setTimeout(() => {
+          throw new Error("Connection did not restart after disconnect");
+        }, 5_001);
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            relayer.once(RELAYER_EVENTS.connect, () => {
+              expect(relayer.connected).to.be.true;
+              resolve();
+            });
+          }),
+          new Promise<void>((resolve) => {
+            relayer.once(RELAYER_EVENTS.disconnect, () => {
+              expect(relayer.connected).to.be.false;
+              resolve();
+            });
+          }),
+          relayer.provider.connection.close(),
+        ]);
+        clearTimeout(timeout);
         // the identifier should be the same
         expect(relayer.core.crypto.randomSessionIdentifier).to.eq(randomSessionIdentifier);
       });
+      it("should connect once regardless of the number of disconnect events", async () => {
+        const disconnectsToEmit = 10;
+        let disconnectsReceived = 0;
+        let connectReceived = 0;
+        relayer.on(RELAYER_EVENTS.connect, () => {
+          connectReceived++;
+        });
+        relayer.on(RELAYER_EVENTS.disconnect, () => {
+          disconnectsReceived++;
+        });
+        await Promise.all(
+          Array.from(Array(disconnectsToEmit).keys()).map(() => relayer.onDisconnectHandler()),
+        );
+        await throttle(5_000);
+        expect(connectReceived).to.eq(1);
+        expect(disconnectsReceived).to.eq(disconnectsToEmit);
+      });
 
-      it("should close transport 10 seconds after init if NOT active", async () => {
+      it("should not start wss connection on init without subscriber topics", async () => {
         relayer = new Relayer({
           core,
           relayUrl: TEST_CORE_OPTIONS.relayUrl,
           projectId: TEST_CORE_OPTIONS.projectId,
         });
         await relayer.init();
-        await throttle(RELAYER_TRANSPORT_CUTOFF + 1_000); // +1 sec buffer
+        await throttle(1_000); // +1 sec buffer
         expect(relayer.connected).to.be.false;
       });
 
-      it("should NOT close transport 10 seconds after init if active", async () => {
+      it("should start transport on subscribe attempt", async () => {
         relayer = new Relayer({
           core,
           relayUrl: TEST_CORE_OPTIONS.relayUrl,
           projectId: TEST_CORE_OPTIONS.projectId,
         });
         await relayer.init();
+        expect(relayer.connected).to.be.false;
         const topic = generateRandomBytes32();
-        await relayer.subscriber.subscribe(topic);
-        await throttle(RELAYER_TRANSPORT_CUTOFF + 1_000); // +1 sec buffer
+        await relayer.subscribe(topic);
+        await throttle(1_000); // +1 sec buffer
         expect(relayer.connected).to.be.true;
       });
       it(`should connect to ${RELAYER_DEFAULT_RELAY_URL} relay url`, async () => {
@@ -313,10 +343,168 @@ describe("Relayer", () => {
           projectId: TEST_CORE_OPTIONS.projectId,
         });
         await relayer.init();
+        await relayer.transportOpen();
         const wsConnection = relayer.provider.connection as unknown as WebSocket;
         expect(relayer.connected).to.be.true;
         expect(wsConnection.url.startsWith(RELAYER_DEFAULT_RELAY_URL)).to.be.true;
       });
+    });
+  });
+  describe("packageName and bundleId validations", () => {
+    beforeEach(async () => {
+      core = new Core({ ...TEST_CORE_OPTIONS, projectId: TEST_PROJECT_ID_MOBILE });
+      relayer = core.relayer;
+      await core.start();
+    });
+
+    it("[Android] packageName included in Cloud Settings - should connect", async () => {
+      // Mock Android environment
+      vi.spyOn(utils, "isAndroid").mockReturnValue(true);
+      vi.spyOn(utils, "isIos").mockReturnValue(false);
+      vi.spyOn(utils, "getAppId").mockReturnValue(TEST_MOBILE_APP_ID);
+
+      relayer = new Relayer({
+        core,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_PROJECT_ID_MOBILE,
+      });
+
+      await relayer.init();
+      await relayer.transportOpen();
+
+      // @ts-expect-error - accessing private property for testing
+      const wsUrl = relayer.provider.connection.url;
+      expect(wsUrl).to.include(`packageName=${TEST_MOBILE_APP_ID}`);
+      expect(relayer.connected).to.be.true;
+    });
+
+    it("[Android] packageName undefined - should connect", async () => {
+      // Mock Android environment
+      vi.spyOn(utils, "isAndroid").mockReturnValue(true);
+      vi.spyOn(utils, "isIos").mockReturnValue(false);
+      vi.spyOn(utils, "getAppId").mockReturnValue(undefined);
+
+      relayer = new Relayer({
+        core,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_PROJECT_ID_MOBILE,
+      });
+
+      await relayer.init();
+      await relayer.transportOpen();
+
+      // @ts-expect-error - accessing private property for testing
+      const wsUrl = relayer.provider.connection.url;
+      expect(wsUrl).not.to.include("packageName=");
+      expect(relayer.connected).to.be.true;
+    });
+
+    it("[Android] packageName not included in Cloud Settings - should fail", async () => {
+      // Mock Android environment
+      vi.spyOn(utils, "isAndroid").mockReturnValue(true);
+      vi.spyOn(utils, "isIos").mockReturnValue(false);
+      vi.spyOn(utils, "getAppId").mockReturnValue("com.example.wrong");
+
+      relayer = new Relayer({
+        core,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_PROJECT_ID_MOBILE,
+      });
+
+      await relayer.init();
+      await relayer.transportOpen();
+      relayer.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload) => {
+        expect(payload.error.message).to.include("Unauthorized: origin not allowed");
+      });
+
+      await throttle(1000);
+    });
+
+    it("[iOS] bundleId included in Cloud Settings - should connect", async () => {
+      // Mock iOS environment
+      vi.spyOn(utils, "isAndroid").mockReturnValue(false);
+      vi.spyOn(utils, "isIos").mockReturnValue(true);
+      vi.spyOn(utils, "getAppId").mockReturnValue(TEST_MOBILE_APP_ID);
+
+      relayer = new Relayer({
+        core,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_PROJECT_ID_MOBILE,
+      });
+
+      await relayer.init();
+      await relayer.transportOpen();
+
+      // @ts-expect-error - accessing private property for testing
+      const wsUrl = relayer.provider.connection.url;
+      expect(wsUrl).to.include(`bundleId=${TEST_MOBILE_APP_ID}`);
+    });
+
+    it("[iOS] bundleId undefined - should connect", async () => {
+      // Mock iOS environment
+      vi.spyOn(utils, "isAndroid").mockReturnValue(false);
+      vi.spyOn(utils, "isIos").mockReturnValue(true);
+      vi.spyOn(utils, "getAppId").mockReturnValue(undefined);
+
+      relayer = new Relayer({
+        core,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_PROJECT_ID_MOBILE,
+      });
+
+      await relayer.init();
+      await relayer.transportOpen();
+
+      // @ts-expect-error - accessing private property for testing
+      const wsUrl = relayer.provider.connection.url;
+      expect(wsUrl).not.to.include("bundleId=");
+      expect(relayer.connected).to.be.true;
+    });
+
+    it("[iOS] bundleId not included in Cloud Settings - should fail", async () => {
+      // Mock iOS environment
+      vi.spyOn(utils, "isAndroid").mockReturnValue(false);
+      vi.spyOn(utils, "isIos").mockReturnValue(true);
+      vi.spyOn(utils, "getAppId").mockReturnValue("com.example.wrong");
+
+      relayer = new Relayer({
+        core,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_PROJECT_ID_MOBILE,
+      });
+
+      await relayer.init();
+      await relayer.transportOpen();
+      relayer.provider.on(RELAYER_PROVIDER_EVENTS.payload, (payload) => {
+        expect(payload.error.message).to.include("Unauthorized: origin not allowed");
+      });
+
+      await throttle(1000);
+    });
+
+    it("[Web] packageName and bundleId not set - should connect", async () => {
+      // Mock non-mobile environment
+      vi.spyOn(utils, "isAndroid").mockReturnValue(false);
+      vi.spyOn(utils, "isIos").mockReturnValue(false);
+      vi.spyOn(utils, "getAppId").mockReturnValue(TEST_MOBILE_APP_ID);
+
+      relayer = new Relayer({
+        core,
+        relayUrl: TEST_CORE_OPTIONS.relayUrl,
+        projectId: TEST_PROJECT_ID_MOBILE,
+      });
+
+      await relayer.init();
+      await relayer.transportOpen();
+
+      // @ts-expect-error - accessing private property for testing
+      const wsUrl = relayer.provider.connection.url;
+      expect(wsUrl).not.to.include("packageName=");
+      expect(wsUrl).not.to.include("bundleId=");
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
     });
   });
 });

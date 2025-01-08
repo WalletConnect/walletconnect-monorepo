@@ -4,6 +4,8 @@ import { ICore } from "./core";
 import { IKeyChain } from "./keychain";
 
 export declare namespace CryptoTypes {
+  export type EncodingType = "base64pad" | "base64url";
+
   export interface Participant {
     publicKey: string;
   }
@@ -19,11 +21,13 @@ export declare namespace CryptoTypes {
     type?: number;
     iv?: string;
     senderPublicKey?: string;
+    encoding?: EncodingType;
   }
 
   export interface DecryptParams {
     symKey: string;
     encoded: string;
+    encoding?: EncodingType;
   }
 
   export interface EncodingParams {
@@ -31,16 +35,24 @@ export declare namespace CryptoTypes {
     sealed: Uint8Array;
     iv: Uint8Array;
     senderPublicKey?: Uint8Array;
+    encoding?: EncodingType;
+  }
+
+  export interface DecodingParams {
+    encoded: string;
+    encoding?: EncodingType;
   }
 
   export interface EncodeOptions {
     type?: number;
     senderPublicKey?: string;
     receiverPublicKey?: string;
+    encoding?: EncodingType;
   }
 
   export interface DecodeOptions {
     receiverPublicKey?: string;
+    encoding?: EncodingType;
   }
 
   export interface EncodingValidation {
@@ -105,6 +117,9 @@ export abstract class ICrypto {
   ): Promise<JsonRpcPayload>;
 
   public abstract signJWT(aud: string): Promise<string>;
-  public abstract getPayloadType(encoded: string): number;
-  public abstract getPayloadSenderPublicKey(encoded: string): string | undefined;
+  public abstract getPayloadType(encoded: string, encoding?: CryptoTypes.EncodingType): number;
+  public abstract getPayloadSenderPublicKey(
+    encoded: string,
+    encoding?: CryptoTypes.EncodingType,
+  ): string | undefined;
 }

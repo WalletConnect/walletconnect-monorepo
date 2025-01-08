@@ -39,7 +39,7 @@ export async function validateSignedCacao(params: { cacao: AuthTypes.Cacao; proj
     walletAddress,
     reconstructed,
     signature,
-    getDidChainId(payload.iss) as string,
+    getNamespacedDidChainId(payload.iss) as string,
     projectId as string,
   );
 

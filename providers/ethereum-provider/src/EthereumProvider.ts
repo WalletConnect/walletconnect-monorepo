@@ -336,6 +336,7 @@ export class EthereumProvider implements IEthereumProvider {
 
   public async authenticate(
     params: AuthenticateParams,
+    walletUniversalLink?: string,
   ): Promise<AuthTypes.AuthenticateResponseResult | undefined> {
     if (!this.signer.client) {
       throw new Error("Provider not initialized. Call init() first");
@@ -358,10 +359,13 @@ export class EthereumProvider implements IEthereumProvider {
             });
           }
           await this.signer
-            .authenticate({
-              ...params,
-              chains: this.rpc.chains,
-            })
+            .authenticate(
+              {
+                ...params,
+                chains: this.rpc.chains,
+              },
+              walletUniversalLink,
+            )
             .then((result: AuthTypes.AuthenticateResponseResult) => {
               resolve(result);
             })
@@ -577,6 +581,7 @@ export class EthereumProvider implements IEthereumProvider {
       storageOptions: opts.storageOptions,
       customStoragePrefix: opts.customStoragePrefix,
       telemetryEnabled: opts.telemetryEnabled,
+      logger: opts.logger,
     });
     this.registerEventListeners();
     await this.loadPersistedSession();

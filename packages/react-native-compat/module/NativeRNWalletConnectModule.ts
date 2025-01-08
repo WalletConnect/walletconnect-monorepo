@@ -9,4 +9,4 @@ export interface Spec extends TurboModule {
   };
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>("RNWalletConnectModule");
+export default TurboModuleRegistry.get<Spec>("RNWalletConnectModule");

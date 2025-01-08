@@ -1,5 +1,6 @@
 import * as qs from "query-string";
 import { EngineTypes, RelayerTypes } from "@walletconnect/types";
+import { fromBase64 } from "./misc";
 
 // -- uri -------------------------------------------------- //
 
@@ -17,6 +18,13 @@ export function parseRelayParams(params: any, delimiter = "-"): RelayerTypes.Pro
 }
 
 export function parseUri(str: string): EngineTypes.UriParameters {
+  if (!str.includes("wc:")) {
+    const parsed = fromBase64(str);
+    if (parsed?.includes("wc:")) {
+      str = parsed;
+    }
+  }
+
   // remove android schema prefix
   str = str.includes("wc://") ? str.replace("wc://", "") : str;
   // remove ios schema prefix
@@ -70,4 +78,12 @@ export function formatUri(params: EngineTypes.UriParameters): string {
       ...(params.methods ? { methods: params.methods.join(",") } : {}),
     })
   );
+}
+
+export function getLinkModeURL(
+  universalLink: string,
+  topic: string,
+  encodedEnvelope: string,
+): string {
+  return `${universalLink}?wc_ev=${encodedEnvelope}&topic=${topic}`;
 }

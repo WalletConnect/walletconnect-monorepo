@@ -22,8 +22,8 @@
     "packages/utils",
     "packages/core",
     "packages/sign-client",
-    "packages/react-native-compat",
     "packages/web3wallet",
+    "packages/react-native-compat",
     "providers/universal-provider",
     "providers/signer-connection",
     "providers/ethereum-provider"

@@ -21,6 +21,7 @@ import CardanoProvider from "./providers/cardano";
 import ElrondProvider from "./providers/elrond";
 import MultiversXProvider from "./providers/multiversx";
 import NearProvider from "./providers/near";
+import TezosProvider from "./providers/tezos";
 import GenericProvider from "./providers/generic";
 
 import {
@@ -141,14 +142,14 @@ export class UniversalProvider implements IUniversalProvider {
     return await this.pair(opts.pairingTopic);
   }
 
-  public async authenticate(opts: AuthenticateParams) {
+  public async authenticate(opts: AuthenticateParams, walletUniversalLink?: string) {
     if (!this.client) {
       throw new Error("Sign Client not initialized");
     }
     this.setNamespaces(opts);
     await this.cleanupPendingPairings();
 
-    const { uri, response } = await this.client.authenticate(opts);
+    const { uri, response } = await this.client.authenticate(opts, walletUniversalLink);
     if (uri) {
       this.uri = uri;
       this.events.emit("display_uri", uri);
@@ -380,6 +381,11 @@ export class UniversalProvider implements IUniversalProvider {
           break;
         case "near":
           this.rpcProviders[namespace] = new NearProvider({
+            namespace: combinedNamespace,
+          });
+          break;
+        case "tezos":
+          this.rpcProviders[namespace] = new TezosProvider({
             namespace: combinedNamespace,
           });
           break;

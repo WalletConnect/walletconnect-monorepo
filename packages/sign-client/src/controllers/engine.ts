@@ -9,6 +9,7 @@ import {
   PAIRING_EVENTS,
   RELAYER_DEFAULT_PROTOCOL,
   RELAYER_EVENTS,
+  TRANSPORT_TYPES,
   VERIFY_SERVER,
 } from "@walletconnect/core";
 
@@ -73,6 +74,7 @@ import {
   isValidString,
   parseExpirerTarget,
   TYPE_1,
+  TYPE_2,
   handleDeeplinkRedirect,
   MemoryStore,
   getDeepLink,
@@ -88,6 +90,12 @@ import {
   validateSignedCacao,
   getNamespacedDidChainId,
   parseChainId,
+  getLinkModeURL,
+  BASE64,
+  BASE64URL,
+  getSearchParamFromURL,
+  isReactNative,
+  isTestRun,
 } from "@walletconnect/utils";
 import EventEmmiter from "events";
 import {
@@ -127,9 +135,7 @@ export class Engine extends IEngine {
   };
 
   private requestQueueDelay = ONE_SECOND;
-
   private expectedPairingMethodMap: Map<string, string[]> = new Map();
-
   // Ephemeral (in-memory) map to store recently deleted items
   private recentlyDeletedMap = new Map<
     string | number,
@@ -149,6 +155,7 @@ export class Engine extends IEngine {
       this.registerRelayerEvents();
       this.registerExpirerEvents();
       this.registerPairingEvents();
+      await this.registerLinkModeListeners();
       this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       this.initialized = true;
       setTimeout(() => {
@@ -161,7 +168,8 @@ export class Engine extends IEngine {
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     const connectParams = {
       ...params,
       requiredNamespaces: params.requiredNamespaces || {},
@@ -226,6 +234,7 @@ export class Engine extends IEngine {
             pairingTopic: proposal.pairingTopic,
             requiredNamespaces: proposal.requiredNamespaces,
             optionalNamespaces: proposal.optionalNamespaces,
+            transportType: TRANSPORT_TYPES.relay,
           };
           await this.client.session.set(session.topic, completeSession);
           await this.setExpiry(session.topic, session.expiry);
@@ -251,7 +260,8 @@ export class Engine extends IEngine {
   };
 
   public pair: IEngine["pair"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       return await this.client.core.pairing.pair(params);
     } catch (error) {
@@ -268,7 +278,8 @@ export class Engine extends IEngine {
       },
     });
     try {
-      await this.isInitialized();
+      this.isInitialized();
+      await this.confirmOnlineStateOrThrow();
     } catch (error) {
       configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.no_internet_connection);
       throw error;
@@ -280,6 +291,7 @@ export class Engine extends IEngine {
       configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found);
       throw error;
     }
+
     try {
       await this.isValidApprove(params);
     } catch (error) {
@@ -328,11 +340,10 @@ export class Engine extends IEngine {
       ...(sessionProperties && { sessionProperties }),
       ...(sessionConfig && { sessionConfig }),
     };
-
+    const transportType = TRANSPORT_TYPES.relay;
     event.addTrace(EVENT_CLIENT_SESSION_TRACES.subscribing_session_topic);
-
     try {
-      await this.client.core.relayer.subscribe(sessionTopic);
+      await this.client.core.relayer.subscribe(sessionTopic, { transportType });
     } catch (error) {
       event.setError(EVENT_CLIENT_SESSION_ERRORS.subscribe_session_topic_failure);
       throw error;
@@ -353,6 +364,7 @@ export class Engine extends IEngine {
         metadata: proposer.metadata,
       },
       controller: selfPublicKey,
+      transportType: TRANSPORT_TYPES.relay,
     };
     await this.client.session.set(sessionTopic, session);
 
@@ -409,7 +421,8 @@ export class Engine extends IEngine {
   };
 
   public reject: IEngine["reject"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       await this.isValidReject(params);
     } catch (error) {
@@ -438,7 +451,8 @@ export class Engine extends IEngine {
   };
 
   public update: IEngine["update"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       await this.isValidUpdate(params);
     } catch (error) {
@@ -478,7 +492,8 @@ export class Engine extends IEngine {
   };
 
   public extend: IEngine["extend"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       await this.isValidExtend(params);
     } catch (error) {
@@ -509,7 +524,7 @@ export class Engine extends IEngine {
   };
 
   public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
-    await this.isInitialized();
+    this.isInitialized();
     try {
       await this.isValidRequest(params);
     } catch (error) {
@@ -518,6 +533,10 @@ export class Engine extends IEngine {
     }
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
     const session = this.client.session.get(topic);
+
+    if (session?.transportType === TRANSPORT_TYPES.relay) {
+      await this.confirmOnlineStateOrThrow();
+    }
     const clientRpcId = payloadId();
     const relayRpcId = getBigIntRpcId().toString() as any;
     const { done, resolve, reject } = createDelayedPromise<T>(
@@ -531,6 +550,36 @@ export class Engine extends IEngine {
         else resolve(result);
       },
     );
+
+    const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
+    if (appLink) {
+      await this.sendRequest({
+        clientRpcId,
+        relayRpcId,
+        topic,
+        method: "wc_sessionRequest",
+        params: {
+          request: {
+            ...request,
+            expiryTimestamp: calcExpiry(expiry),
+          },
+          chainId,
+        },
+        expiry,
+        throwOnFailedPublish: true,
+        appLink,
+      }).catch((error) => reject(error));
+
+      this.client.events.emit("session_request_sent", {
+        topic,
+        request,
+        chainId,
+        id: clientRpcId,
+      });
+      const result = await done();
+      return result;
+    }
+
     return await Promise.all([
       new Promise<void>(async (resolve) => {
         await this.sendRequest({
@@ -559,11 +608,11 @@ export class Engine extends IEngine {
       new Promise<void>(async (resolve) => {
         // only attempt to handle deeplinks if they are not explicitly disabled in the session config
         if (!session.sessionConfig?.disableDeepLink) {
-          const wcDeepLink = await getDeepLink(
+          const wcDeepLink = (await getDeepLink(
             this.client.core.storage,
             WALLETCONNECT_DEEPLINK_CHOICE,
-          );
-          handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink });
+          )) as string;
+          await handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink });
         }
         resolve();
       }),
@@ -572,20 +621,34 @@ export class Engine extends IEngine {
   };
 
   public respond: IEngine["respond"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
     await this.isValidRespond(params);
     const { topic, response } = params;
     const { id } = response;
+    const session = this.client.session.get(topic);
+
+    if (session.transportType === TRANSPORT_TYPES.relay) {
+      await this.confirmOnlineStateOrThrow();
+    }
+
+    const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
     if (isJsonRpcResult(response)) {
-      await this.sendResult({ id, topic, result: response.result, throwOnFailedPublish: true });
+      await this.sendResult({
+        id,
+        topic,
+        result: response.result,
+        throwOnFailedPublish: true,
+        appLink,
+      });
     } else if (isJsonRpcError(response)) {
-      await this.sendError({ id, topic, error: response.error });
+      await this.sendError({ id, topic, error: response.error, appLink });
     }
     this.cleanupAfterResponse(params);
   };
 
   public ping: IEngine["ping"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     try {
       await this.isValidPing(params);
     } catch (error) {
@@ -616,21 +679,25 @@ export class Engine extends IEngine {
   };
 
   public emit: IEngine["emit"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     await this.isValidEmit(params);
     const { topic, event, chainId } = params;
     const relayRpcId = getBigIntRpcId().toString() as any;
+    const clientRpcId = payloadId();
     await this.sendRequest({
       topic,
       method: "wc_sessionEvent",
       params: { event, chainId },
       throwOnFailedPublish: true,
       relayRpcId,
+      clientRpcId,
     });
   };
 
   public disconnect: IEngine["disconnect"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
+    await this.confirmOnlineStateOrThrow();
     await this.isValidDisconnect(params);
     const { topic } = params;
     if (this.client.session.keys.includes(topic)) {
@@ -656,9 +723,22 @@ export class Engine extends IEngine {
 
   // ---------- Auth ------------------------------------------------ //
 
-  public authenticate: IEngine["authenticate"] = async (params) => {
+  public authenticate: IEngine["authenticate"] = async (params, walletUniversalLink) => {
     this.isInitialized();
     this.isValidAuthenticate(params);
+
+    const isLinkMode =
+      walletUniversalLink &&
+      this.client.core.linkModeSupportedApps.includes(walletUniversalLink) &&
+      this.client.metadata.redirect?.linkMode;
+
+    const transportType: RelayerTypes.TransportType = isLinkMode
+      ? TRANSPORT_TYPES.link_mode
+      : TRANSPORT_TYPES.relay;
+
+    if (transportType === TRANSPORT_TYPES.relay) {
+      await this.confirmOnlineStateOrThrow();
+    }
 
     const {
       chains,
@@ -677,6 +757,7 @@ export class Engine extends IEngine {
 
     const { topic: pairingTopic, uri: connectionUri } = await this.client.core.pairing.create({
       methods: ["wc_sessionAuthenticate"],
+      transportType,
     });
 
     this.client.logger.info({
@@ -691,8 +772,9 @@ export class Engine extends IEngine {
       this.client.auth.authKeys.set(AUTH_PUBLIC_KEY_NAME, { responseTopic, publicKey }),
       this.client.auth.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic }),
     ]);
+
     // Subscribe to response topic
-    await this.client.core.relayer.subscribe(responseTopic);
+    await this.client.core.relayer.subscribe(responseTopic, { transportType });
 
     this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
 
@@ -715,7 +797,7 @@ export class Engine extends IEngine {
         ? expiry
         : ENGINE_RPC_OPTS.wc_sessionAuthenticate.req.ttl;
 
-    const request = {
+    const request: AuthTypes.SessionAuthenticateRequestParams = {
       authPayload: {
         type: type ?? "caip122",
         chains,
@@ -860,12 +942,28 @@ export class Engine extends IEngine {
             [...new Set(approvedMethods)],
             [...new Set(approvedAccounts)],
           ),
+          transportType,
         };
 
-        await this.client.core.relayer.subscribe(sessionTopic);
+        await this.client.core.relayer.subscribe(sessionTopic, { transportType });
         await this.client.session.set(sessionTopic, session);
         session = this.client.session.get(sessionTopic);
       }
+
+      if (
+        this.client.metadata.redirect?.linkMode &&
+        responder.metadata.redirect?.linkMode &&
+        responder.metadata.redirect?.universal &&
+        walletUniversalLink
+      ) {
+        // save wallet link in array of apps that support linkMode
+        this.client.core.addLinkModeSupportedApp(responder.metadata.redirect.universal);
+
+        this.client.session.update(sessionTopic, {
+          transportType: TRANSPORT_TYPES.link_mode,
+        });
+      }
+
       resolve({
         auths: cacaos,
         session,
@@ -879,26 +977,37 @@ export class Engine extends IEngine {
     this.events.once<"session_connect">(engineEvent("session_connect"), onSessionConnect);
     this.events.once(engineEvent("session_request", id), onAuthenticate);
 
+    let linkModeURL;
     try {
-      // send both (main & fallback) requests
-      await Promise.all([
-        this.sendRequest({
-          topic: pairingTopic,
-          method: "wc_sessionAuthenticate",
-          params: request,
-          expiry: params.expiry,
-          throwOnFailedPublish: true,
-          clientRpcId: id,
-        }),
-        this.sendRequest({
-          topic: pairingTopic,
-          method: "wc_sessionPropose",
-          params: proposal,
-          expiry: ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl,
-          throwOnFailedPublish: true,
-          clientRpcId: fallbackId,
-        }),
-      ]);
+      if (isLinkMode) {
+        const payload = formatJsonRpcRequest("wc_sessionAuthenticate", request, id);
+        this.client.core.history.set(pairingTopic, payload);
+        const message = await this.client.core.crypto.encode("", payload, {
+          type: TYPE_2,
+          encoding: BASE64URL,
+        });
+        linkModeURL = getLinkModeURL(walletUniversalLink, pairingTopic, message);
+      } else {
+        // send both (main & fallback) requests
+        await Promise.all([
+          this.sendRequest({
+            topic: pairingTopic,
+            method: "wc_sessionAuthenticate",
+            params: request,
+            expiry: params.expiry,
+            throwOnFailedPublish: true,
+            clientRpcId: id,
+          }),
+          this.sendRequest({
+            topic: pairingTopic,
+            method: "wc_sessionPropose",
+            params: proposal,
+            expiry: ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl,
+            throwOnFailedPublish: true,
+            clientRpcId: fallbackId,
+          }),
+        ]);
+      }
     } catch (error) {
       // cleanup listeners on failed publish
       this.events.off(engineEvent("session_connect"), onSessionConnect);
@@ -908,12 +1017,16 @@ export class Engine extends IEngine {
 
     await this.setProposal(fallbackId, { id: fallbackId, ...proposal });
     await this.setAuthRequest(id, {
-      request: { ...request, verifyContext: {} as any },
+      request: {
+        ...request,
+        verifyContext: {} as any,
+      },
       pairingTopic,
+      transportType,
     });
 
     return {
-      uri: connectionUri,
+      uri: linkModeURL ?? connectionUri,
       response: done,
     } as EngineTypes.SessionAuthenticateResponsePromise;
   };
@@ -944,6 +1057,11 @@ export class Engine extends IEngine {
         EVENT_CLIENT_AUTHENTICATE_ERRORS.authenticated_session_pending_request_not_found,
       );
       throw new Error(`Could not find pending auth request with id ${id}`);
+    }
+
+    const transportType = pendingRequest.transportType || TRANSPORT_TYPES.relay;
+    if (transportType === TRANSPORT_TYPES.relay) {
+      await this.confirmOnlineStateOrThrow();
     }
 
     const receiverPublicKey = pendingRequest.requester.publicKey;
@@ -1029,12 +1147,13 @@ export class Engine extends IEngine {
           [...new Set(approvedMethods)],
           [...new Set(approvedAccounts)],
         ),
+        transportType,
       };
 
       event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.subscribing_authenticated_session_topic);
 
       try {
-        await this.client.core.relayer.subscribe(sessionTopic);
+        await this.client.core.relayer.subscribe(sessionTopic, { transportType });
       } catch (error) {
         event.setError(
           EVENT_CLIENT_AUTHENTICATE_ERRORS.subscribe_authenticated_session_topic_failure,
@@ -1071,6 +1190,7 @@ export class Engine extends IEngine {
         },
         encodeOpts,
         throwOnFailedPublish: true,
+        appLink: this.getAppLinkIfEnabled(pendingRequest.requester.metadata, transportType),
       });
     } catch (error) {
       event.setError(
@@ -1081,14 +1201,13 @@ export class Engine extends IEngine {
 
     await this.client.auth.requests.delete(id, { message: "fulfilled", code: 0 });
     await this.client.core.pairing.disconnect({ topic: pendingRequest.pairingTopic });
-
     this.client.core.eventClient.deleteEvent({ eventId: event.eventId });
 
     return { session };
   };
 
   public rejectSessionAuthenticate: IEngine["rejectSessionAuthenticate"] = async (params) => {
-    await this.isInitialized();
+    this.isInitialized();
 
     const { id, reason } = params;
 
@@ -1096,6 +1215,10 @@ export class Engine extends IEngine {
 
     if (!pendingRequest) {
       throw new Error(`Could not find pending auth request with id ${id}`);
+    }
+
+    if (pendingRequest.transportType === TRANSPORT_TYPES.relay) {
+      await this.confirmOnlineStateOrThrow();
     }
 
     const receiverPublicKey = pendingRequest.requester.publicKey;
@@ -1114,6 +1237,10 @@ export class Engine extends IEngine {
       error: reason,
       encodeOpts,
       rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.reject,
+      appLink: this.getAppLinkIfEnabled(
+        pendingRequest.requester.metadata,
+        pendingRequest.transportType,
+      ),
     });
     await this.client.auth.requests.delete(id, { message: "rejected", code: 0 });
     await this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED"));
@@ -1257,7 +1384,7 @@ export class Engine extends IEngine {
   };
 
   private setAuthRequest: EnginePrivate["setAuthRequest"] = async (id, params) => {
-    const { request, pairingTopic } = params;
+    const { request, pairingTopic, transportType = TRANSPORT_TYPES.relay } = params;
     this.client.core.expirer.set(id, request.expiryTimestamp);
     await this.client.auth.requests.set(id, {
       authPayload: request.authPayload,
@@ -1266,6 +1393,7 @@ export class Engine extends IEngine {
       id,
       pairingTopic,
       verifyContext: request.verifyContext,
+      transportType,
     });
   };
 
@@ -1285,12 +1413,24 @@ export class Engine extends IEngine {
   };
 
   private sendRequest: EnginePrivate["sendRequest"] = async (args) => {
-    const { topic, method, params, expiry, relayRpcId, clientRpcId, throwOnFailedPublish } = args;
+    const {
+      topic,
+      method,
+      params,
+      expiry,
+      relayRpcId,
+      clientRpcId,
+      throwOnFailedPublish,
+      appLink,
+    } = args;
     const payload = formatJsonRpcRequest(method, params, clientRpcId);
 
-    let message;
+    let message: string;
+    const isLinkMode = !!appLink;
+
     try {
-      message = await this.client.core.crypto.encode(topic, payload);
+      const encoding = isLinkMode ? BASE64URL : BASE64;
+      message = await this.client.core.crypto.encode(topic, payload, { encoding });
     } catch (error) {
       await this.cleanup();
       this.client.logger.error(`sendRequest() -> core.crypto.encode() for topic ${topic} failed`);
@@ -1308,26 +1448,42 @@ export class Engine extends IEngine {
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
     this.client.core.history.set(topic, payload);
-    if (throwOnFailedPublish) {
-      opts.internal = {
-        ...opts.internal,
-        throwOnFailedPublish: true,
-      };
-      await this.client.core.relayer.publish(topic, message, opts);
+
+    if (isLinkMode) {
+      const redirectURL = getLinkModeURL(appLink, topic, message);
+      await (global as any).Linking.openURL(redirectURL, this.client.name);
     } else {
-      this.client.core.relayer
-        .publish(topic, message, opts)
-        .catch((error) => this.client.logger.error(error));
+      const opts = ENGINE_RPC_OPTS[method].req;
+      if (expiry) opts.ttl = expiry;
+      if (relayRpcId) opts.id = relayRpcId;
+      if (throwOnFailedPublish) {
+        opts.internal = {
+          ...opts.internal,
+          throwOnFailedPublish: true,
+        };
+        await this.client.core.relayer.publish(topic, message, opts);
+      } else {
+        this.client.core.relayer
+          .publish(topic, message, opts)
+          .catch((error) => this.client.logger.error(error));
+      }
     }
+
     return payload.id;
   };
 
   private sendResult: EnginePrivate["sendResult"] = async (args) => {
-    const { id, topic, result, throwOnFailedPublish, encodeOpts } = args;
+    const { id, topic, result, throwOnFailedPublish, encodeOpts, appLink } = args;
     const payload = formatJsonRpcResult(id, result);
     let message;
+    const isLinkMode = appLink && typeof (global as any)?.Linking !== "undefined";
+
     try {
-      message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
+      const encoding = isLinkMode ? BASE64URL : BASE64;
+      message = await this.client.core.crypto.encode(topic, payload, {
+        ...(encodeOpts || {}),
+        encoding,
+      });
     } catch (error) {
       // if encoding fails e.g. due to missing keychain, we want to cleanup all related data as its unusable
       await this.cleanup();
@@ -1341,27 +1497,39 @@ export class Engine extends IEngine {
       this.client.logger.error(`sendResult() -> history.get(${topic}, ${id}) failed`);
       throw error;
     }
-    const opts = ENGINE_RPC_OPTS[record.request.method].res;
-    if (throwOnFailedPublish) {
-      opts.internal = {
-        ...opts.internal,
-        throwOnFailedPublish: true,
-      };
-      await this.client.core.relayer.publish(topic, message, opts);
+
+    if (isLinkMode) {
+      const redirectURL = getLinkModeURL(appLink, topic, message);
+      await (global as any).Linking.openURL(redirectURL, this.client.name);
     } else {
-      this.client.core.relayer
-        .publish(topic, message, opts)
-        .catch((error) => this.client.logger.error(error));
+      const opts = ENGINE_RPC_OPTS[record.request.method].res;
+      if (throwOnFailedPublish) {
+        opts.internal = {
+          ...opts.internal,
+          throwOnFailedPublish: true,
+        };
+        await this.client.core.relayer.publish(topic, message, opts);
+      } else {
+        this.client.core.relayer
+          .publish(topic, message, opts)
+          .catch((error) => this.client.logger.error(error));
+      }
     }
+
     await this.client.core.history.resolve(payload);
   };
 
   private sendError: EnginePrivate["sendError"] = async (params) => {
-    const { id, topic, error, encodeOpts, rpcOpts } = params;
+    const { id, topic, error, encodeOpts, rpcOpts, appLink } = params;
     const payload = formatJsonRpcError(id, error);
     let message;
+    const isLinkMode = appLink && typeof (global as any)?.Linking !== "undefined";
     try {
-      message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
+      const encoding = isLinkMode ? BASE64URL : BASE64;
+      message = await this.client.core.crypto.encode(topic, payload, {
+        ...(encodeOpts || {}),
+        encoding,
+      });
     } catch (error) {
       await this.cleanup();
       this.client.logger.error(`sendError() -> core.crypto.encode() for topic ${topic} failed`);
@@ -1374,9 +1542,16 @@ export class Engine extends IEngine {
       this.client.logger.error(`sendError() -> history.get(${topic}, ${id}) failed`);
       throw error;
     }
-    const opts = rpcOpts || ENGINE_RPC_OPTS[record.request.method].res;
-    // await is intentionally omitted to speed up performance
-    this.client.core.relayer.publish(topic, message, opts);
+
+    if (isLinkMode) {
+      const redirectURL = getLinkModeURL(appLink, topic, message);
+      await (global as any).Linking.openURL(redirectURL, this.client.name);
+    } else {
+      const opts = rpcOpts || ENGINE_RPC_OPTS[record.request.method].res;
+      // await is intentionally omitted to speed up performance
+      this.client.core.relayer.publish(topic, message, opts);
+    }
+
     await this.client.core.history.resolve(payload);
   };
 
@@ -1398,11 +1573,14 @@ export class Engine extends IEngine {
     ]);
   };
 
-  private async isInitialized() {
+  private isInitialized() {
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
     }
+  }
+
+  private async confirmOnlineStateOrThrow() {
     await this.client.core.relayer.confirmOnlineStateOrThrow();
   }
 
@@ -1420,7 +1598,7 @@ export class Engine extends IEngine {
   }
 
   private async onRelayMessage(event: RelayerTypes.MessageEvent) {
-    const { topic, message, attestation } = event;
+    const { topic, message, attestation, transportType } = event;
 
     // Retrieve the public key (if defined) to decrypt possible `auth_request` response
     const { publicKey } = this.client.auth.authKeys.keys.includes(AUTH_PUBLIC_KEY_NAME)
@@ -1429,8 +1607,8 @@ export class Engine extends IEngine {
 
     const payload = await this.client.core.crypto.decode(topic, message, {
       receiverPublicKey: publicKey,
+      encoding: transportType === TRANSPORT_TYPES.link_mode ? BASE64URL : BASE64,
     });
-
     try {
       if (isJsonRpcRequest(payload)) {
         this.client.core.history.set(topic, payload);
@@ -1438,14 +1616,15 @@ export class Engine extends IEngine {
           topic,
           payload,
           attestation,
+          transportType,
           encryptedId: hashMessage(message),
         });
       } else if (isJsonRpcResponse(payload)) {
         await this.client.core.history.resolve(payload);
-        await this.onRelayEventResponse({ topic, payload });
+        await this.onRelayEventResponse({ topic, payload, transportType });
         this.client.core.history.delete(topic, payload.id);
       } else {
-        this.onRelayEventUnknownPayload({ topic, payload });
+        this.onRelayEventUnknownPayload({ topic, payload, transportType });
       }
     } catch (error) {
       this.client.logger.error(error);
@@ -1482,7 +1661,8 @@ export class Engine extends IEngine {
   };
 
   private processRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
-    const { topic, payload, attestation, encryptedId } = event;
+    const { topic, payload, attestation, transportType, encryptedId } = event;
+
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
     if (this.shouldIgnorePairingRequest({ topic, requestMethod: reqMethod })) {
@@ -1503,7 +1683,13 @@ export class Engine extends IEngine {
       case "wc_sessionDelete":
         return await this.onSessionDeleteRequest(topic, payload);
       case "wc_sessionRequest":
-        return await this.onSessionRequest({ topic, payload, attestation, encryptedId });
+        return await this.onSessionRequest({
+          topic,
+          payload,
+          attestation,
+          encryptedId,
+          transportType,
+        });
       case "wc_sessionEvent":
         return await this.onSessionEventRequest(topic, payload);
       case "wc_sessionAuthenticate":
@@ -1512,6 +1698,7 @@ export class Engine extends IEngine {
           payload,
           attestation,
           encryptedId,
+          transportType,
         });
       default:
         return this.client.logger.info(`Unsupported request method ${reqMethod}`);
@@ -1519,12 +1706,13 @@ export class Engine extends IEngine {
   };
 
   private onRelayEventResponse: EnginePrivate["onRelayEventResponse"] = async (event) => {
-    const { topic, payload } = event;
+    const { topic, payload, transportType } = event;
     const record = await this.client.core.history.get(topic, payload.id);
     const resMethod = record.request.method as JsonRpcTypes.WcMethod;
+
     switch (resMethod) {
       case "wc_sessionPropose":
-        return this.onSessionProposeResponse(topic, payload);
+        return this.onSessionProposeResponse(topic, payload, transportType);
       case "wc_sessionSettle":
         return this.onSessionSettleResponse(topic, payload);
       case "wc_sessionUpdate":
@@ -1577,6 +1765,12 @@ export class Engine extends IEngine {
     const { params, id } = payload;
     try {
       const event = this.client.core.eventClient.getEvent({ topic });
+
+      if (this.client.events.listenerCount("session_proposal") === 0) {
+        console.warn("No listener for session_proposal event");
+        event?.setError(EVENT_CLIENT_PAIRING_ERRORS.proposal_listener_not_found);
+      }
+
       this.isValidConnect({ ...payload.params });
       const expiryTimestamp =
         params.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
@@ -1590,10 +1784,6 @@ export class Engine extends IEngine {
         metadata: proposal.proposer.metadata,
       });
 
-      if (this.client.events.listenerCount("session_proposal") === 0) {
-        console.warn("No listener for session_proposal event");
-        event?.setError(EVENT_CLIENT_PAIRING_ERRORS.proposal_listener_not_found);
-      }
       event?.addTrace(EVENT_CLIENT_PAIRING_TRACES.emit_session_proposal);
 
       this.client.events.emit("session_proposal", { id, params: proposal, verifyContext });
@@ -1611,6 +1801,7 @@ export class Engine extends IEngine {
   private onSessionProposeResponse: EnginePrivate["onSessionProposeResponse"] = async (
     topic,
     payload,
+    transportType,
   ) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
@@ -1639,7 +1830,9 @@ export class Engine extends IEngine {
         method: "onSessionProposeResponse",
         sessionTopic,
       });
-      const subscriptionId = await this.client.core.relayer.subscribe(sessionTopic);
+      const subscriptionId = await this.client.core.relayer.subscribe(sessionTopic, {
+        transportType,
+      });
       this.client.logger.trace({
         type: "method",
         method: "onSessionProposeResponse",
@@ -1686,6 +1879,7 @@ export class Engine extends IEngine {
         },
         ...(sessionProperties && { sessionProperties }),
         ...(sessionConfig && { sessionConfig }),
+        transportType: TRANSPORT_TYPES.relay,
       };
       const target = engineEvent("session_connect");
       const listeners = this.events.listenerCount(target);
@@ -1735,7 +1929,7 @@ export class Engine extends IEngine {
       const lastSessionUpdateId = MemoryStore.get<number>(memoryKey);
 
       if (lastSessionUpdateId && this.isRequestOutOfSync(lastSessionUpdateId, id)) {
-        this.client.logger.info(`Discarding out of sync request - ${id}`);
+        this.client.logger.warn(`Discarding out of sync request - ${id}`);
         this.sendError({ id, topic, error: getSdkError("INVALID_UPDATE_REQUEST") });
         return;
       }
@@ -1768,7 +1962,7 @@ export class Engine extends IEngine {
   // compares the timestamp of the last processed request with the current request
   // client <-> client rpc ID is timestamp + 3 random digits
   private isRequestOutOfSync = (lastId: number, currentId: number) => {
-    return parseInt(currentId.toString().slice(0, -3)) <= parseInt(lastId.toString().slice(0, -3));
+    return currentId.toString().slice(0, -3) < lastId.toString().slice(0, -3);
   };
 
   private onSessionUpdateResponse: EnginePrivate["onSessionUpdateResponse"] = (_topic, payload) => {
@@ -1870,7 +2064,7 @@ export class Engine extends IEngine {
     const { id } = payload;
     try {
       this.isValidDisconnect({ topic, reason: payload.params });
-      await Promise.all([
+      Promise.all([
         new Promise((resolve) => {
           // RPC request needs to happen before deletion as it utalises session encryption
           this.client.core.relayer.once(RELAYER_EVENTS.publish, async () => {
@@ -1884,14 +2078,14 @@ export class Engine extends IEngine {
           throwOnFailedPublish: true,
         }),
         this.cleanupPendingSentRequestsForTopic({ topic, error: getSdkError("USER_DISCONNECTED") }),
-      ]);
+      ]).catch((err) => this.client.logger.error(err));
     } catch (err: any) {
       this.client.logger.error(err);
     }
   };
 
   private onSessionRequest: EnginePrivate["onSessionRequest"] = async (args) => {
-    const { topic, payload, attestation, encryptedId } = args;
+    const { topic, payload, attestation, encryptedId, transportType } = args;
     const { id, params } = payload;
     try {
       await this.isValidRequest({ topic, ...params });
@@ -1901,6 +2095,7 @@ export class Engine extends IEngine {
         hash: hashMessage(JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id))),
         encryptedId,
         metadata: session.peer.metadata,
+        transportType,
       });
       const request = {
         id,
@@ -1909,6 +2104,15 @@ export class Engine extends IEngine {
         verifyContext,
       };
       await this.setPendingSessionRequest(request);
+
+      if (
+        transportType === TRANSPORT_TYPES.link_mode &&
+        session.peer.metadata.redirect?.universal
+      ) {
+        // save app as supported for link mode
+        this.client.core.addLinkModeSupportedApp(session.peer.metadata.redirect?.universal);
+      }
+
       if (this.client.signConfig?.disableRequestQueue) {
         this.emitSessionRequest(request);
       } else {
@@ -1993,14 +2197,15 @@ export class Engine extends IEngine {
   private onSessionAuthenticateRequest: EnginePrivate["onSessionAuthenticateRequest"] = async (
     args,
   ) => {
-    const { topic, payload, attestation, encryptedId } = args;
+    const { topic, payload, attestation, encryptedId, transportType } = args;
     try {
       const { requester, authPayload, expiryTimestamp } = payload.params;
       const verifyContext = await this.getVerifyContext({
         attestationId: attestation,
         hash: hashMessage(JSON.stringify(payload)),
         encryptedId,
-        metadata: this.client.metadata,
+        metadata: requester.metadata,
+        transportType,
       });
       const pendingRequest = {
         requester,
@@ -2010,7 +2215,17 @@ export class Engine extends IEngine {
         verifyContext,
         expiryTimestamp,
       };
-      await this.setAuthRequest(payload.id, { request: pendingRequest, pairingTopic: topic });
+      await this.setAuthRequest(payload.id, {
+        request: pendingRequest,
+        pairingTopic: topic,
+        transportType,
+      });
+
+      if (transportType === TRANSPORT_TYPES.link_mode && requester.metadata.redirect?.universal) {
+        // save app as supported for link mode
+        this.client.core.addLinkModeSupportedApp(requester.metadata.redirect.universal);
+      }
+
       this.client.events.emit("session_authenticate", {
         topic,
         params: payload.params,
@@ -2022,6 +2237,7 @@ export class Engine extends IEngine {
 
       const receiverPublicKey = payload.params.requester.publicKey;
       const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+      const appLink = this.getAppLinkIfEnabled(payload.params.requester.metadata, transportType);
 
       const encodeOpts = {
         type: TYPE_1,
@@ -2034,6 +2250,7 @@ export class Engine extends IEngine {
         error: err,
         encodeOpts,
         rpcOpts: ENGINE_RPC_OPTS.wc_sessionAuthenticate.autoReject,
+        appLink,
       });
     }
   };
@@ -2552,8 +2769,9 @@ export class Engine extends IEngine {
     hash?: string;
     encryptedId?: string;
     metadata: CoreTypes.Metadata;
+    transportType?: RelayerTypes.TransportType;
   }) => {
-    const { attestationId, hash, encryptedId, metadata } = params;
+    const { attestationId, hash, encryptedId, metadata, transportType } = params;
     const context: Verify.Context = {
       verified: {
         verifyUrl: metadata.verifyUrl || VERIFY_SERVER,
@@ -2563,6 +2781,12 @@ export class Engine extends IEngine {
     };
 
     try {
+      if (transportType === TRANSPORT_TYPES.link_mode) {
+        const applink = this.getAppLinkIfEnabled(metadata, transportType);
+        context.verified.validation =
+          applink && new URL(applink).origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
+        return context;
+      }
       const result = await this.client.core.verify.resolve({
         attestationId,
         hash,
@@ -2626,6 +2850,68 @@ export class Engine extends IEngine {
         `Record was recently deleted - ${deletedRecord}: ${id}`,
       );
       throw new Error(message);
+    }
+  };
+
+  private isLinkModeEnabled = (
+    peerMetadata?: CoreTypes.Metadata,
+    transportType?: RelayerTypes.TransportType,
+  ): boolean => {
+    if (!peerMetadata || transportType !== TRANSPORT_TYPES.link_mode) return false;
+
+    return (
+      this.client.metadata?.redirect?.linkMode === true &&
+      this.client.metadata?.redirect?.universal !== undefined &&
+      this.client.metadata?.redirect?.universal !== "" &&
+      peerMetadata?.redirect?.universal !== undefined &&
+      peerMetadata?.redirect?.universal !== "" &&
+      peerMetadata?.redirect?.linkMode === true &&
+      this.client.core.linkModeSupportedApps.includes(peerMetadata.redirect.universal) &&
+      typeof (global as any)?.Linking !== "undefined"
+    );
+  };
+
+  private getAppLinkIfEnabled = (
+    peerMetadata?: CoreTypes.Metadata,
+    transportType?: RelayerTypes.TransportType,
+  ): string | undefined => {
+    return this.isLinkModeEnabled(peerMetadata, transportType)
+      ? peerMetadata?.redirect?.universal
+      : undefined;
+  };
+
+  private handleLinkModeMessage = ({ url }: { url: string }) => {
+    if (!url || !url.includes("wc_ev") || !url.includes("topic")) return;
+
+    const topic = getSearchParamFromURL(url, "topic") || "";
+    const message = decodeURIComponent(getSearchParamFromURL(url, "wc_ev") || "");
+
+    const sessionExists = this.client.session.keys.includes(topic);
+
+    if (sessionExists) {
+      this.client.session.update(topic, { transportType: TRANSPORT_TYPES.link_mode });
+    }
+
+    this.client.core.dispatchEnvelope({ topic, message, sessionExists });
+  };
+
+  private registerLinkModeListeners = async () => {
+    if (isTestRun() || (isReactNative() && this.client.metadata.redirect?.linkMode)) {
+      const linking = (global as any)?.Linking;
+      // global.Linking is set by react-native-compat
+      if (typeof linking !== "undefined") {
+        // set URL listener
+        linking.addEventListener("url", this.handleLinkModeMessage, this.client.name);
+
+        // check for initial URL -> cold boots
+        const initialUrl = await linking.getInitialURL();
+        if (initialUrl) {
+          // wait to process the message to allow event listeners to be registered by the implementing app
+          setTimeout(() => {
+            this.handleLinkModeMessage({ url: initialUrl });
+          }, 50);
+        }
+      }
     }
   };
 }

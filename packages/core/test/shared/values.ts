@@ -8,6 +8,10 @@ export const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID
   ? process.env.TEST_PROJECT_ID
   : undefined;
 
+export const TEST_PROJECT_ID_MOBILE = process.env.TEST_PROJECT_ID_MOBILE
+  ? process.env.TEST_PROJECT_ID_MOBILE
+  : undefined;
+
 export const TEST_CORE_OPTIONS: CoreTypes.Options = {
   logger: "fatal",
   relayUrl: TEST_RELAY_URL,
@@ -17,8 +21,12 @@ export const TEST_CORE_OPTIONS: CoreTypes.Options = {
   },
 };
 
+export const TEST_MOBILE_APP_ID = process.env.TEST_MOBILE_APP_ID
+  ? process.env.TEST_MOBILE_APP_ID
+  : undefined;
+
 // default db name for persistent storage tests
-export const DEFAULT_DB_NAME = "tmp/persistent-test.db";
+export const DEFAULT_DB_NAME = "./test/tmp/persistent-test.db";
 
 // default store name for persistent storage tests
 export const MOCK_STORE_NAME = "persistent-store";

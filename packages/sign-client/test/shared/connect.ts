@@ -75,9 +75,14 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
     const timeout = setTimeout(() => {
       return reject(new Error(`Connect timed out after ${connectTimeoutMs}ms - ${A.core.name}`));
     }, connectTimeoutMs);
-    const result = await A.connect(connectParams);
-    clearTimeout(timeout);
-    return resolve(result);
+    try {
+      const result = await A.connect(connectParams);
+      resolve(result);
+    } catch (error) {
+      reject(error);
+    } finally {
+      clearTimeout(timeout);
+    }
   });
 
   const { uri, approval } = await connect;
@@ -113,9 +118,15 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
       const timeout = setTimeout(() => {
         return reject(new Error(`Pair timed out after ${pairTimeoutMs}ms`));
       }, pairTimeoutMs);
-      const result = await B.pair({ uri });
-      clearTimeout(timeout);
-      return resolve(result);
+      try {
+        const result = await B.pair({ uri });
+        clearTimeout(timeout);
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      } finally {
+        clearTimeout(timeout);
+      }
     });
   await Promise.all([
     resolveSessionProposal,

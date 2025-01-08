@@ -5,7 +5,7 @@ Ethereum Provider for WalletConnect Protocol.
 ## Installation
 
 ```
-npm i @walletconnect/ethereum-provider @walletconnect/modal
+npm i @walletconnect/ethereum-provider
 ```
 
 ## Initialization

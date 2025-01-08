@@ -1,6 +1,6 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { ICore, IVerify } from "@walletconnect/types";
-import { isBrowser, isNode, P256KeyDataType, verifyP256Jwt } from "@walletconnect/utils";
+import { isBrowser, isTestRun, P256KeyDataType, verifyP256Jwt } from "@walletconnect/utils";
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import { getDocument } from "@walletconnect/window-getters";
 import { decodeJWT } from "@walletconnect/relay-auth";
@@ -40,7 +40,7 @@ export class Verify extends IVerify {
     super(core, logger, store);
     this.logger = generateChildLogger(logger, this.name);
     this.abortController = new AbortController();
-    this.isDevEnv = isNode() && process.env.IS_VITEST;
+    this.isDevEnv = isTestRun();
     this.init();
   }
 
@@ -56,9 +56,6 @@ export class Verify extends IVerify {
     if (this.publicKey && toMiliseconds(this.publicKey?.expiresAt) < Date.now()) {
       this.logger.debug("verify v2 public key expired");
       await this.removePublicKey();
-    }
-    if (!this.publicKey) {
-      await this.fetchAndPersistPublicKey();
     }
   };
 
@@ -83,16 +80,21 @@ export class Verify extends IVerify {
         iframe.addEventListener("error", abortListener, { signal: this.abortController.signal });
         const listener = (event: MessageEvent) => {
           if (!event.data) return;
-          const data = JSON.parse(event.data);
-          if (data.type === "verify_attestation") {
-            const decoded = decodeJWT(data.attestation) as unknown as { payload: JwkPayload };
-            if (decoded.payload.id !== id) return;
+          if (typeof event.data !== "string") return;
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "verify_attestation") {
+              const decoded = decodeJWT(data.attestation) as unknown as { payload: JwkPayload };
+              if (decoded.payload.id !== id) return;
 
-            clearInterval(abortTimeout);
-            document.body.removeChild(iframe);
-            this.abortController.signal.removeEventListener("abort", abortListener);
-            window.removeEventListener("message", listener);
-            resolve(data.attestation === null ? "" : data.attestation);
+              clearInterval(abortTimeout);
+              document.body.removeChild(iframe);
+              this.abortController.signal.removeEventListener("abort", abortListener);
+              window.removeEventListener("message", listener);
+              resolve(data.attestation === null ? "" : data.attestation);
+            }
+          } catch (e) {
+            this.logger.warn(e);
           }
         };
         document.body.appendChild(iframe);
@@ -118,7 +120,13 @@ export class Verify extends IVerify {
       const decoded = decodeJWT(attestationId) as unknown as { payload: JwkPayload };
       if (decoded.payload.id !== encryptedId) return;
       const validation = await this.isValidJwtAttestation(attestationId);
-      if (validation) return validation;
+      if (validation) {
+        if (!validation.isVerified) {
+          this.logger.warn("resolve: jwt attestation: origin url not verified");
+          return;
+        }
+        return validation;
+      }
     }
     if (!hash) return;
     const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
@@ -243,6 +251,7 @@ export class Verify extends IVerify {
     return {
       origin: validation.payload.origin,
       isScam: validation.payload.isScam,
+      isVerified: validation.payload.isVerified,
     };
   };
 }

@@ -1,13 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  base64Encode,
-  buildNamespacesFromAuth,
   createEncodedRecap,
   createRecap,
   decodeRecap,
   encodeRecap,
   formatMessage,
-  formatStatementFromRecap,
   getChainsFromRecap,
   getCommonValuesInArrays,
   getDecodedRecapFromResources,

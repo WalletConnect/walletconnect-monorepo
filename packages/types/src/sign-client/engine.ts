@@ -52,6 +52,7 @@ export declare namespace EngineTypes {
   interface EventCallback<T extends JsonRpcRequest | JsonRpcResponse> {
     topic: string;
     payload: T;
+    transportType?: RelayerTypes.MessageEvent["transportType"];
     attestation?: string;
     encryptedId?: string;
   }
@@ -184,6 +185,7 @@ export interface EnginePrivate {
     relayRpcId?: number;
     clientRpcId?: number;
     throwOnFailedPublish?: boolean;
+    appLink?: string;
   }): Promise<number>;
 
   sendResult<M extends JsonRpcTypes.WcMethod>(args: {
@@ -192,6 +194,7 @@ export interface EnginePrivate {
     result: JsonRpcTypes.Results[M];
     throwOnFailedPublish?: boolean;
     encodeOpts?: CryptoTypes.EncodeOptions;
+    appLink?: string;
   }): Promise<void>;
 
   sendError(params: {
@@ -200,6 +203,7 @@ export interface EnginePrivate {
     error: JsonRpcTypes.Error;
     encodeOpts?: CryptoTypes.EncodeOptions;
     rpcOpts?: RelayerTypes.PublishOptions;
+    appLink?: string;
   }): Promise<void>;
 
   onRelayEventRequest(event: EngineTypes.EventCallback<JsonRpcRequest>): Promise<void>;
@@ -228,6 +232,7 @@ export interface EnginePrivate {
     params: {
       request: AuthTypes.SessionAuthenticateRequest;
       pairingTopic: string;
+      transportType?: RelayerTypes.MessageEvent["transportType"];
     },
   ): Promise<void>;
 
@@ -259,6 +264,7 @@ export interface EnginePrivate {
   onSessionProposeResponse(
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_sessionPropose"]> | JsonRpcError,
+    transportType?: RelayerTypes.MessageEvent["transportType"],
   ): Promise<void>;
 
   onSessionSettleRequest(
@@ -309,6 +315,7 @@ export interface EnginePrivate {
   onSessionRequest(params: {
     topic: string;
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionRequest"]>;
+    transportType?: RelayerTypes.MessageEvent["transportType"];
     attestation?: string;
     encryptedId?: string;
   }): Promise<void>;
@@ -326,6 +333,7 @@ export interface EnginePrivate {
   onSessionAuthenticateRequest(params: {
     topic: string;
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionAuthenticate"]>;
+    transportType?: RelayerTypes.MessageEvent["transportType"];
     attestation?: string;
     encryptedId?: string;
   }): Promise<void>;
@@ -398,6 +406,7 @@ export abstract class IEngine {
 
   public abstract authenticate: (
     params: AuthTypes.SessionAuthenticateParams,
+    walletUniversalLink?: string,
   ) => Promise<EngineTypes.SessionAuthenticateResponsePromise>;
 
   public abstract approveSessionAuthenticate: (

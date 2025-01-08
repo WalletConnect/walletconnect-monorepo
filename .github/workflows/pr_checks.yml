@@ -72,6 +72,8 @@ jobs:
     env:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
+      TEST_PROJECT_ID_MOBILE: ${{ vars.TEST_PROJECT_ID_MOBILE }}
+      TEST_MOBILE_APP_ID: ${{ vars.TEST_MOBILE_APP_ID }}
     steps:
       - name: checkout
         uses: actions/checkout@v4

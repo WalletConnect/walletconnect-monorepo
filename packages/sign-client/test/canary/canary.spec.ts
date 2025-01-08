@@ -26,17 +26,47 @@ describe("Canary", () => {
   const metric_prefix = "HappyPath.connects";
   describe("HappyPath", () => {
     it("connects", async () => {
-      const start = Date.now();
+      const initStart = Date.now();
+      const handshakeClient = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS_A,
+        logger,
+      });
+      const initLatencyMs = Date.now() - initStart;
+      log(
+        `Client A (${await handshakeClient.core.crypto.getClientId()}) initialized in ${initLatencyMs}ms`,
+      );
+      const handshakeStart = Date.now();
+      await handshakeClient.core.relayer.transportOpen();
+      const handshakeLatencyMs = Date.now() - handshakeStart;
+      log(
+        `Client A (${await handshakeClient.core.crypto.getClientId()}) initialized in ${handshakeLatencyMs}ms`,
+      );
+      await handshakeClient.core.relayer.transportClose();
+
+      const aInitStart = Date.now();
       const A = await SignClient.init({
         ...TEST_SIGN_CLIENT_OPTIONS_A,
         logger,
       });
-      const handshakeLatencyMs = Date.now() - start;
+      log(
+        `Client A (${await A.core.crypto.getClientId()}) initialized in ${
+          Date.now() - aInitStart
+        }ms`,
+      );
 
+      const bInitStart = Date.now();
       const B = await SignClient.init({
         ...TEST_SIGN_CLIENT_OPTIONS_B,
         logger,
       });
+      log(
+        `Client B (${await B.core.crypto.getClientId()}) initialized in ${
+          Date.now() - bInitStart
+        }ms`,
+      );
+
+      const start = Date.now();
+
       const clients = { A, B };
       log(
         `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
@@ -80,6 +110,7 @@ describe("Canary", () => {
           successful,
           latencyMs,
           [
+            { initLatency: initLatencyMs },
             { handshakeLatency: handshakeLatencyMs },
             { proposePairingLatency: clientAConnectLatencyMs },
             { settlePairingLatency: settlePairingLatencyMs - clientAConnectLatencyMs },

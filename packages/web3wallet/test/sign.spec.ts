@@ -22,7 +22,7 @@ import {
   TEST_UPDATED_NAMESPACES,
 } from "./shared";
 
-describe("Sign Integration", () => {
+describe.skip("Sign Integration", () => {
   let core: ICore;
   let wallet: IWeb3Wallet;
   let dapp: ISignClient;

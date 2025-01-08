@@ -73,7 +73,10 @@ export abstract class IPairing {
   }): Promise<PairingTypes.Struct>;
 
   // for proposer to create inactive pairing
-  public abstract create(params?: { methods?: string[] }): Promise<{ topic: string; uri: string }>;
+  public abstract create(params?: {
+    methods?: string[];
+    transportType?: RelayerTypes.SubscribeOptions["transportType"];
+  }): Promise<{ topic: string; uri: string }>;
 
   // for either to activate a previously created pairing
   public abstract activate(params: { topic: string }): Promise<void>;
@@ -98,6 +101,8 @@ export abstract class IPairing {
 
   // for either peer to disconnect a pairing
   public abstract disconnect(params: { topic: string }): Promise<void>;
+
+  public abstract formatUriFromPairing(pairing: PairingTypes.Struct): string;
 }
 
 export interface IPairingPrivate {

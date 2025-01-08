@@ -10,7 +10,7 @@ This library provides a Sign Client for WalletConnect v2.0 Protocol for both Dap
 
 Check out documentation [here](https://docs.walletconnect.com/).
 
-Also available quick start for [Dapps](https://docs.walletconnect.com/2.0/javascript/sign/dapp-usage) and for [Wallets](https://docs.walletconnect.com/2.0/javascript/sign/wallet-usage)
+Also available quick start for [Dapps](https://docs.reown.com/api/sign/dapp-usage) and for [Wallets](https://docs.reown.com/api/sign/wallet-usage)
 
 ## License
 

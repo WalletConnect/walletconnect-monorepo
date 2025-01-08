@@ -11,10 +11,12 @@ import { decodeJWT } from "@walletconnect/relay-auth";
 export const BASE10 = "base10";
 export const BASE16 = "base16";
 export const BASE64 = "base64pad";
+export const BASE64URL = "base64url";
 export const UTF8 = "utf8";
 
 export const TYPE_0 = 0;
 export const TYPE_1 = 1;
+export const TYPE_2 = 2;
 
 export type P256KeyDataType = {
   crv: "P-256";
@@ -86,33 +88,58 @@ export function encrypt(params: CryptoTypes.EncryptParams): string {
     typeof params.iv !== "undefined" ? fromString(params.iv, BASE16) : randomBytes(IV_LENGTH);
   const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
   const sealed = box.seal(iv, fromString(params.message, UTF8));
-  return serialize({ type, sealed, iv, senderPublicKey });
+  return serialize({ type, sealed, iv, senderPublicKey, encoding: params.encoding });
+}
+
+export function encodeTypeTwoEnvelope(
+  message: string,
+  encoding?: CryptoTypes.EncodingType,
+): string {
+  const type = encodeTypeByte(TYPE_2);
+  // iv is not used in type 2 envelopes
+  const iv = randomBytes(IV_LENGTH);
+  const sealed = fromString(message, UTF8);
+  return serialize({ type, sealed, iv, encoding });
 }
 
 export function decrypt(params: CryptoTypes.DecryptParams): string {
   const box = new ChaCha20Poly1305(fromString(params.symKey, BASE16));
-  const { sealed, iv } = deserialize(params.encoded);
+  const { sealed, iv } = deserialize({ encoded: params.encoded, encoding: params?.encoding });
   const message = box.open(iv, sealed);
   if (message === null) throw new Error("Failed to decrypt");
   return toString(message, UTF8);
 }
 
+export function decodeTypeTwoEnvelope(
+  encoded: string,
+  encoding?: CryptoTypes.EncodingType,
+): string {
+  const { sealed } = deserialize({ encoded, encoding });
+  return toString(sealed, UTF8);
+}
+
 export function serialize(params: CryptoTypes.EncodingParams): string {
+  const { encoding = BASE64 } = params;
+
+  if (decodeTypeByte(params.type) === TYPE_2) {
+    return toString(concat([params.type, params.sealed]), encoding);
+  }
   if (decodeTypeByte(params.type) === TYPE_1) {
     if (typeof params.senderPublicKey === "undefined") {
       throw new Error("Missing sender public key for type 1 envelope");
     }
     return toString(
       concat([params.type, params.senderPublicKey, params.iv, params.sealed]),
-      BASE64,
+      encoding,
     );
   }
   // default to type 0 envelope
-  return toString(concat([params.type, params.iv, params.sealed]), BASE64);
+  return toString(concat([params.type, params.iv, params.sealed]), encoding);
 }
 
-export function deserialize(encoded: string): CryptoTypes.EncodingParams {
-  const bytes = fromString(encoded, BASE64);
+export function deserialize(params: CryptoTypes.DecodingParams): CryptoTypes.EncodingParams {
+  const { encoded, encoding = BASE64 } = params;
+  const bytes = fromString(encoded, encoding);
   const type = bytes.slice(ZERO_INDEX, TYPE_LENGTH);
   const slice1 = TYPE_LENGTH;
   if (decodeTypeByte(type) === TYPE_1) {
@@ -122,6 +149,12 @@ export function deserialize(encoded: string): CryptoTypes.EncodingParams {
     const iv = bytes.slice(slice2, slice3);
     const sealed = bytes.slice(slice3);
     return { type, sealed, iv, senderPublicKey };
+  }
+  if (decodeTypeByte(type) === TYPE_2) {
+    const sealed = bytes.slice(slice1);
+    // iv is not used in type 2 envelopes
+    const iv = randomBytes(IV_LENGTH);
+    return { type, sealed, iv };
   }
   // default to type 0 envelope
   const slice2 = slice1 + IV_LENGTH;
@@ -134,7 +167,7 @@ export function validateDecoding(
   encoded: string,
   opts?: CryptoTypes.DecodeOptions,
 ): CryptoTypes.EncodingValidation {
-  const deserialized = deserialize(encoded);
+  const deserialized = deserialize({ encoded, encoding: opts?.encoding });
   return validateEncoding({
     type: decodeTypeByte(deserialized.type),
     senderPublicKey:
@@ -172,6 +205,11 @@ export function isTypeOneEnvelope(
   );
 }
 
+export function isTypeTwoEnvelope(
+  result: CryptoTypes.EncodingValidation,
+): result is CryptoTypes.TypeOneParams {
+  return result.type === TYPE_2;
+}
 export function getCryptoKeyFromKeyData(keyData: P256KeyDataType): EC.KeyPair {
   const ec = new EC("p256");
   const key = ec.keyFromPublic(
@@ -230,8 +268,5 @@ export function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
     throw new Error("Invalid signature");
   }
   const data = decodeJWT(token) as unknown as { payload: T };
-  return {
-    ...data.payload,
-    isVerified: isValid,
-  };
+  return data.payload;
 }

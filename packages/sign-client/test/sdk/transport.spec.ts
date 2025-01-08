@@ -27,10 +27,14 @@ describe("Sign Client Transport Tests", () => {
             resolve(event);
           });
         }),
-        new Promise(async (resolve) => {
-          await clients.A.ping({ topic });
-          await clients.B.ping({ topic });
-          resolve(true);
+        new Promise<void>(async (resolve, reject) => {
+          try {
+            await clients.A.ping({ topic });
+            await clients.B.ping({ topic });
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
         }),
       ]);
       await deleteClients(clients);
@@ -54,10 +58,14 @@ describe("Sign Client Transport Tests", () => {
             resolve(event);
           });
         }),
-        new Promise(async (resolve) => {
-          await clients.A.ping({ topic });
-          await clients.B.ping({ topic });
-          resolve(true);
+        new Promise<void>(async (resolve, reject) => {
+          try {
+            await clients.A.ping({ topic });
+            await clients.B.ping({ topic });
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
         }),
       ]);
       await deleteClients(clients);
@@ -80,18 +88,20 @@ describe("Sign Client Transport Tests", () => {
             resolve(event);
           });
         }),
-        new Promise(async (resolve) => {
-          await clients.A.ping({ topic });
-          await clients.B.ping({ topic });
-          resolve(true);
+        new Promise<void>(async (resolve, reject) => {
+          try {
+            await clients.A.ping({ topic });
+            await clients.B.ping({ topic });
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
         }),
       ]);
       await deleteClients(clients);
     });
     it("should automatically start transport on request after being closed. Case 2", async () => {
       const clients = await initTwoClients();
-
-      await throttle(12000);
 
       // both clients should be auto disconnected
       expect(clients.A.core.relayer.connected).toBe(false);
@@ -111,10 +121,14 @@ describe("Sign Client Transport Tests", () => {
             resolve(event);
           });
         }),
-        new Promise(async (resolve) => {
-          await clients.A.ping({ topic });
-          await clients.B.ping({ topic });
-          resolve(true);
+        new Promise<void>(async (resolve, reject) => {
+          try {
+            await clients.A.ping({ topic });
+            await clients.B.ping({ topic });
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
         }),
       ]);
       await deleteClients(clients);
