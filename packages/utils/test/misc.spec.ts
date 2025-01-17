@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   calcExpiry,
   formatDeeplinkUrl,
@@ -8,6 +8,7 @@ import {
   hasOverlap,
   isExpired,
   toBase64,
+  openDeeplink,
 } from "../src";
 
 const RELAY_URL = "wss://relay.walletconnect.org";
@@ -188,6 +189,64 @@ describe("Misc", () => {
       expect(formatted).to.eql(expectedDeepLink);
       const decoded = atob(formatted.split("startapp=")[1]);
       expect(decoded).to.eql(partToEncode);
+    });
+
+    describe("openDeeplink", () => {
+      const previousWindow = globalThis.window;
+
+      beforeEach(() => {
+        Object.assign(globalThis, {
+          window: {
+            open: vi.fn(),
+          },
+        });
+      });
+
+      afterAll(() => {
+        Object.assign(globalThis, {
+          window: previousWindow,
+        });
+      });
+
+      it("should target '_blank' if link starts with 'https://'", () => {
+        const url = "https://example.com";
+        openDeeplink(url);
+        expect(window.open).toHaveBeenCalledWith(url, "_blank", "noreferrer noopener");
+      });
+
+      it("should target '_blank' if link starts with 'http://'", () => {
+        const url = "http://example.com";
+        openDeeplink(url);
+        expect(window.open).toHaveBeenCalledWith(url, "_blank", "noreferrer noopener");
+      });
+
+      it("should target '_blank' for telegram deep link", () => {
+        Object.assign(window, {
+          Telegram: {},
+        });
+
+        const url = "scheme://example.com";
+        openDeeplink(url);
+        expect(window.open).toHaveBeenCalledWith(url, "_blank", "noreferrer noopener");
+
+        (window as any).Telegram = undefined;
+      });
+
+      it("should target '_top' if is an iframe", () => {
+        Object.assign(window, {
+          top: {},
+        });
+
+        const url = "scheme://example.com";
+        openDeeplink(url);
+        expect(window.open).toHaveBeenCalledWith(url, "_top", "noreferrer noopener");
+      });
+
+      it("should target '_self' for other cases", () => {
+        const url = "scheme://example.com";
+        openDeeplink(url);
+        expect(window.open).toHaveBeenCalledWith(url, "_self", "noreferrer noopener");
+      });
     });
   });
 });
