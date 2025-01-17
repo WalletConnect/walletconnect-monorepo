@@ -413,11 +413,14 @@ export async function handleDeeplinkRedirect({
         return;
       }
 
-      if (link.startsWith("https://") || link.startsWith("http://")) {
-        window.open(link, "_blank", "noreferrer noopener");
-      } else {
-        window.open(link, isTelegram() ? "_blank" : "_self", "noreferrer noopener");
+      let target = "_self";
+      if (isIframe()) {
+        target = "_top";
+      } else if (isTelegram() || link.startsWith("https://") || link.startsWith("http://")) {
+        target = "_blank";
       }
+
+      window.open(link, target, "noreferrer noopener");
     } else if (env === ENV_MAP.reactNative) {
       // global.Linking is set by react-native-compat
       if (typeof (global as any)?.Linking !== "undefined") {
@@ -499,6 +502,14 @@ export function isTelegram() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       Boolean((window as any).TelegramWebviewProxyProto))
   );
+}
+
+export function isIframe() {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return false;
+  }
 }
 
 export function toBase64(input: string, removePadding = false): string {
