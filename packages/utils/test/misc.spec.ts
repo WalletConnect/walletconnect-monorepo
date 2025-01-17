@@ -9,6 +9,7 @@ import {
   isExpired,
   toBase64,
   openDeeplink,
+  isIframe,
 } from "../src";
 
 const RELAY_URL = "wss://relay.walletconnect.org";
@@ -247,6 +248,27 @@ describe("Misc", () => {
         openDeeplink(url);
         expect(window.open).toHaveBeenCalledWith(url, "_self", "noreferrer noopener");
       });
+    });
+  });
+
+  describe("isIframe", () => {
+    const previousWindow = globalThis.window;
+
+    afterEach(() => {
+      Object.assign(globalThis, { window: previousWindow });
+    });
+
+    it("should return true if window.top is not equal to window", () => {
+      Object.assign(globalThis, {
+        window: {
+          top: {},
+        },
+      });
+      expect(isIframe()).to.be.true;
+    });
+
+    it("should return false if window.top is equal to window", () => {
+      expect(isIframe()).to.be.false;
     });
   });
 });
