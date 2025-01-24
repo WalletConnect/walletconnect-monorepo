@@ -35,7 +35,7 @@
     "@walletconnect/jsonrpc-utils": "1.0.8",
     "@walletconnect/keyvaluestorage": "1.1.1",
     "@walletconnect/relay-api": "1.0.11",
-    "@walletconnect/relay-auth": "1.0.4-canary-bnl-1",
+    "@walletconnect/relay-auth": "1.1.0",
     "@walletconnect/safe-json": "1.0.2",
     "@walletconnect/time": "1.0.2",
     "@walletconnect/types": "2.17.5",
