@@ -36,7 +36,7 @@
     "@walletconnect/logger": "2.1.2",
     "@walletconnect/sign-client": "2.17.1",
     "@walletconnect/types": "2.17.1",
-    "@walletconnect/utils": "2.17.1"
+    "@walletconnect/utils": "2.18.0"
   },
   "devDependencies": {
     "@ethersproject/wallet": "5.7.0"
