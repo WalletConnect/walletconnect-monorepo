@@ -8,7 +8,7 @@ import {
 } from "@walletconnect/utils";
 import { RPC_URL } from "../constants";
 import { Namespace, NamespaceConfig } from "../types";
-import { merge } from "es-toolkit";
+import { merge } from "es-toolkit/compat";
 
 export function getRpcUrl(chainId: string, rpc: Namespace, projectId?: string): string | undefined {
   const chain = parseChainId(chainId);
