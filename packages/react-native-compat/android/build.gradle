@@ -5,14 +5,24 @@ buildscript {
   repositories {
     google()
     mavenCentral()
+    maven { url 'https://jitpack.io' }
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:7.2.1"
+    classpath "com.android.tools.build:gradle:8.5.1"
     // noinspection DifferentKotlinGradleVersion
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
   }
 }
+
+allprojects {
+  repositories {
+    google()
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+  }
+}
+
 
 def isNewArchitectureEnabled() {
   return rootProject.hasProperty("newArchEnabled") && rootProject.getProperty("newArchEnabled") == "true"
@@ -109,6 +119,11 @@ dependencies {
   //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  implementation 'net.java.dev.jna:jna:5.12.1@aar'
+  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0'  // Latest stable version
+  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0' // For Dispatchers.Main
+  implementation 'com.google.code.gson:gson:2.9.0'
+  implementation("com.github.reown-com:yttrium:0.4.11")
 }
 
 if (isNewArchitectureEnabled()) {

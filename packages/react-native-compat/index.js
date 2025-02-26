@@ -1,3 +1,4 @@
+import { NativeModules } from "react-native";
 import { getApplicationModule } from "./module";
 
 // Polyfill TextEncode / TextDecode
@@ -75,3 +76,9 @@ if (typeof global?.Application === "undefined") {
     console.error("react-native-compat: Application module is not available");
   }
 }
+
+// iOS uses Yttrium, Android uses RNWalletConnectModule
+global.yttrium = NativeModules.Yttrium || NativeModules.RNWalletConnectModule;
+
+// eslint-disable-next-line no-console
+console.log("RN yttrium", global.yttrium);
