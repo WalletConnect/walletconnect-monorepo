@@ -3,10 +3,10 @@ import { hkdf } from "@noble/hashes/hkdf";
 import { randomBytes } from "@noble/hashes/utils";
 import { sha256 } from "@noble/hashes/sha256";
 import { x25519 } from "@noble/curves/ed25519";
+import { p256 } from "@noble/curves/p256";
 import { CryptoTypes } from "@walletconnect/types";
 import { decodeJWT } from "@walletconnect/relay-auth";
 import { concat, fromString, toString } from "uint8arrays";
-import { ec as EC } from "elliptic";
 
 export const BASE10 = "base10";
 export const BASE16 = "base16";
@@ -73,6 +73,16 @@ export function decodeTypeByte(byte: Uint8Array): number {
   return Number(toString(byte, BASE10));
 }
 
+function toBase64URL(base64: string): string {
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+function fromBase64URL(base64url: string): string {
+  const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = (4 - (base64.length % 4)) % 4;
+  return base64 + "=".repeat(padding);
+}
+
 export function encrypt(params: CryptoTypes.EncryptParams): string {
   const type = encodeTypeByte(typeof params.type !== "undefined" ? params.type : TYPE_0);
   if (decodeTypeByte(type) === TYPE_1 && typeof params.senderPublicKey === "undefined") {
@@ -88,12 +98,13 @@ export function encrypt(params: CryptoTypes.EncryptParams): string {
   const key = fromString(params.symKey, BASE16);
   const box = chacha20poly1305(key, iv);
   const sealed = box.encrypt(fromString(params.message, UTF8));
-  return serialize({ type, sealed, iv, senderPublicKey, encoding: params.encoding });
+  const result = serialize({ type, sealed, iv, senderPublicKey });
+  return params.encoding === BASE64URL ? toBase64URL(result) : result;
 }
 
 export function decrypt(params: CryptoTypes.DecryptParams): string {
   const key = fromString(params.symKey, BASE16);
-  const { sealed, iv } = deserialize(params);
+  const { sealed, iv } = deserialize({ encoded: params.encoded, encoding: params.encoding });
   const box = chacha20poly1305(key, iv);
   const message = box.decrypt(sealed);
   if (message === null) throw new Error("Failed to decrypt");
@@ -108,7 +119,8 @@ export function encodeTypeTwoEnvelope(
   // iv is not used in type 2 envelopes
   const iv = randomBytes(IV_LENGTH);
   const sealed = fromString(message, UTF8);
-  return serialize({ type, sealed, iv, encoding });
+  const result = serialize({ type, sealed, iv });
+  return encoding === BASE64URL ? toBase64URL(result) : result;
 }
 
 export function decodeTypeTwoEnvelope(
@@ -120,10 +132,8 @@ export function decodeTypeTwoEnvelope(
 }
 
 export function serialize(params: CryptoTypes.EncodingParams): string {
-  const { encoding = BASE64 } = params;
-
   if (decodeTypeByte(params.type) === TYPE_2) {
-    return toString(concat([params.type, params.sealed]), encoding);
+    return toString(concat([params.type, params.sealed]), BASE64);
   }
   if (decodeTypeByte(params.type) === TYPE_1) {
     if (typeof params.senderPublicKey === "undefined") {
@@ -131,16 +141,17 @@ export function serialize(params: CryptoTypes.EncodingParams): string {
     }
     return toString(
       concat([params.type, params.senderPublicKey, params.iv, params.sealed]),
-      encoding,
+      BASE64,
     );
   }
   // default to type 0 envelope
-  return toString(concat([params.type, params.iv, params.sealed]), encoding);
+  return toString(concat([params.type, params.iv, params.sealed]), BASE64);
 }
 
 export function deserialize(params: CryptoTypes.DecodingParams): CryptoTypes.EncodingParams {
-  const { encoded, encoding = BASE64 } = params;
-  const bytes = fromString(encoded, encoding);
+  const encoding = params.encoding || BASE64;
+  const normalizedEncoded = encoding === BASE64URL ? fromBase64URL(params.encoded) : params.encoded;
+  const bytes = fromString(normalizedEncoded, BASE64);
   const type = bytes.slice(ZERO_INDEX, TYPE_LENGTH);
   const slice1 = TYPE_LENGTH;
   if (decodeTypeByte(type) === TYPE_1) {
@@ -211,36 +222,20 @@ export function isTypeTwoEnvelope(
 ): result is CryptoTypes.TypeOneParams {
   return result.type === TYPE_2;
 }
-export function getCryptoKeyFromKeyData(keyData: P256KeyDataType): EC.KeyPair {
-  const ec = new EC("p256");
-  const key = ec.keyFromPublic(
-    {
-      x: Buffer.from(keyData.x, "base64").toString("hex"),
-      y: Buffer.from(keyData.y, "base64").toString("hex"),
-    },
-    "hex",
-  );
-  return key;
-}
 
-function base64UrlToBase64(base64Url: string) {
-  let base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = base64.length % 4;
-  if (padding > 0) {
-    base64 += "=".repeat(4 - padding);
-  }
-  return base64;
-}
+export function getCryptoKeyFromKeyData(keyData: P256KeyDataType): Uint8Array {
+  const xBuffer = Buffer.from(keyData.x, "base64");
+  const yBuffer = Buffer.from(keyData.y, "base64");
 
-function base64UrlDecode(base64Url: string) {
-  return Buffer.from(base64UrlToBase64(base64Url), "base64");
+  // Concatenate x and y coordinates with 0x04 prefix (uncompressed point format)
+  return concat([new Uint8Array([0x04]), xBuffer, yBuffer]);
 }
 
 export function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
   const [headerBase64Url, payloadBase64Url, signatureBase64Url] = token.split(".");
 
   // Decode the signature
-  const signatureBuffer = base64UrlDecode(signatureBase64Url);
+  const signatureBuffer = Buffer.from(fromBase64URL(signatureBase64Url), "base64");
 
   // Check if signature length is correct (64 bytes for P-256)
   if (signatureBuffer.length !== 64) {
@@ -248,25 +243,29 @@ export function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
   }
 
   // Extract r and s from the signature
-  const r = signatureBuffer.slice(0, 32).toString("hex");
-  const s = signatureBuffer.slice(32, 64).toString("hex");
+  const r = signatureBuffer.slice(0, 32);
+  const s = signatureBuffer.slice(32, 64);
 
   // Create the signing input
   const signingInput = `${headerBase64Url}.${payloadBase64Url}`;
 
-  const buffer = sha256(signingInput);
+  // Hash the signing input
+  const messageHash = sha256(signingInput);
 
-  const key = getCryptoKeyFromKeyData(keyData);
+  // Get the public key in uncompressed point format
+  const publicKey = getCryptoKeyFromKeyData(keyData);
 
-  // Convert the hash to hex format
-  const hashHex = toString(buffer, BASE16);
-
-  // Verify the signature
-  const isValid = key.verify(hashHex, { r, s });
+  // Verify the signature using noble/curves p256
+  const isValid = p256.verify(
+    concat([r, s]), // signature bytes
+    messageHash, // message hash
+    publicKey, // public key in uncompressed format
+  );
 
   if (!isValid) {
     throw new Error("Invalid signature");
   }
+
   const data = decodeJWT(token) as unknown as { payload: T };
   return data.payload;
 }
