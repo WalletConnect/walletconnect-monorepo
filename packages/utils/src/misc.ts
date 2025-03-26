@@ -113,6 +113,37 @@ export function appendToQueryString(
 
 // -- metadata ----------------------------------------------//
 
+export function populateAppMetadata(metadata?: SignClientTypes.Metadata): SignClientTypes.Metadata {
+  const appMetadata = getAppMetadata();
+  try {
+    if (metadata?.url && appMetadata.url) {
+      if (metadata.url !== appMetadata.url) {
+        console.warn(
+          `The configured WalletConnect 'metadata.url':${metadata.url} differs from the actual page url:${appMetadata.url}. This is probably unintended and can lead to issues.`,
+        );
+        metadata.url = appMetadata.url;
+      }
+    }
+
+    if (metadata?.icons?.length && metadata.icons.length > 0) {
+      metadata.icons = metadata.icons.filter((icon) => icon !== "");
+    }
+
+    return {
+      ...appMetadata,
+      ...metadata,
+      url: metadata?.url || appMetadata.url,
+      name: metadata?.name || appMetadata.name,
+      description: metadata?.description || appMetadata.description,
+      icons:
+        metadata?.icons?.length && metadata.icons.length > 0 ? metadata.icons : appMetadata.icons,
+    };
+  } catch (error) {
+    console.warn("Error populating app metadata", error);
+    return metadata || appMetadata;
+  }
+}
+
 export function getAppMetadata(): SignClientTypes.Metadata {
   return (
     getWindowMetadata() || {
