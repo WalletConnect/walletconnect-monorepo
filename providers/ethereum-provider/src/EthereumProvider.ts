@@ -450,6 +450,11 @@ export class EthereumProvider implements IEthereumProvider {
       this.events.emit("session_event", payload);
     });
 
+    this.signer.on("accountsChanged", (accounts: string[]) => {
+      this.accounts = this.parseAccounts(accounts);
+      this.events.emit("accountsChanged", this.accounts);
+    });
+
     this.signer.on("chainChanged", (chainId: string) => {
       const chain = parseInt(chainId);
       this.chainId = chain;

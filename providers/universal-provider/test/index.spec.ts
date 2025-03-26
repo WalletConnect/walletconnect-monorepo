@@ -31,6 +31,7 @@ import {
 import { getChainId, getGlobal, getRpcUrl, setGlobal } from "../src/utils";
 import { BUNDLER_URL, RPC_URL } from "../src/constants";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { parseChainId } from "@walletconnect/utils";
 
 const getDbName = (_prefix: string) => {
   return `./test/tmp/${_prefix}.db`;
@@ -149,6 +150,171 @@ describe("UniversalProvider", function () {
             chainId: `eip155:${CHAIN_ID}`,
           }),
         ]);
+      });
+      it("should emit accountsChanged when a chain is changed and there are new accounts on the new chain", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = [1, 2, 3, 4, 5];
+        const namespace = "eip155";
+        const walletAddresses = [
+          "0x0000000000000000000000000000000000000000",
+          "0x1111111111111111111111111111111111111111",
+          "0x2222222222222222222222222222222222222222",
+          "0x3333333333333333333333333333333333333333",
+          "0x4444444444444444444444444444444444444444",
+          "0x5555555555555555555555555555555555555555",
+          "0x6666666666666666666666666666666666666666",
+          "0x7777777777777777777777777777777777777777",
+          "0x8888888888888888888888888888888888888888",
+          "0x9999999999999999999999999999999999999999",
+        ];
+        /*
+        eip155:1 - One address
+        eip155:2 - One address
+        eip155:3 - two addresses
+        eip155:4 - two addresses
+        eip155:5 - one address
+        */
+        const accounts = [
+          `${namespace}:${chains[0]}:${walletAddresses[0]}`,
+          `${namespace}:${chains[1]}:${walletAddresses[1]}`,
+          `${namespace}:${chains[2]}:${walletAddresses[2]}`,
+          `${namespace}:${chains[2]}:${walletAddresses[3]}`,
+          `${namespace}:${chains[3]}:${walletAddresses[4]}`,
+          `${namespace}:${chains[3]}:${walletAddresses[5]}`,
+          `${namespace}:${chains[4]}:${walletAddresses[6]}`,
+        ];
+
+        expect(accounts).to.be.an("array");
+        expect(accounts).to.include(`${namespace}:${chains[0]}:${walletAddresses[0]}`);
+        expect(accounts).to.include(`${namespace}:${chains[1]}:${walletAddresses[1]}`);
+        expect(accounts).to.include(`${namespace}:${chains[2]}:${walletAddresses[2]}`);
+        expect(accounts).to.include(`${namespace}:${chains[2]}:${walletAddresses[3]}`);
+        expect(accounts).to.include(`${namespace}:${chains[3]}:${walletAddresses[4]}`);
+        expect(accounts).to.include(`${namespace}:${chains[3]}:${walletAddresses[5]}`);
+        expect(accounts).to.include(`${namespace}:${chains[4]}:${walletAddresses[6]}`);
+
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {},
+            optionalNamespaces: {},
+            namespaces: {
+              eip155: {
+                accounts,
+                chains: chains.map((chain) => `${namespace}:${chain}`),
+                methods,
+                events,
+              },
+            },
+          },
+        );
+        const currentChain = await dapp.request({ method: "eth_chainId" });
+        expect(currentChain).to.eql(chains[0]);
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            dapp.once("accountsChanged", (accountsChanged: string[]) => {
+              expect(accountsChanged).to.be.an("array");
+              expect(accountsChanged.length).to.eql(1);
+              expect(accounts[1]).to.include(accountsChanged[0]);
+              expect(accounts[1]).to.eql(`${namespace}:${chains[1]}:${accountsChanged[0]}`);
+              resolve();
+            });
+          }),
+          dapp.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: `0x${chains[1].toString(16)}` }],
+          }),
+        ]);
+        const newChain = await dapp.request({ method: "eth_chainId" });
+        expect(newChain).to.eql(chains[1]);
+
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            dapp.once("accountsChanged", (accountsChanged: string[]) => {
+              expect(accountsChanged).to.be.an("array");
+              expect(accountsChanged.length).to.eql(1);
+              expect(accounts[0]).to.include(accountsChanged[0]);
+              expect(accounts[0]).to.eql(`${namespace}:${chains[0]}:${accountsChanged[0]}`);
+              resolve();
+            });
+          }),
+          dapp.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: `0x${chains[0].toString(16)}` }],
+          }),
+        ]);
+        const newChain2 = await dapp.request({ method: "eth_chainId" });
+        expect(newChain2).to.eql(chains[0]);
+
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            dapp.once("accountsChanged", (accountsChanged: string[]) => {
+              expect(accountsChanged).to.be.an("array");
+              expect(accountsChanged.length).to.eql(2);
+              expect(accounts[2]).to.include(accountsChanged[0]);
+              expect(accounts[3]).to.include(accountsChanged[1]);
+              expect(accounts[2]).to.eql(`${namespace}:${chains[2]}:${accountsChanged[0]}`);
+              expect(accounts[3]).to.eql(`${namespace}:${chains[2]}:${accountsChanged[1]}`);
+              resolve();
+            });
+          }),
+          dapp.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: `0x${chains[2].toString(16)}` }],
+          }),
+        ]);
+        const newChain3 = await dapp.request({ method: "eth_chainId" });
+        expect(newChain3).to.eql(chains[2]);
+
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            dapp.once("accountsChanged", (accountsChanged: string[]) => {
+              expect(accountsChanged).to.be.an("array");
+              expect(accountsChanged.length).to.eql(2);
+              expect(accounts[4]).to.include(accountsChanged[0]);
+              expect(accounts[5]).to.include(accountsChanged[1]);
+              expect(accounts[4]).to.eql(`${namespace}:${chains[3]}:${accountsChanged[0]}`);
+              expect(accounts[5]).to.eql(`${namespace}:${chains[3]}:${accountsChanged[1]}`);
+              resolve();
+            });
+          }),
+          dapp.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: `0x${chains[3].toString(16)}` }],
+          }),
+        ]);
+        const newChain4 = await dapp.request({ method: "eth_chainId" });
+        expect(newChain4).to.eql(chains[3]);
+
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            dapp.once("accountsChanged", (accountsChanged: string[]) => {
+              expect(accountsChanged).to.be.an("array");
+              expect(accountsChanged.length).to.eql(1);
+              expect(accounts[6]).to.include(accountsChanged[0]);
+              expect(accounts[6]).to.eql(`${namespace}:${chains[4]}:${accountsChanged[0]}`);
+              resolve();
+            });
+          }),
+          dapp.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: `0x${chains[4].toString(16)}` }],
+          }),
+        ]);
+        const newChain5 = await dapp.request({ method: "eth_chainId" });
+        expect(newChain5).to.eql(chains[4]);
+
+        await deleteProviders({ A: dapp, B: wallet });
       });
     });
     describe("Web3", () => {

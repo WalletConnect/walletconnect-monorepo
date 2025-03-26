@@ -638,4 +638,61 @@ describe("EthereumProvider", function () {
       await walletClient.core.relayer.transportClose();
     });
   });
+  describe("events", () => {
+    it("should emit accountsChanged when a chain is changed and there are new accounts on the new chain", async () => {
+      const walletAddresses = [
+        "0x0000000000000000000000000000000000000000",
+        "0x1111111111111111111111111111111111111111",
+      ];
+      // the chains requested during connection in the beforeAll hook
+      const chains = [42, 123];
+
+      if (!provider.signer.session) {
+        throw new Error("No provider session found");
+      }
+
+      const cachedAccounts = provider.signer.session.namespaces.eip155.accounts;
+
+      provider.signer.session.namespaces.eip155.accounts = [
+        `eip155:${chains[0]}:${walletAddresses[0]}`,
+        `eip155:${chains[1]}:${walletAddresses[1]}`,
+      ];
+
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          provider.once("accountsChanged", (accounts) => {
+            expect(accounts[0]).to.eql(walletAddresses[0]);
+            expect(accounts.length).to.eql(1);
+            resolve();
+          });
+        }),
+        provider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: `0x${chains[0].toString(16)}` }],
+        }),
+      ]);
+
+      const newChainId = await provider.request({ method: "eth_chainId" });
+      expect(newChainId).to.eql(chains[0]);
+
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          provider.once("accountsChanged", (accounts) => {
+            expect(accounts[0]).to.eql(walletAddresses[1]);
+            expect(accounts.length).to.eql(1);
+            resolve();
+          });
+        }),
+        provider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: `0x${chains[1].toString(16)}` }],
+        }),
+      ]);
+
+      const newChainId2 = await provider.request({ method: "eth_chainId" });
+      expect(newChainId2).to.eql(chains[1]);
+
+      provider.signer.session.namespaces.eip155.accounts = cachedAccounts;
+    });
+  });
 });

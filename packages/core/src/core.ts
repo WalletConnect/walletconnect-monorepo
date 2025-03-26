@@ -69,6 +69,31 @@ export class Core extends ICore {
 
   constructor(opts?: CoreTypes.Options) {
     super(opts);
+
+    const globalCore = this.getGlobalCore(opts?.customStoragePrefix);
+    if (globalCore) {
+      try {
+        this.customStoragePrefix = globalCore.customStoragePrefix;
+        this.logger = globalCore.logger;
+        this.heartbeat = globalCore.heartbeat;
+        this.crypto = globalCore.crypto;
+        this.history = globalCore.history;
+        this.expirer = globalCore.expirer;
+        this.storage = globalCore.storage;
+        this.relayer = globalCore.relayer;
+        this.pairing = globalCore.pairing;
+        this.verify = globalCore.verify;
+        this.echoClient = globalCore.echoClient;
+        this.linkModeSupportedApps = globalCore.linkModeSupportedApps;
+        this.eventClient = globalCore.eventClient;
+        this.initialized = globalCore.initialized;
+        this.logChunkController = globalCore.logChunkController;
+        return globalCore;
+      } catch (error) {
+        console.warn("Failed to copy global core", error);
+      }
+    }
+
     this.projectId = opts?.projectId;
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
     this.customStoragePrefix = opts?.customStoragePrefix ? `:${opts.customStoragePrefix}` : "";
@@ -118,6 +143,7 @@ export class Core extends ICore {
     this.echoClient = new EchoClient(this.projectId || "", this.logger);
     this.linkModeSupportedApps = [];
     this.eventClient = new EventClient(this, this.logger, opts?.telemetryEnabled);
+    this.setGlobalCore(this);
   }
 
   get context() {
@@ -203,6 +229,49 @@ export class Core extends ICore {
       this.logger.warn(`Core Initialization Failure at epoch ${Date.now()}`, error);
       this.logger.error((error as any).message);
       throw error;
+    }
+  }
+
+  private getGlobalCore(customStoragePrefix = ""): Core | undefined {
+    try {
+      if (this.isGlobalCoreDisabled()) {
+        return undefined;
+      }
+      const globalCorePrefix = `_walletConnectCore_${customStoragePrefix}`;
+
+      const counterKey = `${globalCorePrefix}_count`;
+      globalThis[counterKey] = (globalThis[counterKey] || 0) + 1;
+      if (globalThis[counterKey] > 1) {
+        console.warn(
+          `WalletConnect Core is already initialized. This is probably a mistake and can lead to unexpected behavior. Init() was called ${globalThis[counterKey]} times.`,
+        );
+      }
+
+      return globalThis[globalCorePrefix];
+    } catch (error) {
+      console.warn("Failed to get global WalletConnect core", error);
+      return undefined;
+    }
+  }
+
+  private setGlobalCore(core: Core) {
+    try {
+      if (this.isGlobalCoreDisabled()) {
+        return;
+      }
+      const customStoragePrefix = core.opts?.customStoragePrefix || "";
+      const globalCorePrefix = `_walletConnectCore_${customStoragePrefix}`;
+      globalThis[globalCorePrefix] = core;
+    } catch (error) {
+      console.warn("Failed to set global WalletConnect core", error);
+    }
+  }
+
+  private isGlobalCoreDisabled() {
+    try {
+      return typeof process !== "undefined" && process.env.DISABLE_GLOBAL_CORE === "true";
+    } catch (error) {
+      return true;
     }
   }
 }

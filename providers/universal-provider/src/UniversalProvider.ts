@@ -517,21 +517,65 @@ export class UniversalProvider implements IUniversalProvider {
 
     if (!chainId) return;
 
+    this.updateNamespaceChain(namespace, chainId);
+
+    this.events.emit("chainChanged", chainId);
+
+    const previousChainId = this.getProvider(namespace).getDefaultChain();
     if (!internal) {
       this.getProvider(namespace).setDefaultChain(chainId);
     }
 
-    if (this.namespaces[namespace]) {
-      this.namespaces[namespace].defaultChain = chainId;
-    } else if (this.namespaces[`${namespace}:${chainId}`]) {
-      this.namespaces[`${namespace}:${chainId}`].defaultChain = chainId;
-    } else {
-      // @ts-ignore
-      this.namespaces[`${namespace}:${chainId}`] = { defaultChain: chainId };
-    }
-
-    this.events.emit("chainChanged", chainId);
+    this.emitAccountsChangedOnChainChange({ namespace, previousChainId, newChainId: caip2Chain });
     await this.persist("namespaces", this.namespaces);
+  }
+
+  /**
+   * Emits `accountsChanged` event when a chain is changed and there are new accounts on the new chain
+   */
+  private emitAccountsChangedOnChainChange({
+    namespace,
+    previousChainId,
+    newChainId,
+  }: {
+    namespace: string;
+    previousChainId: string;
+    newChainId: string;
+  }): void {
+    try {
+      if (previousChainId === newChainId) {
+        return;
+      }
+
+      const accounts = this.session?.namespaces[namespace]?.accounts;
+      if (!accounts) return;
+      const newChainIdAccounts = accounts
+        .filter((account) => account.includes(`${newChainId}:`))
+        .map(parseCaip10Account);
+      if (!isValidArray(newChainIdAccounts)) return;
+      this.events.emit("accountsChanged", newChainIdAccounts);
+    } catch (error) {
+      this.logger.warn("Failed to emit accountsChanged on chain change", error);
+    }
+  }
+
+  private updateNamespaceChain(namespace: string, chainId: string): void {
+    if (!this.namespaces) return;
+
+    const namespaceKey = this.namespaces[namespace] ? namespace : `${namespace}:${chainId}`;
+
+    const defaultNamespace = {
+      chains: [],
+      methods: [],
+      events: [],
+      defaultChain: chainId,
+    };
+
+    if (!this.namespaces[namespaceKey]) {
+      this.namespaces[namespaceKey] = defaultNamespace;
+    } else if (this.namespaces[namespaceKey]) {
+      this.namespaces[namespaceKey].defaultChain = chainId;
+    }
   }
 
   private onConnect() {
