@@ -74,6 +74,56 @@ describe("EthereumProvider", function () {
     await walletClient.client?.core.relayer.transportClose();
   });
 
+  describe("config options", () => {
+    it("should set options", () => {
+      const cacheConfig = provider.rpc;
+      // validate that we can update individual options
+      provider.updateConfigOptions({ showQrModal: true });
+      expect(provider.rpc.showQrModal).to.be.true;
+      provider.updateConfigOptions({ showQrModal: false });
+      expect(provider.rpc.showQrModal).to.be.false;
+      provider.updateConfigOptions({
+        chains: [42],
+      });
+      expect(provider.rpc.chains).to.be.eql(["eip155:42"]);
+      provider.updateConfigOptions({
+        optionalChains: [3, 1],
+      });
+      expect(provider.rpc.optionalChains).to.be.eql(["eip155:3", "eip155:1"]);
+      provider.updateConfigOptions({
+        methods: ["eth_sendTransaction"],
+      });
+      expect(provider.rpc.methods).to.be.eql(["eth_sendTransaction"]);
+      provider.updateConfigOptions({
+        optionalMethods: ["eth_sendTransaction"],
+      });
+      expect(provider.rpc.optionalMethods).to.be.eql(["eth_sendTransaction"]);
+      provider.updateConfigOptions({
+        events: ["accountsChanged"],
+      });
+      expect(provider.rpc.events).to.be.eql(["accountsChanged"]);
+      provider.updateConfigOptions({
+        optionalEvents: ["accountsChanged"],
+      });
+      expect(provider.rpc.optionalEvents).to.be.eql(["accountsChanged"]);
+      provider.updateConfigOptions({
+        rpcMap: {
+          42: "https://kovan.poa.network",
+        },
+      });
+      // validate updating individual options doesn't affect other options
+      expect(provider.rpc.rpcMap).to.be.eql({ 42: "https://kovan.poa.network" });
+      expect(provider.rpc.chains).to.be.eql(["eip155:42"]);
+      expect(provider.rpc.optionalChains).to.be.eql(["eip155:3", "eip155:1"]);
+      expect(provider.rpc.methods).to.be.eql(["eth_sendTransaction"]);
+      expect(provider.rpc.optionalMethods).to.be.eql(["eth_sendTransaction"]);
+      expect(provider.rpc.events).to.be.eql(["accountsChanged"]);
+      expect(provider.rpc.optionalEvents).to.be.eql(["accountsChanged"]);
+      expect(provider.rpc.rpcMap).to.be.eql({ 42: "https://kovan.poa.network" });
+      provider.rpc = cacheConfig;
+    });
+  });
+
   it("chainChanged", async () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     // change to Kovan

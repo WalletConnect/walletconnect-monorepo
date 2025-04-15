@@ -336,7 +336,7 @@ export class EthereumProvider implements IEthereumProvider {
       this.signer.logger.error(error);
       throw error;
     } finally {
-      if (this.modal) this.modal.closeModal();
+      if (this.rpc.showQrModal) this.modal?.closeModal();
     }
   }
 
@@ -394,7 +394,7 @@ export class EthereumProvider implements IEthereumProvider {
       this.signer.logger.error(error);
       throw error;
     } finally {
-      if (this.modal) this.modal.closeModal();
+      if (this.rpc.showQrModal) this.modal?.closeModal();
     }
   }
 
@@ -431,6 +431,18 @@ export class EthereumProvider implements IEthereumProvider {
 
   get session() {
     return this.signer.session;
+  }
+
+  public updateConfigOptions(opts: Partial<EthereumProviderOptions>) {
+    const chains = opts.chains?.map((chain) => this.formatChainId(chain)) || this.rpc.chains;
+    const optionalChains =
+      opts.optionalChains?.map((chain) => this.formatChainId(chain)) || this.rpc.optionalChains;
+    this.rpc = {
+      ...this.rpc,
+      ...opts,
+      chains,
+      optionalChains,
+    };
   }
 
   // ---------- Protected --------------------------------------------- //
@@ -597,24 +609,28 @@ export class EthereumProvider implements IEthereumProvider {
     });
     this.registerEventListeners();
     await this.loadPersistedSession();
-    if (this.rpc.showQrModal) {
-      let WalletConnectModalClass;
+    await this.loadWalletConnectModal();
+  }
+
+  protected async loadWalletConnectModal() {
+    if (this.modal) return;
+    // old try catch block from the time the modal was optional
+    let WalletConnectModalClass;
+    try {
+      const { WalletConnectModal } = await import("@walletconnect/modal");
+      WalletConnectModalClass = WalletConnectModal;
+    } catch {
+      throw new Error("To use QR modal, please install @walletconnect/modal package");
+    }
+    if (WalletConnectModalClass) {
       try {
-        const { WalletConnectModal } = await import("@walletconnect/modal");
-        WalletConnectModalClass = WalletConnectModal;
-      } catch {
-        throw new Error("To use QR modal, please install @walletconnect/modal package");
-      }
-      if (WalletConnectModalClass) {
-        try {
-          this.modal = new WalletConnectModalClass({
-            projectId: this.rpc.projectId,
-            ...this.rpc.qrModalOptions,
-          });
-        } catch (e) {
-          this.signer.logger.error(e);
-          throw new Error("Could not generate WalletConnectModal Instance");
-        }
+        this.modal = new WalletConnectModalClass({
+          projectId: this.rpc.projectId,
+          ...this.rpc.qrModalOptions,
+        });
+      } catch (e) {
+        this.signer.logger.error(e);
+        throw new Error("Could not generate WalletConnectModal Instance");
       }
     }
   }
