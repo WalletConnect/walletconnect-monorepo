@@ -1,5 +1,15 @@
 # @walletconnect/core
 
+## 2.20.2
+
+### Patch Changes
+
+- [#6279](https://github.com/WalletConnect/walletconnect-monorepo/pull/6279) [`f2847e2511243846a422ec0495f9d56a88376a1c`](https://github.com/WalletConnect/walletconnect-monorepo/commit/f2847e2511243846a422ec0495f9d56a88376a1c) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - fixed auto bumping relayer version on release
+
+- Updated dependencies [[`f2847e2511243846a422ec0495f9d56a88376a1c`](https://github.com/WalletConnect/walletconnect-monorepo/commit/f2847e2511243846a422ec0495f9d56a88376a1c)]:
+  - @walletconnect/types@2.20.2
+  - @walletconnect/utils@2.20.2
+
 ## 2.20.1
 
 ### Patch Changes
