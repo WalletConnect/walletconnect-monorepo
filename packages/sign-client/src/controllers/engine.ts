@@ -2687,7 +2687,8 @@ export class Engine extends IEngine {
       );
 
       const scopedNamespaces = Object.keys(scopedProperties);
-      const valid = scopedNamespaces.every((ns) => requestedNamespaces.includes(ns));
+      // .split(":")[0] to account for inline <namespace>:<chainId>
+      const valid = scopedNamespaces.every((ns) => requestedNamespaces.includes(ns.split(":")[0]));
       if (!valid) {
         throw new Error(
           `Scoped properties must be a subset of required/optional namespaces, received: ${JSON.stringify(
@@ -2743,7 +2744,8 @@ export class Engine extends IEngine {
       const scopedNamespaces = Object.keys(scopedProperties);
 
       // the approved scoped namespaces must be a subset of the approved namespaces
-      const valid = scopedNamespaces.every((ns) => approvedNamespaces.has(ns));
+      // .split(":")[0] to account for inline <namespace>:<chainId>
+      const valid = scopedNamespaces.every((ns) => approvedNamespaces.has(ns.split(":")[0]));
       if (!valid) {
         throw new Error(
           `Scoped properties must be a subset of approved namespaces, received: ${JSON.stringify(

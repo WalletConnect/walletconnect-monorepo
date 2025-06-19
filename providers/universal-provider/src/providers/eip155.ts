@@ -11,7 +11,7 @@ import {
   SessionNamespace,
 } from "../types";
 
-import { getChainId, getGlobal, getRpcUrl } from "../utils";
+import { extractCapabilitiesFromSession, getChainId, getGlobal, getRpcUrl } from "../utils";
 import EventEmitter from "events";
 import { BUNDLER_URL, PROVIDER_EVENTS } from "../constants";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
@@ -174,19 +174,39 @@ class Eip155Provider implements IProvider {
     return this.namespace.chains.includes(`${this.name}:${chainId}`);
   }
 
+  /**
+   * util method to get the capabilities for given address and chainIds from the wallet
+   * 1. check if the capabilities are stored in the sessionProperties legacy way - address+chainIds for backwards compatibility
+   * 2. check if the capabilities are stored in the sessionProperties
+   * 3. check if the capabilities are stored in the scopedProperties
+   * 4. if not, send the request to the wallet
+   * 5. update the session with the capabilities so they can be retrieved later
+   * 6. return the capabilities
+   */
   private async getCapabilities(args: RequestParams) {
     // if capabilities are stored in the session, return them, else send the request to the wallet
     const address = args.request?.params?.[0];
     const chainIds: string[] = args.request?.params?.[1] || [];
 
-    // cache key is address + chainIds to allow requests to be made to different chains
-    const capabilitiesKey = `${address}${chainIds.join(",")}`;
     if (!address) throw new Error("Missing address parameter in `wallet_getCapabilities` request");
     const session = this.client.session.get(args.topic);
     const sessionCapabilities = session?.sessionProperties?.capabilities || {};
 
-    if (sessionCapabilities?.[capabilitiesKey]) {
-      return sessionCapabilities?.[capabilitiesKey];
+    // cache key is address + chainIds to allow requests to be made to different chains
+    const capabilitiesKey = `${address}${chainIds.join(",")}`;
+    const legacyCapabilities = sessionCapabilities?.[capabilitiesKey];
+    if (legacyCapabilities) {
+      return legacyCapabilities;
+    }
+    let cachedCapabilities;
+    try {
+      cachedCapabilities = extractCapabilitiesFromSession(session, address, chainIds);
+    } catch (error) {
+      console.warn("Failed to extract capabilities from session", error);
+    }
+
+    if (cachedCapabilities) {
+      return cachedCapabilities;
     }
 
     // intentionally omit catching errors/rejection during `request` to allow the error to bubble up

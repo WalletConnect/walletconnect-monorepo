@@ -17,12 +17,13 @@ import UniversalProvider from "../../src/UniversalProvider";
 
 export interface TestConnectParams {
   requiredNamespaces?: ProposalTypes.RequiredNamespaces;
-  optionalNamespaces?: ProposalTypes.optionalNamespaces;
+  optionalNamespaces?: ProposalTypes.OptionalNamespaces;
   namespaces?: SessionTypes.Namespaces;
   relays?: RelayerTypes.ProtocolOptions[];
   pairingTopic?: string;
   qrCodeScanLatencyMs?: number;
   sessionProperties?: SessionTypes.Struct["sessionProperties"];
+  scopedProperties?: SessionTypes.Struct["scopedProperties"];
 }
 
 export async function testConnectMethod(
@@ -43,6 +44,7 @@ export async function testConnectMethod(
   const approveParams: Omit<EngineTypes.ApproveParams, "id"> = {
     namespaces: params?.namespaces || TEST_NAMESPACES,
     sessionProperties: params?.sessionProperties,
+    scopedProperties: params?.scopedProperties,
   };
 
   // We need to kick off the promise that binds the listener for `session_proposal` before `A.connect()`

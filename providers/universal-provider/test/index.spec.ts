@@ -1607,6 +1607,67 @@ describe("UniversalProvider", function () {
 
         await deleteProviders({ A: dapp, B: wallet });
       });
+
+      it("should get `wallet_getCapabilities` from scoped properties", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+        const chains = ["eip155:1"];
+        const scopedProperties = {
+          "eip155:1": {
+            [`eip155:1:${walletAddress}`]: {
+              atomic: {
+                status: "supported",
+              },
+            },
+          },
+        };
+        const { sessionA } = await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {
+              eip155: {
+                methods: ["wallet_getCapabilities"],
+                events,
+                chains,
+              },
+            },
+            namespaces: {
+              eip155: {
+                accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+                methods: ["wallet_getCapabilities"],
+                events,
+              },
+            },
+            scopedProperties,
+          },
+        );
+        expect(sessionA).to.be.an("object");
+        expect(sessionA.scopedProperties).to.exist;
+        expect(sessionA.scopedProperties).to.eql(scopedProperties);
+
+        const result = await dapp.request({
+          method: "wallet_getCapabilities",
+          params: [walletAddress, ["0x1"]],
+        });
+
+        expect(result).to.eql({
+          "0x1": {
+            atomic: {
+              status: "supported",
+            },
+          },
+        });
+        await deleteProviders({ A: dapp, B: wallet });
+      });
     });
   });
 
