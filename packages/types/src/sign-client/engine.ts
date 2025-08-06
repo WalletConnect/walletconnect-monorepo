@@ -57,6 +57,25 @@ export declare namespace EngineTypes {
     encryptedId?: string;
   }
 
+  type Hex = `0x${string}`;
+
+  type PaymentOption = {
+    asset: string;
+    amount: Hex;
+    recipient: string;
+  };
+
+  interface WalletPayParams {
+    version: string;
+    orderId?: string;
+    acceptedPayments: PaymentOption[];
+    expiry: number;
+  }
+
+  interface AuthenticationParams {
+    messageToSign?: string;
+  }
+
   interface ConnectParams {
     /**
      * @deprecated Use `optionalNamespaces` instead.
@@ -67,6 +86,8 @@ export declare namespace EngineTypes {
     scopedProperties?: ProposalTypes.ScopedProperties;
     pairingTopic?: string;
     relays?: RelayerTypes.ProtocolOptions[];
+    authentication?: AuthenticationParams;
+    walletPay?: WalletPayParams;
   }
 
   interface PairParams {
@@ -80,6 +101,7 @@ export declare namespace EngineTypes {
     scopedProperties?: ProposalTypes.ScopedProperties;
     sessionConfig?: SessionTypes.SessionConfig;
     relayProtocol?: string;
+    pendingRequestsResults?: ProposalTypes.PendingRequestsResults;
   }
 
   interface RejectParams {
@@ -160,6 +182,32 @@ export declare namespace EngineTypes {
   type EngineQueue<T> = {
     state: "IDLE" | "ACTIVE";
     queue: T[];
+  };
+
+  type PreparedPendingRequest =
+    | {
+        type: "authentication";
+        request: {
+          method: string;
+          params: any;
+        };
+        chainId: string;
+        id: number;
+      }
+    | {
+        type: "wallet_pay";
+        request: {
+          method: string;
+          params: any;
+        };
+        id: number;
+      };
+
+  type PendingRequestResult = {
+    id: number;
+    result: any;
+    address: string;
+    chainId: string;
   };
 }
 
@@ -466,4 +514,9 @@ export abstract class IEngine {
    * @deprecated
    */
   public abstract processRelayMessageCache(): void;
+
+  public abstract preparePendingRequests(params: {
+    pendingRequests: ProposalTypes.PendingRequests;
+    namespaces: SessionTypes.Namespaces;
+  }): Promise<EngineTypes.PreparedPendingRequest[]>;
 }

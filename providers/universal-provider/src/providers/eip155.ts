@@ -230,7 +230,7 @@ class Eip155Provider implements IProvider {
 
   private async getCallStatus(args: RequestParams) {
     const session = this.client.session.get(args.topic);
-    const bundlerName = session.sessionProperties?.bundler_name;
+    const bundlerName = session.sessionProperties?.bundler_name as string;
     if (bundlerName) {
       const bundlerUrl = this.getBundlerUrl(args.chainId, bundlerName);
       try {
@@ -239,7 +239,7 @@ class Eip155Provider implements IProvider {
         console.warn("Failed to fetch call status from bundler", error, bundlerUrl);
       }
     }
-    const customUrl = session.sessionProperties?.bundler_url;
+    const customUrl = session.sessionProperties?.bundler_url as string;
     if (customUrl) {
       try {
         return await this.getUserOperationReceipt(customUrl, args);

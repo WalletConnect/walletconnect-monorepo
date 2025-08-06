@@ -258,3 +258,19 @@ export function getSignDirectHash(payload: {
 
   return Buffer.from(hashBytes).toString("hex").toUpperCase();
 }
+
+export function encodeBase58(message: string) {
+  return bs58.encode(new Uint8Array(Buffer.from(message)));
+}
+
+export function decodeBase58(message: string) {
+  return bs58.decode(message);
+}
+
+export function encodeBase64(message: string) {
+  return Buffer.from(message).toString("base64");
+}
+
+export function decodeBase64(message: string) {
+  return Buffer.from(message, "base64").toString("utf-8");
+}

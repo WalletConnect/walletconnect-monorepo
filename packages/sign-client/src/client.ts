@@ -240,6 +240,15 @@ export class SignClient extends ISignClient {
     }
   };
 
+  public preparePendingRequests: ISignClient["preparePendingRequests"] = async (params) => {
+    try {
+      return await this.engine.preparePendingRequests(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {

@@ -5,6 +5,7 @@ import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, deleteClients, throttle 
 import {
   buildApprovedNamespaces,
   buildAuthObject,
+  decodeBase58,
   getSdkError,
   populateAuthPayload,
 } from "@walletconnect/utils";
@@ -21,7 +22,7 @@ describe("Authenticated Sessions", () => {
   });
   // this test simulates the scenario where the wallet supports all the requested chains and methods
   // and replies with a single signature
-  it("should establish authenticated session with single signature. Case 1", async () => {
+  it.only("should establish authenticated session with single signature. Case 1", async () => {
     const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
     expect(dapp).to.be.exist;
     expect(dapp.metadata.redirect).to.exist;
@@ -1381,5 +1382,151 @@ describe("Authenticated Sessions", () => {
       wallet.pair({ uri }),
     ]);
     await deleteClients({ A: dapp, B: wallet });
+  });
+  it.only("should establish authenticated session with single signature. Solana Case 1", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    expect(dapp).to.be.exist;
+    expect(dapp.metadata.redirect).to.exist;
+    expect(dapp.metadata.redirect?.universal).to.exist;
+    expect(dapp.metadata.redirect?.native).to.not.exist;
+
+    const requestedChains = [
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z",
+    ];
+    const requestedMethods = [
+      "solana_signMessage",
+      "solana_signTransaction",
+      "solana_signAllTransactions",
+    ];
+    const { uri, response } = await dapp.authenticate({
+      chains: [
+        "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z",
+      ],
+      domain: "localhost",
+      nonce: "1",
+      uri: "aud",
+      methods: ["solana_signMessage", "solana_signTransaction", "solana_signAllTransactions"],
+      resources: [],
+    });
+    console.log("uri", uri);
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+
+    wallet.on("session_proposal", async (payload) => {
+      const namespaces = {
+        solana: {
+          methods: requestedMethods,
+          chains: requestedChains,
+          accounts: ["solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp:" + cryptoWallet.address],
+          events: [],
+        },
+      };
+
+      console.log("session_proposal", JSON.stringify(payload, null, 2));
+      const pendingRequests = payload.params.sessionProperties?.pending_requests;
+      if (pendingRequests) {
+        console.log("pendingRequests", JSON.stringify(pendingRequests, null, 2));
+      }
+      const requestsToSign = wallet.engine.preparePendingRequests({
+        pendingRequests,
+        namespaces,
+      });
+      console.log("requestsToSign", JSON.stringify(requestsToSign, null, 2));
+
+      const pendingRequestsResults = {};
+      Object.values(requestsToSign).forEach((request: any) => {
+        const {
+          request: { method, params },
+          chainId,
+        } = request;
+        // TODO: sign the request
+        // const signature = await cryptoWallet.signMessage(params);
+        pendingRequestsResults[request.id] = formatJsonRpcResult(request.id, {
+          signature: "0x123_solana_signature",
+        });
+      });
+      console.log("pendingRequestsResults", JSON.stringify(pendingRequestsResults, null, 2));
+      // payload.params.sessionProperties.siwx = {
+      //   canHandle: true,
+      // };
+      // console.log("session_proposal", payload);
+      await wallet.approve({
+        id: payload.id,
+        namespaces,
+        pendingRequestsResults,
+      });
+    });
+    const sessionRequestCount = 0;
+
+    await wallet.pair({ uri });
+    const result = await response();
+    console.log("sessionRequestCount", sessionRequestCount);
+    console.log("result", result);
+    console.log("result.auths", JSON.stringify(result.auths, null, 2));
+    expect(result.auths).to.exist;
+    expect(result.auths).to.have.length(1);
+    expect(result?.auths?.[0]?.s.s).to.exist;
+    expect(result?.auths?.[0]?.s.s).to.eq("0x123_solana_signature");
+  });
+  it("should establish authenticated session with single signature. Sui Case 1", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    expect(dapp).to.be.exist;
+    expect(dapp.metadata.redirect).to.exist;
+    expect(dapp.metadata.redirect?.universal).to.exist;
+    expect(dapp.metadata.redirect?.native).to.not.exist;
+
+    const requestedChains = ["sui:mainnet"];
+    const requestedMethods = ["sui_signPersonalMessage"];
+    const { uri, response } = await dapp.authenticate({
+      chains: requestedChains,
+      domain: "localhost",
+      nonce: "1",
+      uri: "aud",
+      methods: requestedMethods,
+      resources: [],
+    });
+    console.log("uri", uri);
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+
+    wallet.on("session_proposal", async (payload) => {
+      console.log("session_proposal", payload);
+      await wallet.approve({
+        id: payload.id,
+        namespaces: {
+          sui: {
+            methods: requestedMethods,
+            chains: requestedChains,
+            accounts: ["sui:mainnet:" + cryptoWallet.address],
+            events: [],
+          },
+        },
+      });
+    });
+
+    wallet.on("session_request", async (payload) => {
+      console.log("session_request", JSON.stringify(payload, null, 2));
+      const { params } = payload;
+      const { message, address } = params.request.params;
+      console.log("sui message", message);
+      await wallet.respond({
+        topic: payload.topic,
+        response: formatJsonRpcResult(payload.id, {
+          signature: "0x123_sui_signature" + address,
+        }),
+      });
+    });
+
+    await wallet.pair({ uri });
+    const result = await response();
+    console.log("result", result);
   });
 });

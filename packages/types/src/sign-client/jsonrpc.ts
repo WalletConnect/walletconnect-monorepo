@@ -50,6 +50,8 @@ export declare namespace JsonRpcTypes {
         publicKey: string;
         metadata: SignClientTypes.Metadata;
       };
+      pendingRequests?: ProposalTypes.PendingRequests;
+      pendingRequestsResults?: ProposalTypes.PendingRequestsResults;
     };
     wc_sessionUpdate: {
       namespaces: SessionTypes.Namespaces;

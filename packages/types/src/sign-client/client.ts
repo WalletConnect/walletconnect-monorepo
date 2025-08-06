@@ -160,4 +160,5 @@ export abstract class ISignClient {
   public abstract formatAuthMessage: IEngine["formatAuthMessage"];
   public abstract approveSessionAuthenticate: IEngine["approveSessionAuthenticate"];
   public abstract rejectSessionAuthenticate: IEngine["rejectSessionAuthenticate"];
+  public abstract preparePendingRequests: IEngine["preparePendingRequests"];
 }

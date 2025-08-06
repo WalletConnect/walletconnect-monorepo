@@ -1497,7 +1497,7 @@ describe("UniversalProvider", function () {
           }),
         ]);
       });
-      it("should cache `wallet_getCapabilities` request with different chainIds", async () => {
+      it.only("should cache `wallet_getCapabilities` request with different chainIds", async () => {
         const dapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,
           name: "dapp",

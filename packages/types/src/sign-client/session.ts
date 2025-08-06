@@ -37,6 +37,8 @@ export declare namespace SessionTypes {
     optionalNamespaces: ProposalTypes.OptionalNamespaces;
     sessionProperties?: SessionProperties;
     scopedProperties?: ScopedProperties;
+    pendingRequests?: ProposalTypes.PendingRequests;
+    pendingRequestsResults?: ProposalTypes.PendingRequestsResults;
     sessionConfig?: SessionConfig;
     self: {
       publicKey: string;
