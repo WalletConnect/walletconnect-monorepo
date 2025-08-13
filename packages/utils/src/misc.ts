@@ -95,18 +95,17 @@ export function getAppId(): string | undefined {
 
 export function appendToQueryString(
   queryString: string,
-  newQueryParams: Record<string, any>,
+  newQueryParams: Record<string, string | number | boolean | undefined>,
 ): string {
   const urlSearchParams = new URLSearchParams(queryString);
 
-  for (const key of Object.keys(newQueryParams).sort()) {
-    if (newQueryParams.hasOwnProperty(key)) {
-      const value = newQueryParams[key];
-      if (value !== undefined) {
-        urlSearchParams.set(key, value);
+  Object.entries(newQueryParams)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        urlSearchParams.set(key, String(value));
       }
-    }
-  }
+    });
 
   return urlSearchParams.toString();
 }

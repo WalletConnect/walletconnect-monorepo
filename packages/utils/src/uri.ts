@@ -35,10 +35,7 @@ export function parseUri(str: string): EngineTypes.UriParameters {
   const requiredValues = path.split("@");
   const queryString: string = typeof pathEnd !== "undefined" ? str.substring(pathEnd) : "";
   const urlSearchParams = new URLSearchParams(queryString);
-  const queryParams: Record<string, string> = {};
-  urlSearchParams.forEach((value, key) => {
-    queryParams[key] = value;
-  });
+  const queryParams = Object.fromEntries(urlSearchParams.entries());
   const methods =
     typeof queryParams.methods === "string" ? queryParams.methods.split(",") : undefined;
   const result = {
@@ -75,23 +72,24 @@ export function formatRelayParams(relay: RelayerTypes.ProtocolOptions, delimiter
 export function formatUri(params: EngineTypes.UriParameters): string {
   const urlSearchParams = new URLSearchParams();
 
-  const relayParams = formatRelayParams(params.relay);
-  Object.keys(relayParams)
-    .sort()
-    .forEach((key) => {
-      urlSearchParams.set(key, relayParams[key]);
+  // Combine all params into a single object first
+  const allParams = {
+    ...formatRelayParams(params.relay),
+    symKey: params.symKey,
+    ...(params.expiryTimestamp && { expiryTimestamp: params.expiryTimestamp.toString() }),
+    ...(params.methods && { methods: params.methods.join(",") }),
+  };
+
+  // Sort and append all at once
+  Object.entries(allParams)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([key, value]) => {
+      if (value !== undefined) {
+        urlSearchParams.append(key, String(value));
+      }
     });
 
-  urlSearchParams.set("symKey", params.symKey);
-  if (params.expiryTimestamp)
-    urlSearchParams.set("expiryTimestamp", params.expiryTimestamp.toString());
-
-  if (params.methods) {
-    urlSearchParams.set("methods", params.methods.join(","));
-  }
-
-  const queryString = urlSearchParams.toString();
-  return `${params.protocol}:${params.topic}@${params.version}?${queryString}`;
+  return `${params.protocol}:${params.topic}@${params.version}?${urlSearchParams}`;
 }
 
 export function getLinkModeURL(
