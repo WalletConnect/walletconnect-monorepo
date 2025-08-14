@@ -546,7 +546,7 @@ export class UniversalProvider implements IUniversalProvider {
     newChainId: string;
   }): void {
     try {
-      if (previousChainId === newChainId) {
+      if (previousChainId === this.validateChain(newChainId)[0]) {
         return;
       }
 
