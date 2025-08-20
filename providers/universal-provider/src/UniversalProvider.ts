@@ -12,16 +12,7 @@ import {
   populateNamespacesChains,
   setGlobal,
 } from "./utils";
-import PolkadotProvider from "./providers/polkadot";
 import Eip155Provider from "./providers/eip155";
-import SolanaProvider from "./providers/solana";
-import CosmosProvider from "./providers/cosmos";
-import AlgorandProvider from "./providers/algorand";
-import CardanoProvider from "./providers/cardano";
-import ElrondProvider from "./providers/elrond";
-import MultiversXProvider from "./providers/multiversx";
-import NearProvider from "./providers/near";
-import TezosProvider from "./providers/tezos";
 import GenericProvider from "./providers/generic";
 
 import {
@@ -336,51 +327,6 @@ export class UniversalProvider implements IUniversalProvider {
       switch (namespace) {
         case "eip155":
           this.rpcProviders[namespace] = new Eip155Provider({
-            namespace: combinedNamespace,
-          });
-          break;
-        case "algorand":
-          this.rpcProviders[namespace] = new AlgorandProvider({
-            namespace: combinedNamespace,
-          });
-          break;
-        case "solana":
-          this.rpcProviders[namespace] = new SolanaProvider({
-            namespace: combinedNamespace,
-          });
-          break;
-        case "cosmos":
-          this.rpcProviders[namespace] = new CosmosProvider({
-            namespace: combinedNamespace,
-          });
-          break;
-        case "polkadot":
-          this.rpcProviders[namespace] = new PolkadotProvider({
-            namespace: combinedNamespace,
-          });
-          break;
-        case "cip34":
-          this.rpcProviders[namespace] = new CardanoProvider({
-            namespace: combinedNamespace,
-          });
-          break;
-        case "elrond":
-          this.rpcProviders[namespace] = new ElrondProvider({
-            namespace: combinedNamespace,
-          });
-          break;
-        case "multiversx":
-          this.rpcProviders[namespace] = new MultiversXProvider({
-            namespace: combinedNamespace,
-          });
-          break;
-        case "near":
-          this.rpcProviders[namespace] = new NearProvider({
-            namespace: combinedNamespace,
-          });
-          break;
-        case "tezos":
-          this.rpcProviders[namespace] = new TezosProvider({
             namespace: combinedNamespace,
           });
           break;
