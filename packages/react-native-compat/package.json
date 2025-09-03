@@ -4,7 +4,7 @@
   "version": "2.21.8",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
-  "license": "Apache-2.0",
+  "license": "WalletConnect Community License Agreement",
   "main": "index.js",
   "files": [
     "dist",

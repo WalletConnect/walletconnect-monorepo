@@ -9,7 +9,7 @@
     "url": "https://github.com/walletconnect/walletconnect-monorepo",
     "directory": "packages/ethereum-provider"
   },
-  "license": "Apache-2.0",
+  "license": "WalletConnect Community License Agreement",
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
   "unpkg": "dist/index.umd.js",
