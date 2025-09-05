@@ -15,7 +15,7 @@
   ],
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
-  "license": "WalletConnect Community License Agreement",
+  "license": "SEE LICENSE IN LICENSE.md",
   "workspaces": [
     "packages/types",
     "packages/utils",
