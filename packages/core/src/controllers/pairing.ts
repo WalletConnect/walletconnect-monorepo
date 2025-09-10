@@ -25,6 +25,7 @@ import {
   isExpired,
   parseExpirerTarget,
   TYPE_1,
+  validateMetadataCustomData,
 } from "@walletconnect/utils";
 import {
   formatJsonRpcRequest,
@@ -224,6 +225,12 @@ export class Pairing implements IPairing {
 
   public updateMetadata: IPairing["updateMetadata"] = async ({ topic, metadata }) => {
     this.isInitialized();
+
+    const customDataError = validateMetadataCustomData(metadata.customData, "updateMetadata");
+    if (customDataError) {
+      throw new Error(customDataError.message);
+    }
+
     await this.pairings.update(topic, { peerMetadata: metadata });
   };
 

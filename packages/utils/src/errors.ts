@@ -137,6 +137,10 @@ export const INTERNAL_ERRORS = {
     message: "Non conforming namespaces.",
     code: 9,
   },
+  INVALID_METADATA_CUSTOM_DATA: {
+    message: "Invalid metadata custom data.",
+    code: 10,
+  },
 };
 
 /**
