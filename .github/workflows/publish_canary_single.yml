@@ -1,0 +1,79 @@
+name: Publish Single Package Canary to NPM
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to release from"
+        required: true
+        default: "v2.0"
+      dir:
+        description: "Path to the package (e.g., packages/pos-client)"
+        required: true
+      canaryVersion:
+        description: "Custom version (e.g., 1.2.3-canary.42)"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Validate canary version format 🔍
+        run: |
+          VERSION="${{ github.event.inputs.canaryVersion }}"
+          if [[ ! "$VERSION" =~ -canary\. ]]; then
+            echo "❌ Invalid version: '$VERSION'. It must include '-canary.'."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Validate dir input 📂
+        run: |
+          DIR="${{ github.event.inputs.dir }}"
+          # Only allow directories like packages/foo or providers/bar (no slashes after the prefix, no .., no special chars)
+          if [[ ! "$DIR" =~ ^(packages|providers)/[a-zA-Z0-9_-]+$ ]]; then
+            echo "❌ Invalid dir: $DIR"
+            exit 1
+          fi
+          if [ ! -d "$DIR" ]; then
+            echo "❌ Directory does not exist: $DIR"
+            exit 1
+          fi
+          echo "✅ Valid dir: $DIR"
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+      - name: Update package.json in target dir 📦
+        run: |
+          DIR="${{ github.event.inputs.dir }}"
+          VERSION="${{ github.event.inputs.canaryVersion }}"
+
+          if [ ! -f "$DIR/package.json" ]; then
+            echo "❌ No package.json found in $DIR"
+            exit 1
+          fi
+
+          echo "📦 Updating version of $DIR to $VERSION"
+          npm version "$VERSION" --no-git-tag-version --prefix "$DIR"
+
+      - name: Rebuild after version change 🔁
+        run: npm run build
+
+      - name: Publish canary on NPM 🚀
+        run: |
+          cd ${{ github.event.inputs.dir }}
+          npm publish --access public --tag canary
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

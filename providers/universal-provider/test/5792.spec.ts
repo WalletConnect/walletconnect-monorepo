@@ -170,6 +170,7 @@ describe("UniversalProvider 5792 utils", function () {
               ],
               data: "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
               blockNumber: "0x15ec918",
+              blockTimestamp: "0x68822a17",
               transactionHash: "0xa52498b3b9a951859235ebaedfc92bcdb4f4b895b6467d71cbd7d65abf64ec41",
               transactionIndex: "0xcd",
               blockHash: "0x2ae77979eecb4655a3adc36e465c0b6aad2bb468426d7f76a0b415e20fcda685",
