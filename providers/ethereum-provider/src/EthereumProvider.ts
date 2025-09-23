@@ -613,7 +613,7 @@ export class EthereumProvider implements IEthereumProvider {
         });
 
         if (!options.networks.length) {
-          throw new Error("No networks found for WalletConnect·");
+          throw new Error("No networks found for WalletConnect");
         }
 
         appKit = createAppKit({
