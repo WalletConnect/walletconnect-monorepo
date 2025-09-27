@@ -37,7 +37,7 @@ await provider.connect({
       events: ["chainChanged", "accountsChanged"],
       rpcMap: {
         80001:
-          "https://rpc.walletconnect.org?chainId=eip155:80001&projectId=<your walletconnect project id>",
+          "https://rpc.walletconnect.com/v1/?chainId=eip155:80001&projectId=<your walletconnect project id>",
       },
     },
     pairingTopic: "<123...topic>", // optional topic to connect to
