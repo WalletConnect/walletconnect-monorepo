@@ -389,4 +389,54 @@ describe("UniversalProvider utils", function () {
       },
     });
   });
+
+  it("should extract capabilities from session. Case 9", function () {
+    const session = {
+      namespaces: {
+        eip155: {
+          chains: ["eip155:1", "eip155:137", "eip155:84532"],
+        },
+      },
+      scopedProperties: {
+        "eip155:1": {
+          atomic: {
+            status: "unsupported",
+          },
+        },
+        "eip155:137": {
+          "eip155:137:0x0910e12C68d02B561a34569E1367c9AAb42bd811": {
+            atomic: {
+              status: "supported",
+            },
+          },
+        },
+        "eip155:84532": {
+          "eip155:84532:0x0910e12C68d02B561a34569E1367c9AAb42bd810": {
+            atomic: {
+              status: "supported",
+            },
+          },
+        },
+      },
+    } as unknown as SessionTypes.Struct;
+
+    const capabilities = extractCapabilitiesFromSession(
+      session,
+      "0x0910e12C68d02B561a34569E1367c9AAb42bd811",
+      [],
+    );
+
+    expect(capabilities).toEqual({
+      "0x1": {
+        atomic: {
+          status: "unsupported",
+        },
+      },
+      "0x89": {
+        atomic: {
+          status: "supported",
+        },
+      },
+    });
+  });
 });

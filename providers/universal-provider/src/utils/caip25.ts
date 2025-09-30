@@ -44,7 +44,7 @@ export const extractCapabilitiesFromSession = (
   address: string,
   chainIds: string[],
 ) => {
-  const { sessionProperties = {}, scopedProperties = {} } = session;
+  const { sessionProperties = {}, scopedProperties = {}, namespaces = {} } = session;
   const result: Record<string, any> = {};
 
   if (!isValidObject(scopedProperties) && !isValidObject(sessionProperties)) {
@@ -54,7 +54,15 @@ export const extractCapabilitiesFromSession = (
   // get all capabilities from sessionProperties as they apply to all chains/addresses
   const globalCapabilities = getCapabilitiesFromObject(sessionProperties);
 
-  for (const chain of chainIds) {
+  const namespaceChainIds =
+    namespaces[EIP155_PREFIX]?.chains
+      ?.map((chain) => decimalToHex(chain.split(":")[1]))
+      .filter(Boolean) ?? [];
+
+  // use namespace chainIds if no chainIds are provided
+  const targetChainIds = chainIds.length > 0 ? chainIds : namespaceChainIds;
+
+  for (const chain of targetChainIds) {
     const chainId = hexToDecimal(chain);
     if (!chainId) {
       continue;
