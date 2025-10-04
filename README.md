@@ -13,7 +13,7 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 To ensure all packages lint, build and test correctly, we can run the following command from the root folder:
 
 > **For tests to pass in the following command, you will need your own `TEST_PROJECT_ID` value**,
-> which will be generated for you when you set up a new project on [WalletConnect Cloud](https://cloud.walletconnect.com).
+> which will be generated for you when you set up a new project on [WalletConnect Cloud](https://dashboard.reown.com/).
 
 ```zsh
 TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
