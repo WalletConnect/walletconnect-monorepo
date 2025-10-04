@@ -9,7 +9,7 @@ assignees: ""
 **Adding a new chain to the Explorer**
 To get a new chain added to the Explorer, you will need to submit the following:
 
-1. JSON-RPC spec for Wallets **(only if [one](https://docs.walletconnect.com/2.0/advanced/rpc-reference/ethereum-rpc) doesn't already exist)**. For more information, please review the Ethereum [JSON-RPC API docs](https://ethereum.org/en/developers/docs/apis/json-rpc/).
+1. JSON-RPC spec for Wallets **(only if [one](https://docs.reown.com/advanced/multichain/rpc-reference/ethereum-rpc) doesn't already exist)**. For more information, please review the Ethereum [JSON-RPC API docs](https://ethereum.org/developers/docs/apis/json-rpc/).
    **GitHub Link**:
 2. Write a [CASA namespace spec](https://github.com/ChainAgnostic/namespaces) if not already available for this namespace.
    **GitHub Link**:
@@ -38,8 +38,8 @@ Add any other context here.
 
 **Registering a chain with the Explorer does not impact or improve the ability for wallets and dapps to support your chain.** It is simply a way for users to discover wallets and dapps that support your chain by:
 
-- Browsing the [Chains List](https://docs.walletconnect.com/advanced/multichain/chain-list)
-- Filtering results programmatically via the [Explorer API](https://docs.walletconnect.com/cloud/explorer)
+- Browsing the [Chains List](https://docs.reown.com/cloud/chains/chain-list#supported-chains)
+- Filtering results programmatically via the [Explorer API](https://docs.reown.com/cloud/explorer)
 
 **It is still up to wallets and dapps to provide concrete support for your chain once it is listed as part of the Explorer.**
 
