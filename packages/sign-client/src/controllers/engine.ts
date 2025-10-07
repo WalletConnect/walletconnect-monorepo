@@ -1614,7 +1614,10 @@ export class Engine extends IEngine {
 
     const decryptedId = hashMessage(JSON.stringify(proposeSessionPayload));
     const attestationId = hashMessage(proposeSessionMessage);
-    const attestation = await this.client.core.verify.register({ id: attestationId, decryptedId });
+    const attestation = await Promise.all([
+      this.client.core.verify.register({ id: attestationId, decryptedId }),
+      this.client.core.relayer.transportOpen(),
+    ]).then(([attestation]) => attestation);
 
     await this.client.core.relayer.publishCustom({
       payload: {
