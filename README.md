@@ -1,5 +1,8 @@
 # WalletConnect v2.x.x
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://github.com/WalletConnect/walletconnect-monorepo/blob/main/LICENSE.md)
+[![Contributing](https://img.shields.io/badge/CONTRIBUTING-guidelines-brightgreen?style=flat-square)](https://github.com/WalletConnect/walletconnect-monorepo/blob/main/CONTRIBUTING.md)
+
 Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 
 ## Setup
