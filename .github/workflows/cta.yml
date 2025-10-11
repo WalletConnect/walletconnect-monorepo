@@ -16,6 +16,6 @@ jobs:
   CTA:
     runs-on: ubuntu-latest
     steps:
-      - uses: walletconnect/actions/github/cta-assistant@9fd44c01c5f8c169349f8822efc93dd08821a628
+      - uses: walletconnect/actions/github/cta-assistant@974cce051b8452198a144e0e6c4df4d2328a132c
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
