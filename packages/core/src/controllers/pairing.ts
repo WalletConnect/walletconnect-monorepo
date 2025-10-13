@@ -49,8 +49,8 @@ import {
   EVENT_CLIENT_PAIRING_TRACES,
   EVENT_CLIENT_PAIRING_ERRORS,
   TRANSPORT_TYPES,
-} from "../constants";
-import { Store } from "../controllers/store";
+} from "../constants/index.js";
+import { Store } from "../controllers/store.js";
 
 export class Pairing implements IPairing {
   public name = PAIRING_CONTEXT;

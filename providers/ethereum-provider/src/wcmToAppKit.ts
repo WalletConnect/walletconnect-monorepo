@@ -1,7 +1,7 @@
 import type { AppKitOptions, CaipNetwork, CaipNetworkId } from "@reown/appkit";
-import type { WalletConnectModalConfig, Assign, ChainFormatters, Prettify } from "./types";
+import type { WalletConnectModalConfig, Assign, ChainFormatters, Prettify } from "./types.js";
 import type { AppKitNetwork } from "@reown/appkit/networks";
-import type { EthereumProviderOptions } from "./EthereumProvider";
+import type { EthereumProviderOptions } from "./EthereumProvider.js";
 
 function convertThemeVariables(
   wcmTheme?: WalletConnectModalConfig["themeVariables"],

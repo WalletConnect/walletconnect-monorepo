@@ -24,8 +24,8 @@ import {
 } from "@walletconnect/utils";
 import { toString } from "uint8arrays";
 
-import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants";
-import { KeyChain } from "./keychain";
+import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants/index.js";
+import { KeyChain } from "./keychain.js";
 
 export class Crypto implements ICrypto {
   public name = CRYPTO_CONTEXT;

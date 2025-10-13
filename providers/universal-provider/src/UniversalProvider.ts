@@ -1,8 +1,9 @@
-import SignClient from "@walletconnect/sign-client";
+import { SignClient } from "@walletconnect/sign-client";
 import { SessionTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
-import { getSdkError, isValidArray, parseNamespaceKey } from "@walletconnect/utils";
-import { getDefaultLoggerOptions, Logger, pino } from "@walletconnect/logger";
+import { createLogger, getSdkError, isValidArray, parseNamespaceKey } from "@walletconnect/utils";
+import { Logger } from "@walletconnect/logger";
+
 import {
   convertChainIdToNumber,
   getAccountsFromSession,
@@ -11,9 +12,9 @@ import {
   parseCaip10Account,
   populateNamespacesChains,
   setGlobal,
-} from "./utils";
-import Eip155Provider from "./providers/eip155";
-import GenericProvider from "./providers/generic";
+} from "./utils/index.js";
+import Eip155Provider from "./providers/eip155.js";
+import GenericProvider from "./providers/generic.js";
 
 import {
   IUniversalProvider,
@@ -29,14 +30,21 @@ import {
   DefaultChainChanged,
   OnChainChanged,
   EmitAccountsChangedOnChainChange,
-} from "./types";
+} from "./types/index.js";
 
-import { RELAY_URL, LOGGER, STORAGE, PROVIDER_EVENTS, GENERIC_SUBPROVIDER_NAME } from "./constants";
+import {
+  RELAY_URL,
+  LOGGER,
+  STORAGE,
+  PROVIDER_EVENTS,
+  GENERIC_SUBPROVIDER_NAME,
+  CONTEXT,
+} from "./constants/index.js";
 import EventEmitter from "events";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 export class UniversalProvider implements IUniversalProvider {
-  public client!: SignClient;
+  public client!: InstanceType<typeof SignClient>;
   public namespaces?: NamespaceConfig;
   public optionalNamespaces?: NamespaceConfig;
   public sessionProperties?: SessionTypes.SessionProperties;
@@ -58,10 +66,10 @@ export class UniversalProvider implements IUniversalProvider {
 
   constructor(opts: UniversalProviderOpts) {
     this.providerOpts = opts;
-    this.logger =
-      typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
-        ? opts.logger
-        : pino(getDefaultLoggerOptions({ level: opts?.logger || LOGGER }));
+    this.logger = createLogger({
+      logger: opts.logger ?? LOGGER,
+      name: this.providerOpts.name ?? CONTEXT,
+    });
     this.disableProviderPing = opts?.disableProviderPing || false;
   }
 
@@ -236,7 +244,7 @@ export class UniversalProvider implements IUniversalProvider {
 
       this.logger.info(`Inactive pairings cleared: ${inactivePairings.length}`);
     } catch (error) {
-      this.logger.warn("Failed to cleanup pending pairings", error);
+      this.logger.warn(error, "Failed to cleanup pending pairings");
     }
   }
 
@@ -279,7 +287,7 @@ export class UniversalProvider implements IUniversalProvider {
       try {
         this.session = this.client.session.get(this.providerOpts.session.topic);
       } catch (error) {
-        this.logger.error("Failed to get session", error);
+        this.logger.error(error, "Failed to get session");
         throw new Error(
           `The provided session: ${this.providerOpts?.session?.topic} doesn't exist in the Sign client`,
         );
@@ -509,7 +517,7 @@ export class UniversalProvider implements IUniversalProvider {
       if (!isValidArray(newChainIdAccounts)) return;
       this.events.emit("accountsChanged", newChainIdAccounts);
     } catch (error) {
-      this.logger.warn("Failed to emit accountsChanged on chain change", error);
+      this.logger.warn(error, "Failed to emit accountsChanged on chain change");
     }
   }
 
@@ -578,7 +586,7 @@ export class UniversalProvider implements IUniversalProvider {
         }
       }
     } catch (error) {
-      this.logger.warn("Failed to cleanup storage", error);
+      this.logger.warn(error, "Failed to cleanup storage");
     }
   }
 }

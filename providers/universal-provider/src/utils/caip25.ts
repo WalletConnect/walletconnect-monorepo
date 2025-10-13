@@ -1,7 +1,7 @@
 import { SessionTypes } from "@walletconnect/types";
 import { isValidObject } from "@walletconnect/utils";
 
-import { isValidJSONObject } from "./misc";
+import { isValidJSONObject } from "./misc.js";
 
 const EIP155_PREFIX = "eip155";
 const CAPABILITIES_KEYS = [

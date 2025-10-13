@@ -6,11 +6,10 @@ const LINKING_ERROR =
   "- You rebuilt the app after installing the package\n" +
   "- If you are using Expo: install expo-application \n";
 
-// @ts-expect-error
 const isTurboModuleEnabled = global.__turboModuleProxy != null;
 
 const RNWalletConnectModule = isTurboModuleEnabled
-  ? require("../module/NativeRNWalletConnectModule").default
+  ? require("../module/NativeRNWalletConnectModule.js").default
   : NativeModules.RNWalletConnectModule;
 
 function getExpoModule(): any | undefined {

@@ -21,7 +21,7 @@ import {
   TRANSPORT_TYPES,
   WALLETCONNECT_CLIENT_ID,
   WALLETCONNECT_LINK_MODE_APPS,
-} from "./constants";
+} from "./constants/index.js";
 import {
   Crypto,
   EchoClient,
@@ -31,7 +31,7 @@ import {
   Pairing,
   Relayer,
   Verify,
-} from "./controllers";
+} from "./controllers/index.js";
 
 export class Core extends ICore {
   public readonly protocol = CORE_PROTOCOL;
@@ -226,7 +226,7 @@ export class Core extends ICore {
       this.initialized = true;
       this.logger.info(`Core Initialization Success`);
     } catch (error) {
-      this.logger.warn(`Core Initialization Failure at epoch ${Date.now()}`, error);
+      this.logger.warn(error, `Core Initialization Failure at epoch ${Date.now()}`);
       this.logger.error((error as any).message);
       throw error;
     }

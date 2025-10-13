@@ -4,6 +4,7 @@ import { isBrowser, isTestRun, P256KeyDataType, verifyP256Jwt } from "@walletcon
 import { FIVE_SECONDS, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import { getDocument } from "@walletconnect/window-getters";
 import { decodeJWT } from "@walletconnect/relay-auth";
+import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 
 import {
   CORE_STORAGE_PREFIX,
@@ -12,8 +13,7 @@ import {
   VERIFY_CONTEXT,
   VERIFY_SERVER,
   VERIFY_SERVER_V3,
-} from "../constants";
-import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
+} from "../constants/index.js";
 
 type Jwk = {
   publicKey: P256KeyDataType;
@@ -104,7 +104,7 @@ export class Verify extends IVerify {
         document.body.appendChild(iframe);
         window.addEventListener("message", listener, { signal: this.abortController.signal });
       });
-      this.logger.debug("jwt attestation", attestationJwt);
+      this.logger.debug(attestationJwt, "jwt attestation");
       return attestationJwt as string;
     } catch (e) {
       this.logger.warn(e);
@@ -184,7 +184,7 @@ export class Verify extends IVerify {
   };
 
   private persistPublicKey = async (publicKey: Jwk) => {
-    this.logger.debug(`persisting public key to local storage`, publicKey);
+    this.logger.debug(publicKey, `persisting public key to local storage`);
     await this.store.setItem(this.storeKey, publicKey);
     this.publicKey = publicKey;
   };

@@ -1,5 +1,5 @@
 import { getDocument } from "@walletconnect/window-getters";
-import { getEnvironment, ENV_MAP, isBrowser, isReactNative } from "./misc";
+import { getEnvironment, ENV_MAP, isBrowser, isReactNative } from "./misc.js";
 
 export function isOnline(): Promise<boolean> {
   const env = getEnvironment();

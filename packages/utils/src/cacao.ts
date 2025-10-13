@@ -1,6 +1,6 @@
 import { AuthTypes } from "@walletconnect/types";
-import { getCommonValuesInArrays } from "./misc";
-import { verifySignature } from "./signatures";
+import { getCommonValuesInArrays } from "./misc.js";
+import { verifySignature } from "./signatures.js";
 const didPrefix = "did:pkh:";
 export const getDidAddressSegments = (iss: string) => {
   return iss?.split(":");

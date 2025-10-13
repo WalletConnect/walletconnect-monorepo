@@ -1,6 +1,6 @@
 import { ProposalTypes, SessionTypes } from "@walletconnect/types";
-import { mergeArrays } from "./misc";
-import { isConformingNamespaces, isValidNamespaces, isValidObject } from "./validators";
+import { mergeArrays } from "./misc.js";
+import { isConformingNamespaces, isValidNamespaces, isValidObject } from "./validators.js";
 
 export function getAccountsChains(accounts: SessionTypes.Namespace["accounts"]) {
   const chains: string[] = [];

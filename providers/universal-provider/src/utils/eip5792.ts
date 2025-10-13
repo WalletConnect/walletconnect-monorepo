@@ -2,9 +2,9 @@ import { calcExpiry, isExpired, parseChainId } from "@walletconnect/utils";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import JsonRpcProvider from "@walletconnect/jsonrpc-provider";
 
-import { StoredSendCalls, StoreSendCallsParams } from "../types";
-import { CALL_STATUS_RESULT_EXPIRY, CALL_STATUS_STORAGE_KEY } from "../constants";
-import { Storage } from "./storage";
+import { StoredSendCalls, StoreSendCallsParams } from "../types/index.js";
+import { CALL_STATUS_RESULT_EXPIRY, CALL_STATUS_STORAGE_KEY } from "../constants/index.js";
+import { Storage } from "./storage.js";
 
 export async function prepareCallStatusFromStoredSendCalls(
   storedSendCalls: StoredSendCalls,

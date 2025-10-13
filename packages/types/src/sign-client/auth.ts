@@ -5,8 +5,8 @@ import {
   JsonRpcResponse,
   JsonRpcResult,
 } from "@walletconnect/jsonrpc-types";
-import { CoreTypes, ICore, IStore, RelayerTypes, Verify } from "../core";
-import { SessionTypes } from "./session";
+import { CoreTypes, ICore, IStore, RelayerTypes, Verify } from "../core/index.js";
+import { SessionTypes } from "./session.js";
 
 export declare namespace AuthTypes {
   type Event = "session_authenticate";

@@ -1,5 +1,5 @@
 import { EngineTypes, RelayerTypes } from "@walletconnect/types";
-import { fromBase64 } from "./misc";
+import { fromBase64 } from "./misc.js";
 
 // -- uri -------------------------------------------------- //
 

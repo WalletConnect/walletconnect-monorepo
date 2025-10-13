@@ -7,7 +7,7 @@ import {
 } from "@walletconnect/jsonrpc-types";
 import { Logger } from "@walletconnect/logger";
 
-import { ICore } from "./core";
+import { ICore } from "./core.js";
 
 export interface JsonRpcRecord {
   id: number;

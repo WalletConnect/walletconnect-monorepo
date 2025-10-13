@@ -11,7 +11,7 @@ import {
   NamespaceConfig,
   ConnectParams,
   IEthereumProvider,
-} from "./misc";
+} from "./misc.js";
 
 export interface IProvider {
   readonly namespace: SessionNamespace;

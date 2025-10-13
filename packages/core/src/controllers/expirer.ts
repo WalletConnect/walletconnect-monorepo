@@ -9,7 +9,7 @@ import {
   EXPIRER_CONTEXT,
   EXPIRER_EVENTS,
   EXPIRER_STORAGE_VERSION,
-} from "../constants";
+} from "../constants/index.js";
 
 export class Expirer extends IExpirer {
   public expirations = new Map<string, ExpirerTypes.Expiration>();

@@ -6,7 +6,7 @@ import {
   MESSAGE_DIRECTION,
   MESSAGES_CONTEXT,
   MESSAGES_STORAGE_VERSION,
-} from "../constants";
+} from "../constants/index.js";
 
 export class MessageTracker extends IMessageTracker {
   public messages = new Map<string, MessageRecord>();

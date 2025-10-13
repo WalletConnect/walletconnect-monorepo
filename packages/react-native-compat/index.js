@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { getApplicationModule } from "./module";
+import { getApplicationModule } from "./module/index.js";
 
 // Polyfill TextEncode / TextDecode
 import "fast-text-encoding";

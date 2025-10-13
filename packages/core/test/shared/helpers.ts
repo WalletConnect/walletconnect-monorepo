@@ -1,4 +1,4 @@
-import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
+import { getDefaultLoggerOptions, generateClientLogger } from "@walletconnect/logger";
 import { CoreTypes, ICore } from "@walletconnect/types";
 import { DEFAULT_DB_NAME, MOCK_STORE_NAME, TEST_CORE_OPTIONS, storeTestValues } from "./values";
 import { Core, Store } from "../../src";
@@ -37,7 +37,9 @@ export const initCore = async (
  * @returns Initialized store instance
  */
 export const initStore = async (core: ICore) => {
-  const logger = pino(getDefaultLoggerOptions({ level: "fatal" }));
+  const logger = generateClientLogger({
+    opts: getDefaultLoggerOptions({ level: "fatal" }),
+  }).logger;
 
   const store = new Store<string, MockStoreValue>(
     core,

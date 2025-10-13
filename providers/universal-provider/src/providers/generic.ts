@@ -3,15 +3,15 @@ import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import Client from "@walletconnect/sign-client";
 import { EngineTypes, SessionTypes } from "@walletconnect/types";
 import EventEmitter from "events";
-import { GENERIC_SUBPROVIDER_NAME, PROVIDER_EVENTS } from "../constants";
+import { GENERIC_SUBPROVIDER_NAME, PROVIDER_EVENTS } from "../constants/index.js";
 import {
   IProvider,
   RequestParams,
   RpcProvidersMap,
   SessionNamespace,
   SubProviderOpts,
-} from "../types";
-import { getGlobal, getRpcUrl } from "../utils";
+} from "../types/index.js";
+import { getGlobal, getRpcUrl } from "../utils/index.js";
 import { parseChainId } from "@walletconnect/utils";
 
 class GenericProvider implements IProvider {
