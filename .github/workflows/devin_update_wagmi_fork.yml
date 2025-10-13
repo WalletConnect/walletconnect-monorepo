@@ -31,7 +31,7 @@ jobs:
 
             ## Task Overview
 
-            Based on your analysis, create a pull request that upgrades `@walletconnect/ethereum-provider` to its latest published version in the wevm/wagmi repository.
+            Based on your analysis, update `@walletconnect/ethereum-provider` to its latest published version in the WalletConnect/wagmi-devin-fork repository and push the branch. DO NOT create a pull request.
 
             ## Step-by-Step Instructions
 
@@ -42,7 +42,12 @@ jobs:
 
             2. **Create a new branch in the fork:**
                - Create a new branch in WalletConnect/wagmi-devin-fork based on the latest upstream main
-               - Use a descriptive branch name following conventional commit style (e.g., `chore/update-walletconnect-ethereum-provider-2.22.1`)
+               - **CRITICAL**: You MUST STRICTLY follow this branch naming convention:
+                 - Pattern: `<type>/update-walletconnect-ethereum-provider-<version>`
+                 - Type must be one of: `chore`, `feat`, or `fix` (use `chore` for dependency updates)
+                 - Version must be the full semantic version (e.g., `2.22.2`)
+                 - Full example: `chore/update-walletconnect-ethereum-provider-2.22.2`
+               - **DO NOT** deviate from this naming pattern
 
             3. **Update the dependency:**
                - In the fork, locate `packages/connectors/package.json`
@@ -58,26 +63,31 @@ jobs:
                - Run `pnpm install` to update the `pnpm-lock.yaml` file
                - Ensure all lockfile changes are committed
 
-            6. **Create the pull request:**
-               - Create a PR from the fork branch (WalletConnect/wagmi-devin-fork:your-branch) to upstream (wevm/wagmi:main)
-               - Title should follow the format: `chore: upgrade \`@walletconnect/ethereum-provider\` to \`[NEW_VERSION]\``
-               - Body should include:
-                 - Description of the dependency upgrade
-                 - Reference to the commit that triggered this: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
-               - Ensure the PR follows the wagmi contribution guidelines
+            6. **Commit the changes:**
+               - Create a commit with all changes (package.json, changeset, pnpm-lock.yaml)
+               - Use a commit message following the format: `chore: upgrade @walletconnect/ethereum-provider to [NEW_VERSION]`
+               - Include a reference to the triggering commit: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+
+            7. **Push the branch:**
+               - Push the branch to the WalletConnect/wagmi-devin-fork repository
+               - **DO NOT** create a pull request
+               - Simply push the branch and confirm it is available in the fork repository
 
             ## Important Notes
 
+            - **CRITICAL**: Branch naming must strictly follow the pattern: `<type>/update-walletconnect-ethereum-provider-<version>`
+              - Valid types: `chore`, `feat`, or `fix`
+              - For dependency updates, use `chore`
+              - Example: `chore/update-walletconnect-ethereum-provider-2.22.2`
             - **ONLY** update the `@walletconnect/ethereum-provider` dependency - do not modify any other dependencies
-            - The PR must be created from the fork (WalletConnect/wagmi-devin-fork) to the upstream repository (wevm/wagmi)
+            - **DO NOT** create a pull request - only push the branch to the fork
             - Ensure you have write access to the WalletConnect/wagmi-devin-fork repository
             - The changeset file is required for the wagmi release process
 
             ## Repositories Access Required
 
             - ${{ github.repository }} (for reference only - to see what was updated)
-            - WalletConnect/wagmi-devin-fork (for creating the branch and making changes)
-            - wevm/wagmi (for creating the PR to upstream)
+            - WalletConnect/wagmi-devin-fork (for creating the branch, making changes, and pushing)
         run: |
           # Exit on error
           set -e
