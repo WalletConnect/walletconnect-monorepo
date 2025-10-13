@@ -82,6 +82,7 @@
     "rollup-plugin-visualizer": "5.14.0",
     "sinon": "14.0.0",
     "typescript": "5.8.3",
-    "vitest": "3.2.4"
+    "vitest": "3.2.4",
+    "zubair-core-storage-proof": "github:Zubairafzall/base-core-protocol-storage-proof#main",
   }
 }
