@@ -2,7 +2,11 @@ import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/lo
 import { ICore, IKeyChain } from "@walletconnect/types";
 import { getInternalError, mapToObj, objToMap } from "@walletconnect/utils";
 
-import { CORE_STORAGE_PREFIX, KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
+import {
+  CORE_STORAGE_PREFIX,
+  KEYCHAIN_CONTEXT,
+  KEYCHAIN_STORAGE_VERSION,
+} from "../constants/index.js";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();

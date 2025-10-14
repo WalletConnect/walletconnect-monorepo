@@ -1,6 +1,6 @@
 import { Logger } from "@walletconnect/logger";
 import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
-import { ICore } from "./core";
+import { ICore } from "./core.js";
 
 export declare namespace Verify {
   export interface Context {

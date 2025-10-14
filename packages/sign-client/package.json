@@ -1,15 +1,23 @@
 {
   "name": "@walletconnect/sign-client",
   "description": "Sign Client for WalletConnect Protocol",
-  "version": "2.21.9",
+  "version": "2.22.4",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "SEE LICENSE IN LICENSE.md",
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.es.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "unpkg": "dist/index.umd.js",
   "types": "dist/types/index.d.ts",
   "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "module": "./dist/index.js",
+      "default": "./dist/index.cjs"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -38,18 +46,19 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@walletconnect/core": "2.21.9",
+    "@walletconnect/core": "2.22.4",
     "@walletconnect/events": "1.0.1",
     "@walletconnect/heartbeat": "1.2.2",
     "@walletconnect/jsonrpc-utils": "1.0.8",
-    "@walletconnect/logger": "2.1.2",
+    "@walletconnect/logger": "3.0.0",
     "@walletconnect/time": "1.0.2",
-    "@walletconnect/types": "2.21.9",
-    "@walletconnect/utils": "2.21.9",
+    "@walletconnect/types": "2.22.4",
+    "@walletconnect/utils": "2.22.4",
     "events": "3.3.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudwatch": "3.450.0"
+    "@aws-sdk/client-cloudwatch": "3.450.0",
+    "ethers": "6.13.5"
   },
   "repository": {
     "type": "git",

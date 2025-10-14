@@ -52,40 +52,35 @@ describe("Canary", () => {
         ...TEST_SIGN_CLIENT_OPTIONS_A,
         logger,
       });
-      log(
-        `Client A (${await A.core.crypto.getClientId()}) initialized in ${
-          Date.now() - aInitStart
-        }ms`,
-      );
+      const aInitLatencyMs = Date.now() - aInitStart;
+      const clientIdA = await A.core.crypto.getClientId();
+      log(`Client A (${clientIdA}) initialized in ${aInitLatencyMs}ms`);
 
       const bInitStart = Date.now();
       const B = await SignClient.init({
         ...TEST_SIGN_CLIENT_OPTIONS_B,
         logger,
       });
-      log(
-        `Client B (${await B.core.crypto.getClientId()}) initialized in ${
-          Date.now() - bInitStart
-        }ms`,
-      );
+      const bInitLatencyMs = Date.now() - bInitStart;
+      const clientIdB = await B.core.crypto.getClientId();
+      log(`Client B (${clientIdB}) initialized in ${bInitLatencyMs}ms`);
 
       const start = Date.now();
 
       const clients = { A, B };
       log(
-        `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}'`,
+        `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${clientIdA}';B:'${clientIdB}'`,
       );
-      const humanInputLatencyMs = 600;
       const { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs } =
-        await testConnectMethod(clients, { qrCodeScanLatencyMs: humanInputLatencyMs });
+        await testConnectMethod(clients);
       log(
-        `Clients connected (relay '${TEST_RELAY_URL}', client ids: A:'${await clients.A.core.crypto.getClientId()}';B:'${await clients.B.core.crypto.getClientId()}' pairing topic '${
+        `Clients connected (relay '${TEST_RELAY_URL}', client ids: A:'${clientIdA}';B:'${clientIdB}' pairing topic '${
           pairingA.topic
         }', session topic '${sessionA.topic}')`,
       );
 
       const successful = true;
-      const pairingLatencyMs = Date.now() - start - humanInputLatencyMs;
+      const pairingLatencyMs = Date.now() - start;
 
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -200,7 +195,7 @@ describe("Canary", () => {
         }
       });
       const pingLatencyMs = Date.now() - pingStart;
-      const latencyMs = Date.now() - start - 2 * humanInputLatencyMs;
+      const latencyMs = Date.now() - start;
 
       console.log(`Clients paired after ${pairingLatencyMs}ms`);
       if (environment !== "dev") {
@@ -250,7 +245,7 @@ describe("Canary", () => {
     }, 600_000);
   });
   afterEach(async (done) => {
-    const { result } = done.meta;
+    const { result } = done.task;
     const nowTimestamp = Date.now();
     const latencyMs = nowTimestamp - (result?.startTime || nowTimestamp);
     const taskState = result?.state;

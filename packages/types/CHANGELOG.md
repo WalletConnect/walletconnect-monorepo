@@ -1,5 +1,47 @@
 # @walletconnect/types
 
+## 2.22.4
+
+### Patch Changes
+
+- [#6996](https://github.com/WalletConnect/walletconnect-monorepo/pull/6996) [`9c879ea`](https://github.com/WalletConnect/walletconnect-monorepo/commit/9c879ea935ed2f99c5a01ff3476c7d697677672b) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - fix: solved react-native-compat file imports
+
+## 2.22.3
+
+### Patch Changes
+
+- [#6988](https://github.com/WalletConnect/walletconnect-monorepo/pull/6988) [`b8b7b2e`](https://github.com/WalletConnect/walletconnect-monorepo/commit/b8b7b2e8307e83b770e4037ad7c85995595a4d29) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Sets file extensions on all imports/exports
+
+- [#6982](https://github.com/WalletConnect/walletconnect-monorepo/pull/6982) [`a4f5f76`](https://github.com/WalletConnect/walletconnect-monorepo/commit/a4f5f76e44d3b3d3504793c8570f3d014afacd85) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Updated `@walletconnect/logger` to `3.0.0`
+
+## 2.22.2
+
+### Patch Changes
+
+- [#6976](https://github.com/WalletConnect/walletconnect-monorepo/pull/6976) [`9d00e00`](https://github.com/WalletConnect/walletconnect-monorepo/commit/9d00e0014d4facf2defb25dd56136ca7906c0de5) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Fixed a bug in `universal-provider` where `logger` wasn't imported correctly due to esm/cjs mismatch in some environments
+
+## 2.22.1
+
+### Patch Changes
+
+- [#6974](https://github.com/WalletConnect/walletconnect-monorepo/pull/6974) [`a1abfdc`](https://github.com/WalletConnect/walletconnect-monorepo/commit/a1abfdc9f71f77ec114fc8c3ba68649d74167faf) Thanks [@svenvoskamp](https://github.com/svenvoskamp)! - Add enableMobileFullScreen to EthereumProviderOptions and feed to AppKit
+
+## 2.22.0
+
+### Minor Changes
+
+- [#6941](https://github.com/WalletConnect/walletconnect-monorepo/pull/6941) [`aa2399e`](https://github.com/WalletConnect/walletconnect-monorepo/commit/aa2399ead2e6b91da25adb79cb44472dadccd791) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Validates response topic when responding to a session request
+
+### Patch Changes
+
+- [#6973](https://github.com/WalletConnect/walletconnect-monorepo/pull/6973) [`bc03edf`](https://github.com/WalletConnect/walletconnect-monorepo/commit/bc03edf498d3f413e29b69a9ace6fe6225919762) Thanks [@svenvoskamp](https://github.com/svenvoskamp)! - Upgrade "@reown/appkit" to 1.8.9
+
+## 2.21.10
+
+### Patch Changes
+
+- [#6926](https://github.com/WalletConnect/walletconnect-monorepo/pull/6926) [`df6a83d04b075fdd075317becb1c274b82cf7fba`](https://github.com/WalletConnect/walletconnect-monorepo/commit/df6a83d04b075fdd075317becb1c274b82cf7fba) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - Replaced `viem` with `ox`
+
 ## 2.21.9
 
 ### Patch Changes

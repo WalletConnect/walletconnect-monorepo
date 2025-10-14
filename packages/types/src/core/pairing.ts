@@ -6,12 +6,12 @@ import {
   JsonRpcError,
 } from "@walletconnect/jsonrpc-types";
 import EventEmitter from "events";
-
-import { ICore, CoreTypes } from "./core";
-import { IStore } from "./store";
-
-import { RelayerTypes } from "../core/relayer";
 import { Logger } from "@walletconnect/logger";
+
+import { ICore, CoreTypes } from "./core.js";
+import { IStore } from "./store.js";
+
+import { RelayerTypes } from "../core/relayer.js";
 
 export declare namespace PairingTypes {
   interface Struct {

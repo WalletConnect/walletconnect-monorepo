@@ -27,8 +27,8 @@ import {
   SUBSCRIBER_STORAGE_VERSION,
   RELAYER_EVENTS,
   TRANSPORT_TYPES,
-} from "../constants";
-import { SubscriberTopicMap } from "./topicmap";
+} from "../constants/index.js";
+import { SubscriberTopicMap } from "./topicmap.js";
 
 export class Subscriber extends ISubscriber {
   public subscriptions = new Map<string, SubscriberTypes.Active>();

@@ -1,0 +1,152 @@
+name: Trigger Devin for Wagmi Fork Update
+
+on:
+  push:
+    branches:
+      - v2.0
+
+permissions:
+  contents: read # Required to read github.event.head_commit.message
+
+jobs:
+  trigger-devin-wagmi-fork-update:
+    # This job runs only if the head commit message on the push to v2.0 contains 'chore: version packages'
+    if: |
+      contains(github.event.head_commit.message, 'chore: version packages')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack Notification for Wagmi Fork Update
+        env:
+          DEVIN_SLACK_WEBHOOK_URL: ${{ secrets.DEVIN_SLACK_WEBHOOK_URL }}
+          DEVIN_SLACK_USER_ID: ${{ vars.DEVIN_SLACK_USER_ID }}
+          PROMPT_TEXT: |
+            ## Context
+
+            A commit titled "chore: version packages" (SHA: ${{ github.sha }}) was just pushed to the v2.0 branch of the ${{ github.repository }} repository. This commit is typically the result of a merged Pull Request that contains new package versions from a changeset.
+            Your task is to analyze this specific commit and update the `@walletconnect/ethereum-provider` dependency in the upstream wevm/wagmi repository by working through the WalletConnect/wagmi-devin-fork fork repository.
+
+            Please examine the changes introduced by commit ${{ github.sha }} in the ${{ github.repository }} repository. Focus your examination on:
+            1. The content of any `CHANGELOG.md` files modified in this commit to understand which packages were versioned
+            2. The `package.json` files to identify the exact new version of `@walletconnect/ethereum-provider` that was published
+
+            ## Task Overview
+
+            Based on your analysis, update `@walletconnect/ethereum-provider` to its latest published version in the WalletConnect/wagmi-devin-fork repository and push the branch. DO NOT create a pull request.
+
+            ## Step-by-Step Instructions
+
+            1. **Sync the fork with upstream:**
+               - Go to the WalletConnect/wagmi-devin-fork repository
+               - Ensure it is synced with the latest upstream wevm/wagmi main branch
+               - If the fork is behind, sync it first
+
+            2. **Create a new branch in the fork:**
+               - Create a new branch in WalletConnect/wagmi-devin-fork based on the latest upstream main
+               - **CRITICAL**: You MUST STRICTLY follow this branch naming convention:
+                 - Pattern: `<type>/update-walletconnect-ethereum-provider-<version>`
+                 - Type must be one of: `chore`, `feat`, or `fix` (use `chore` for dependency updates)
+                 - Version must be the full semantic version (e.g., `2.22.2`)
+                 - Full example: `chore/update-walletconnect-ethereum-provider-2.22.2`
+               - **DO NOT** deviate from this naming pattern
+
+            3. **Update the dependency:**
+               - In the fork, locate `packages/connectors/package.json`
+               - Update `@walletconnect/ethereum-provider` to the new version you identified from the commit analysis
+
+            4. **Create a changeset:**
+               - Run `pnpm changeset` to create a new changeset
+               - Select the `@wagmi/connectors` package
+               - Choose `patch` as the bump type
+               - Provide a clear description of the dependency update (e.g., "chore: upgrade `@walletconnect/ethereum-provider` to [NEW_VERSION]")
+
+            5. **Update the lockfile:**
+               - Run `pnpm install` to update the `pnpm-lock.yaml` file
+               - Ensure all lockfile changes are committed
+
+            6. **Commit the changes:**
+               - Create a commit with all changes (package.json, changeset, pnpm-lock.yaml)
+               - Use a commit message following the format: `chore: upgrade @walletconnect/ethereum-provider to [NEW_VERSION]`
+               - Include a reference to the triggering commit: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+
+            7. **Push the branch:**
+               - Push the branch to the WalletConnect/wagmi-devin-fork repository
+               - **DO NOT** create a pull request
+               - Simply push the branch and confirm it is available in the fork repository
+
+            ## Important Notes
+
+            - **CRITICAL**: Branch naming must strictly follow the pattern: `<type>/update-walletconnect-ethereum-provider-<version>`
+              - Valid types: `chore`, `feat`, or `fix`
+              - For dependency updates, use `chore`
+              - Example: `chore/update-walletconnect-ethereum-provider-2.22.2`
+            - **ONLY** update the `@walletconnect/ethereum-provider` dependency - do not modify any other dependencies
+            - **DO NOT** create a pull request - only push the branch to the fork
+            - Ensure you have write access to the WalletConnect/wagmi-devin-fork repository
+            - The changeset file is required for the wagmi release process
+
+            ## Repositories Access Required
+
+            - ${{ github.repository }} (for reference only - to see what was updated)
+            - WalletConnect/wagmi-devin-fork (for creating the branch, making changes, and pushing)
+        run: |
+          # Exit on error
+          set -e
+
+          # Check if the Slack webhook URL is provided and not empty
+          if [ -z "${DEVIN_SLACK_WEBHOOK_URL}" ]; then
+            echo "Error: DEVIN_SLACK_WEBHOOK_URL is not set or is empty."
+            echo "Please ensure this secret is configured in the repository settings (Secrets and variables > Actions)."
+            exit 1
+          fi
+
+          # PROMPT_TEXT is set in the 'env' block and should be fully expanded by GitHub Actions.
+          # Construct the final message text for Slack.
+          MESSAGE_TEXT="<@${DEVIN_SLACK_USER_ID}> ${PROMPT_TEXT}"
+
+          # Create the JSON payload for Slack.
+          # The --arg option in jq handles escaping special characters in MESSAGE_TEXT for valid JSON.
+          echo "Attempting to create JSON payload..."
+          JSON_PAYLOAD=$(jq -n --arg text "$MESSAGE_TEXT" '{text: $text}')
+          JQ_EXIT_CODE=$?
+
+          if [ $JQ_EXIT_CODE -ne 0 ]; then
+            echo "Error: jq command failed to create JSON payload (Exit Code: $JQ_EXIT_CODE)."
+            # Log a snippet of the message text to aid debugging, avoiding overly long logs.
+            echo "Original Message Text (first 200 characters):"
+            echo "${MESSAGE_TEXT:0:200}..."
+            exit 1
+          fi
+
+          echo "Sending Slack notification for Wagmi Fork Update."
+          # Echo context information using direct GitHub context expressions for clarity and consistency.
+          echo "WalletConnect Repo: ${{ github.repository }}"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Commit URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+
+          # Send the notification to Slack using curl.
+          # -s: silent mode (no progress meter).
+          # -X POST: specifies the HTTP POST method.
+          # -H "Content-Type: application/json": sets the content type header.
+          # -d "$JSON_PAYLOAD": provides the JSON data for the request body.
+          RESPONSE=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD" \
+            "${DEVIN_SLACK_WEBHOOK_URL}")
+          CURL_EXIT_CODE=$?
+
+          if [ $CURL_EXIT_CODE -ne 0 ]; then
+            echo "Error: curl command failed to send Slack notification (Exit Code: $CURL_EXIT_CODE)."
+            # RESPONSE might be empty or contain an error message from curl itself (e.g., if URL is malformed or network issue).
+            echo "Curl response (if any): $RESPONSE"
+            exit 1
+          fi
+
+          # Check the content of the response from the Slack API.
+          # A successful Slack webhook POST request typically returns the string "ok".
+          if [ "$RESPONSE" = "ok" ]; then
+            echo "Slack notification sent successfully."
+          else
+            echo "Error sending Slack notification: Slack API did not return 'ok'."
+            echo "Response from Slack: $RESPONSE"
+            exit 1
+          fi

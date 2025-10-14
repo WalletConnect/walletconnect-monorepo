@@ -2,7 +2,7 @@ import { Store } from "@walletconnect/core";
 import { Logger } from "@walletconnect/logger";
 import { ICore, ProposalTypes } from "@walletconnect/types";
 
-import { SIGN_CLIENT_STORAGE_PREFIX, PROPOSAL_CONTEXT } from "../constants";
+import { SIGN_CLIENT_STORAGE_PREFIX, PROPOSAL_CONTEXT } from "../constants/index.js";
 
 export class Proposal extends Store<number, ProposalTypes.Struct> {
   constructor(

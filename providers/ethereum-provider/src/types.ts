@@ -1,5 +1,5 @@
 import { SignClientTypes } from "@walletconnect/types";
-import { EthereumProvider } from "./EthereumProvider";
+import { EthereumProvider } from "./EthereumProvider.js";
 
 export interface ProviderRpcError extends Error {
   message: string;
@@ -211,6 +211,7 @@ export type WalletConnectModalConfig = ConfigCtrlState &
     walletImages?: Record<string, string>;
     enableAuthMode?: boolean;
     enableExplorer?: boolean;
+    enableMobileFullScreen?: boolean;
     explorerRecommendedWalletIds?: string[] | "NONE";
     explorerExcludedWalletIds?: string[] | "ALL";
     termsOfServiceUrl?: string;
@@ -223,6 +224,7 @@ export type QrModalOptions = Pick<
   | "themeVariables"
   | "desktopWallets"
   | "enableExplorer"
+  | "enableMobileFullScreen"
   | "explorerRecommendedWalletIds"
   | "explorerExcludedWalletIds"
   | "mobileWallets"
@@ -230,3 +232,27 @@ export type QrModalOptions = Pick<
   | "termsOfServiceUrl"
   | "walletImages"
 >;
+
+// Viem compatible types
+export type Assign<T, U> = Assign_<T, U> & U;
+type Assign_<T, U> = {
+  [K in keyof T as K extends keyof U ? (U[K] extends void ? never : K) : K]: K extends keyof U
+    ? U[K]
+    : T[K];
+};
+
+export type Prettify<T> = {
+  [K in keyof T]: T[K];
+} & {};
+
+export type ChainFormatters = {
+  block?: ChainFormatter<"block"> | undefined;
+  transaction?: ChainFormatter<"transaction"> | undefined;
+  transactionReceipt?: ChainFormatter<"transactionReceipt"> | undefined;
+  transactionRequest?: ChainFormatter<"transactionRequest"> | undefined;
+};
+
+export type ChainFormatter<type extends string = string> = {
+  format: (args: any) => any;
+  type: type;
+};

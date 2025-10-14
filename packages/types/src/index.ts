@@ -1,2 +1,2 @@
-export * from "./core";
-export * from "./sign-client";
+export * from "./core/index.js";
+export * from "./sign-client/index.js";

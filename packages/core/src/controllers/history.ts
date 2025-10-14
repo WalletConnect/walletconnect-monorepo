@@ -10,7 +10,7 @@ import {
   HISTORY_CONTEXT,
   HISTORY_EVENTS,
   HISTORY_STORAGE_VERSION,
-} from "../constants";
+} from "../constants/index.js";
 
 export class JsonRpcHistory extends IJsonRpcHistory {
   public records = new Map<number, JsonRpcRecord>();

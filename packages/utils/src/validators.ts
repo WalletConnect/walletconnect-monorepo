@@ -5,10 +5,10 @@ import {
   getNamespacesMethodsForChainId,
   getNamespacesEventsForChainId,
   getAccountsChains,
-} from "./namespaces";
-import { getSdkError, getInternalError } from "./errors";
-import { fromBase64, hasOverlap } from "./misc";
-import { getChainsFromNamespace } from "./caip";
+} from "./namespaces.js";
+import { getSdkError, getInternalError } from "./errors.js";
+import { fromBase64, hasOverlap } from "./misc.js";
+import { getChainsFromNamespace } from "./caip.js";
 
 export type ErrorObject = { message: string; code: number } | null;
 

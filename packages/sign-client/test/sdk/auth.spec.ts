@@ -1,7 +1,5 @@
 /* eslint-disable no-console */
 import { expect, describe, it, beforeAll } from "vitest";
-import { ENGINE_RPC_OPTS, SignClient } from "../../src";
-import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, deleteClients, throttle } from "../shared";
 import {
   buildApprovedNamespaces,
   buildAuthObject,
@@ -9,15 +7,19 @@ import {
   populateAuthPayload,
 } from "@walletconnect/utils";
 import { AuthTypes } from "@walletconnect/types";
-import { Wallet as CryptoWallet } from "@ethersproject/wallet";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { RELAYER_EVENTS } from "@walletconnect/core";
 
+import { ethers } from "ethers";
+
+import { ENGINE_RPC_OPTS, SignClient } from "../../src";
+import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, deleteClients, throttle } from "../shared";
+
 describe("Authenticated Sessions", () => {
-  let cryptoWallet: CryptoWallet;
+  let cryptoWallet: ethers.HDNodeWallet;
 
   beforeAll(() => {
-    cryptoWallet = CryptoWallet.createRandom();
+    cryptoWallet = ethers.Wallet.createRandom();
   });
   // this test simulates the scenario where the wallet supports all the requested chains and methods
   // and replies with a single signature

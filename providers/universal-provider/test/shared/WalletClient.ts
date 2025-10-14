@@ -1,14 +1,10 @@
 /* eslint-disable no-case-declarations */
 import SignClient from "@walletconnect/sign-client";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { SignClientTypes, SessionTypes } from "@walletconnect/types";
 import { getSdkError, getChainsFromAccounts } from "@walletconnect/utils";
-import { ethers, utils } from "ethers";
+import { ethers, toBeArray, toUtf8String } from "ethers";
 import UniversalProvider from "../../src";
-import { parseSignDocValues } from "cosmos-wallet";
-import CosmosLib from "./CosmosWallet";
-import { ACCOUNTS } from "./constants";
 
 export interface WalletClientOpts {
   privateKey: string;
@@ -26,7 +22,6 @@ export class WalletClient {
   public client?: SignClient;
   public topic?: string;
   public namespaces?: SessionTypes.Namespaces;
-  public cosmosWallet: CosmosLib;
 
   static async init(
     provider: UniversalProvider,
@@ -46,7 +41,6 @@ export class WalletClient {
     this.chainId = opts?.chainId || 123;
     this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
     this.signer = this.getWallet(opts.privateKey);
-    this.cosmosWallet = {} as CosmosLib;
   }
 
   public async changeAccount(privateKey: string) {
@@ -94,7 +88,7 @@ export class WalletClient {
     }
     if (this.rpcUrl !== rpcUrl) {
       this.rpcUrl = rpcUrl;
-      this.signer = this.signer.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
+      this.signer = this.signer.connect(new ethers.JsonRpcProvider(this.rpcUrl));
     }
   }
 
@@ -117,15 +111,12 @@ export class WalletClient {
       typeof privateKey !== "undefined"
         ? new ethers.Wallet(privateKey)
         : ethers.Wallet.createRandom();
-    return wallet.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
-  }
 
-  private getCosmosWallet(privateKey?: string) {
-    return CosmosLib.init(ACCOUNTS.cosmos.privateKey);
+    return wallet.connect(new ethers.JsonRpcProvider(this.rpcUrl)) as ethers.Wallet;
   }
 
   private parseTxParams = (payload: any) => {
-    let txParams: ethers.providers.TransactionRequest = {
+    let txParams: any = {
       from: payload.params[0].from,
       data: payload.params[0].data,
       chainId: this.chainId,
@@ -164,7 +155,6 @@ export class WalletClient {
 
   private async initialize(opts?: SignClientTypes.Options) {
     this.client = await SignClient.init(opts);
-    this.cosmosWallet = await CosmosLib.init(ACCOUNTS.cosmos.privateKey);
     this.registerEventListeners();
   }
 
@@ -252,26 +242,21 @@ export class WalletClient {
               break;
             case "eth_sendRawTransaction":
               //  eslint-disable-next-line no-case-declarations
-              const receipt = await this.signer.provider.sendTransaction(request.params[0]);
-              result = receipt.hash;
+              const receipt = await this.signer?.provider?.sendTransaction?.(request.params[0]);
+              result = receipt?.hash;
               break;
             case "eth_sign":
               //  eslint-disable-next-line no-case-declarations
               const ethMsg = request.params[1];
-              result = await this.signer.signMessage(utils.arrayify(ethMsg));
+              result = await this.signer.signMessage(ethMsg);
               break;
             case "personal_sign":
-              //  eslint-disable-next-line no-case-declarations
               const personalMsg = request.params[0];
-              result = await this.signer.signMessage(utils.arrayify(personalMsg));
+              result = await this.signer.signMessage(toBeArray(personalMsg));
               break;
             case "cosmos_signDirect":
-              //  eslint-disable-next-line no-case-declarations
-              const signedDirect = await this.cosmosWallet.signDirect(
-                request.params.signerAddress,
-                parseSignDocValues(request.params.signDoc),
-              );
-              result = signedDirect.signature;
+              // just mock the result
+              result = { signature: "0xdeadbeef" };
               break;
             case "wallet_switchEthereumChain":
               const session = this.client.session.get(topic);

@@ -7,7 +7,7 @@ import {
   ProviderAccounts,
   RequestArguments,
   QrModalOptions,
-} from "./types";
+} from "./types.js";
 import {
   Metadata,
   Namespace,
@@ -23,8 +23,8 @@ import {
   RPC_URL,
   OPTIONAL_METHODS,
   OPTIONAL_EVENTS,
-} from "./constants";
-import { getAppkit } from "./utils/appkit";
+} from "./constants/index.js";
+import { getAppkit } from "./utils/appkit.js";
 
 export type RpcMethod =
   | "personal_sign"
@@ -604,7 +604,7 @@ export class EthereumProvider implements IEthereumProvider {
       let appKit;
       try {
         const createAppKit = await getAppkit();
-        const { convertWCMToAppKitOptions } = await import("./wcmToAppKit");
+        const { convertWCMToAppKitOptions } = await import("./wcmToAppKit.js");
         const options = convertWCMToAppKitOptions({
           ...this.rpc.qrModalOptions,
           chains: [...new Set([...this.rpc.chains, ...this.rpc.optionalChains])],
@@ -620,6 +620,7 @@ export class EthereumProvider implements IEthereumProvider {
           ...options,
           universalProvider: this.signer as any,
           manualWCControl: true,
+          enableMobileFullScreen: this.rpc.qrModalOptions?.enableMobileFullScreen === true,
         });
       } catch (e) {
         console.warn(e);

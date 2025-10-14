@@ -1,15 +1,15 @@
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { buildAuthObject, populateAuthPayload } from "@walletconnect/utils";
 import { beforeAll, describe, expect, it } from "vitest";
-import { Wallet as CryptoWallet } from "@ethersproject/wallet";
+import { ethers } from "ethers";
 import { SignClient } from "../../src";
 import { throttle, TEST_SIGN_CLIENT_OPTIONS, TEST_APP_METADATA_B } from "../shared";
 
 describe("Sign Client Link Mode", () => {
-  let cryptoWallet: CryptoWallet;
+  let cryptoWallet: ethers.HDNodeWallet;
 
   beforeAll(() => {
-    cryptoWallet = CryptoWallet.createRandom();
+    cryptoWallet = ethers.Wallet.createRandom();
     const handlers: any = {};
     (global as any).Linking = {
       openURL: (url: any, sender: string) => {

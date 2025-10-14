@@ -1,3 +1,4 @@
+import { isEqual } from "es-toolkit/compat";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { ICore, IStore } from "@walletconnect/types";
 import {
@@ -6,8 +7,7 @@ import {
   isSessionStruct,
   isUndefined,
 } from "@walletconnect/utils";
-import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants";
-import { isEqual } from "es-toolkit/compat";
+import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants/index.js";
 
 export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Data> {
   public map = new Map<Key, Data>();

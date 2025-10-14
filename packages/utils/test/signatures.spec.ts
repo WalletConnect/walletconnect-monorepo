@@ -1,7 +1,6 @@
 import { AuthTypes } from "@walletconnect/types";
 import { describe, expect, it } from "vitest";
 import {
-  buildSignedExtrinsic,
   buildSignedExtrinsicHash,
   extractSolanaTransactionId,
   getAlgorandTransactionId,
@@ -117,31 +116,31 @@ Expiration Time: 2022-10-11T23:03:35.700Z`;
     });
   });
   describe("EIP-191 signatures", () => {
-    it("should validate a valid signature", async () => {
+    it("should validate a valid signature", () => {
       const address = "0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C52";
       const message = `Hello AppKit!`;
       const signature =
         "0xd7ec09eb8ecb1ba9af45380e14d3ef1a1ec2376e0adfc0a9b591e7c3519a00d702cbe063aa55ff681265eed2d1646a217f0bf23f12ab4cd326455ab4134e12691b";
-      const isValid = await isValidEip191Signature(address, message, signature);
+      const isValid = isValidEip191Signature(address, message, signature);
       expect(isValid).toBe(true);
     });
-    it("should fail to validate an invalid signature", async () => {
+    it("should fail to validate an invalid signature", () => {
       const address = "0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C52";
       const message = `Hello AppKit!`;
       const signature = "0xd7ec09eb8ecb1ba9af45380e14d3ef1a1ec2376e0adfc0a9b591e";
-      await expect(isValidEip191Signature(address, message, signature)).rejects.toThrow();
+      expect(() => isValidEip191Signature(address, message, signature)).toThrow();
     });
-    it("should fail to validate a valid signature with wrong address", async () => {
+    it("should fail to validate a valid signature with wrong address", () => {
       const address = "0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C54";
       const message = `Hello AppKit!`;
       const signature = "0xd7ec09eb8ecb1ba9af45380e14d3ef1a1ec2376e0adfc0a9b591e";
-      await expect(isValidEip191Signature(address, message, signature)).rejects.toThrow();
+      expect(() => isValidEip191Signature(address, message, signature)).toThrow();
     });
-    it("should fail to validate an valid signature with wrong message", async () => {
+    it("should fail to validate an valid signature with wrong message", () => {
       const address = "0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C52";
       const message = `Hello AppKit! 0xyadayada`;
       const signature = "0xd7ec09eb8ecb1ba9af45380e14d3ef1a1ec2376e0adfc0a9b591e";
-      await expect(isValidEip191Signature(address, message, signature)).rejects.toThrow();
+      expect(() => isValidEip191Signature(address, message, signature)).toThrow();
     });
   });
   describe("tvf", () => {

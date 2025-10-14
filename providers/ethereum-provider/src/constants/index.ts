@@ -1,3 +1,3 @@
-export * from "./values";
+export * from "./values.js";
 
-export * from "./rpc";
+export * from "./rpc.js";

@@ -1,7 +1,7 @@
 import { IEvents } from "@walletconnect/events";
 import { Logger } from "@walletconnect/logger";
 
-import { ICore } from "./core";
+import { ICore } from "./core.js";
 
 export declare namespace ExpirerTypes {
   interface Expiration {

@@ -1,10 +1,10 @@
 import SignClient from "@walletconnect/sign-client";
 import { formatJsonRpcError, formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-import { SIGNER_EVENTS } from "@walletconnect/signer-connection";
 import { SignClientTypes, SessionTypes } from "@walletconnect/types";
-import { getSdkError, getChainsFromAccounts } from "@walletconnect/utils";
-import { ethers, utils } from "ethers";
+import { getSdkError } from "@walletconnect/utils";
+import { ethers, toBeArray } from "ethers";
 import EthereumProvider from "../../src";
+import { PORT } from "./constants";
 
 export interface WalletClientOpts {
   privateKey: string;
@@ -39,7 +39,7 @@ export class WalletClient {
   constructor(provider: EthereumProvider, opts: Partial<WalletClientOpts>) {
     this.provider = provider;
     this.chainId = opts?.chainId || 123;
-    this.rpcUrl = opts?.rpcUrl || "http://localhost:8545";
+    this.rpcUrl = opts?.rpcUrl || `http://localhost:${PORT}`;
     this.signer = this.getWallet(opts.privateKey);
   }
 
@@ -107,11 +107,11 @@ export class WalletClient {
       typeof privateKey !== "undefined"
         ? new ethers.Wallet(privateKey)
         : ethers.Wallet.createRandom();
-    return wallet.connect(new ethers.providers.JsonRpcProvider(this.rpcUrl));
+    return wallet.connect(new ethers.JsonRpcProvider(this.rpcUrl)) as ethers.Wallet;
   }
 
   private parseTxParams = (payload: any) => {
-    let txParams: ethers.providers.TransactionRequest = {
+    let txParams: any = {
       from: payload.params[0].from,
       data: payload.params[0].data,
       chainId: this.chainId,
@@ -237,18 +237,18 @@ export class WalletClient {
               break;
             case "eth_sendRawTransaction":
               //  eslint-disable-next-line no-case-declarations
-              const receipt = await this.signer.provider.sendTransaction(request.params[0]);
-              result = receipt.hash;
+              const receipt = await this.signer?.provider?.sendTransaction?.(request.params[0]);
+              result = receipt?.hash;
               break;
             case "eth_sign":
               //  eslint-disable-next-line no-case-declarations
               const ethMsg = request.params[1];
-              result = await this.signer.signMessage(utils.arrayify(ethMsg));
+              result = await this.signer.signMessage(toBeArray(ethMsg));
               break;
             case "personal_sign":
               //  eslint-disable-next-line no-case-declarations
               const personalMsg = request.params[0];
-              result = await this.signer.signMessage(utils.arrayify(personalMsg));
+              result = await this.signer.signMessage(toBeArray(personalMsg));
               break;
             default:
               throw new Error(`Method not supported: ${request.method}`);

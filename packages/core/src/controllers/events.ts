@@ -1,6 +1,8 @@
 import { generateChildLogger, Logger } from "@walletconnect/logger";
 import { ICore, IEventClient, EventClientTypes } from "@walletconnect/types";
 import { formatUA, isTestRun, uuidv4, getAppMetadata } from "@walletconnect/utils";
+import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
+import { fromMiliseconds } from "@walletconnect/time";
 import {
   CORE_STORAGE_PREFIX,
   EVENTS_CLIENT_API_URL,
@@ -8,9 +10,7 @@ import {
   EVENTS_STORAGE_CONTEXT,
   EVENTS_STORAGE_VERSION,
   RELAYER_SDK_VERSION,
-} from "../constants";
-import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
-import { fromMiliseconds } from "@walletconnect/time";
+} from "../constants/index.js";
 
 export class EventClient extends IEventClient {
   public readonly context = EVENTS_STORAGE_CONTEXT;

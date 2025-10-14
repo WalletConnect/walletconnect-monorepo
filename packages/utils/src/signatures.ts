@@ -1,5 +1,5 @@
 import { keccak_256 } from "@noble/hashes/sha3";
-import { recoverAddress } from "viem";
+import { Secp256k1, Signature } from "ox";
 import { sha256, sha512_256 } from "@noble/hashes/sha2";
 import bs58 from "bs58";
 import { blake2b } from "@noble/hashes/blake2";
@@ -7,7 +7,7 @@ import { encode as msgpackEncode, decode as msgpackDecode } from "@msgpack/msgpa
 import { base32 } from "@scure/base";
 import { AuthTypes } from "@walletconnect/types";
 
-import { parseChainId } from "./caip";
+import { parseChainId } from "./caip.js";
 
 const DEFAULT_RPC_URL = "https://rpc.walletconnect.org/v1";
 
@@ -46,14 +46,15 @@ export async function verifySignature(
   }
 }
 
-export async function isValidEip191Signature(
+export function isValidEip191Signature(
   address: string,
   message: string,
   signature: string,
-): Promise<boolean> {
-  const recoveredAddress = await recoverAddress({
-    hash: hashEthereumMessage(message) as `0x${string}`,
-    signature: signature as `0x${string}`,
+): boolean {
+  const parsedSignature = Signature.fromHex(signature as `0x${string}`);
+  const recoveredAddress = Secp256k1.recoverAddress({
+    payload: hashEthereumMessage(message) as `0x${string}`,
+    signature: parsedSignature,
   });
   return recoveredAddress.toLowerCase() === address.toLowerCase();
 }

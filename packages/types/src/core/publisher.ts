@@ -1,7 +1,7 @@
 import { IEvents } from "@walletconnect/events";
 import { Logger } from "@walletconnect/logger";
 
-import { IRelayer, RelayerTypes } from "./relayer";
+import { IRelayer, RelayerTypes } from "./relayer.js";
 
 export declare namespace PublisherTypes {
   export interface Params {

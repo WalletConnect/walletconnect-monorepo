@@ -119,7 +119,7 @@ import {
   ENGINE_QUEUE_STATES,
   AUTH_PUBLIC_KEY_NAME,
   TVF_METHODS,
-} from "../constants";
+} from "../constants/index.js";
 
 export class Engine extends IEngine {
   public name = ENGINE_CONTEXT;
@@ -211,7 +211,7 @@ export class Engine extends IEngine {
         }
       }
     } catch (error) {
-      this.client.logger.warn("processPendingMessageEvents failed", error);
+      this.client.logger.warn(error, "processPendingMessageEvents failed");
     }
   }
 
@@ -700,7 +700,23 @@ export class Engine extends IEngine {
 
   public respond: IEngine["respond"] = async (params) => {
     this.isInitialized();
-    await this.isValidRespond(params);
+    const event = this.client.core.eventClient.createEvent({
+      properties: {
+        topic: params?.topic || params?.response?.id?.toString(),
+        trace: [EVENT_CLIENT_SESSION_TRACES.session_request_response_started],
+      },
+    });
+    try {
+      await this.isValidRespond(params);
+    } catch (error) {
+      event.addTrace((error as Error)?.message);
+      event.setError(EVENT_CLIENT_SESSION_ERRORS.session_request_response_validation_failure);
+
+      throw error;
+    }
+
+    event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_request_response_validation_success);
+
     const { topic, response } = params;
     const { id } = response;
     const session = this.client.session.get(topic);
@@ -710,18 +726,25 @@ export class Engine extends IEngine {
     }
 
     const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
-    if (isJsonRpcResult(response)) {
-      await this.sendResult({
-        id,
-        topic,
-        result: response.result,
-        throwOnFailedPublish: true,
-        appLink,
-      });
-    } else if (isJsonRpcError(response)) {
-      await this.sendError({ id, topic, error: response.error, appLink });
+    try {
+      event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_request_response_publish_started);
+      if (isJsonRpcResult(response)) {
+        await this.sendResult({
+          id,
+          topic,
+          result: response.result,
+          throwOnFailedPublish: true,
+          appLink,
+        });
+      } else if (isJsonRpcError(response)) {
+        await this.sendError({ id, topic, error: response.error, appLink });
+      }
+      this.cleanupAfterResponse(params);
+    } catch (error) {
+      event.addTrace((error as Error)?.message);
+      event.setError(EVENT_CLIENT_SESSION_ERRORS.session_request_response_publish_failure);
+      throw error;
     }
-    this.cleanupAfterResponse(params);
   };
 
   public ping: IEngine["ping"] = async (params) => {
@@ -2769,7 +2792,11 @@ export class Engine extends IEngine {
     }
 
     // validate required namespaces only if they are defined
-    if (!isUndefined(requiredNamespaces) && isValidObject(requiredNamespaces) !== 0) {
+    if (
+      requiredNamespaces &&
+      !isUndefined(requiredNamespaces) &&
+      isValidObject(requiredNamespaces) !== 0
+    ) {
       const warning =
         "requiredNamespaces are deprecated and are automatically assigned to optionalNamespaces";
       // if logger level is one of the following, the logger.warn will not be shown, so we need to use console.warn
@@ -2782,16 +2809,20 @@ export class Engine extends IEngine {
     }
 
     // validate optional namespaces only if they are defined
-    if (!isUndefined(optionalNamespaces) && isValidObject(optionalNamespaces) !== 0) {
+    if (
+      optionalNamespaces &&
+      !isUndefined(optionalNamespaces) &&
+      isValidObject(optionalNamespaces) !== 0
+    ) {
       this.validateNamespaces(optionalNamespaces, "optionalNamespaces");
     }
 
     // validate session properties only if they are defined
-    if (!isUndefined(sessionProperties)) {
+    if (sessionProperties && !isUndefined(sessionProperties)) {
       this.validateSessionProps(sessionProperties, "sessionProperties");
     }
 
-    if (!isUndefined(scopedProperties)) {
+    if (scopedProperties && !isUndefined(scopedProperties)) {
       this.validateSessionProps(scopedProperties, "scopedProperties");
 
       const requestedNamespaces = Object.keys(requiredNamespaces || {}).concat(
@@ -2845,11 +2876,11 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
 
-    if (!isUndefined(sessionProperties)) {
+    if (sessionProperties && !isUndefined(sessionProperties)) {
       this.validateSessionProps(sessionProperties, "sessionProperties");
     }
 
-    if (!isUndefined(scopedProperties)) {
+    if (scopedProperties && !isUndefined(scopedProperties)) {
       this.validateSessionProps(scopedProperties, "scopedProperties");
 
       const approvedNamespaces = new Set(Object.keys(namespaces));
@@ -2985,6 +3016,7 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
     const { topic, response } = params;
+
     try {
       // if the session is already disconnected, we can't respond to the request so we need to delete it
       await this.isValidSessionTopic(topic);
@@ -2996,6 +3028,16 @@ export class Engine extends IEngine {
       const { message } = getInternalError(
         "MISSING_OR_INVALID",
         `respond() response: ${JSON.stringify(response)}`,
+      );
+      throw new Error(message);
+    }
+
+    const request = this.client.pendingRequest.get(response.id);
+
+    if (request.topic !== topic) {
+      const { message } = getInternalError(
+        "MISMATCHED_TOPIC",
+        `Request response topic mismatch. reqId: ${response.id}, expected topic: ${request.topic}, received topic: ${topic}`,
       );
       throw new Error(message);
     }
@@ -3255,7 +3297,7 @@ export class Engine extends IEngine {
         ? [params.request.params?.[0]?.to]
         : [];
     } catch (e) {
-      this.client.logger.warn("Error getting TVF params", e);
+      this.client.logger.warn(e, "Error getting TVF params");
     }
     return tvf;
   };
@@ -3345,7 +3387,7 @@ export class Engine extends IEngine {
         return [hashes];
       }
     } catch (e) {
-      this.client.logger.warn("Error extracting tx hashes from result", e);
+      this.client.logger.warn(e, "Error extracting tx hashes from result");
     }
     return [];
   };

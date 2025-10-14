@@ -1,6 +1,6 @@
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import { Logger } from "@walletconnect/logger";
-import { ICore } from "./core";
+import { ICore } from "./core.js";
 
 export abstract class IStore<Key, Value> {
   public abstract map: Map<Key, Value>;

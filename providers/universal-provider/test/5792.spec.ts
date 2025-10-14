@@ -1,36 +1,25 @@
 import { expect, describe, it, beforeAll } from "vitest";
-import { extractCapabilitiesFromSession } from "../src/utils/caip25";
-import { SessionTypes } from "@walletconnect/types";
+
 import UniversalProvider, { SendCallsResult } from "../src";
 import {
   ACCOUNTS,
-  CHAIN_ID,
   CHAIN_ID_B,
   EIP155_TEST_METHODS,
-  PORT,
-  TEST_NAMESPACES_CONFIG,
   TEST_PROVIDER_OPTS,
   TEST_WALLET_CLIENT_OPTS,
 } from "./shared/constants";
 import { WalletClient } from "./shared/WalletClient";
-import { TestNetwork } from "ethereum-test-network";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { getStoredSendCalls } from "../src/utils";
 import { deleteProviders, testConnectMethod } from "./shared";
-const CHAIN_ID = 1;
 const events = ["chainChanged"];
+const CHAIN_ID = 1;
 describe("UniversalProvider 5792 utils", function () {
-  let testNetwork: TestNetwork;
   let provider: UniversalProvider;
   let walletClient: WalletClient;
   let walletAddress: string;
   let receiverAddress: string;
   beforeAll(async () => {
-    testNetwork = await TestNetwork.init({
-      chainId: CHAIN_ID,
-      port: PORT + 1,
-      genesisAccounts: [ACCOUNTS.a, ACCOUNTS.b],
-    });
     provider = await UniversalProvider.init(TEST_PROVIDER_OPTS);
 
     walletClient = await WalletClient.init(provider, {

@@ -2,7 +2,7 @@ import { Store } from "@walletconnect/core";
 import { Logger } from "@walletconnect/logger";
 import { AuthTypes, ICore } from "@walletconnect/types";
 
-import { AUTH_STORAGE_PREFIX, AUTH_REQUEST_CONTEXT } from "../constants";
+import { AUTH_STORAGE_PREFIX, AUTH_REQUEST_CONTEXT } from "../constants/index.js";
 
 export class AuthRequest extends Store<number, AuthTypes.PendingRequest> {
   constructor(

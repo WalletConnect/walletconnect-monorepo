@@ -96,7 +96,7 @@ describe("Lifecycle", () => {
     }, 70000_000);
   });
   afterEach(async (done) => {
-    const { result } = done.meta;
+    const { result } = done.task;
     const nowTimestamp = Date.now();
     const latencyMs = nowTimestamp - (result?.startTime || nowTimestamp);
     log(`Lifecycle test finished in state ${result?.state} took ${latencyMs}ms`);
