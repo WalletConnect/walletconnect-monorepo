@@ -68,6 +68,7 @@ const getRegionEndpointPermutations = (array: string[]) => {
 
   const isDev = TEST_RELAY_URL.includes("dev.");
   const isStaging = TEST_RELAY_URL.includes("staging.");
+  const isStagingDash = TEST_RELAY_URL.includes("staging-");
 
   for (let i = 0; i < array.length; i++) {
     for (let j = i + 1; j < array.length; j++) {
@@ -81,8 +82,14 @@ const getRegionEndpointPermutations = (array: string[]) => {
         from = from.replace("wss://", "wss://dev.");
         to = to.replace("wss://", "wss://dev.");
       } else if (isStaging) {
+        // Old format: staging.
         from = from.replace("wss://", "wss://staging.");
         to = to.replace("wss://", "wss://staging.");
+      } else if (isStagingDash) {
+        // New format: staging-
+        // Transform from wss://us-east-1.relay.walletconnect.com to wss://us-east-1.staging-relay.walletconnect.org
+        from = from.replace(".relay.walletconnect.com", ".staging-relay.walletconnect.org");
+        to = to.replace(".relay.walletconnect.com", ".staging-relay.walletconnect.org");
       }
 
       list.push(from);
