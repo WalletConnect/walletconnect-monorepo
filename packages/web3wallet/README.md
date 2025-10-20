@@ -33,7 +33,7 @@ const web3wallet = await Web3Wallet.init({
   metadata: {
     name: "Demo app",
     description: "Demo Client as Wallet/Peer",
-    url: "www.walletconnect.com",
+    url: "https://reown.com",
     icons: [],
   },
 });
