@@ -43,3 +43,4 @@ sudo xcode-select --reset
 ## License
 
 Apache 2.0
+<br>## Welcome to WalletConnect v2<br>WalletConnect v2 supports dApp wallet bridges - new contributors, start your first pairing with the Session tutorial. Tip: use the Sign API for auth! <br>
