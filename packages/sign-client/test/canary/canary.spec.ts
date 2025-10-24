@@ -1,8 +1,6 @@
 import { getSdkError } from "@walletconnect/utils";
 import {
-  initTwoClients,
   testConnectMethod,
-  deleteClients,
   uploadCanaryResultsToCloudWatch,
   publishToStatusPage,
 } from "../shared";
@@ -232,6 +230,8 @@ describe("Canary", () => {
         }
       });
 
+      // Unsubscribe Client A first to avoid receiving Client B's ACK after cleanup
+      await clients.A.core.relayer.unsubscribe(sessionA.topic);
       await clients.A.disconnect({
         topic: sessionA.topic,
         reason: getSdkError("USER_DISCONNECTED"),
