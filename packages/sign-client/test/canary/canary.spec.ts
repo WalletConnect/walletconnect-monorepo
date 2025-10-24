@@ -1,9 +1,5 @@
 import { getSdkError } from "@walletconnect/utils";
-import {
-  testConnectMethod,
-  uploadCanaryResultsToCloudWatch,
-  publishToStatusPage,
-} from "../shared";
+import { testConnectMethod, uploadCanaryResultsToCloudWatch, publishToStatusPage } from "../shared";
 import {
   TEST_RELAY_URL,
   TEST_REQUEST_PARAMS,
