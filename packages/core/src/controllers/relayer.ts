@@ -612,7 +612,7 @@ export class Relayer extends IRelayer {
         this.transportExplicitlyClosed = false;
       } else {
         await this.transportOpen().catch((error) =>
-          this.logger.error(error, (error as Error)?.message),
+          this.logger.warn(error, (error as Error)?.message),
         );
       }
     });
@@ -644,7 +644,7 @@ export class Relayer extends IRelayer {
 
     this.reconnectTimeout = setTimeout(async () => {
       await this.transportOpen().catch((error) =>
-        this.logger.error(error, (error as Error)?.message),
+        this.logger.warn(error, (error as Error)?.message),
       );
       this.reconnectTimeout = undefined;
       this.reconnectInProgress = false;

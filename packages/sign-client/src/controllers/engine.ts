@@ -263,7 +263,7 @@ export class Engine extends IEngine {
         active = pairing.active;
       }
     } catch (error) {
-      this.client.logger.error(`connect() -> pairing.get(${topic}) failed`);
+      this.client.logger.warn(`connect() -> pairing.get(${topic}) failed`);
       throw error;
     }
     if (!topic || !active) {
@@ -358,7 +358,7 @@ export class Engine extends IEngine {
     try {
       return await this.client.core.pairing.pair(params);
     } catch (error) {
-      this.client.logger.error("pair() failed");
+      this.client.logger.warn("pair() failed");
       throw error;
     }
   };
@@ -380,7 +380,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidProposalId(params?.id);
     } catch (error) {
-      this.client.logger.error(`approve() -> proposal.get(${params?.id}) failed`);
+      this.client.logger.warn(`approve() -> proposal.get(${params?.id}) failed`);
       configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found);
       throw error;
     }
@@ -388,7 +388,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidApprove(params);
     } catch (error) {
-      this.client.logger.error("approve() -> isValidApprove() failed");
+      this.client.logger.warn("approve() -> isValidApprove() failed");
       configEvent.setError(
         EVENT_CLIENT_SESSION_ERRORS.session_approve_namespace_validation_failure,
       );
@@ -505,7 +505,7 @@ export class Engine extends IEngine {
 
       event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_approve_publish_success);
     } catch (error) {
-      this.client.logger.error(error);
+      this.client.logger.warn(error);
       // if the publish fails, delete the session and throw an error
       this.client.session.delete(sessionTopic, getSdkError("USER_DISCONNECTED"));
       await this.client.core.relayer.unsubscribe(sessionTopic);
@@ -533,7 +533,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidReject(params);
     } catch (error) {
-      this.client.logger.error("reject() -> isValidReject() failed");
+      this.client.logger.warn("reject() -> isValidReject() failed");
       throw error;
     }
     const { id, reason } = params;
@@ -542,7 +542,7 @@ export class Engine extends IEngine {
       const proposal = this.client.proposal.get(id);
       pairingTopic = proposal.pairingTopic;
     } catch (error) {
-      this.client.logger.error(`reject() -> proposal.get(${id}) failed`);
+      this.client.logger.warn(`reject() -> proposal.get(${id}) failed`);
       throw error;
     }
 
@@ -564,7 +564,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidUpdate(params);
     } catch (error) {
-      this.client.logger.error("update() -> isValidUpdate() failed");
+      this.client.logger.warn("update() -> isValidUpdate() failed");
       throw error;
     }
     const { topic, namespaces } = params;
@@ -592,7 +592,7 @@ export class Engine extends IEngine {
       clientRpcId,
       relayRpcId,
     }).catch((error) => {
-      this.client.logger.error(error);
+      this.client.logger.warn(error);
       this.client.session.update(topic, { namespaces: oldNamespaces });
       reject(error);
     });
@@ -605,7 +605,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidExtend(params);
     } catch (error) {
-      this.client.logger.error("extend() -> isValidExtend() failed");
+      this.client.logger.warn("extend() -> isValidExtend() failed");
       throw error;
     }
 
@@ -636,7 +636,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidRequest(params);
     } catch (error) {
-      this.client.logger.error("request() -> isValidRequest() failed");
+      this.client.logger.warn("request() -> isValidRequest() failed");
       throw error;
     }
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
@@ -786,7 +786,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidPing(params);
     } catch (error) {
-      this.client.logger.error("ping() -> isValidPing() failed");
+      this.client.logger.warn("ping() -> isValidPing() failed");
       throw error;
     }
     const { topic } = params;
@@ -1035,7 +1035,7 @@ export class Engine extends IEngine {
       for (const cacao of cacaos) {
         const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
         if (!isValid) {
-          this.client.logger.error(cacao, "Signature verification failed");
+          this.client.logger.warn(cacao, "Signature verification failed");
           reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
         }
 
@@ -1412,7 +1412,7 @@ export class Engine extends IEngine {
             await this.onRelayMessage(message);
           }
         } catch (error) {
-          this.client.logger.error(error);
+          this.client.logger.warn(error);
         }
       }
     }, 50);
@@ -1443,7 +1443,7 @@ export class Engine extends IEngine {
       );
       this.client.logger.info(`Duplicate pairings clean up finished`);
     } catch (error) {
-      this.client.logger.error(error);
+      this.client.logger.warn(error);
     }
   };
 
@@ -1584,7 +1584,7 @@ export class Engine extends IEngine {
       message = await this.client.core.crypto.encode(topic, payload, { encoding });
     } catch (error) {
       await this.cleanup();
-      this.client.logger.error(`sendRequest() -> core.crypto.encode() for topic ${topic} failed`);
+      this.client.logger.warn(`sendRequest() -> core.crypto.encode() for topic ${topic} failed`);
       throw error;
     }
 
@@ -1623,7 +1623,7 @@ export class Engine extends IEngine {
       } else {
         this.client.core.relayer
           .publish(topic, message, opts)
-          .catch((error) => this.client.logger.error(error));
+          .catch((error) => this.client.logger.warn(error));
       }
     }
 
@@ -1720,7 +1720,7 @@ export class Engine extends IEngine {
     } catch (error) {
       // if encoding fails e.g. due to missing keychain, we want to cleanup all related data as its unusable
       await this.cleanup();
-      this.client.logger.error(`sendResult() -> core.crypto.encode() for topic ${topic} failed`);
+      this.client.logger.warn(`sendResult() -> core.crypto.encode() for topic ${topic} failed`);
       throw error;
     }
     let record;
@@ -1736,7 +1736,7 @@ export class Engine extends IEngine {
         );
       }
     } catch (error) {
-      this.client.logger.error(`sendResult() -> history.get(${topic}, ${id}) failed`);
+      this.client.logger.warn(`sendResult() -> history.get(${topic}, ${id}) failed`);
       throw error;
     }
 
@@ -1761,7 +1761,7 @@ export class Engine extends IEngine {
       } else {
         this.client.core.relayer
           .publish(topic, message, opts)
-          .catch((error) => this.client.logger.error(error));
+          .catch((error) => this.client.logger.warn(error));
       }
     }
 
@@ -1781,14 +1781,14 @@ export class Engine extends IEngine {
       });
     } catch (error) {
       await this.cleanup();
-      this.client.logger.error(`sendError() -> core.crypto.encode() for topic ${topic} failed`);
+      this.client.logger.warn(`sendError() -> core.crypto.encode() for topic ${topic} failed`);
       throw error;
     }
     let record;
     try {
       record = await this.client.core.history.get(topic, id);
     } catch (error) {
-      this.client.logger.error(`sendError() -> history.get(${topic}, ${id}) failed`);
+      this.client.logger.warn(`sendError() -> history.get(${topic}, ${id}) failed`);
       throw error;
     }
 
@@ -1883,7 +1883,7 @@ export class Engine extends IEngine {
       }
       await this.client.core.relayer.messages.ack(topic, message);
     } catch (error) {
-      this.client.logger.error(error);
+      this.client.logger.warn(error);
     }
   }
 
@@ -2057,7 +2057,7 @@ export class Engine extends IEngine {
         error: err,
         rpcOpts: ENGINE_RPC_OPTS.wc_sessionPropose.autoReject,
       });
-      this.client.logger.error(err);
+      this.client.logger.warn(err);
     }
   };
 
@@ -2139,7 +2139,7 @@ export class Engine extends IEngine {
       );
 
       if (!pendingSession) {
-        return this.client.logger.error(`Pending session not found for topic ${topic}`);
+        return this.client.logger.warn(`Pending session not found for topic ${topic}`);
       }
 
       const proposal = this.client.proposal.get(pendingSession.proposalId);
@@ -2196,7 +2196,7 @@ export class Engine extends IEngine {
         topic,
         error: err,
       });
-      this.client.logger.error(err);
+      this.client.logger.warn(err);
     }
   };
 
@@ -2251,7 +2251,7 @@ export class Engine extends IEngine {
         topic,
         error: err,
       });
-      this.client.logger.error(err);
+      this.client.logger.warn(err);
     }
   };
 
@@ -2295,7 +2295,7 @@ export class Engine extends IEngine {
         topic,
         error: err,
       });
-      this.client.logger.error(err);
+      this.client.logger.warn(err);
     }
   };
 
@@ -2330,7 +2330,7 @@ export class Engine extends IEngine {
         topic,
         error: err,
       });
-      this.client.logger.error(err);
+      this.client.logger.warn(err);
     }
   };
 
@@ -2374,9 +2374,9 @@ export class Engine extends IEngine {
           result: true,
         }),
         this.cleanupPendingSentRequestsForTopic({ topic, error: getSdkError("USER_DISCONNECTED") }),
-      ]).catch((err) => this.client.logger.error(err));
+      ]).catch((err) => this.client.logger.warn(err));
     } catch (err: any) {
-      this.client.logger.error(err);
+      this.client.logger.warn(err);
     }
   };
 
@@ -2423,7 +2423,7 @@ export class Engine extends IEngine {
         topic,
         error: err,
       });
-      this.client.logger.error(err);
+      this.client.logger.warn(err);
     }
   };
 
@@ -2470,7 +2470,7 @@ export class Engine extends IEngine {
         topic,
         error: err,
       });
-      this.client.logger.error(err);
+      this.client.logger.warn(err);
     }
   };
 
@@ -2531,7 +2531,7 @@ export class Engine extends IEngine {
         verifyContext,
       });
     } catch (err: any) {
-      this.client.logger.error(err);
+      this.client.logger.warn(err);
 
       const receiverPublicKey = payload.params.requester.publicKey;
       const senderPublicKey = await this.client.core.crypto.generateKeyPair();
@@ -2615,7 +2615,7 @@ export class Engine extends IEngine {
     try {
       this.emitSessionRequest(request);
     } catch (error) {
-      this.client.logger.error(error);
+      this.client.logger.warn(error);
     }
   };
 

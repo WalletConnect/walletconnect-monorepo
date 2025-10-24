@@ -203,7 +203,7 @@ export class Verify extends IVerify {
         return validation;
       }
     } catch (e) {
-      this.logger.error(e);
+      this.logger.warn(e);
       this.logger.warn("error validating attestation");
     }
     const newKey = await this.fetchAndPersistPublicKey();
@@ -213,7 +213,7 @@ export class Verify extends IVerify {
         return validation;
       }
     } catch (e) {
-      this.logger.error(e);
+      this.logger.warn(e);
       this.logger.warn("error validating attestation");
     }
     return undefined;

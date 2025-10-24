@@ -154,10 +154,10 @@ export class Crypto implements ICrypto {
       const payload = safeJsonParse(message);
       return payload;
     } catch (error) {
-      this.logger.error(
+      this.logger.warn(
         `Failed to decode message from topic: '${topic}', clientId: '${await this.getClientId()}'`,
       );
-      this.logger.error(error);
+      this.logger.warn(error);
     }
   };
 

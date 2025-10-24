@@ -47,7 +47,7 @@ export class MessageTracker extends IMessageTracker {
         this.logger.trace({ type: "method", method: "restore", size: this.messages.size });
       } catch (e) {
         this.logger.debug(`Failed to Restore records for ${this.name}`);
-        this.logger.error(e as any);
+        this.logger.warn(e as any);
       } finally {
         this.initialized = true;
       }

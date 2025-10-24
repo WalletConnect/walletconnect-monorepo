@@ -342,7 +342,7 @@ export class Pairing implements IPairing {
         }
         await this.core.relayer.messages.ack(topic, message);
       } catch (error) {
-        this.logger.error(error);
+        this.logger.warn(error);
       }
     });
   }
@@ -385,7 +385,7 @@ export class Pairing implements IPairing {
       this.events.emit(PAIRING_EVENTS.ping, { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
-      this.logger.error(err);
+      this.logger.warn(err);
     }
   };
 
@@ -413,7 +413,7 @@ export class Pairing implements IPairing {
       this.events.emit(PAIRING_EVENTS.delete, { id, topic });
     } catch (err: any) {
       await this.sendError(id, topic, err);
-      this.logger.error(err);
+      this.logger.warn(err);
     }
   };
 
@@ -428,17 +428,17 @@ export class Pairing implements IPairing {
       if (this.registeredMethods.includes(method)) return;
       const error = getSdkError("WC_METHOD_UNSUPPORTED", method);
       await this.sendError(id, topic, error);
-      this.logger.error(error);
+      this.logger.warn(error);
     } catch (err: any) {
       await this.sendError(id, topic, err);
-      this.logger.error(err);
+      this.logger.warn(err);
     }
   };
 
   private onUnknownRpcMethodResponse: IPairingPrivate["onUnknownRpcMethodResponse"] = (method) => {
     // Ignore if the implementing client has registered this method as known.
     if (this.registeredMethods.includes(method)) return;
-    this.logger.error(getSdkError("WC_METHOD_UNSUPPORTED", method));
+    this.logger.warn(getSdkError("WC_METHOD_UNSUPPORTED", method));
   };
 
   // ---------- Expirer Events ---------------------------------------- //

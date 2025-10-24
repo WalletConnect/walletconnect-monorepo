@@ -185,7 +185,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       if (!persisted.length) return;
       if (this.records.size) {
         const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
-        this.logger.error(message);
+        this.logger.warn(message);
         throw new Error(message);
       }
       this.cached = persisted;
@@ -193,7 +193,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       this.logger.trace({ type: "method", method: "restore", records: this.values });
     } catch (e) {
       this.logger.debug(`Failed to Restore records for ${this.name}`);
-      this.logger.error(e as any);
+      this.logger.warn(e as any);
     }
   }
 

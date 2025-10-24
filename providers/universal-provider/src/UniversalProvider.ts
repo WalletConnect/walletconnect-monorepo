@@ -291,7 +291,7 @@ export class UniversalProvider implements IUniversalProvider {
       try {
         this.session = this.client.session.get(this.providerOpts.session.topic);
       } catch (error) {
-        this.logger.error(error, "Failed to get session");
+        this.logger.warn(error, "Failed to get session");
         throw new Error(
           `The provided session: ${this.providerOpts?.session?.topic} doesn't exist in the Sign client`,
         );

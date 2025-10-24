@@ -227,7 +227,7 @@ export class Core extends ICore {
       this.logger.info(`Core Initialization Success`);
     } catch (error) {
       this.logger.warn(error, `Core Initialization Failure at epoch ${Date.now()}`);
-      this.logger.error((error as any).message);
+      this.logger.warn((error as any).message);
       throw error;
     }
   }

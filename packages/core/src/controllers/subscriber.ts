@@ -120,7 +120,7 @@ export class Subscriber extends ISubscriber {
       return id;
     } catch (e) {
       this.logger.debug(`Failed to Subscribe Topic`);
-      this.logger.error(e as any);
+      this.logger.warn(e as any);
       throw e;
     }
   };
@@ -226,7 +226,7 @@ export class Subscriber extends ISubscriber {
       this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
     } catch (e) {
       this.logger.debug(`Failed to Unsubscribe Topic`);
-      this.logger.error(e as any);
+      this.logger.warn(e as any);
       throw e;
     }
   }
@@ -494,8 +494,8 @@ export class Subscriber extends ISubscriber {
         !persisted.every((s) => s.topic === this.subscriptions.get(s.id)?.topic)
       ) {
         const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
-        this.logger.error(message);
-        this.logger.error(`${this.name}: ${JSON.stringify(this.values)}`);
+        this.logger.warn(message);
+        this.logger.warn(`${this.name}: ${JSON.stringify(this.values)}`);
         throw new Error(message);
       }
       this.cached = persisted;
@@ -503,7 +503,7 @@ export class Subscriber extends ISubscriber {
       this.logger.trace({ type: "method", method: "restore", subscriptions: this.values });
     } catch (e) {
       this.logger.debug(`Failed to Restore subscriptions for ${this.name}`);
-      this.logger.error(e as any);
+      this.logger.warn(e as any);
     }
   }
 

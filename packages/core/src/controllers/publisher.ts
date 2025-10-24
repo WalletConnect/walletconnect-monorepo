@@ -118,7 +118,7 @@ export class Publisher extends IPublisher {
       await createExpiringPromise(publishPromise, this.publishTimeout, failedPublishMessage);
     } catch (e) {
       this.logger.debug(`Failed to Publish Payload`);
-      this.logger.error(e as any);
+      this.logger.warn(e as any);
       if (opts?.internal?.throwOnFailedPublish) {
         throw e;
       }
@@ -197,7 +197,7 @@ export class Publisher extends IPublisher {
       await createExpiringPromise(publishPromise, this.publishTimeout, failedPublishMessage);
     } catch (e) {
       this.logger.debug(`Failed to Publish Payload`);
-      this.logger.error(e as any);
+      this.logger.warn(e as any);
       if (opts?.internal?.throwOnFailedPublish) {
         throw e;
       }

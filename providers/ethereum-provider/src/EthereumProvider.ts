@@ -338,7 +338,7 @@ export class EthereumProvider implements IEthereumProvider {
       this.setAccounts(accounts);
       this.events.emit("connect", { chainId: toHexChainId(this.chainId) });
     } catch (error) {
-      this.signer.logger.error(error);
+      this.signer.logger.warn(error);
       throw error;
     } finally {
       this.modal?.close();
@@ -400,7 +400,7 @@ export class EthereumProvider implements IEthereumProvider {
 
       return result;
     } catch (error) {
-      this.signer.logger.error(error);
+      this.signer.logger.warn(error);
       throw error;
     } finally {
       this.modal?.close();
@@ -630,7 +630,7 @@ export class EthereumProvider implements IEthereumProvider {
         try {
           this.modal = appKit;
         } catch (e) {
-          this.signer.logger.error(e);
+          this.signer.logger.warn(e);
           throw new Error("Could not generate WalletConnectModal Instance");
         }
       }
@@ -676,8 +676,8 @@ export class EthereumProvider implements IEthereumProvider {
       this.setChainIds(chainId ? [this.formatChainId(chainId)] : namespace?.accounts);
       this.setAccounts(namespace?.accounts);
     } catch (error) {
-      this.signer.logger.error("Failed to load persisted session, clearing state...");
-      this.signer.logger.error(error);
+      this.signer.logger.warn("Failed to load persisted session, clearing state...");
+      this.signer.logger.warn(error);
       await this.disconnect().catch((error) => this.signer.logger.warn(error));
     }
   }

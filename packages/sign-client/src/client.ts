@@ -89,7 +89,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.connect(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -98,7 +98,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.pair(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -107,7 +107,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.approve(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -116,7 +116,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.reject(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -125,7 +125,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.update(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -134,7 +134,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.extend(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -143,7 +143,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.request<T>(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -152,7 +152,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.respond(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -161,7 +161,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.ping(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -170,7 +170,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.emit(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -179,7 +179,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.disconnect(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -188,7 +188,7 @@ export class SignClient extends ISignClient {
     try {
       return this.engine.find(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -197,7 +197,7 @@ export class SignClient extends ISignClient {
     try {
       return this.engine.getPendingSessionRequests();
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -206,7 +206,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.authenticate(params, walletUniversalLink);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -215,7 +215,7 @@ export class SignClient extends ISignClient {
     try {
       return this.engine.formatAuthMessage(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -224,7 +224,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.approveSessionAuthenticate(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -233,7 +233,7 @@ export class SignClient extends ISignClient {
     try {
       return await this.engine.rejectSessionAuthenticate(params);
     } catch (error: any) {
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   };
@@ -252,7 +252,7 @@ export class SignClient extends ISignClient {
       this.logger.info(`SignClient Initialization Success`);
     } catch (error: any) {
       this.logger.info(`SignClient Initialization Failure`);
-      this.logger.error(error.message);
+      this.logger.warn(error.message);
       throw error;
     }
   }

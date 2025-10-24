@@ -153,7 +153,7 @@ export class Expirer extends IExpirer {
       if (!persisted.length) return;
       if (this.expirations.size) {
         const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
-        this.logger.error(message);
+        this.logger.warn(message);
         throw new Error(message);
       }
       this.cached = persisted;
@@ -161,7 +161,7 @@ export class Expirer extends IExpirer {
       this.logger.trace({ type: "method", method: "restore", expirations: this.values });
     } catch (e) {
       this.logger.debug(`Failed to Restore expirations for ${this.name}`);
-      this.logger.error(e as any);
+      this.logger.warn(e as any);
     }
   }
 

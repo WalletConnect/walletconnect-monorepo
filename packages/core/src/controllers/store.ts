@@ -165,12 +165,12 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
           "MISSING_OR_INVALID",
           `Record was recently deleted - ${this.name}: ${key}`,
         );
-        this.logger.error(message);
+        this.logger.warn(message);
         throw new Error(message);
       }
 
       const { message } = getInternalError("NO_MATCHING_KEY", `${this.name}: ${key}`);
-      this.logger.error(message);
+      this.logger.warn(message);
       throw new Error(message);
     }
     return value;
@@ -187,7 +187,7 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
       if (!persisted.length) return;
       if (this.map.size) {
         const { message } = getInternalError("RESTORE_WILL_OVERRIDE", this.name);
-        this.logger.error(message);
+        this.logger.warn(message);
         throw new Error(message);
       }
       this.cached = persisted;
@@ -195,7 +195,7 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
       this.logger.trace({ type: "method", method: "restore", value: this.values });
     } catch (e) {
       this.logger.debug(`Failed to Restore value for ${this.name}`);
-      this.logger.error(e as any);
+      this.logger.warn(e as any);
     }
   }
 
