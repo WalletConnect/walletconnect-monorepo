@@ -193,7 +193,9 @@ export class Publisher extends IPublisher {
         } catch (e) {
           // Check if the error is retryable before queueing
           if (!isRetryableRelayError(e)) {
-            this.logger.error(`Non-retryable error during custom publish: ${(e as Error)?.message}`);
+            this.logger.error(
+              `Non-retryable error during custom publish: ${(e as Error)?.message}`,
+            );
             this.events.removeListener(RELAYER_EVENTS.publish, onPublish);
             throw e;
           }
