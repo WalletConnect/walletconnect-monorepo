@@ -9,6 +9,7 @@ import {
   getRelayProtocolName,
   isUndefined,
   createExpiringPromise,
+  isRetryableRelayError,
 } from "@walletconnect/utils";
 import { getBigIntRpcId } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, ONE_MINUTE, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
@@ -105,6 +106,12 @@ export class Publisher extends IPublisher {
           await initialPublish;
           this.events.removeListener(RELAYER_EVENTS.publish, onPublish);
         } catch (e) {
+          // Check if the error is retryable before queueing
+          if (!isRetryableRelayError(e)) {
+            this.logger.error(`Non-retryable error during publish: ${(e as Error)?.message}`);
+            this.events.removeListener(RELAYER_EVENTS.publish, onPublish);
+            throw e;
+          }
           this.queue.set(id, { request, opts, attempt: 1 });
           this.logger.warn(e, (e as Error)?.message);
         }
@@ -184,6 +191,12 @@ export class Publisher extends IPublisher {
           await initialPublish;
           this.events.removeListener(RELAYER_EVENTS.publish, onPublish);
         } catch (e) {
+          // Check if the error is retryable before queueing
+          if (!isRetryableRelayError(e)) {
+            this.logger.error(`Non-retryable error during custom publish: ${(e as Error)?.message}`);
+            this.events.removeListener(RELAYER_EVENTS.publish, onPublish);
+            throw e;
+          }
           this.queue.set(id, { request, opts, attempt: 1 });
           this.logger.warn(e, (e as Error)?.message);
         }

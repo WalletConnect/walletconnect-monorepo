@@ -19,6 +19,7 @@ import {
   createExpiringPromise,
   hashMessage,
   sleep,
+  isRetryableRelayError,
 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
@@ -287,7 +288,14 @@ export class Subscriber extends ISubscriber {
           );
           this.events.removeListener(SUBSCRIBER_EVENTS.created, onSubscribe);
           resolve(result);
-        } catch (err) {}
+        } catch (err) {
+          // Check if the error is non-retryable and should throw immediately
+          if (!isRetryableRelayError(err)) {
+            this.logger.error(`Non-retryable error during subscribe: ${(err as Error)?.message}`);
+            this.events.removeListener(SUBSCRIBER_EVENTS.created, onSubscribe);
+            throw err;
+          }
+        }
       });
 
       const subscribe = createExpiringPromise(
@@ -303,6 +311,11 @@ export class Subscriber extends ISubscriber {
       // return null to indicate that the subscription failed
       return result ? subId : null;
     } catch (err) {
+      // Check if error is non-retryable - always throw these immediately
+      if (!isRetryableRelayError(err)) {
+        this.logger.error(`Non-retryable error during subscribe: ${(err as Error)?.message}`);
+        throw err;
+      }
       this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
       this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
       if (shouldThrow) {
