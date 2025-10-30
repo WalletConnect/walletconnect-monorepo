@@ -107,11 +107,8 @@ describe("Authenticated Sessions", () => {
           expect(pendingProposal.requests?.authentication?.[0].nonce).to.deep.eq(
             payload.params.requests?.authentication?.[0].nonce,
           );
-          expect(pendingProposal.requests?.authentication?.[0].uri).to.deep.eq(
-            payload.params.requests?.authentication?.[0].uri,
-          );
-          expect(pendingProposal.requests?.authentication?.[0].ttl).to.deep.eq(
-            payload.params.requests?.authentication?.[0].ttl,
+          expect(pendingProposal.requests?.authentication?.[0].aud).to.deep.eq(
+            payload.params.requests?.authentication?.[0].aud,
           );
           expect(pendingProposal.requests?.authentication?.[0].statement).to.deep.eq(
             payload.params.requests?.authentication?.[0].statement,
@@ -122,11 +119,15 @@ describe("Authenticated Sessions", () => {
           expect(pendingProposal.requests?.authentication?.[0].iat).to.deep.eq(
             payload.params.requests?.authentication?.[0].iat,
           );
+          expect(pendingProposal.requests?.authentication?.[0].type).to.deep.eq(
+            payload.params.requests?.authentication?.[0].type,
+          );
+          expect(pendingProposal.requests?.authentication?.[0].type).to.deep.eq("caip122");
 
           expect(pendingProposal.requests?.authentication?.[0].chains).to.deep.eq(requestedChains);
           expect(pendingProposal.requests?.authentication?.[0].domain).to.deep.eq("localhost");
           expect(pendingProposal.requests?.authentication?.[0].nonce).to.deep.eq("1");
-          expect(pendingProposal.requests?.authentication?.[0].uri).to.deep.eq("localhost/login");
+          expect(pendingProposal.requests?.authentication?.[0].aud).to.deep.eq("localhost/login");
 
           const auths = buildAuthObjects({
             wallet,
@@ -144,7 +145,9 @@ describe("Authenticated Sessions", () => {
                 events: [],
               },
             },
-            proposalRequestsResponses: auths,
+            proposalRequestsResponses: {
+              authentication: auths,
+            },
           });
           resolve();
         });
@@ -261,11 +264,8 @@ describe("Authenticated Sessions", () => {
           expect(pendingProposal.requests?.authentication?.[0].nonce).to.deep.eq(
             payload.params.requests?.authentication?.[0].nonce,
           );
-          expect(pendingProposal.requests?.authentication?.[0].uri).to.deep.eq(
-            payload.params.requests?.authentication?.[0].uri,
-          );
-          expect(pendingProposal.requests?.authentication?.[0].ttl).to.deep.eq(
-            payload.params.requests?.authentication?.[0].ttl,
+          expect(pendingProposal.requests?.authentication?.[0].aud).to.deep.eq(
+            payload.params.requests?.authentication?.[0].aud,
           );
           expect(pendingProposal.requests?.authentication?.[0].statement).to.deep.eq(
             payload.params.requests?.authentication?.[0].statement,
@@ -280,7 +280,7 @@ describe("Authenticated Sessions", () => {
           expect(pendingProposal.requests?.authentication?.[0].chains).to.deep.eq(requestedChains);
           expect(pendingProposal.requests?.authentication?.[0].domain).to.deep.eq("localhost");
           expect(pendingProposal.requests?.authentication?.[0].nonce).to.deep.eq("1");
-          expect(pendingProposal.requests?.authentication?.[0].uri).to.deep.eq("localhost/login");
+          expect(pendingProposal.requests?.authentication?.[0].aud).to.deep.eq("localhost/login");
 
           const auths = buildAuthObjects({
             wallet,
@@ -298,7 +298,9 @@ describe("Authenticated Sessions", () => {
                 events: [],
               },
             },
-            proposalRequestsResponses: auths,
+            proposalRequestsResponses: {
+              authentication: auths,
+            },
           });
           resolve();
         });

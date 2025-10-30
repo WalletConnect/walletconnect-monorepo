@@ -173,23 +173,41 @@ export declare namespace AuthTypes {
     session: SessionTypes.Struct;
   };
 
+  // protocol method params
   interface AuthenticateParams {
     domain: string;
     chains: string[];
     nonce: string;
-    uri: string;
-    ttl: number;
+    aud: string;
     version: string;
+    type: string;
     iat: string;
     exp?: string;
     nbf?: string;
     statement?: string;
     requestId?: string;
     resources?: string[];
-    signatureTypes?: string[];
+    signatureTypes?: Record<string, string[]>;
   }
 
-  type AuthenticateRequestParams = Omit<AuthenticateParams, "version" | "iat">;
+  // client api method params
+  type AuthenticateRequestParams = {
+    domain: string;
+    chains: string[];
+    nonce: string;
+    uri: string;
+    ttl: number;
+    /**
+     * cacao header type, if not provided, it will be "caip122"
+     */
+    type?: string;
+    exp?: string;
+    nbf?: string;
+    statement?: string;
+    requestId?: string;
+    resources?: string[];
+    signatureTypes?: Record<string, string[]>;
+  };
 }
 
 export type IAuth = {

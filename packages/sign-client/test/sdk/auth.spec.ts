@@ -15,7 +15,7 @@ import { ethers } from "ethers";
 import { ENGINE_RPC_OPTS, SignClient } from "../../src";
 import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, deleteClients, throttle } from "../shared";
 
-describe("Authenticated Sessions", () => {
+describe.concurrent("Authenticated Sessions", () => {
   let cryptoWallet: ethers.HDNodeWallet;
 
   beforeAll(() => {

@@ -52,8 +52,7 @@ export declare namespace JsonRpcTypes {
         publicKey: string;
         metadata: SignClientTypes.Metadata;
       };
-      authentication?: AuthTypes.Cacao[];
-      walletPayResult?: EngineTypes.WalletPayResult[];
+      proposalRequestsResponses?: EngineTypes.ProposalRequestsResponses;
     };
     wc_sessionUpdate: {
       namespaces: SessionTypes.Namespaces;

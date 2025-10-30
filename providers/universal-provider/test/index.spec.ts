@@ -3,17 +3,17 @@ import Web3 from "web3";
 import { ContractFactory, ethers, toBeHex } from "ethers";
 
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-import { RELAYER_EVENTS } from "../../../packages/core/src/constants";
+import { RELAYER_EVENTS } from "../../../packages/core/src/constants/index.js";
 import {
   deleteProviders,
   disconnectSocket,
   testConnectMethod,
   throttle,
   WalletClient,
-} from "./shared";
+} from "./shared/index.js";
 import ERC20Artifact from "./shared/TestToken.json"; // Note: some setups need TypeChain
 
-import UniversalProvider, { Namespace } from "../src";
+import UniversalProvider, { Namespace } from "../src/index.js";
 import {
   CHAIN_ID,
   TEST_NAMESPACES_CONFIG,
@@ -24,9 +24,9 @@ import {
   TEST_SIGN_TRANSACTION,
   CHAIN_ID_B,
   TEST_REQUIRED_NAMESPACES,
-} from "./shared/constants";
-import { getGlobal, getRpcUrl, setGlobal } from "../src/utils";
-import { BUNDLER_URL, RPC_URL } from "../src/constants";
+} from "./shared/constants.js";
+import { getGlobal, getRpcUrl, setGlobal } from "../src/utils/index.js";
+import { BUNDLER_URL, RPC_URL } from "../src/constants/index.js";
 
 const getDbName = (_prefix: string) => {
   return `./test/tmp/${_prefix}.db`;
@@ -58,8 +58,8 @@ describe("UniversalProvider", function () {
     await deleteProviders({ A: provider, B: walletClient.provider });
   });
 
-  describe("eip155", () => {
-    describe("multi chain", () => {
+  describe.concurrent("eip155", () => {
+    describe.concurrent("multi chain", () => {
       let web3: Web3;
       beforeAll(() => {
         web3 = new Web3(provider);
@@ -115,7 +115,7 @@ describe("UniversalProvider", function () {
         });
       });
     });
-    describe("events", () => {
+    describe.concurrent("events", () => {
       it("should emit CAIP-10 parsed accountsChanged", async () => {
         const caip10AccountToEmit = `eip155:${CHAIN_ID}:${walletAddress}`;
         const expectedParsedAccount = walletAddress;
@@ -346,7 +346,7 @@ describe("UniversalProvider", function () {
         await deleteProviders({ A: dapp, B: wallet });
       });
     });
-    describe("Web3", () => {
+    describe.concurrent("Web3", () => {
       let web3: Web3;
       beforeAll(async () => {
         web3 = new Web3(provider);
@@ -447,7 +447,7 @@ describe("UniversalProvider", function () {
         });
       });
     });
-    describe("Ethers", () => {
+    describe.concurrent("Ethers", () => {
       let web3Provider: ethers.BrowserProvider;
       beforeAll(async () => {
         web3Provider = new ethers.BrowserProvider(provider);
@@ -520,7 +520,7 @@ describe("UniversalProvider", function () {
       });
     });
   });
-  describe("cosmos", () => {
+  describe.concurrent("cosmos", () => {
     it("should sign mocked cosmos_signDirect request", async () => {
       // cosmos_signDirect params
       const params = {
@@ -538,7 +538,7 @@ describe("UniversalProvider", function () {
       expect(result.signature).to.eq("0xdeadbeef");
     });
   });
-  describe("persistence", () => {
+  describe.concurrent("persistence", () => {
     describe("after restart", () => {
       it("clients can ping each other", async () => {
         const dappDbName = getDbName(`dappDB-${Date.now()}`);
@@ -1074,7 +1074,7 @@ describe("UniversalProvider", function () {
       });
     });
   });
-  describe("validation", () => {
+  describe.concurrent("validation", () => {
     it("should not throw exception when setDefaultChain is called prematurely", async () => {
       const provider = await UniversalProvider.init(TEST_PROVIDER_OPTS);
       provider.setDefaultChain("eip155:1");
@@ -1472,7 +1472,7 @@ describe("UniversalProvider", function () {
     });
   });
 
-  describe("utils", () => {
+  describe.concurrent("utils", () => {
     it("get global values", () => {
       const client = getGlobal("client");
       const events = getGlobal("events");

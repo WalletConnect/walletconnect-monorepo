@@ -1,13 +1,13 @@
 import { expect, describe, it, beforeAll } from "vitest";
-import UniversalProvider from "../src";
+import UniversalProvider from "../src/index.js";
 import {
   ACCOUNTS,
   CHAIN_ID_B,
   PORT,
   TEST_PROVIDER_OPTS,
   TEST_WALLET_CLIENT_OPTS,
-} from "./shared/constants";
-import { WalletClient } from "./shared/WalletClient";
+} from "./shared/constants.js";
+import { WalletClient } from "./shared/WalletClient.js";
 const CHAIN_ID = 1;
 describe("UniversalProvider 1CA", function () {
   let provider: UniversalProvider;

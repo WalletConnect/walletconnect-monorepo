@@ -75,6 +75,11 @@ export declare namespace RelayerTypes {
     chainId?: string;
     txHashes?: string[];
     contractAddresses?: string[];
+    approvedChains?: string[];
+    approvedMethods?: string[];
+    approvedEvents?: string[];
+    sessionProperties?: Record<string, string>;
+    scopedProperties?: Record<string, unknown>;
   }
 
   export type MessageDirection = "inbound" | "outbound";

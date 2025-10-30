@@ -1,7 +1,12 @@
 /* eslint-disable no-console */
 import { expect, describe, it, beforeAll } from "vitest";
-import { ENGINE_RPC_OPTS, SignClient } from "../../src";
-import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, deleteClients, throttle } from "../shared";
+import { ENGINE_RPC_OPTS, SignClient } from "../../src/index.js";
+import {
+  TEST_APP_METADATA_B,
+  TEST_SIGN_CLIENT_OPTIONS,
+  deleteClients,
+  throttle,
+} from "../shared/index.js";
 
 import { AuthTypes, EngineTypes, SessionTypes } from "@walletconnect/types";
 import { ethers } from "ethers";
@@ -91,7 +96,9 @@ describe("Authenticated Sessions", () => {
                 events: [],
               },
             },
-            proposalRequestsResponses: [walletPayResult],
+            proposalRequestsResponses: {
+              walletPay: [walletPayResult],
+            },
           });
           resolve();
         });

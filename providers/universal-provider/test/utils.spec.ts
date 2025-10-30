@@ -1,5 +1,5 @@
 import { expect, describe, it } from "vitest";
-import { extractCapabilitiesFromSession } from "../src/utils/caip25";
+import { extractCapabilitiesFromSession } from "../src/utils/caip25.js";
 import { SessionTypes } from "@walletconnect/types";
 
 describe("UniversalProvider utils", function () {

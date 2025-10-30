@@ -1,15 +1,14 @@
 /* eslint-disable no-console */
-import { PairingTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
+import { SignClientTypes } from "@walletconnect/types";
 import { createExpiringPromise } from "@walletconnect/utils";
-import { testConnectMethod, TestConnectParams } from ".";
-import SignClient from "../../src";
-import { deleteClients, throttle } from "./helpers";
+import { testConnectMethod, TestConnectParams } from "./connect.js";
+import SignClient from "../../src/index.js";
 import {
   TESTS_CONNECT_RETRIES,
   TESTS_CONNECT_TIMEOUT,
   TEST_SIGN_CLIENT_OPTIONS_A,
   TEST_SIGN_CLIENT_OPTIONS_B,
-} from "./values";
+} from "./values.js";
 
 export interface Clients {
   A: SignClient;

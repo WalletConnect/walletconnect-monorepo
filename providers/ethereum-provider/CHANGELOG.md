@@ -1,5 +1,23 @@
 # @walletconnect/ethereum-provider
 
+## 2.23.0
+
+### Minor Changes
+
+- [#6956](https://github.com/WalletConnect/walletconnect-monorepo/pull/6956) [`1cd5151`](https://github.com/WalletConnect/walletconnect-monorepo/commit/1cd5151d90e58c89d70acc1bc3d9d55b9442b68b) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Implemented non evm 1 Click Auth
+
+### Patch Changes
+
+- [#7015](https://github.com/WalletConnect/walletconnect-monorepo/pull/7015) [`83cfa07`](https://github.com/WalletConnect/walletconnect-monorepo/commit/83cfa07c27c80cdb78ec389dd99e12f70ca8a674) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Removed redundant sign-client to sign-client ACK when session disconnect request is received
+
+- [#7007](https://github.com/WalletConnect/walletconnect-monorepo/pull/7007) [`793bfe8`](https://github.com/WalletConnect/walletconnect-monorepo/commit/793bfe86780e08bd58848077e47786befbf93184) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Updated `Appkit` to `1.8.11` in `ethereum-provider`
+
+- Updated dependencies [[`1cd5151`](https://github.com/WalletConnect/walletconnect-monorepo/commit/1cd5151d90e58c89d70acc1bc3d9d55b9442b68b), [`83cfa07`](https://github.com/WalletConnect/walletconnect-monorepo/commit/83cfa07c27c80cdb78ec389dd99e12f70ca8a674), [`793bfe8`](https://github.com/WalletConnect/walletconnect-monorepo/commit/793bfe86780e08bd58848077e47786befbf93184)]:
+  - @walletconnect/universal-provider@2.23.0
+  - @walletconnect/sign-client@2.23.0
+  - @walletconnect/types@2.23.0
+  - @walletconnect/utils@2.23.0
+
 ## 2.22.4
 
 ### Patch Changes

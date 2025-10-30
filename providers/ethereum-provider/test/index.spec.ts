@@ -5,8 +5,8 @@ import { ContractFactory, ethers, toBeHex } from "ethers";
 import { SESSION_REQUEST_EXPIRY_BOUNDARIES, SignClient } from "@walletconnect/sign-client";
 import { parseChainId } from "@walletconnect/utils";
 
-import { WalletClient } from "./shared";
-import EthereumProvider, { OPTIONAL_EVENTS, OPTIONAL_METHODS } from "../src";
+import { WalletClient } from "./shared/index.js";
+import EthereumProvider, { OPTIONAL_EVENTS, OPTIONAL_METHODS } from "../src/index.js";
 import ERC20Artifact from "./shared/TestToken.json";
 import {
   CHAIN_ID,
@@ -19,8 +19,8 @@ import {
   TEST_ETHEREUM_METHODS_OPTIONAL,
   TEST_WALLET_METADATA,
   TEST_APP_METADATA_A,
-} from "./shared/constants";
-import { EthereumProviderOptions } from "../src/EthereumProvider";
+} from "./shared/constants.js";
+import { EthereumProviderOptions } from "../src/EthereumProvider.js";
 
 describe("EthereumProvider", function () {
   let provider: EthereumProvider;

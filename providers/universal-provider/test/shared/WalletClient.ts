@@ -223,7 +223,9 @@ export class WalletClient {
           id,
           relayProtocol: relays[0].protocol,
           namespaces,
-          proposalRequestsResponses: authentication,
+          proposalRequestsResponses: {
+            authentication,
+          },
         });
         const session = await acknowledged();
         this.topic = session.topic;
