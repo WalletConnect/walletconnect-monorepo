@@ -346,11 +346,12 @@ export class UniversalProvider implements IUniversalProvider {
     break;
 
   case "solana":
-  case "solaxy":
-    this.rpcProviders[namespace] = new (await import("./providers/solana.js")).default({
-      namespace: combinedNamespace,
-    });
-    break;
+case "solaxy":
+  const SolanaProvider = (await import("./providers/solana.js")).default;
+  this.rpcProviders[namespace] = new SolanaProvider({
+    namespace: combinedNamespace,
+  });
+  break;
 
   default:
     this.rpcProviders[namespace] = new GenericProvider({
