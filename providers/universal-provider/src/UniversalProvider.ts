@@ -338,17 +338,25 @@ export class UniversalProvider implements IUniversalProvider {
         accounts,
         chains: approvedChains,
       };
-      switch (namespace) {
-        case "eip155":
-          this.rpcProviders[namespace] = new Eip155Provider({
-            namespace: combinedNamespace,
-          });
-          break;
-        default:
-          this.rpcProviders[namespace] = new GenericProvider({
-            namespace: combinedNamespace,
-          });
-      }
+    switch (namespace) {
+  case "eip155":
+    this.rpcProviders[namespace] = new Eip155Provider({
+      namespace: combinedNamespace,
+    });
+    break;
+
+  case "solana":
+  case "solaxy":
+    this.rpcProviders[namespace] = new (await import("./providers/solana.js")).default({
+      namespace: combinedNamespace,
+    });
+    break;
+
+  default:
+    this.rpcProviders[namespace] = new GenericProvider({
+      namespace: combinedNamespace,
+    });
+}
     });
   }
 
