@@ -16,13 +16,14 @@ import { describe, it, expect, afterEach } from "vitest";
 import { SignClient } from "../../src";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
 import { RELAYER_EVENTS } from "@walletconnect/core";
+import { ISignClient } from "@walletconnect/types";
 
 const environment = process.env.ENVIRONMENT || "dev";
 const region = process.env.REGION || "unknown";
 const logger = process.env.LOGGER || "error";
-const log = (log: string) => {
+const log = (log: string, level = "log") => {
   // eslint-disable-next-line no-console
-  console.log(log);
+  console[level](log);
 };
 
 describe("Canary", () => {
@@ -219,6 +220,23 @@ describe("Canary", () => {
 
       if (environment === "prod") {
         await publishToStatusPage(latencyMs);
+      }
+
+      // @ts-expect-error- private property
+      const clientARequestsWaitingForResult = A.engine.requestWaitingForResult?.values() || [];
+      // @ts-expect-error- private property
+      const clientBRequestsWaitingForResult = B.engine.requestWaitingForResult?.values() || [];
+      if (clientARequestsWaitingForResult.length > 0) {
+        log(
+          `Client A (${await A.core.crypto.getClientId()}) has ${clientARequestsWaitingForResult.length} requests waiting for result, ${JSON.stringify(clientARequestsWaitingForResult)}`,
+          "error",
+        );
+      }
+      if (clientBRequestsWaitingForResult.length > 0) {
+        log(
+          `Client B (${await B.core.crypto.getClientId()}) has ${clientBRequestsWaitingForResult.length} requests waiting for result, ${JSON.stringify(clientBRequestsWaitingForResult)}`,
+          "error",
+        );
       }
 
       const clientDisconnect = new Promise<void>((resolve, reject) => {
