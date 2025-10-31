@@ -222,10 +222,14 @@ describe("Canary", () => {
         await publishToStatusPage(latencyMs);
       }
 
-      // @ts-expect-error- private property
-      const clientARequestsWaitingForResult = A.engine.requestWaitingForResult?.values() || [];
-      // @ts-expect-error- private property
-      const clientBRequestsWaitingForResult = B.engine.requestWaitingForResult?.values() || [];
+      const clientARequestsWaitingForResult = Array.from(
+        // @ts-expect-error- private property
+        A.engine.requestWaitingForResult?.values() || [],
+      );
+      const clientBRequestsWaitingForResult = Array.from(
+        // @ts-expect-error- private property
+        B.engine.requestWaitingForResult?.values() || [],
+      );
       if (clientARequestsWaitingForResult.length > 0) {
         log(
           `Client A (${await A.core.crypto.getClientId()}) has ${clientARequestsWaitingForResult.length} requests waiting for result, ${JSON.stringify(clientARequestsWaitingForResult)}`,
