@@ -4,9 +4,52 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 
 ## Setup
 
-1. Ensure [nodejs](https://nodejs.org) and [npm](https://www.npmjs.com)
-2. Clone the repository
-3. Install all package dependencies, by running `npm install` from the root folder
+### Prerequisites
+
+1. **Node.js**: Version 18.x or higher (check with `node --version`)
+2. **npm**: Version 9.x or higher (check with `npm --version`)
+3. **Build tools**: 
+   - Windows: Install [windows-build-tools](https://www.npmjs.com/package/windows-build-tools)
+   - macOS: Install Xcode Command Line Tools: `xcode-select --install`
+   - Linux: Install build-essential: `sudo apt-get install build-essential`
+
+### Installation Steps
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/walletconnect/walletconnect-monorepo.git
+   cd walletconnect-monorepo
+   ```
+
+2. Install global dependencies:
+   ```sh
+   npm i -g node-gyp
+   ```
+
+3. Install all package dependencies:
+   ```sh
+   npm install
+   ```
+
+4. Set up test environment (optional but recommended):
+   - Get your project ID from [WalletConnect Cloud](https://cloud.walletconnect.com)
+   - Export it: `export TEST_PROJECT_ID=your_project_id`
+   - Or create a `.env` file: `echo "TEST_PROJECT_ID=your_project_id" > .env`
+
+### Platform-Specific Notes
+
+#### Windows
+- Use Git Bash or WSL2 for running scripts
+- Install Windows Build Tools for native modules
+- May need Visual Studio Build Tools
+
+#### macOS
+- Ensure Xcode Command Line Tools are installed
+- If issues occur, reset: `sudo xcode-select --reset`
+
+#### Linux
+- Install build-essential package
+- May need Python 3.x for node-gyp
 
 ## Running checks for all packages
 
