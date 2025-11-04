@@ -57,8 +57,13 @@
     "@walletconnect/logger": "3.0.0",
     "events": "3.3.0"
   },
-  "optionalDependencies": {
-    "@reown/appkit": "1.8.11"
+  "peerDependencies": {
+    "@reown/appkit": "^1.8.0"
+  },
+  "peerDependenciesMeta": {
+    "@reown/appkit": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "hardhat": "^3.0.6",
