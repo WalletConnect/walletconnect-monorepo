@@ -601,6 +601,15 @@ export class EthereumProvider implements IEthereumProvider {
     this.registerEventListeners();
     await this.loadPersistedSession();
     if (this.rpc.showQrModal) {
+      // Validate @reown/appkit is available before attempting to use it
+      try {
+        await import("@reown/appkit/core");
+      } catch (e) {
+        throw new Error(
+          "QR modal requires @reown/appkit. Install with: npm install @reown/appkit",
+        );
+      }
+
       let appKit;
       try {
         const createAppKit = await getAppkit();
@@ -624,7 +633,9 @@ export class EthereumProvider implements IEthereumProvider {
         });
       } catch (e) {
         console.warn(e);
-        throw new Error("To use QR modal, please install @reown/appkit package");
+        throw new Error(
+          "QR modal requires @reown/appkit. Install with: npm install @reown/appkit",
+        );
       }
       if (appKit) {
         try {

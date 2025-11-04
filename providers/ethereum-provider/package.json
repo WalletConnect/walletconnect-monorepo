@@ -45,7 +45,6 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@reown/appkit": "1.8.11",
     "@walletconnect/jsonrpc-http-connection": "1.0.8",
     "@walletconnect/jsonrpc-provider": "1.0.14",
     "@walletconnect/jsonrpc-types": "1.0.4",
@@ -57,6 +56,9 @@
     "@walletconnect/utils": "2.23.0",
     "@walletconnect/logger": "3.0.0",
     "events": "3.3.0"
+  },
+  "optionalDependencies": {
+    "@reown/appkit": "1.8.11"
   },
   "devDependencies": {
     "hardhat": "^3.0.6",
