@@ -8,6 +8,23 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 2. Clone the repository
 3. Install all package dependencies, by running `npm install` from the root folder
 
+### Prerequisites
+
+Before starting, make sure you have:
+
+- **Node.js**: Version 16.x or higher recommended
+- **npm**: Version 8.x or higher
+- **Git**: Latest version for cloning the repository
+
+### Installation Steps
+
+For a smooth setup experience:
+
+1. **Clone the repository**: `git clone https://github.com/Vaios0x/walletconnect-monorepo.git`
+2. **Navigate to the directory**: `cd walletconnect-monorepo`
+3. **Install dependencies**: `npm install`
+4. **Verify installation**: Check that all packages are installed correctly
+
 ## Running checks for all packages
 
 To ensure all packages lint, build and test correctly, we can run the following command from the root folder:
@@ -29,6 +46,34 @@ TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
 - `check` - Shorthand to run lint, build and test commands
 - `reset` - Shorthand to run clean and check commands
 
+### Command Details
+
+Each command serves a specific purpose in the development workflow:
+
+- **clean**: Use this when you need to remove all build artifacts and start fresh
+- **lint**: Ensures code quality and consistency across all packages
+- **prettier**: Formats code according to project standards
+- **build**: Compiles all packages for production use
+- **test**: Runs the test suite to verify functionality
+- **check**: Quick way to validate code before committing
+- **reset**: Complete reset when you need to start from scratch
+
+### Usage Examples
+
+```bash
+# Run linting on all packages
+npm run lint
+
+# Build all packages
+npm run build
+
+# Run tests (requires TEST_PROJECT_ID)
+TEST_PROJECT_ID=your_id npm run test
+
+# Complete check before committing
+TEST_PROJECT_ID=your_id npm run check
+```
+
 ## Troubleshooting
 
 1. If you are experiencing issues with installation ensure you install `npm i -g node-gyp`
@@ -39,6 +84,58 @@ TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
 sudo xcode-select --switch /Library/Developer/CommandLineTools
 sudo xcode-select --reset
 ```
+
+### Common Issues
+
+**Installation Problems:**
+- Ensure you have Node.js and npm installed correctly
+- Try clearing npm cache: `npm cache clean --force`
+- Reinstall dependencies: `rm -rf node_modules && npm install`
+
+**Build Issues:**
+- Check that all dependencies are installed: `npm install`
+- Verify Node.js version compatibility
+- Ensure build tools are available (node-gyp, etc.)
+
+**Test Failures:**
+- Verify TEST_PROJECT_ID is set correctly
+- Check that WalletConnect Cloud project is configured
+- Ensure network connectivity for API calls
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+- Check the [GitHub Issues](https://github.com/Vaios0x/walletconnect-monorepo/issues)
+- Review the [WalletConnect Documentation](https://docs.walletconnect.com)
+- Join the [WalletConnect Discord](https://discord.gg/walletconnect) community
+
+## Contributing
+
+We welcome contributions to the WalletConnect monorepo! Here's how you can help:
+
+### Getting Started
+
+1. Fork the repository
+2. Create a new branch for your changes
+3. Make your changes and test them locally
+4. Submit a pull request with a clear description
+
+### Contribution Guidelines
+
+- Follow the existing code style and conventions
+- Write tests for new features
+- Ensure all tests pass before submitting
+- Update documentation as needed
+
+### Code Review Process
+
+All pull requests go through a review process:
+
+- Automated checks run on every PR
+- Maintainers review the code
+- Feedback is provided for improvements
+- PRs are merged once approved
 
 ## License
 
