@@ -2,11 +2,34 @@
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 
+## Quick Start
+
+Get started with WalletConnect in minutes:
+
+```bash
+# Clone the repository
+git clone https://github.com/Vaios0x/walletconnect-monorepo.git
+cd walletconnect-monorepo
+
+# Install dependencies
+npm install
+
+# Run checks (optional, requires TEST_PROJECT_ID)
+TEST_PROJECT_ID=your_id npm run check
+```
+
 ## Setup
 
 1. Ensure [nodejs](https://nodejs.org) and [npm](https://www.npmjs.com)
 2. Clone the repository
 3. Install all package dependencies, by running `npm install` from the root folder
+
+### Quick Commands
+
+- **Install**: `npm install`
+- **Build**: `npm run build`
+- **Test**: `TEST_PROJECT_ID=your_id npm run test`
+- **Check**: `TEST_PROJECT_ID=your_id npm run check`
 
 ## Running checks for all packages
 
