@@ -19,6 +19,37 @@ To ensure all packages lint, build and test correctly, we can run the following 
 TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
 ```
 
+## Development Guide
+
+### Development Workflow
+
+When developing on the WalletConnect monorepo:
+
+1. **Install dependencies**: `npm install`
+2. **Make changes**: Edit files in the appropriate package
+3. **Run checks**: `TEST_PROJECT_ID=your_id npm run check`
+4. **Test locally**: Verify your changes work as expected
+5. **Submit PR**: Create a pull request with your changes
+
+### Package Structure
+
+The monorepo is organized into several packages:
+
+- **core**: Core WalletConnect functionality
+- **sign-client**: Sign client implementation
+- **web3wallet**: Web3 wallet integration
+- **types**: TypeScript type definitions
+- **utils**: Utility functions and helpers
+- **providers**: Provider implementations
+
+### Testing
+
+Always run tests before submitting:
+
+```bash
+TEST_PROJECT_ID=your_id npm run test
+```
+
 ## Command Overview
 
 - `clean` - Removes build folders from all packages
