@@ -2,6 +2,27 @@
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 
+## Requirements
+
+Before you begin, ensure you have:
+
+- **Node.js**: Version 16.x or higher (LTS recommended)
+- **npm**: Version 8.x or higher
+- **Git**: Latest version for version control
+- **WalletConnect Cloud Account**: For TEST_PROJECT_ID (optional but recommended)
+
+### System Requirements
+
+- **macOS**: Xcode Command Line Tools
+- **Linux**: Build essential packages
+- **Windows**: Visual Studio Build Tools
+
+### Optional Tools
+
+- **VS Code**: Recommended editor with extensions
+- **Docker**: For containerized development
+- **nvm**: For Node.js version management
+
 ## Setup
 
 1. Ensure [nodejs](https://nodejs.org) and [npm](https://www.npmjs.com)
