@@ -2,6 +2,33 @@
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 
+## Migration Guide
+
+### Upgrading from v1.x
+
+If you're upgrading from WalletConnect v1.x:
+
+1. **Update dependencies**: Install v2.x packages
+2. **Update API calls**: Use new v2.x APIs
+3. **Update configuration**: Migrate to new config format
+4. **Test thoroughly**: Verify all functionality
+
+### Breaking Changes
+
+v2.x introduces breaking changes:
+
+- **New API structure**: Different method signatures
+- **New configuration**: Updated config format
+- **Package structure**: Reorganized packages
+
+### Migration Steps
+
+1. Review [migration documentation](https://docs.walletconnect.com)
+2. Update package imports
+3. Refactor API calls
+4. Update tests
+5. Deploy and verify
+
 ## Setup
 
 1. Ensure [nodejs](https://nodejs.org) and [npm](https://www.npmjs.com)
