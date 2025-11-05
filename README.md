@@ -40,6 +40,39 @@ sudo xcode-select --switch /Library/Developer/CommandLineTools
 sudo xcode-select --reset
 ```
 
+## Development Workflow
+
+### Typical Development Cycle
+
+1. **Create a branch**: `git checkout -b feature/my-feature`
+2. **Make changes**: Edit code in the appropriate package
+3. **Run checks**: `TEST_PROJECT_ID=your_id npm run check`
+4. **Commit changes**: `git commit -m "description"`
+5. **Push branch**: `git push origin feature/my-feature`
+6. **Create PR**: Open a pull request on GitHub
+
+### Before Committing
+
+Always run these checks:
+
+```bash
+# Run linting
+npm run lint
+
+# Run prettier
+npm run prettier
+
+# Run tests
+TEST_PROJECT_ID=your_id npm run test
+```
+
+### Git Workflow
+
+- Use descriptive commit messages
+- Keep commits focused and atomic
+- Rebase before pushing if needed
+- Follow conventional commit format
+
 ## License
 
 Apache 2.0
