@@ -40,6 +40,24 @@ sudo xcode-select --switch /Library/Developer/CommandLineTools
 sudo xcode-select --reset
 ```
 
+## About This Project
+
+WalletConnect is an open protocol for connecting decentralized applications (Dapps) to mobile wallets. This monorepo contains all the packages needed to integrate WalletConnect into your application.
+
+### Key Features
+
+- **Secure**: End-to-end encrypted connections
+- **Decentralized**: No central server required
+- **Cross-Platform**: Works on web, mobile, and desktop
+- **Open Source**: Fully open and transparent
+
+### Resources
+
+- **Documentation**: [docs.walletconnect.com](https://docs.walletconnect.com)
+- **Website**: [walletconnect.com](https://walletconnect.com)
+- **Cloud Dashboard**: [cloud.walletconnect.com](https://cloud.walletconnect.com)
+- **Discord**: [discord.gg/walletconnect](https://discord.gg/walletconnect)
+
 ## License
 
 Apache 2.0
