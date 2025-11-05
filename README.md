@@ -19,6 +19,48 @@ To ensure all packages lint, build and test correctly, we can run the following 
 TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
 ```
 
+## Linting and Code Quality
+
+### Linting
+
+The project uses ESLint for code quality:
+
+```bash
+# Run linting
+npm run lint
+
+# Fix linting issues automatically
+npm run lint -- --fix
+```
+
+### Code Formatting
+
+Prettier is used for code formatting:
+
+```bash
+# Check formatting
+npm run prettier
+
+# Format code automatically
+npm run prettier -- --write
+```
+
+### Linting Rules
+
+The project follows these linting rules:
+
+- **ESLint**: JavaScript/TypeScript linting
+- **Prettier**: Code formatting
+- **TypeScript**: Type checking
+
+### Pre-commit Hooks
+
+Consider setting up pre-commit hooks:
+
+- Run linting before commits
+- Format code automatically
+- Check for type errors
+
 ## Command Overview
 
 - `clean` - Removes build folders from all packages
