@@ -29,6 +29,46 @@ TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
 - `check` - Shorthand to run lint, build and test commands
 - `reset` - Shorthand to run clean and check commands
 
+## Testing Guide
+
+### Running Tests
+
+To run tests, you need a TEST_PROJECT_ID:
+
+```bash
+TEST_PROJECT_ID=your_project_id npm run test
+```
+
+### Test Structure
+
+Tests are organized by package:
+
+- Each package has its own `test` directory
+- Tests use Vitest as the test runner
+- Test files follow the `.spec.ts` naming convention
+
+### Writing Tests
+
+When writing new tests:
+
+1. Create test files in the package's `test` directory
+2. Use descriptive test names
+3. Follow the existing test patterns
+4. Ensure good test coverage
+
+### Test Commands
+
+```bash
+# Run all tests
+TEST_PROJECT_ID=your_id npm run test
+
+# Run tests for a specific package
+cd packages/core && npm test
+
+# Run tests in watch mode
+TEST_PROJECT_ID=your_id npm run test -- --watch
+```
+
 ## Troubleshooting
 
 1. If you are experiencing issues with installation ensure you install `npm i -g node-gyp`
