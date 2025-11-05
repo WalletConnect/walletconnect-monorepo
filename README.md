@@ -8,6 +8,23 @@ Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 2. Clone the repository
 3. Install all package dependencies, by running `npm install` from the root folder
 
+### Prerequisites
+
+Before starting, make sure you have:
+
+- **Node.js**: Version 16.x or higher recommended
+- **npm**: Version 8.x or higher
+- **Git**: Latest version for cloning the repository
+
+### Installation Steps
+
+For a smooth setup experience:
+
+1. **Clone the repository**: `git clone https://github.com/Vaios0x/walletconnect-monorepo.git`
+2. **Navigate to the directory**: `cd walletconnect-monorepo`
+3. **Install dependencies**: `npm install`
+4. **Verify installation**: Check that all packages are installed correctly
+
 ## Running checks for all packages
 
 To ensure all packages lint, build and test correctly, we can run the following command from the root folder:
