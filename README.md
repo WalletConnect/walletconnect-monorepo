@@ -19,6 +19,45 @@ To ensure all packages lint, build and test correctly, we can run the following 
 TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
 ```
 
+## Building Guide
+
+### Build Process
+
+The build process compiles all TypeScript packages:
+
+```bash
+# Build all packages
+npm run build
+
+# Build output
+# - Each package's build output goes to its dist/ directory
+# - Source maps are generated for debugging
+# - Type definitions are included
+```
+
+### Build Commands
+
+- **`npm run build`**: Builds all packages in the monorepo
+- **`npm run clean`**: Removes all build folders
+- **`npm run reset`**: Cleans and rebuilds everything
+
+### Building Individual Packages
+
+To build a specific package:
+
+```bash
+cd packages/core
+npm run build
+```
+
+### Build Configuration
+
+Each package has its own build configuration:
+
+- **Rollup**: Used for bundling
+- **TypeScript**: Compiles to JavaScript
+- **Source Maps**: Generated for debugging
+
 ## Command Overview
 
 - `clean` - Removes build folders from all packages
