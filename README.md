@@ -40,6 +40,37 @@ sudo xcode-select --switch /Library/Developer/CommandLineTools
 sudo xcode-select --reset
 ```
 
+## FAQ
+
+### Common Questions
+
+**Q: How do I get a TEST_PROJECT_ID?**
+A: Sign up at [cloud.walletconnect.com](https://cloud.walletconnect.com) and create a project.
+
+**Q: Can I use WalletConnect without a project ID?**
+A: A project ID is required for testing and some features. Get one from WalletConnect Cloud.
+
+**Q: How do I report bugs?**
+A: Open an issue on GitHub with detailed information about the bug.
+
+**Q: How do I contribute?**
+A: Fork the repo, create a branch, make changes, and submit a pull request.
+
+**Q: Is WalletConnect free to use?**
+A: Yes, WalletConnect is open source and free to use.
+
+**Q: Which chains are supported?**
+A: WalletConnect supports multiple chains. Check the documentation for the full list.
+
+**Q: How do I get help?**
+A: Join the Discord community or check the documentation.
+
+### Still Have Questions?
+
+- Check the [documentation](https://docs.walletconnect.com)
+- Join [Discord](https://discord.gg/walletconnect)
+- Open a [GitHub issue](https://github.com/Vaios0x/walletconnect-monorepo/issues)
+
 ## License
 
 Apache 2.0
