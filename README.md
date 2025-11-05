@@ -29,6 +29,27 @@ TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
 - `check` - Shorthand to run lint, build and test commands
 - `reset` - Shorthand to run clean and check commands
 
+## Best Practices
+
+### Development
+
+- **Always run checks**: Use `npm run check` before committing
+- **Write tests**: Ensure new features have test coverage
+- **Follow conventions**: Maintain code style consistency
+- **Document changes**: Update README and docs as needed
+
+### Testing
+
+- **Set TEST_PROJECT_ID**: Required for running tests
+- **Run tests locally**: Verify before submitting PRs
+- **Check test coverage**: Ensure adequate coverage
+
+### Code Quality
+
+- **Lint before commit**: Catch issues early
+- **Use Prettier**: Maintain consistent formatting
+- **Review dependencies**: Keep packages up to date
+
 ## Troubleshooting
 
 1. If you are experiencing issues with installation ensure you install `npm i -g node-gyp`
