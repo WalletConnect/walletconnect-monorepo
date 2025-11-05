@@ -2,6 +2,43 @@
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 
+## Monorepo Structure
+
+This repository uses a monorepo structure managed by Lerna:
+
+### Directory Structure
+
+```
+walletconnect-monorepo/
+├── packages/          # Core packages
+│   ├── core/         # Core WalletConnect functionality
+│   ├── sign-client/  # Sign client implementation
+│   ├── web3wallet/   # Web3 wallet integration
+│   ├── types/        # TypeScript definitions
+│   └── utils/        # Utility functions
+├── providers/        # Provider implementations
+│   ├── ethereum-provider/
+│   ├── universal-provider/
+│   └── signer-connection/
+├── scripts/          # Build and utility scripts
+└── package.json      # Root package configuration
+```
+
+### Package Management
+
+- **Lerna**: Monorepo management
+- **npm workspaces**: Dependency management
+- **Shared configs**: Common TypeScript and ESLint configs
+
+### Adding New Packages
+
+To add a new package:
+
+1. Create directory in `packages/` or `providers/`
+2. Add `package.json` with proper configuration
+3. Update root `package.json` if needed
+4. Run `npm install` to link dependencies
+
 ## Setup
 
 1. Ensure [nodejs](https://nodejs.org) and [npm](https://www.npmjs.com)
