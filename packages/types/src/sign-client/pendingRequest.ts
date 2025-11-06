@@ -1,5 +1,5 @@
-import { IStore, Verify } from "../core";
-import { SignClientTypes } from "./";
+import { IStore, Verify } from "../core/index.js";
+import { SignClientTypes } from "./client.js";
 
 export declare namespace PendingRequestTypes {
   export interface Struct {

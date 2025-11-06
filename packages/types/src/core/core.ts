@@ -1,17 +1,17 @@
 import { IEvents } from "@walletconnect/events";
 import { IHeartBeat } from "@walletconnect/heartbeat";
 import { IKeyValueStorage, KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
-
-import { ICrypto } from "./crypto";
-import { IRelayer } from "./relayer";
-import { IKeyChain } from "./keychain";
-import { IJsonRpcHistory } from "./history";
-import { IExpirer } from "./expirer";
-import { IPairing } from "./pairing";
 import { Logger } from "@walletconnect/logger";
-import { IVerify } from "./verify";
-import { IEchoClient } from "./echo";
-import { IEventClient } from "./events";
+
+import { ICrypto } from "./crypto.js";
+import { IRelayer } from "./relayer.js";
+import { IKeyChain } from "./keychain.js";
+import { IJsonRpcHistory } from "./history.js";
+import { IExpirer } from "./expirer.js";
+import { IPairing } from "./pairing.js";
+import { IVerify } from "./verify.js";
+import { IEchoClient } from "./echo.js";
+import { IEventClient } from "./events.js";
 export declare namespace CoreTypes {
   interface Options {
     projectId?: string;

@@ -1,17 +1,28 @@
 /* eslint-disable no-console */
-import { TEST_APP_METADATA_A, TEST_EMPTY_METADATA, TEST_WALLET_METADATA } from "./../shared/values";
+import {
+  TEST_APP_METADATA_A,
+  TEST_EMPTY_METADATA,
+  TEST_WALLET_METADATA,
+} from "./../shared/values.js";
 import {
   formatJsonRpcError,
   formatJsonRpcResult,
   JsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { calcExpiry, getSdkError, parseUri } from "@walletconnect/utils";
+import {
+  calcExpiry,
+  getNamespacesChains,
+  getNamespacesEvents,
+  getNamespacesMethods,
+  getSdkError,
+  parseUri,
+} from "@walletconnect/utils";
 import { expect, describe, it, vi } from "vitest";
 import SignClient, {
   ENGINE_QUEUE_STATES,
   ENGINE_RPC_OPTS,
   WALLETCONNECT_DEEPLINK_CHOICE,
-} from "../../src";
+} from "../../src/index.js";
 
 import {
   initTwoClients,
@@ -27,15 +38,16 @@ import {
   TEST_NAMESPACES_V2,
   initTwoPairedClients,
   TEST_CONNECT_PARAMS,
-} from "../shared";
+} from "../shared/index.js";
 import {
   EVENT_CLIENT_PAIRING_ERRORS,
   EVENT_CLIENT_PAIRING_TRACES,
   EVENT_CLIENT_SESSION_ERRORS,
   RELAYER_EVENTS,
 } from "@walletconnect/core";
+import { EngineTypes, RelayerTypes } from "@walletconnect/types";
 
-describe("Sign Client Integration", () => {
+describe.concurrent("Sign Client Integration", () => {
   it("init", async () => {
     const client = await SignClient.init({
       ...TEST_SIGN_CLIENT_OPTIONS,
@@ -74,12 +86,12 @@ describe("Sign Client Integration", () => {
     await deleteClients({ A: client, B: undefined });
   });
 
-  describe("connect", () => {
+  describe.concurrent("connect", () => {
     it("connect (with new pairing)", async () => {
       const clients = await initTwoClients({}, {}, { logger: "warn" });
 
-      let proposeSessionPayload: { method: string; params: { correlationId: number } } | undefined;
-      let approveSessionPayload: { method: string; params: { correlationId: number } } | undefined;
+      let proposeSessionPayload: { method: string; params: RelayerTypes.ITVF } | undefined;
+      let approveSessionPayload: { method: string; params: RelayerTypes.ITVF } | undefined;
 
       clients.A.core.relayer.once(RELAYER_EVENTS.publish, (payload) => {
         if (payload.method === "wc_proposeSession") {
@@ -102,6 +114,25 @@ describe("Sign Client Integration", () => {
       expect(proposeSessionPayload?.params.correlationId).to.be.greaterThan(0);
       expect(proposeSessionPayload?.params.correlationId).to.eq(
         approveSessionPayload?.params.correlationId,
+      );
+
+      const approvedChains = getNamespacesChains(sessionA.namespaces);
+      const approvedMethods = getNamespacesMethods(sessionA.namespaces);
+      const approvedEvents = getNamespacesEvents(sessionA.namespaces);
+      expect(approvedChains).to.exist;
+      expect(approvedChains).to.have.length.greaterThan(1);
+      expect(approvedMethods).to.exist;
+      expect(approvedMethods).to.have.length.greaterThan(1);
+      expect(approvedEvents).to.exist;
+      expect(approvedEvents).to.have.length.greaterThan(1);
+      expect(approvedChains).to.deep.equal(approveSessionPayload?.params.approvedChains);
+      expect(approvedMethods).to.deep.equal(approveSessionPayload?.params.approvedMethods);
+      expect(approvedEvents).to.deep.equal(approveSessionPayload?.params.approvedEvents);
+      expect(sessionA.scopedProperties).to.deep.equal(
+        approveSessionPayload?.params.scopedProperties,
+      );
+      expect(sessionA.sessionProperties).to.deep.equal(
+        approveSessionPayload?.params.sessionProperties,
       );
 
       expect(pairingA).to.be.exist;
@@ -513,8 +544,8 @@ describe("Sign Client Integration", () => {
     });
   });
 
-  describe("disconnect", () => {
-    describe("pairing", () => {
+  describe.concurrent("disconnect", () => {
+    describe.concurrent("pairing", () => {
       it("deletes the pairing on disconnect", async () => {
         const {
           clients,
@@ -532,7 +563,7 @@ describe("Sign Client Integration", () => {
         await deleteClients(clients);
       });
     });
-    describe("session", () => {
+    describe.concurrent("session", () => {
       it("deletes the session on disconnect", async () => {
         const {
           clients,
@@ -560,7 +591,7 @@ describe("Sign Client Integration", () => {
         await deleteClients(clients);
       });
     });
-    describe("deeplinks", () => {
+    describe.concurrent("deeplinks", () => {
       it("should clear `WALLETCONNECT_DEEPLINK_CHOICE` from storage on disconnect", async () => {
         const {
           clients,
@@ -576,7 +607,7 @@ describe("Sign Client Integration", () => {
         await deleteClients(clients);
       });
     });
-    describe("request queue", () => {
+    describe.concurrent("request queue", () => {
       it("should reset request queue state on disconnect", async () => {
         const {
           clients,
@@ -595,11 +626,9 @@ describe("Sign Client Integration", () => {
             clients.B.once("session_request", async (params) => {
               expect(clients.B.pendingRequest.getAll().length).to.eq(1);
 
-              await clients.A.disconnect({ topic, reason: getSdkError("USER_DISCONNECTED") });
-
               // @ts-expect-error - sessionRequestQueue is private property
               expect(clients.B.engine.sessionRequestQueue.state).to.eq(ENGINE_QUEUE_STATES.active);
-
+              await clients.A.disconnect({ topic, reason: getSdkError("USER_DISCONNECTED") });
               resolve();
             });
             clients.A.request({
@@ -611,13 +640,12 @@ describe("Sign Client Integration", () => {
             });
           }),
         ]);
-
         await deleteClients(clients);
       });
     });
   });
 
-  describe("ping", () => {
+  describe.concurrent("ping", () => {
     it("throws if the topic is not a known pairing or session topic", async () => {
       const clients = await initTwoClients();
       const fakeTopic = "nonsense";
@@ -626,8 +654,8 @@ describe("Sign Client Integration", () => {
       );
       await deleteClients(clients);
     });
-    describe("pairing", () => {
-      describe("with existing pairing", () => {
+    describe.concurrent("pairing", () => {
+      describe.concurrent("with existing pairing", () => {
         it("A pings B", async () => {
           const {
             clients,
@@ -646,8 +674,8 @@ describe("Sign Client Integration", () => {
         });
       });
     });
-    describe("session", () => {
-      describe("with existing session", () => {
+    describe.concurrent("session", () => {
+      describe.concurrent("with existing session", () => {
         it("A pings B", async () => {
           const {
             clients,
@@ -704,7 +732,7 @@ describe("Sign Client Integration", () => {
           await deleteClients(clients);
         });
 
-        it("can set tvf params", async () => {
+        it("can set evm tvf params", async () => {
           const {
             clients,
             sessionA: { topic },
@@ -714,146 +742,18 @@ describe("Sign Client Integration", () => {
             { logger: "error" },
             {
               requiredNamespaces: {
-                solana: {
-                  methods: [
-                    "solana_signTransaction",
-                    "solana_signAllTransactions",
-                    "solana_signAndSendTransaction",
-                  ],
-                  events: [],
-                  chains: ["solana:devnet"],
-                },
                 eip155: {
                   methods: ["eth_sendTransaction", "wallet_sendCalls"],
                   events: [],
                   chains: ["eip155:1"],
                 },
-                sui: {
-                  methods: ["sui_signTransaction", "sui_signAndExecuteTransaction"],
-                  events: [],
-                  chains: ["sui:devnet"],
-                },
-                hedera: {
-                  methods: ["hedera_signAndExecuteTransaction", "hedera_executeTransaction"],
-                  events: [],
-                  chains: ["hedera:mainnet"],
-                },
-                near: {
-                  methods: ["near_signTransaction", "near_signTransactions"],
-                  events: [],
-                  chains: ["near:testnet"],
-                },
-                tron: {
-                  methods: ["tron_signTransaction"],
-                  events: [],
-                  chains: ["tron:mainnet"],
-                },
-                xrpl: {
-                  methods: ["xrpl_signTransaction", "xrpl_signTransactionFor"],
-                  events: [],
-                  chains: ["xrpl:mainnet"],
-                },
-                algorand: {
-                  methods: ["algo_signTxn"],
-                  events: [],
-                  chains: ["algorand:mainnet"],
-                },
-                bip122: {
-                  methods: ["sendTransfer"],
-                  events: [],
-                  chains: ["bip122:mainnet"],
-                },
-                stacks: {
-                  methods: ["stacks_stxTransfer"],
-                  events: [],
-                  chains: ["stacks:mainnet"],
-                },
-                polkadot: {
-                  methods: ["polkadot_signTransaction"],
-                  events: [],
-                  chains: ["polkadot:mainnet"],
-                },
-                cosmos: {
-                  methods: ["cosmos_signDirect"],
-                  events: [],
-                  chains: ["cosmos:mainnet"],
-                },
               },
               namespaces: {
-                solana: {
-                  chains: ["solana:devnet"],
-                  methods: [
-                    "solana_signTransaction",
-                    "solana_signAllTransactions",
-                    "solana_signAndSendTransaction",
-                  ],
-                  events: [],
-                  accounts: ["solana:devnet:0x"],
-                },
                 eip155: {
                   methods: ["eth_sendTransaction", "wallet_sendCalls"],
                   events: [],
+                  chains: ["eip155:1"],
                   accounts: ["eip155:1:0x"],
-                },
-                sui: {
-                  methods: ["sui_signTransaction", "sui_signAndExecuteTransaction"],
-                  events: [],
-                  chains: ["sui:devnet"],
-                  accounts: ["sui:devnet:0x"],
-                },
-                hedera: {
-                  methods: ["hedera_signAndExecuteTransaction", "hedera_executeTransaction"],
-                  events: [],
-                  chains: ["hedera:mainnet"],
-                  accounts: ["hedera:mainnet:0x"],
-                },
-                near: {
-                  methods: ["near_signTransaction", "near_signTransactions"],
-                  events: [],
-                  chains: ["near:testnet"],
-                  accounts: ["near:testnet:0x"],
-                },
-                tron: {
-                  methods: ["tron_signTransaction"],
-                  events: [],
-                  chains: ["tron:mainnet"],
-                  accounts: ["tron:mainnet:0x"],
-                },
-                xrpl: {
-                  methods: ["xrpl_signTransaction", "xrpl_signTransactionFor"],
-                  events: [],
-                  chains: ["xrpl:mainnet"],
-                  accounts: ["xrpl:mainnet:0x"],
-                },
-                algorand: {
-                  methods: ["algo_signTxn"],
-                  events: [],
-                  chains: ["algorand:mainnet"],
-                  accounts: ["algorand:mainnet:0x"],
-                },
-                bip122: {
-                  methods: ["sendTransfer"],
-                  events: [],
-                  chains: ["bip122:mainnet"],
-                  accounts: ["bip122:mainnet:0x"],
-                },
-                stacks: {
-                  methods: ["stacks_stxTransfer"],
-                  events: [],
-                  chains: ["stacks:mainnet"],
-                  accounts: ["stacks:mainnet:0x"],
-                },
-                polkadot: {
-                  methods: ["polkadot_signTransaction"],
-                  events: [],
-                  chains: ["polkadot:mainnet"],
-                  accounts: ["polkadot:mainnet:0x"],
-                },
-                cosmos: {
-                  methods: ["cosmos_signDirect"],
-                  events: [],
-                  chains: ["cosmos:mainnet"],
-                  accounts: ["cosmos:mainnet:0x"],
                 },
               },
             },
@@ -1200,6 +1100,44 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("can set solana tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                solana: {
+                  methods: [
+                    "solana_signTransaction",
+                    "solana_signAllTransactions",
+                    "solana_signAndSendTransaction",
+                  ],
+                  events: [],
+                  chains: ["solana:devnet"],
+                },
+              },
+              namespaces: {
+                solana: {
+                  methods: [
+                    "solana_signTransaction",
+                    "solana_signAllTransactions",
+                    "solana_signAndSendTransaction",
+                  ],
+                  events: [],
+                  chains: ["solana:devnet"],
+                  accounts: ["solana:devnet:0x"],
+                },
+              },
+            },
+          );
+
           // solana solana_signAndSendTransaction example
           await Promise.all([
             new Promise<void>((resolve) => {
@@ -1444,6 +1382,36 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("can set sui tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                sui: {
+                  methods: ["sui_signTransaction", "sui_signAndExecuteTransaction"],
+                  events: [],
+                  chains: ["sui:devnet"],
+                },
+              },
+
+              namespaces: {
+                sui: {
+                  methods: ["sui_signTransaction", "sui_signAndExecuteTransaction"],
+                  events: [],
+                  chains: ["sui:devnet"],
+                  accounts: ["sui:devnet:0x"],
+                },
+              },
+            },
+          );
           // sui sui_signTransaction example
           await Promise.all([
             new Promise<void>((resolve) => {
@@ -1606,6 +1574,35 @@ describe("Sign Client Integration", () => {
               resolve();
             }),
           ]);
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("can set hedera tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                hedera: {
+                  methods: ["hedera_signAndExecuteTransaction", "hedera_executeTransaction"],
+                  events: [],
+                  chains: ["hedera:mainnet"],
+                },
+              },
+              namespaces: {
+                hedera: {
+                  methods: ["hedera_signAndExecuteTransaction", "hedera_executeTransaction"],
+                  events: [],
+                  chains: ["hedera:mainnet"],
+                  accounts: ["hedera:mainnet:0x"],
+                },
+              },
+            },
+          );
 
           // hedera hedera_signAndExecuteTransaction example
           await Promise.all([
@@ -1774,6 +1771,36 @@ describe("Sign Client Integration", () => {
               resolve();
             }),
           ]);
+
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("it can set near tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                near: {
+                  methods: ["near_signTransaction", "near_signTransactions"],
+                  events: [],
+                  chains: ["near:testnet"],
+                },
+              },
+              namespaces: {
+                near: {
+                  methods: ["near_signTransaction", "near_signTransactions"],
+                  events: [],
+                  chains: ["near:testnet"],
+                  accounts: ["near:testnet:0x"],
+                },
+              },
+            },
+          );
 
           // near near_signTransaction example
           await Promise.all([
@@ -1961,6 +1988,36 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("it can set tron tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                tron: {
+                  methods: ["tron_signTransaction"],
+                  events: [],
+                  chains: ["tron:mainnet"],
+                },
+              },
+              namespaces: {
+                tron: {
+                  methods: ["tron_signTransaction"],
+                  events: [],
+                  chains: ["tron:mainnet"],
+                  accounts: ["tron:mainnet:0x"],
+                },
+              },
+            },
+          );
+
           // tron tron_signTransaction example
           await Promise.all([
             new Promise<void>((resolve) => {
@@ -2044,90 +2101,35 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
-          // xrpl xrpl_signTransaction example
-          await Promise.all([
-            new Promise<void>((resolve) => {
-              clients.B.once("session_request", async (args) => {
-                const pendingRequests = clients.B.pendingRequest.getAll();
-                const { id, topic, params } = pendingRequests[0];
-                expect(params).toEqual(args.params);
-                expect(topic).toEqual(args.topic);
-                expect(id).toEqual(args.id);
-                const expectedTxHashes = ["0x1234567890"];
-                const transaction = {
-                  tx_json: {
-                    hash: expectedTxHashes[0],
-                  },
-                };
-
-                const result = formatJsonRpcResult(id, transaction);
-
-                let checkedWalletPublish = false;
-                clients.B.core.relayer.once(RELAYER_EVENTS.publish, (publishPayload: any) => {
-                  const tvf = publishPayload.params;
-                  if (!tvf) {
-                    return console.error("xrpl tvf is undefined");
-                  }
-                  if (!tvf.chainId || !tvf.rpcMethods || !tvf.txHashes) {
-                    return console.error("xrpl tvf is missing required fields");
-                  }
-                  if (tvf.rpcMethods.length !== 1 && tvf.rpcMethods[0] !== "xrpl_signTransaction") {
-                    return console.error("xrpl tvf rpcMethods is invalid", tvf.rpcMethods);
-                  }
-                  if (tvf.txHashes.join(",") !== expectedTxHashes.join(",")) {
-                    return console.error(
-                      "xrpl txHashes do not match: transactionId",
-                      tvf.txHashes,
-                      result.result,
-                    );
-                  }
-
-                  checkedWalletPublish = true;
-                });
-
-                await clients.B.respond({
-                  topic,
-                  response: result,
-                });
-
-                expect(checkedWalletPublish).to.be.true;
-                resolve();
-              });
-            }),
-            new Promise<void>(async (resolve) => {
-              const requestParams = {
-                method: "xrpl_signTransaction",
-                params: [
-                  {
-                    data: "0xdeadbeef",
-                  },
-                ],
-              };
-              let checkedDappPublish = false;
-
-              clients.A.core.relayer.once(RELAYER_EVENTS.publish, (publishPayload: any) => {
-                checkedDappPublish = true;
-                const tvf = publishPayload.params;
-                expect(tvf).to.exist;
-                expect(tvf?.chainId).to.eq(TEST_REQUEST_PARAMS.chainId);
-                expect(tvf?.rpcMethods).to.eql([requestParams.method]);
-                expect(tvf?.txHashes).to.be.undefined;
-                expect(tvf?.contractAddresses).to.eql([requestParams.params[0].to]);
-              });
-
-              await clients.A.request({
-                topic,
-                ...TEST_REQUEST_PARAMS,
-                request: {
-                  ...TEST_REQUEST_PARAMS.request,
-                  ...requestParams,
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("it can set xrpl tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                xrpl: {
+                  methods: ["xrpl_signTransaction", "xrpl_signTransactionFor"],
+                  events: [],
+                  chains: ["xrpl:mainnet"],
                 },
-                chainId: "xrpl:mainnet",
-              });
-              expect(checkedDappPublish).to.be.true;
-              resolve();
-            }),
-          ]);
+              },
+              namespaces: {
+                xrpl: {
+                  methods: ["xrpl_signTransaction", "xrpl_signTransactionFor"],
+                  events: [],
+                  chains: ["xrpl:mainnet"],
+                  accounts: ["xrpl:mainnet:0x"],
+                },
+              },
+            },
+          );
 
           // xrpl xrpl_signTransactionFor example
           await Promise.all([
@@ -2217,6 +2219,36 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("it can set algorand tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                algorand: {
+                  methods: ["algo_signTxn"],
+                  events: [],
+                  chains: ["algorand:mainnet"],
+                },
+              },
+              namespaces: {
+                algorand: {
+                  methods: ["algo_signTxn"],
+                  events: [],
+                  chains: ["algorand:mainnet"],
+                  accounts: ["algorand:mainnet:0x"],
+                },
+              },
+            },
+          );
+
           // algorand algo_signTxn example
           await Promise.all([
             new Promise<void>((resolve) => {
@@ -2299,6 +2331,36 @@ describe("Sign Client Integration", () => {
               resolve();
             }),
           ]);
+
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("it can set bip122 tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                bip122: {
+                  methods: ["sendTransfer"],
+                  events: [],
+                  chains: ["bip122:mainnet"],
+                },
+              },
+              namespaces: {
+                bip122: {
+                  methods: ["sendTransfer"],
+                  events: [],
+                  chains: ["bip122:mainnet"],
+                  accounts: ["bip122:mainnet:0x"],
+                },
+              },
+            },
+          );
 
           // bip122 sendTransfer example
           await Promise.all([
@@ -2383,6 +2445,36 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("it can set stacks tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                stacks: {
+                  methods: ["stacks_stxTransfer"],
+                  events: [],
+                  chains: ["stacks:mainnet"],
+                },
+              },
+              namespaces: {
+                stacks: {
+                  methods: ["stacks_stxTransfer"],
+                  events: [],
+                  chains: ["stacks:mainnet"],
+                  accounts: ["stacks:mainnet:0x"],
+                },
+              },
+            },
+          );
+
           // stacks stacks_stxTransfer example
           await Promise.all([
             new Promise<void>((resolve) => {
@@ -2465,6 +2557,36 @@ describe("Sign Client Integration", () => {
               resolve();
             }),
           ]);
+
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("it can set polkadot tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                polkadot: {
+                  methods: ["polkadot_signTransaction"],
+                  events: [],
+                  chains: ["polkadot:mainnet"],
+                },
+              },
+              namespaces: {
+                polkadot: {
+                  methods: ["polkadot_signTransaction"],
+                  events: [],
+                  chains: ["polkadot:mainnet"],
+                  accounts: ["polkadot:mainnet:0x"],
+                },
+              },
+            },
+          );
 
           // polkadot polkadot_signTransaction example
           await Promise.all([
@@ -2568,6 +2690,36 @@ describe("Sign Client Integration", () => {
             }),
           ]);
 
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("it can set cosmos tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                cosmos: {
+                  methods: ["cosmos_signDirect"],
+                  events: [],
+                  chains: ["cosmos:mainnet"],
+                },
+              },
+              namespaces: {
+                cosmos: {
+                  methods: ["cosmos_signDirect"],
+                  events: [],
+                  chains: ["cosmos:mainnet"],
+                  accounts: ["cosmos:mainnet:0x"],
+                },
+              },
+            },
+          );
+
           // cosmos cosmos_signDirect example
           await Promise.all([
             new Promise<void>((resolve) => {
@@ -2658,6 +2810,199 @@ describe("Sign Client Integration", () => {
                   ...requestParams,
                 },
                 chainId: "cosmos:mainnet",
+              });
+              expect(checkedDappPublish).to.be.true;
+              resolve();
+            }),
+          ]);
+
+          await throttle(1_000);
+          await deleteClients(clients);
+        });
+        it("can set sui tvf params", async () => {
+          const {
+            clients,
+            sessionA: { topic },
+          } = await initTwoPairedClients(
+            {},
+            {},
+            { logger: "error" },
+            {
+              requiredNamespaces: {
+                sui: {
+                  methods: ["sui_signTransaction", "sui_signAndExecuteTransaction"],
+                  events: [],
+                  chains: ["sui:devnet"],
+                },
+              },
+              namespaces: {
+                sui: {
+                  methods: ["sui_signTransaction", "sui_signAndExecuteTransaction"],
+                  events: [],
+                  chains: ["sui:devnet"],
+                  accounts: ["sui:devnet:0x"],
+                },
+              },
+            },
+          );
+
+          // sui sui_signTransaction example
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.once("session_request", async (args) => {
+                const pendingRequests = clients.B.pendingRequest.getAll();
+                const { id, topic, params } = pendingRequests[0];
+                expect(params).toEqual(args.params);
+                expect(topic).toEqual(args.topic);
+                expect(id).toEqual(args.id);
+
+                const result = formatJsonRpcResult(id, {
+                  transactionBytes:
+                    "AAACAAhkAAAAAAAAAAAg1fZH7bd9T9ox0DBFBkR/s8kuVar3e8XtS3fDMt1GBfoCAgABAQAAAQEDAAAAAAEBANX2R+23fU/aMdAwRQZEf7PJLlWq93vF7Ut3wzLdRgX6At/pRJzj2VpZgqXpSvEtd3GzPvt99hR8e/yOCGz/8nbRmA7QFAAAAAAgBy5vStJizn76LmJTBlDiONdR/2rSuzzS4L+Tp/Zs4hZ8cBxYkcSlxBD6QXvgS11E6d+DNek8LiA/beba6iH3l5gO0BQAAAAAIMpdmZjiqJ5GG9di1MAgD4S3uRr2gaMC7S1WsaeBwNIx1fZH7bd9T9ox0DBFBkR/s8kuVar3e8XtS3fDMt1GBfroAwAAAAAAAECrPAAAAAAAAA==",
+                });
+                const expectedTxHashes = ["C98G1Uwh5soPMtZZmjUFwbVzWLMoAHzi5jrX2BtABe8v"];
+                let checkedWalletPublish = false;
+                clients.B.core.relayer.once(RELAYER_EVENTS.publish, (publishPayload: any) => {
+                  const tvf = publishPayload.params;
+                  if (!tvf) {
+                    return console.error("sui tvf is undefined");
+                  }
+                  if (!tvf.chainId || !tvf.rpcMethods || !tvf.txHashes) {
+                    return console.error("sui tvf is missing required fields");
+                  }
+                  if (tvf.txHashes.join(",") !== expectedTxHashes.join(",")) {
+                    return console.error(
+                      "sui txHashes do not match: transactionBytes",
+                      tvf.txHashes,
+                      result.result.transactionBytes,
+                    );
+                  }
+
+                  checkedWalletPublish = true;
+                });
+
+                await clients.B.respond({
+                  topic,
+                  response: result,
+                });
+
+                expect(checkedWalletPublish).to.be.true;
+                resolve();
+              });
+            }),
+            new Promise<void>(async (resolve) => {
+              const requestParams = {
+                method: "sui_signTransaction",
+                params: [
+                  {
+                    data: "0xdeadbeef",
+                  },
+                ],
+              };
+              let checkedDappPublish = false;
+
+              clients.A.core.relayer.once(RELAYER_EVENTS.publish, (publishPayload: any) => {
+                checkedDappPublish = true;
+                const tvf = publishPayload.params;
+                expect(tvf).to.exist;
+                expect(tvf?.chainId).to.eq(TEST_REQUEST_PARAMS.chainId);
+                expect(tvf?.rpcMethods).to.eql([requestParams.method]);
+                expect(tvf?.txHashes).to.be.undefined;
+                expect(tvf?.contractAddresses).to.eql([requestParams.params[0].to]);
+              });
+
+              await clients.A.request({
+                topic,
+                ...TEST_REQUEST_PARAMS,
+                request: {
+                  ...TEST_REQUEST_PARAMS.request,
+                  ...requestParams,
+                },
+                chainId: "sui:devnet",
+              });
+              expect(checkedDappPublish).to.be.true;
+              resolve();
+            }),
+          ]);
+
+          // sui sui_signAndExecuteTransaction example
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              clients.B.once("session_request", async (args) => {
+                const pendingRequests = clients.B.pendingRequest.getAll();
+                const { id, topic, params } = pendingRequests[0];
+                expect(params).toEqual(args.params);
+                expect(topic).toEqual(args.topic);
+                expect(id).toEqual(args.id);
+                const expectedTxHashes = ["C98G1Uwh5soPMtZZmjUFwbVzWLMoAHzi5jrX2BtABe8v"];
+                const result = formatJsonRpcResult(id, {
+                  digest: expectedTxHashes[0],
+                });
+
+                let checkedWalletPublish = false;
+                clients.B.core.relayer.once(RELAYER_EVENTS.publish, (publishPayload: any) => {
+                  const tvf = publishPayload.params;
+                  if (!tvf) {
+                    return console.error("sui tvf is undefined");
+                  }
+                  if (!tvf.chainId || !tvf.rpcMethods || !tvf.txHashes) {
+                    return console.error("sui tvf is missing required fields");
+                  }
+                  if (
+                    tvf.rpcMethods.length !== 1 &&
+                    tvf.rpcMethods[0] !== "sui_signAndExecuteTransaction"
+                  ) {
+                    return console.error("sui tvf rpcMethods is invalid", tvf.rpcMethods);
+                  }
+                  if (tvf.txHashes.join(",") !== expectedTxHashes.join(",")) {
+                    return console.error(
+                      "sui txHashes do not match: digest",
+                      tvf.txHashes,
+                      result.result.digest,
+                    );
+                  }
+
+                  checkedWalletPublish = true;
+                });
+
+                await clients.B.respond({
+                  topic,
+                  response: result,
+                });
+
+                expect(checkedWalletPublish).to.be.true;
+                resolve();
+              });
+            }),
+            new Promise<void>(async (resolve) => {
+              const requestParams = {
+                method: "sui_signAndExecuteTransaction",
+                params: [
+                  {
+                    data: "0xdeadbeef",
+                  },
+                ],
+              };
+              let checkedDappPublish = false;
+
+              clients.A.core.relayer.once(RELAYER_EVENTS.publish, (publishPayload: any) => {
+                checkedDappPublish = true;
+                const tvf = publishPayload.params;
+                expect(tvf).to.exist;
+                expect(tvf?.chainId).to.eq(TEST_REQUEST_PARAMS.chainId);
+                expect(tvf?.rpcMethods).to.eql([requestParams.method]);
+                expect(tvf?.txHashes).to.be.undefined;
+                expect(tvf?.contractAddresses).to.eql([requestParams.params[0].to]);
+              });
+
+              await clients.A.request({
+                topic,
+                ...TEST_REQUEST_PARAMS,
+                request: {
+                  ...TEST_REQUEST_PARAMS.request,
+                  ...requestParams,
+                },
+                chainId: "sui:devnet",
               });
               expect(checkedDappPublish).to.be.true;
               resolve();
@@ -2893,7 +3238,7 @@ describe("Sign Client Integration", () => {
       });
     });
   });
-  describe("update", () => {
+  describe.concurrent("update", () => {
     it("updates session namespaces state with provided namespaces", async () => {
       const {
         clients,
@@ -2919,45 +3264,7 @@ describe("Sign Client Integration", () => {
     });
   });
 
-  describe("extend", () => {
-    it("updates session expiry state initiated by client A", async () => {
-      const {
-        clients,
-        sessionA: { topic },
-      } = await initTwoPairedClients({}, {}, { logger: "error" });
-      const prevExpiry = clients.A.session.get(topic).expiry;
-      vi.useFakeTimers({ shouldAdvanceTime: true });
-      // Fast-forward system time by 60 seconds after expiry was first set.
-      vi.setSystemTime(Date.now() + 60_000);
-      const { acknowledged } = await clients.A.extend({
-        topic,
-      });
-      await acknowledged();
-      const updatedExpiry = clients.A.session.get(topic).expiry;
-      expect(updatedExpiry).to.be.greaterThan(prevExpiry);
-      vi.useRealTimers();
-      await deleteClients(clients);
-    });
-    it("updates session expiry state initiated by client B", async () => {
-      const {
-        clients,
-        sessionA: { topic },
-      } = await initTwoPairedClients({}, {}, { logger: "error" });
-      const prevExpiry = clients.A.session.get(topic).expiry;
-      vi.useFakeTimers({ shouldAdvanceTime: true });
-      // Fast-forward system time by 60 seconds after expiry was first set.
-      vi.setSystemTime(Date.now() + 60_000);
-      const { acknowledged } = await clients.A.extend({
-        topic,
-      });
-      await acknowledged();
-      const updatedExpiry = clients.A.session.get(topic).expiry;
-      expect(updatedExpiry).to.be.greaterThan(prevExpiry);
-      vi.useRealTimers();
-      await deleteClients(clients);
-    });
-  });
-  describe("namespaces", () => {
+  describe.concurrent("namespaces", () => {
     it("should pair with empty namespaces", async () => {
       const clients = await initTwoClients();
       const requiredNamespaces = {};
@@ -2973,7 +3280,7 @@ describe("Sign Client Integration", () => {
     });
   });
 
-  describe("session requests", () => {
+  describe.concurrent("session requests", () => {
     it("should set custom request expiry", async () => {
       const {
         clients,
@@ -3012,6 +3319,59 @@ describe("Sign Client Integration", () => {
           clients.B.once("session_request", async (payload) => {
             const { params } = payload;
             expect(params).toMatchObject(TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE);
+            await clients.B.respond({
+              topic,
+              response: formatJsonRpcResult(payload.id, "test response"),
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>(async (resolve) => {
+          await clients.A.request({ ...TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE, topic });
+          resolve();
+        }),
+      ]);
+      await deleteClients(clients);
+    });
+
+    it("should throw an error when responding to request on mismatched topic", async () => {
+      const {
+        clients,
+        sessionA: { topic },
+      } = await initTwoPairedClients({}, {}, { logger: "error" });
+      await clients.B.session.set("0xdeadbeef", clients.B.session.get(topic));
+      clients.B.core.crypto.keychain.set("0xdeadbeef", {} as any);
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          clients.B.once("session_request", async (payload) => {
+            const { params } = payload;
+            expect(params).toMatchObject(TEST_REQUEST_PARAMS_OPTIONAL_NAMESPACE);
+            try {
+              // should throw an error
+              await clients.B.respond({
+                topic: "0xdeadbeef",
+                response: formatJsonRpcResult(payload.id, "test response"),
+              });
+            } catch (err) {
+              const message = (err as Error).message;
+              expect(message).toMatch(
+                "Request response topic mismatch. reqId: " +
+                  payload.id +
+                  ", expected topic: " +
+                  topic +
+                  ", received topic: 0xdeadbeef",
+              );
+              // @ts-expect-error - private property
+              const errorEvents = clients.B.core.eventClient.events;
+              expect(errorEvents.size).to.eq(1);
+              const event = Array.from(errorEvents.values())[0] as any;
+              expect(event.props.event).to.eq("ERROR");
+              expect(event.props.type).to.eq(
+                EVENT_CLIENT_SESSION_ERRORS.session_request_response_validation_failure,
+              );
+              expect(event.props.properties.topic).to.eq("0xdeadbeef");
+            }
+            // should respond to the request on the correct topic
             await clients.B.respond({
               topic,
               response: formatJsonRpcResult(payload.id, "test response"),
@@ -3065,44 +3425,7 @@ describe("Sign Client Integration", () => {
       await deleteClients(clients);
     });
   });
-  describe("Events Client", () => {
-    it("should create event during pairing flow", async () => {
-      const clients = await initTwoClients();
-      const { uri } = await clients.A.connect({});
-      if (!uri) throw new Error("URI is undefined");
-      await clients.B.pair({ uri });
-      const { topic } = parseUri(uri);
-      expect(clients.B.core.eventClient.events.size).to.eq(1);
-      const event = clients.B.core.eventClient.getEvent({ topic });
-      if (!event) throw new Error("Event is undefined");
-      expect(event).to.exist;
-      expect(event.props.event).to.eq("ERROR");
-      expect(event.props.type).to.eq(""); // there is no type yet as no error has happened
-      expect(event.props.properties.topic).to.eq(topic);
-      expect(event.props.properties.trace).to.exist;
-      expect(event.props.properties.trace.length).to.toBeGreaterThan(0);
-
-      await new Promise<void>((resolve) => {
-        clients.B.once("session_proposal", (params) => {
-          resolve();
-        });
-      });
-
-      expect(event.props.properties.trace).to.include(
-        EVENT_CLIENT_PAIRING_TRACES.emit_session_proposal,
-      );
-
-      vi.useFakeTimers({ shouldAdvanceTime: true });
-      vi.useFakeTimers({ shouldAdvanceTime: true, shouldClearNativeTimers: true });
-      vi.setSystemTime(Date.now() + 60_000 * 6);
-      await throttle(5_000);
-
-      expect(event.props.type).to.eq(EVENT_CLIENT_PAIRING_ERRORS.proposal_expired);
-
-      vi.useRealTimers();
-
-      await deleteClients(clients);
-    });
+  describe.concurrent("Events Client", () => {
     it("should set missing event listener error type", async () => {
       const clients = await initTwoClients();
       const { uri } = await clients.A.connect({});
@@ -3179,5 +3502,82 @@ describe("Sign Client Integration", () => {
 
       await deleteClients(clients);
     });
+  });
+});
+// don't use concurrency here as these tests change timeclock
+describe("extend", () => {
+  it("updates session expiry state initiated by client A", async () => {
+    const {
+      clients,
+      sessionA: { topic },
+    } = await initTwoPairedClients({}, {}, { logger: "error" });
+    const prevExpiry = clients.A.session.get(topic).expiry;
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Fast-forward system time by 60 seconds after expiry was first set.
+    vi.setSystemTime(Date.now() + 60_000);
+    const { acknowledged } = await clients.A.extend({
+      topic,
+    });
+    await acknowledged();
+    const updatedExpiry = clients.A.session.get(topic).expiry;
+    expect(updatedExpiry).to.be.greaterThan(prevExpiry);
+    vi.useRealTimers();
+    await deleteClients(clients);
+  });
+  it("updates session expiry state initiated by client B", async () => {
+    const {
+      clients,
+      sessionA: { topic },
+    } = await initTwoPairedClients({}, {}, { logger: "error" });
+    const prevExpiry = clients.A.session.get(topic).expiry;
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Fast-forward system time by 60 seconds after expiry was first set.
+    vi.setSystemTime(Date.now() + 60_000);
+    const { acknowledged } = await clients.A.extend({
+      topic,
+    });
+    await acknowledged();
+    const updatedExpiry = clients.A.session.get(topic).expiry;
+    expect(updatedExpiry).to.be.greaterThan(prevExpiry);
+    vi.useRealTimers();
+    await deleteClients(clients);
+  });
+
+  it("should create event during pairing flow", async () => {
+    const clients = await initTwoClients();
+    const { uri } = await clients.A.connect({});
+    if (!uri) throw new Error("URI is undefined");
+    await clients.B.pair({ uri });
+    const { topic } = parseUri(uri);
+    expect(clients.B.core.eventClient.events.size).to.eq(1);
+    const event = clients.B.core.eventClient.getEvent({ topic });
+    if (!event) throw new Error("Event is undefined");
+    expect(event).to.exist;
+    expect(event.props.event).to.eq("ERROR");
+    expect(event.props.type).to.eq(""); // there is no type yet as no error has happened
+    expect(event.props.properties.topic).to.eq(topic);
+    expect(event.props.properties.trace).to.exist;
+    expect(event.props.properties.trace.length).to.toBeGreaterThan(0);
+
+    await new Promise<void>((resolve) => {
+      clients.B.once("session_proposal", (params) => {
+        resolve();
+      });
+    });
+
+    expect(event.props.properties.trace).to.include(
+      EVENT_CLIENT_PAIRING_TRACES.emit_session_proposal,
+    );
+
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.useFakeTimers({ shouldAdvanceTime: true, shouldClearNativeTimers: true });
+    vi.setSystemTime(Date.now() + 60_000 * 6);
+    await throttle(5_000);
+
+    expect(event.props.type).to.eq(EVENT_CLIENT_PAIRING_ERRORS.proposal_expired);
+
+    vi.useRealTimers();
+
+    await deleteClients(clients);
   });
 });

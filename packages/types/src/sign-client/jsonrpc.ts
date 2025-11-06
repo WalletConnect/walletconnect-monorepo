@@ -1,9 +1,11 @@
 import { ErrorResponse, JsonRpcResult } from "@walletconnect/jsonrpc-types";
-import { SignClientTypes } from "./client";
-import { RelayerTypes } from "../core/relayer";
-import { SessionTypes } from "./session";
-import { ProposalTypes } from "./proposal";
-import { AuthTypes } from ".";
+
+import { SignClientTypes } from "./client.js";
+import { RelayerTypes } from "../core/relayer.js";
+import { SessionTypes } from "./session.js";
+import { ProposalTypes } from "./proposal.js";
+import { AuthTypes } from "./auth.js";
+import { EngineTypes } from "./engine.js";
 
 export declare namespace JsonRpcTypes {
   // -- core ------------------------------------------------------- //
@@ -50,6 +52,7 @@ export declare namespace JsonRpcTypes {
         publicKey: string;
         metadata: SignClientTypes.Metadata;
       };
+      proposalRequestsResponses?: EngineTypes.ProposalRequestsResponses;
     };
     wc_sessionUpdate: {
       namespaces: SessionTypes.Namespaces;

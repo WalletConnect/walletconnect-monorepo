@@ -12,7 +12,7 @@ jobs:
     if: github.event.action == 'opened' || github.event.action == 'synchronize'
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: setup-node
         uses: actions/setup-node@v4
         with:
@@ -44,7 +44,7 @@ jobs:
           - prettier
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: setup-node
         uses: actions/setup-node@v4
         with:
@@ -74,7 +74,7 @@ jobs:
       TEST_MOBILE_APP_ID: ${{ vars.TEST_MOBILE_APP_ID }}
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: setup-node
         uses: actions/setup-node@v4
         with:

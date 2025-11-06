@@ -1,6 +1,6 @@
 import { generateChildLogger, Logger } from "@walletconnect/logger";
 import { IEchoClient } from "@walletconnect/types";
-import { ECHO_CONTEXT, ECHO_URL } from "../constants";
+import { ECHO_CONTEXT, ECHO_URL } from "../constants/index.js";
 
 export class EchoClient extends IEchoClient {
   public readonly context = ECHO_CONTEXT;

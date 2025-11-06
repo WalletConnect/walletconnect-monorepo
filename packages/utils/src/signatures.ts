@@ -7,7 +7,7 @@ import { encode as msgpackEncode, decode as msgpackDecode } from "@msgpack/msgpa
 import { base32 } from "@scure/base";
 import { AuthTypes } from "@walletconnect/types";
 
-import { parseChainId } from "./caip";
+import { parseChainId } from "./caip.js";
 
 const DEFAULT_RPC_URL = "https://rpc.walletconnect.org/v1";
 

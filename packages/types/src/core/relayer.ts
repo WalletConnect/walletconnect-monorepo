@@ -2,10 +2,10 @@ import { IEvents } from "@walletconnect/events";
 import { IJsonRpcProvider, JsonRpcPayload, RequestArguments } from "@walletconnect/jsonrpc-types";
 import { Logger } from "@walletconnect/logger";
 
-import { ICore } from "./core";
-import { IMessageTracker } from "./messages";
-import { IPublisher } from "./publisher";
-import { ISubscriber } from "./subscriber";
+import { ICore } from "./core.js";
+import { IMessageTracker } from "./messages.js";
+import { IPublisher } from "./publisher.js";
+import { ISubscriber } from "./subscriber.js";
 
 export declare namespace RelayerTypes {
   export interface ProtocolOptions {
@@ -75,6 +75,11 @@ export declare namespace RelayerTypes {
     chainId?: string;
     txHashes?: string[];
     contractAddresses?: string[];
+    approvedChains?: string[];
+    approvedMethods?: string[];
+    approvedEvents?: string[];
+    sessionProperties?: Record<string, string>;
+    scopedProperties?: Record<string, unknown>;
   }
 
   export type MessageDirection = "inbound" | "outbound";

@@ -1,3 +1,4 @@
+import { expect } from "vitest";
 import { parseUri } from "@walletconnect/utils";
 import {
   EngineTypes,
@@ -6,7 +7,7 @@ import {
   ProposalTypes,
   SessionTypes,
 } from "@walletconnect/types";
-import { throttle } from "./../shared";
+import { throttle } from "./../shared/index.js";
 import {
   TEST_RELAY_OPTIONS,
   TEST_NAMESPACES,
@@ -14,10 +15,9 @@ import {
   TEST_OPTIONAL_NAMESPACES,
   TEST_SESSION_PROPERTIES,
   TEST_SESSION_PROPERTIES_APPROVE,
-} from "./values";
-import { Clients } from "./init";
-import { expect } from "vitest";
-import { RELAYER_EVENTS } from "../../../core/src";
+} from "./values.js";
+import { Clients } from "./init.js";
+import { RELAYER_EVENTS } from "../../../core/src/index.js";
 
 export interface TestConnectParams {
   requiredNamespaces?: ProposalTypes.RequiredNamespaces;

@@ -1,8 +1,8 @@
 import { Logger } from "@walletconnect/logger";
 import { IAuth, ICore } from "@walletconnect/types";
-import { AuthPairingTopic } from "./authPairingTopic";
-import { AuthRequest } from "./authRequest";
-import { AuthKey } from "./authKey";
+import { AuthPairingTopic } from "./authPairingTopic.js";
+import { AuthRequest } from "./authRequest.js";
+import { AuthKey } from "./authKey.js";
 
 export class AuthStore {
   public authKeys: IAuth["authKeys"];

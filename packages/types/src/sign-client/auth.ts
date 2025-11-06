@@ -5,8 +5,8 @@ import {
   JsonRpcResponse,
   JsonRpcResult,
 } from "@walletconnect/jsonrpc-types";
-import { CoreTypes, ICore, IStore, RelayerTypes, Verify } from "../core";
-import { SessionTypes } from "./session";
+import { CoreTypes, ICore, IStore, RelayerTypes, Verify } from "../core/index.js";
+import { SessionTypes } from "./session.js";
 
 export declare namespace AuthTypes {
   type Event = "session_authenticate";
@@ -76,7 +76,7 @@ export declare namespace AuthTypes {
 
   interface BaseAuthRequestParams {
     domain: string;
-    aud: string;
+    aud?: string;
     nonce: string;
     version?: string;
     iat?: string;
@@ -171,6 +171,42 @@ export declare namespace AuthTypes {
   type AuthenticateResponseResult = {
     auths?: AuthTypes.AuthResponse;
     session: SessionTypes.Struct;
+  };
+
+  // protocol method params
+  interface AuthenticateParams {
+    domain: string;
+    chains: string[];
+    nonce: string;
+    aud: string;
+    version: string;
+    type: string;
+    iat: string;
+    exp?: string;
+    nbf?: string;
+    statement?: string;
+    requestId?: string;
+    resources?: string[];
+    signatureTypes?: Record<string, string[]>;
+  }
+
+  // client api method params
+  type AuthenticateRequestParams = {
+    domain: string;
+    chains: string[];
+    nonce: string;
+    uri: string;
+    ttl: number;
+    /**
+     * cacao header type, if not provided, it will be "caip122"
+     */
+    type?: string;
+    exp?: string;
+    nbf?: string;
+    statement?: string;
+    requestId?: string;
+    resources?: string[];
+    signatureTypes?: Record<string, string[]>;
   };
 }
 

@@ -7,7 +7,7 @@ export default defineConfig({
     "process.env.DISABLE_GLOBAL_CORE": true,
   },
   test: {
-    testTimeout: 300_000,
-    hookTimeout: 300_000,
+    testTimeout: 60_000,
+    hookTimeout: 60_000,
   },
 });

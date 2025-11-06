@@ -1,6 +1,8 @@
-import { SignClientTypes } from "./client";
-import { RelayerTypes } from "../core/relayer";
-import { IStore } from "../core/store";
+import { AuthTypes } from "./auth.js";
+import { EngineTypes } from "./engine.js";
+import { SignClientTypes } from "./client.js";
+import { RelayerTypes } from "../core/relayer.js";
+import { IStore } from "../core/store.js";
 
 export declare namespace ProposalTypes {
   interface BaseRequiredNamespace {
@@ -36,6 +38,10 @@ export declare namespace ProposalTypes {
     // these two fields are for verifyContext
     attestation?: string;
     encryptedId?: string;
+    requests?: {
+      authentication?: AuthTypes.AuthenticateParams[];
+      walletPay?: EngineTypes.WalletPayParams;
+    };
   }
 }
 

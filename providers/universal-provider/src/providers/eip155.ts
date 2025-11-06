@@ -11,7 +11,7 @@ import {
   RequestParams,
   SessionNamespace,
   SendCallsResult,
-} from "../types";
+} from "../types/index.js";
 
 import {
   extractCapabilitiesFromSession,
@@ -22,9 +22,9 @@ import {
   prepareCallStatusFromStoredSendCalls,
   Storage,
   storeSendCalls,
-} from "../utils";
+} from "../utils/index.js";
 import EventEmitter from "events";
-import { BUNDLER_URL, PROVIDER_EVENTS } from "../constants";
+import { BUNDLER_URL, PROVIDER_EVENTS } from "../constants/index.js";
 
 class Eip155Provider implements IProvider {
   public name = "eip155";

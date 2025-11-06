@@ -1,7 +1,7 @@
 import { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 import { Logger } from "@walletconnect/logger";
-import { ICore } from "./core";
-import { IKeyChain } from "./keychain";
+import { ICore } from "./core.js";
+import { IKeyChain } from "./keychain.js";
 
 export declare namespace CryptoTypes {
   export type EncodingType = "base64pad" | "base64url";

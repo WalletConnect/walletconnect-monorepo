@@ -1,7 +1,19 @@
 import { AuthTypes } from "@walletconnect/types";
-import { getCommonValuesInArrays } from "./misc";
-import { verifySignature } from "./signatures";
+import { getCommonValuesInArrays } from "./misc.js";
+import { verifySignature } from "./signatures.js";
 const didPrefix = "did:pkh:";
+const NAMESPACE_DISPLAY_NAMES = {
+  eip155: "Ethereum",
+  solana: "Solana",
+  bip122: "Bitcoin",
+};
+
+const getNamespaceNameFromNamespace = (namespace?: string) => {
+  if (!namespace) return "";
+  const displayName = NAMESPACE_DISPLAY_NAMES[namespace as keyof typeof NAMESPACE_DISPLAY_NAMES];
+  return displayName || namespace;
+};
+
 export const getDidAddressSegments = (iss: string) => {
   return iss?.split(":");
 };
@@ -10,6 +22,14 @@ export const getDidChainId = (iss: string) => {
   const segments = iss && getDidAddressSegments(iss);
   if (segments) {
     return iss.includes(didPrefix) ? segments[3] : segments[1];
+  }
+  return undefined;
+};
+
+export const getDidAddressNamespace = (iss: string) => {
+  const segments = iss && getDidAddressSegments(iss);
+  if (segments) {
+    return iss.includes(didPrefix) ? segments[2] : segments[0];
   }
   return undefined;
 };
@@ -47,7 +67,11 @@ export async function validateSignedCacao(params: { cacao: AuthTypes.Cacao; proj
 }
 
 export const formatMessage = (cacao: AuthTypes.FormatMessageParams, iss: string) => {
-  const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
+  const didNamespace = getDidAddressNamespace(iss);
+  if (!didNamespace) {
+    throw new Error("Invalid issuer: " + iss);
+  }
+  const header = `${cacao.domain} wants you to sign in with your ${getNamespaceNameFromNamespace(didNamespace)} account:`;
   const walletAddress = getDidAddress(iss);
 
   if (!cacao.aud && !cacao.uri) {

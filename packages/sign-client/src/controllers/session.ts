@@ -2,7 +2,7 @@ import { Store } from "@walletconnect/core";
 import { Logger } from "@walletconnect/logger";
 import { ICore, SessionTypes } from "@walletconnect/types";
 
-import { SIGN_CLIENT_STORAGE_PREFIX, SESSION_CONTEXT } from "../constants";
+import { SIGN_CLIENT_STORAGE_PREFIX, SESSION_CONTEXT } from "../constants/index.js";
 
 export class Session extends Store<string, SessionTypes.Struct> {
   constructor(

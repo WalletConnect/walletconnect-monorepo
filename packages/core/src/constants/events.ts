@@ -37,6 +37,9 @@ export const EVENT_CLIENT_SESSION_TRACES = {
   store_session: "store_session",
   publishing_session_settle: "publishing_session_settle",
   session_settle_publish_success: "session_settle_publish_success",
+  session_request_response_started: "session_request_response_started",
+  session_request_response_validation_success: "session_request_response_validation_success",
+  session_request_response_publish_started: "session_request_response_publish_started",
 };
 
 export const EVENT_CLIENT_SESSION_ERRORS = {
@@ -48,6 +51,8 @@ export const EVENT_CLIENT_SESSION_ERRORS = {
   session_settle_publish_failure: "session_settle_publish_failure",
   session_approve_namespace_validation_failure: "session_approve_namespace_validation_failure",
   proposal_not_found: "proposal_not_found",
+  session_request_response_validation_failure: "session_request_response_validation_failure",
+  session_request_response_publish_failure: "session_request_response_publish_failure",
 };
 
 export const EVENT_CLIENT_AUTHENTICATE_TRACES = {

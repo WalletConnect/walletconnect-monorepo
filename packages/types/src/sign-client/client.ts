@@ -1,13 +1,13 @@
 import { Logger } from "@walletconnect/logger";
 import EventEmmiter from "events";
-import { CoreTypes, ICore } from "../core/core";
-import { IEngine } from "./engine";
-import { IPendingRequest } from "./pendingRequest";
-import { IProposal, ProposalTypes } from "./proposal";
-import { ISession, SessionTypes } from "./session";
-import { Verify } from "../core/verify";
-import { IAuth, AuthTypes } from "./auth";
-import { RelayerTypes } from "../core";
+import { CoreTypes, ICore } from "../core/core.js";
+import { IEngine } from "./engine.js";
+import { IPendingRequest } from "./pendingRequest.js";
+import { IProposal, ProposalTypes } from "./proposal.js";
+import { ISession, SessionTypes } from "./session.js";
+import { Verify } from "../core/verify.js";
+import { IAuth, AuthTypes } from "./auth.js";
+import { RelayerTypes } from "../core/relayer.js";
 
 export declare namespace SignClientTypes {
   type Event =

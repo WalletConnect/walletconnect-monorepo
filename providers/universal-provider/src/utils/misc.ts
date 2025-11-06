@@ -1,3 +1,4 @@
+import { merge } from "es-toolkit/compat";
 import { SessionTypes } from "@walletconnect/types";
 import {
   isCaipNamespace,
@@ -6,9 +7,8 @@ import {
   parseChainId,
   parseNamespaceKey,
 } from "@walletconnect/utils";
-import { RPC_URL } from "../constants";
-import { Namespace, NamespaceConfig } from "../types";
-import { merge } from "es-toolkit/compat";
+import { RPC_URL } from "../constants/index.js";
+import { Namespace, NamespaceConfig } from "../types/index.js";
 
 export function getRpcUrl(chainId: string, rpc: Namespace, projectId?: string): string | undefined {
   const chain = parseChainId(chainId);

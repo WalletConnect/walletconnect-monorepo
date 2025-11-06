@@ -1,5 +1,77 @@
 # @walletconnect/core
 
+## 2.23.0
+
+### Minor Changes
+
+- [#6956](https://github.com/WalletConnect/walletconnect-monorepo/pull/6956) [`1cd5151`](https://github.com/WalletConnect/walletconnect-monorepo/commit/1cd5151d90e58c89d70acc1bc3d9d55b9442b68b) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Implemented non evm 1 Click Auth
+
+### Patch Changes
+
+- [#7015](https://github.com/WalletConnect/walletconnect-monorepo/pull/7015) [`83cfa07`](https://github.com/WalletConnect/walletconnect-monorepo/commit/83cfa07c27c80cdb78ec389dd99e12f70ca8a674) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Removed redundant sign-client to sign-client ACK when session disconnect request is received
+
+- [#7007](https://github.com/WalletConnect/walletconnect-monorepo/pull/7007) [`793bfe8`](https://github.com/WalletConnect/walletconnect-monorepo/commit/793bfe86780e08bd58848077e47786befbf93184) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Updated `Appkit` to `1.8.11` in `ethereum-provider`
+
+- Updated dependencies [[`1cd5151`](https://github.com/WalletConnect/walletconnect-monorepo/commit/1cd5151d90e58c89d70acc1bc3d9d55b9442b68b), [`83cfa07`](https://github.com/WalletConnect/walletconnect-monorepo/commit/83cfa07c27c80cdb78ec389dd99e12f70ca8a674), [`793bfe8`](https://github.com/WalletConnect/walletconnect-monorepo/commit/793bfe86780e08bd58848077e47786befbf93184)]:
+  - @walletconnect/types@2.23.0
+  - @walletconnect/utils@2.23.0
+
+## 2.22.4
+
+### Patch Changes
+
+- [#6996](https://github.com/WalletConnect/walletconnect-monorepo/pull/6996) [`9c879ea`](https://github.com/WalletConnect/walletconnect-monorepo/commit/9c879ea935ed2f99c5a01ff3476c7d697677672b) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - fix: solved react-native-compat file imports
+
+- Updated dependencies [[`9c879ea`](https://github.com/WalletConnect/walletconnect-monorepo/commit/9c879ea935ed2f99c5a01ff3476c7d697677672b)]:
+  - @walletconnect/types@2.22.4
+  - @walletconnect/utils@2.22.4
+
+## 2.22.3
+
+### Patch Changes
+
+- [#6988](https://github.com/WalletConnect/walletconnect-monorepo/pull/6988) [`b8b7b2e`](https://github.com/WalletConnect/walletconnect-monorepo/commit/b8b7b2e8307e83b770e4037ad7c85995595a4d29) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Sets file extensions on all imports/exports
+
+- [#6982](https://github.com/WalletConnect/walletconnect-monorepo/pull/6982) [`a4f5f76`](https://github.com/WalletConnect/walletconnect-monorepo/commit/a4f5f76e44d3b3d3504793c8570f3d014afacd85) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Updated `@walletconnect/logger` to `3.0.0`
+
+- Updated dependencies [[`b8b7b2e`](https://github.com/WalletConnect/walletconnect-monorepo/commit/b8b7b2e8307e83b770e4037ad7c85995595a4d29), [`a4f5f76`](https://github.com/WalletConnect/walletconnect-monorepo/commit/a4f5f76e44d3b3d3504793c8570f3d014afacd85)]:
+  - @walletconnect/types@2.22.3
+  - @walletconnect/utils@2.22.3
+
+## 2.22.2
+
+### Patch Changes
+
+- [#6976](https://github.com/WalletConnect/walletconnect-monorepo/pull/6976) [`9d00e00`](https://github.com/WalletConnect/walletconnect-monorepo/commit/9d00e0014d4facf2defb25dd56136ca7906c0de5) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Fixed a bug in `universal-provider` where `logger` wasn't imported correctly due to esm/cjs mismatch in some environments
+
+- Updated dependencies [[`9d00e00`](https://github.com/WalletConnect/walletconnect-monorepo/commit/9d00e0014d4facf2defb25dd56136ca7906c0de5)]:
+  - @walletconnect/types@2.22.2
+  - @walletconnect/utils@2.22.2
+
+## 2.22.1
+
+### Patch Changes
+
+- [#6974](https://github.com/WalletConnect/walletconnect-monorepo/pull/6974) [`a1abfdc`](https://github.com/WalletConnect/walletconnect-monorepo/commit/a1abfdc9f71f77ec114fc8c3ba68649d74167faf) Thanks [@svenvoskamp](https://github.com/svenvoskamp)! - Add enableMobileFullScreen to EthereumProviderOptions and feed to AppKit
+
+- Updated dependencies [[`a1abfdc`](https://github.com/WalletConnect/walletconnect-monorepo/commit/a1abfdc9f71f77ec114fc8c3ba68649d74167faf)]:
+  - @walletconnect/types@2.22.1
+  - @walletconnect/utils@2.22.1
+
+## 2.22.0
+
+### Minor Changes
+
+- [#6941](https://github.com/WalletConnect/walletconnect-monorepo/pull/6941) [`aa2399e`](https://github.com/WalletConnect/walletconnect-monorepo/commit/aa2399ead2e6b91da25adb79cb44472dadccd791) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Validates response topic when responding to a session request
+
+### Patch Changes
+
+- [#6973](https://github.com/WalletConnect/walletconnect-monorepo/pull/6973) [`bc03edf`](https://github.com/WalletConnect/walletconnect-monorepo/commit/bc03edf498d3f413e29b69a9ace6fe6225919762) Thanks [@svenvoskamp](https://github.com/svenvoskamp)! - Upgrade "@reown/appkit" to 1.8.9
+
+- Updated dependencies [[`bc03edf`](https://github.com/WalletConnect/walletconnect-monorepo/commit/bc03edf498d3f413e29b69a9ace6fe6225919762), [`aa2399e`](https://github.com/WalletConnect/walletconnect-monorepo/commit/aa2399ead2e6b91da25adb79cb44472dadccd791)]:
+  - @walletconnect/types@2.22.0
+  - @walletconnect/utils@2.22.0
+
 ## 2.21.10
 
 ### Patch Changes
