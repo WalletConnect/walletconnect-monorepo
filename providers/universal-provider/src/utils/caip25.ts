@@ -54,16 +54,16 @@ export const extractCapabilitiesFromSession = (
   // get all capabilities from sessionProperties as they apply to all chains/addresses
   const globalCapabilities = getCapabilitiesFromObject(sessionProperties);
 
-  const namespaceChainIds: string[] = [];
+  const namespaceChainIds = new Set<string>();
   for (const account of namespaces[EIP155_PREFIX]?.accounts ?? []) {
     const params = parseAccountId(account);
     if (params.address === address) {
-      namespaceChainIds.push(decimalToHex(params.reference));
+      namespaceChainIds.add(decimalToHex(params.reference));
     }
   }
 
   // fallback to namespace chainIds if no chainIds are provided
-  const targetChainIds = chainIds.length > 0 ? chainIds : namespaceChainIds;
+  const targetChainIds = chainIds.length > 0 ? chainIds : Array.from(namespaceChainIds);
 
   for (const chain of targetChainIds) {
     const chainId = hexToDecimal(chain);
