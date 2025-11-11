@@ -7,8 +7,12 @@ import {
   SIGN_CLIENT_DEFAULT,
   SIGN_CLIENT_PROTOCOL,
   SIGN_CLIENT_VERSION,
-} from "./constants/index.js";
-import { AuthStore, Engine, PendingRequest, Proposal, Session } from "./controllers/index.js";
+} from "./constants/client.js";
+import { AuthStore } from "./controllers/authStore.js";
+import { Engine } from "./controllers/engine.js";
+import { PendingRequest } from "./controllers/pendingRequest.js";
+import { Proposal } from "./controllers/proposal.js";
+import { Session } from "./controllers/session.js";
 
 export class SignClient extends ISignClient {
   public readonly protocol = SIGN_CLIENT_PROTOCOL;

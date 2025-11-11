@@ -4,22 +4,18 @@ import { payloadId } from "@walletconnect/jsonrpc-utils";
 import { parseChainId } from "@walletconnect/utils";
 import { Logger, pino } from "@walletconnect/logger";
 
-import {
-  IPOSClientEngine,
-  POSClientEngineTypes,
-  POSClientTypes,
-  UtilsTypes,
-} from "../types/index.js";
-import { isValidPaymentIntent, isValidToken } from "../utils/index.js";
+import { IPOSClientEngine, POSClientEngineTypes } from "../types/engine.js";
+import { POSClientTypes } from "../types/client.js";
+import { UtilsTypes } from "../types/utils.js";
+import { isValidPaymentIntent, isValidToken } from "../utils/validator.js";
 import {
   CLIENT_STORAGE_OPTIONS,
   MAX_TRANSACTION_STATUS_CHECKS,
-  DEFAULT_NAMESPACES,
-  RPC_URL,
-  RPC_ERROR_CODES,
   DEFAULT_LOGGER_LEVEL,
   CLIENT_STORAGE_PREFIX,
-} from "../constants/index.js";
+} from "../constants/client.js";
+import { DEFAULT_NAMESPACES } from "../constants/chains.js";
+import { RPC_URL, RPC_ERROR_CODES } from "../constants/rpc.js";
 
 export class Engine extends IPOSClientEngine {
   public signClient: ISignClient;
