@@ -1,7 +1,7 @@
 import { POSClient as Client } from "./client.js";
-
-export * from "./constants/index.js";
-export * from "./types/index.js";
+import { IPOSClient } from "./types/client.js";
 
 export const POSClient = Client;
+export type { IPOSClient };
+
 export default Client;
