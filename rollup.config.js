@@ -10,7 +10,7 @@ export const plugins = [
   json(),
   commonjs(),
   esbuild({
-    minify: true,
+    minify: false,
     tsconfig: "./tsconfig.json",
     loaders: {
       ".json": "json",

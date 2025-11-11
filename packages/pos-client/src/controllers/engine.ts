@@ -84,7 +84,6 @@ export class Engine extends IPOSClientEngine {
     }
 
     try {
-      this.logger.debug("Fetching supported namespaces/networks");
       const supportedNamespaces =
         await this.fetchRpcRequest<POSClientEngineTypes.RPCSupportedNetworksResult>(
           JSON.stringify({

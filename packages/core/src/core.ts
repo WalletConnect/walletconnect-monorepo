@@ -264,7 +264,7 @@ export class Core extends ICore {
       if (this.isGlobalCoreDisabled()) {
         return;
       }
-      const customStoragePrefix = core.opts?.customStoragePrefix || "";
+      const customStoragePrefix = core.storedOpts?.customStoragePrefix || "";
       const globalCorePrefix = `_walletConnectCore_${customStoragePrefix}`;
       globalThis[globalCorePrefix] = core;
     } catch (error) {
