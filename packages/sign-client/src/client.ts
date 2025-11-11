@@ -16,15 +16,17 @@ export class SignClient extends ISignClient {
   public readonly name: ISignClient["name"] = SIGN_CLIENT_DEFAULT.name;
   public readonly metadata: ISignClient["metadata"];
 
-  public core: ISignClient["core"];
+  public core!: ISignClient["core"];
   public logger: ISignClient["logger"];
   public events: ISignClient["events"] = new EventEmitter();
-  public engine: ISignClient["engine"];
-  public session: ISignClient["session"];
-  public proposal: ISignClient["proposal"];
-  public pendingRequest: ISignClient["pendingRequest"];
-  public auth: ISignClient["auth"];
+  public engine!: ISignClient["engine"];
+  public session!: ISignClient["session"];
+  public proposal!: ISignClient["proposal"];
+  public pendingRequest!: ISignClient["pendingRequest"];
+  public auth!: ISignClient["auth"];
   public signConfig?: ISignClient["signConfig"];
+
+  private storedOpts?: SignClientTypes.Options;
 
   static async init(opts?: SignClientTypes.Options) {
     const client = new SignClient(opts);
@@ -40,17 +42,14 @@ export class SignClient extends ISignClient {
     this.metadata = populateAppMetadata(opts?.metadata);
     this.signConfig = opts?.signConfig;
 
+    this.storedOpts = opts;
+
     const logger = createLogger({
       logger: opts?.logger || SIGN_CLIENT_DEFAULT.logger,
       name: this.name,
     });
+
     this.logger = logger;
-    this.core = opts?.core || new Core(opts);
-    this.session = new Session(this.core, this.logger);
-    this.proposal = new Proposal(this.core, this.logger);
-    this.pendingRequest = new PendingRequest(this.core, this.logger);
-    this.engine = new Engine(this);
-    this.auth = new AuthStore(this.core, this.logger);
   }
 
   get context() {
@@ -243,6 +242,13 @@ export class SignClient extends ISignClient {
   private async initialize() {
     this.logger.trace(`Initialized`);
     try {
+      this.core = this.storedOpts?.core || new Core(this.storedOpts);
+      this.session = new Session(this.core, this.logger);
+      this.proposal = new Proposal(this.core, this.logger);
+      this.pendingRequest = new PendingRequest(this.core, this.logger);
+      this.engine = new Engine(this);
+      this.auth = new AuthStore(this.core, this.logger);
+
       await this.core.start();
       await this.session.init();
       await this.proposal.init();

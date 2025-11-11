@@ -30,10 +30,18 @@ import { KeyChain } from "./keychain.js";
 export class Crypto implements ICrypto {
   public name = CRYPTO_CONTEXT;
   public keychain: ICrypto["keychain"];
-  public readonly randomSessionIdentifier = generateRandomBytes32();
 
   private initialized = false;
   private clientId: string | undefined;
+  private _randomSessionIdentifier: string | undefined;
+
+  public get randomSessionIdentifier(): string {
+    if (!this._randomSessionIdentifier) {
+      this._randomSessionIdentifier = generateRandomBytes32();
+    }
+    return this._randomSessionIdentifier;
+  }
+
   constructor(
     public core: ICore,
     public logger: Logger,

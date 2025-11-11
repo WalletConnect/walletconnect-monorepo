@@ -6,7 +6,7 @@ import { IPOSClient, POSClientTypes } from "./types/index.js";
 export class POSClient extends IPOSClient {
   public name: IPOSClient["name"];
   public events: IPOSClient["events"] = new EventEmitter();
-  public engine: IPOSClient["engine"];
+  public engine!: IPOSClient["engine"];
   public metadata: IPOSClient["metadata"];
   public session: IPOSClient["session"];
 
@@ -21,7 +21,6 @@ export class POSClient extends IPOSClient {
     super(opts);
     this.metadata = opts.metadata;
     this.name = CLIENT_CONTEXT;
-    this.engine = new Engine(this);
   }
 
   // ---------- Events ----------------------------------------------- //
@@ -92,6 +91,8 @@ export class POSClient extends IPOSClient {
 
   private async initialize() {
     try {
+      this.engine = new Engine(this);
+
       await this.engine.init();
       this.engine.logger.info(`POSClient Initialization Success`);
     } catch (error: any) {

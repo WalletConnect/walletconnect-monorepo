@@ -45,10 +45,11 @@ export class Engine extends IPOSClientEngine {
       name: this.client.name,
       level: this.client.opts.loggerOptions?.posLevel || DEFAULT_LOGGER_LEVEL,
     });
-    this.setupEventHandlers();
   }
 
   public init = async () => {
+    this.setupEventHandlers();
+
     this.signClient = await SignClient.init({
       projectId: this.client.opts.projectId,
       metadata: {
@@ -63,6 +64,15 @@ export class Engine extends IPOSClientEngine {
       customStoragePrefix: CLIENT_STORAGE_OPTIONS.customStoragePrefix,
       logger: this.client.opts.loggerOptions?.signLevel || DEFAULT_LOGGER_LEVEL,
     });
+
+    this.fetchSupportedNamespacesInBackground();
+  };
+
+  /**
+   * Fetches supported namespaces in the background without blocking initialization.
+   */
+  private async fetchSupportedNamespacesInBackground() {
+    this.logger.debug("Fetching supported namespaces/networks in background");
 
     const persistedSessionTopic = await this.getPersistedSessionTopic();
     if (persistedSessionTopic) {
@@ -94,7 +104,7 @@ export class Engine extends IPOSClientEngine {
     } catch (error) {
       this.logger.error(error, "Failed to fetch supported namespaces/networks");
     }
-  };
+  }
 
   public setTokens: IPOSClientEngine["setTokens"] = async (params) => {
     const { tokens } = params;

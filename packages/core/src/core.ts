@@ -17,21 +17,18 @@ import {
   CORE_PROTOCOL,
   CORE_STORAGE_OPTIONS,
   CORE_VERSION,
-  RELAYER_DEFAULT_RELAY_URL,
-  TRANSPORT_TYPES,
-  WALLETCONNECT_CLIENT_ID,
-  WALLETCONNECT_LINK_MODE_APPS,
-} from "./constants/index.js";
-import {
-  Crypto,
-  EchoClient,
-  EventClient,
-  Expirer,
-  JsonRpcHistory,
-  Pairing,
-  Relayer,
-  Verify,
-} from "./controllers/index.js";
+} from "./constants/core.js";
+import { RELAYER_DEFAULT_RELAY_URL, TRANSPORT_TYPES } from "./constants/relayer.js";
+import { WALLETCONNECT_CLIENT_ID, WALLETCONNECT_LINK_MODE_APPS } from "./constants/store.js";
+
+import { Crypto } from "./controllers/crypto.js";
+import { EchoClient } from "./controllers/echo.js";
+import { EventClient } from "./controllers/events.js";
+import { Expirer } from "./controllers/expirer.js";
+import { JsonRpcHistory } from "./controllers/history.js";
+import { Pairing } from "./controllers/pairing.js";
+import { Relayer } from "./controllers/relayer.js";
+import { Verify } from "./controllers/verify.js";
 
 export class Core extends ICore {
   public readonly protocol = CORE_PROTOCOL;
@@ -43,20 +40,21 @@ export class Core extends ICore {
   public readonly customStoragePrefix: ICore["customStoragePrefix"];
   public events: ICore["events"] = new EventEmitter();
   public logger: ICore["logger"];
-  public heartbeat: ICore["heartbeat"];
-  public relayer: ICore["relayer"];
-  public crypto: ICore["crypto"];
-  public storage: ICore["storage"];
-  public history: ICore["history"];
-  public expirer: ICore["expirer"];
-  public pairing: ICore["pairing"];
-  public verify: ICore["verify"];
-  public echoClient: ICore["echoClient"];
-  public linkModeSupportedApps: ICore["linkModeSupportedApps"];
-  public eventClient: ICore["eventClient"];
+  public heartbeat!: ICore["heartbeat"];
+  public relayer!: ICore["relayer"];
+  public crypto!: ICore["crypto"];
+  public storage!: ICore["storage"];
+  public history!: ICore["history"];
+  public expirer!: ICore["expirer"];
+  public pairing!: ICore["pairing"];
+  public verify!: ICore["verify"];
+  public echoClient!: ICore["echoClient"];
+  public linkModeSupportedApps!: ICore["linkModeSupportedApps"];
+  public eventClient!: ICore["eventClient"];
 
   private initialized = false;
   private logChunkController: ChunkLoggerController | null;
+  private storedOpts?: CoreTypes.Options;
 
   static async init(opts?: CoreTypes.Options) {
     const core = new Core(opts);
@@ -88,11 +86,15 @@ export class Core extends ICore {
         this.eventClient = globalCore.eventClient;
         this.initialized = globalCore.initialized;
         this.logChunkController = globalCore.logChunkController;
+        this.storedOpts = globalCore.storedOpts;
         return globalCore;
       } catch (error) {
         console.warn("Failed to copy global core", error);
       }
     }
+
+    // Store options for lazy initialization
+    this.storedOpts = opts;
 
     this.projectId = opts?.projectId;
     this.relayUrl = opts?.relayUrl || RELAYER_DEFAULT_RELAY_URL;
@@ -111,38 +113,8 @@ export class Core extends ICore {
 
     this.logChunkController = chunkLoggerController;
 
-    if (this.logChunkController?.downloadLogsBlobInBrowser) {
-      // @ts-ignore
-      window.downloadLogsBlobInBrowser = async () => {
-        // Have to null check twice because there is no guarantee
-        // this.logChunkController.downloadLogsBlobInBrowser is always truthy
-        if (this.logChunkController?.downloadLogsBlobInBrowser) {
-          this.logChunkController?.downloadLogsBlobInBrowser({
-            clientId: await this.crypto.getClientId(),
-          });
-        }
-      };
-    }
-
     this.logger = generateChildLogger(logger, this.name);
-    this.heartbeat = new HeartBeat();
-    this.crypto = new Crypto(this, this.logger, opts?.keychain);
-    this.history = new JsonRpcHistory(this, this.logger);
-    this.expirer = new Expirer(this, this.logger);
-    this.storage = opts?.storage
-      ? opts.storage
-      : new KeyValueStorage({ ...CORE_STORAGE_OPTIONS, ...opts?.storageOptions });
-    this.relayer = new Relayer({
-      core: this,
-      logger: this.logger,
-      relayUrl: this.relayUrl,
-      projectId: this.projectId,
-    });
-    this.pairing = new Pairing(this, this.logger);
-    this.verify = new Verify(this, this.logger, this.storage);
-    this.echoClient = new EchoClient(this.projectId || "", this.logger);
-    this.linkModeSupportedApps = [];
-    this.eventClient = new EventClient(this, this.logger, opts?.telemetryEnabled);
+
     this.setGlobalCore(this);
   }
 
@@ -215,6 +187,39 @@ export class Core extends ICore {
   private async initialize() {
     this.logger.trace(`Initialized`);
     try {
+      this.heartbeat = new HeartBeat();
+      this.crypto = new Crypto(this, this.logger, this.storedOpts?.keychain);
+      this.history = new JsonRpcHistory(this, this.logger);
+      this.expirer = new Expirer(this, this.logger);
+      this.storage = this.storedOpts?.storage
+        ? this.storedOpts.storage
+        : new KeyValueStorage({ ...CORE_STORAGE_OPTIONS, ...this.storedOpts?.storageOptions });
+      this.relayer = new Relayer({
+        core: this,
+        logger: this.logger,
+        relayUrl: this.relayUrl,
+        projectId: this.projectId,
+      });
+      this.pairing = new Pairing(this, this.logger);
+      this.verify = new Verify(this, this.logger, this.storage);
+      this.echoClient = new EchoClient(this.projectId || "", this.logger);
+      this.eventClient = new EventClient(this, this.logger, this.storedOpts?.telemetryEnabled);
+      this.linkModeSupportedApps = [];
+
+      // Setup download logs helper if available
+      if (this.logChunkController?.downloadLogsBlobInBrowser) {
+        // @ts-ignore
+        window.downloadLogsBlobInBrowser = async () => {
+          // Have to null check twice because there is no guarantee
+          // this.logChunkController.downloadLogsBlobInBrowser is always truthy
+          if (this.logChunkController?.downloadLogsBlobInBrowser) {
+            this.logChunkController?.downloadLogsBlobInBrowser({
+              clientId: await this.crypto.getClientId(),
+            });
+          }
+        };
+      }
+
       await this.crypto.init();
       await this.history.init();
       await this.expirer.init();
