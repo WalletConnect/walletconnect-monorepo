@@ -2,7 +2,12 @@
 // This prevents loading thousands of lines of unused utility code
 
 // CAIP utilities
-export { parseChainId } from "./caip.js";
+export {
+  parseChainId,
+  getAccountsFromNamespaces,
+  getChainsFromNamespaces,
+  getChainsFromRequiredNamespaces,
+} from "./caip.js";
 
 // CACAO utilities (authentication/signatures)
 export {
@@ -79,6 +84,7 @@ export {
   sleep,
   isExpired,
   populateAppMetadata,
+  mergeArrays,
 } from "./misc.js";
 
 // Namespace utilities
@@ -88,6 +94,8 @@ export {
   getNamespacesEvents,
   buildNamespacesFromAuth,
   mergeRequiredAndOptionalNamespaces,
+  isCaipNamespace,
+  parseNamespaceKey,
 } from "./namespaces.js";
 
 // Network utilities
