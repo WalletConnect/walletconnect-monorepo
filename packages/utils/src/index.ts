@@ -1,6 +1,3 @@
-// Optimized exports - only export what's actually used by core/sign-client/pos-client
-// This prevents loading thousands of lines of unused utility code
-
 // CAIP utilities
 export {
   parseChainId,
