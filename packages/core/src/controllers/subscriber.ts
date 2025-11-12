@@ -5,11 +5,11 @@ import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/lo
 import { RelayJsonRpc } from "@walletconnect/relay-api";
 import { ONE_SECOND, ONE_MINUTE, toMiliseconds } from "@walletconnect/time";
 import {
-  IRelayer,
+  type IRelayer,
   ISubscriber,
-  RelayerTypes,
-  SubscriberEvents,
-  SubscriberTypes,
+  type RelayerTypes,
+  type SubscriberEvents,
+  type SubscriberTypes,
 } from "@walletconnect/types";
 import {
   getSdkError,

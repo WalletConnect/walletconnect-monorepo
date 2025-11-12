@@ -1,4 +1,4 @@
-import { SessionTypes, ProposalTypes } from "@walletconnect/types";
+import type { SessionTypes, ProposalTypes } from "@walletconnect/types";
 
 interface ChainIdParams {
   namespace: string;

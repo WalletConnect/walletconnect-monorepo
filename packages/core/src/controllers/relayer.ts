@@ -20,14 +20,14 @@ import {
   toMiliseconds,
 } from "@walletconnect/time";
 import {
-  ICore,
-  IMessageTracker,
-  IPublisher,
+  type ICore,
+  type IMessageTracker,
+  type IPublisher,
   IRelayer,
-  ISubscriber,
-  RelayerOptions,
-  RelayerTypes,
-  SubscriberTypes,
+  type ISubscriber,
+  type RelayerOptions,
+  type RelayerTypes,
+  type SubscriberTypes,
 } from "@walletconnect/types";
 import {
   createExpiringPromise,

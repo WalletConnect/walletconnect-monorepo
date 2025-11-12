@@ -1,6 +1,6 @@
 import { Store } from "@walletconnect/core";
 import { Logger } from "@walletconnect/logger";
-import { ICore } from "@walletconnect/types";
+import type { ICore } from "@walletconnect/types";
 
 import {
   AUTH_KEYS_CONTEXT,

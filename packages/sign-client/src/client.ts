@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import { Core } from "@walletconnect/core";
-import { SignClientTypes, ISignClient, ISignClientEvents, EngineTypes } from "@walletconnect/types";
+import type { SignClientTypes, ISignClientEvents, EngineTypes } from "@walletconnect/types";
+import { ISignClient } from "@walletconnect/types";
 import { populateAppMetadata, createLogger } from "@walletconnect/utils";
 import { getLoggerContext } from "@walletconnect/logger";
 import {

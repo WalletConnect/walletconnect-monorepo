@@ -1,5 +1,5 @@
 import { THIRTY_DAYS, ONE_DAY, THIRTY_SECONDS } from "@walletconnect/time";
-import { RelayerTypes, PairingJsonRpcTypes } from "@walletconnect/types";
+import type { RelayerTypes, PairingJsonRpcTypes } from "@walletconnect/types";
 
 export const PAIRING_CONTEXT = "pairing";
 

@@ -1,5 +1,5 @@
 import EventEmitter from "events";
-import { ISignClient, SessionTypes } from "@walletconnect/types";
+import type { ISignClient, SessionTypes } from "@walletconnect/types";
 import { IPOSClient, POSClientTypes } from "./client.js";
 import { UtilsTypes } from "./index.js";
 import { Logger } from "@walletconnect/logger";

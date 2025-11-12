@@ -1,4 +1,4 @@
-import { SignClientTypes } from "@walletconnect/types";
+import type { SignClientTypes } from "@walletconnect/types";
 import { EthereumProvider } from "./EthereumProvider.js";
 
 export interface ProviderRpcError extends Error {

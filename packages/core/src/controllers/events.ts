@@ -1,5 +1,5 @@
 import { generateChildLogger, Logger } from "@walletconnect/logger";
-import { ICore, IEventClient, EventClientTypes } from "@walletconnect/types";
+import { type ICore, IEventClient, type EventClientTypes } from "@walletconnect/types";
 import { formatUA, isTestRun, uuidv4, getAppMetadata } from "@walletconnect/utils";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { fromMiliseconds } from "@walletconnect/time";

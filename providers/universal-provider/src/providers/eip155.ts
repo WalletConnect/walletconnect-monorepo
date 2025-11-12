@@ -1,7 +1,7 @@
 import Client from "@walletconnect/sign-client";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import { HttpConnection } from "@walletconnect/jsonrpc-http-connection";
-import { EngineTypes, SessionTypes } from "@walletconnect/types";
+import type { EngineTypes, SessionTypes } from "@walletconnect/types";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 
 import {

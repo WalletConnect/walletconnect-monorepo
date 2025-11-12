@@ -1,4 +1,4 @@
-import { AuthTypes } from "@walletconnect/types";
+import type { AuthTypes } from "@walletconnect/types";
 import { getCommonValuesInArrays } from "./misc.js";
 import { verifySignature } from "./signatures.js";
 const didPrefix = "did:pkh:";

@@ -1,5 +1,5 @@
 import { Logger } from "@walletconnect/logger";
-import { IAuth, ICore } from "@walletconnect/types";
+import type { IAuth, ICore } from "@walletconnect/types";
 import { AuthPairingTopic } from "./authPairingTopic.js";
 import { AuthRequest } from "./authRequest.js";
 import { AuthKey } from "./authKey.js";

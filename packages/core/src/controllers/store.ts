@@ -1,6 +1,6 @@
 import { isEqual } from "es-toolkit/compat";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
-import { ICore, IStore } from "@walletconnect/types";
+import { type ICore, IStore } from "@walletconnect/types";
 import {
   getInternalError,
   isProposalStruct,

@@ -1,6 +1,6 @@
 import { formatJsonRpcRequest, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
-import { IJsonRpcHistory, JsonRpcRecord, RequestEvent, ICore } from "@walletconnect/types";
+import { IJsonRpcHistory, type JsonRpcRecord, type RequestEvent, type ICore } from "@walletconnect/types";
 import { calcExpiry, getInternalError } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import { THIRTY_DAYS, toMiliseconds } from "@walletconnect/time";

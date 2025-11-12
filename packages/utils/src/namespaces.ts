@@ -1,4 +1,4 @@
-import { ProposalTypes, SessionTypes } from "@walletconnect/types";
+import type { ProposalTypes, SessionTypes } from "@walletconnect/types";
 import { mergeArrays } from "./misc.js";
 import { isConformingNamespaces, isValidNamespaces, isValidObject } from "./validators.js";
 

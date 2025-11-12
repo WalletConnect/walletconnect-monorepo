@@ -1,4 +1,4 @@
-import { SessionTypes } from "@walletconnect/types";
+import type { SessionTypes } from "@walletconnect/types";
 import { isValidObject } from "@walletconnect/utils";
 
 import { isValidJSONObject } from "./misc.js";

@@ -1,7 +1,7 @@
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { toMiliseconds } from "@walletconnect/time";
-import { ExpirerTypes, ICore, IExpirer } from "@walletconnect/types";
+import { type ExpirerTypes, type ICore, IExpirer } from "@walletconnect/types";
 import { getInternalError, formatIdTarget, formatTopicTarget } from "@walletconnect/utils";
 import { EventEmitter } from "events";
 import {

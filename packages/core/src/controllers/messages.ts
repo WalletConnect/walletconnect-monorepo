@@ -1,5 +1,5 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
-import { ICore, IMessageTracker, MessageRecord } from "@walletconnect/types";
+import { type ICore, IMessageTracker, type MessageRecord } from "@walletconnect/types";
 import { hashMessage, mapToObj, objToMap, getInternalError } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,

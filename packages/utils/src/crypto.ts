@@ -4,7 +4,7 @@ import { randomBytes } from "@noble/hashes/utils";
 import { sha256 } from "@noble/hashes/sha256";
 import { x25519 } from "@noble/curves/ed25519";
 import { p256 } from "@noble/curves/p256";
-import { CryptoTypes } from "@walletconnect/types";
+import type { CryptoTypes } from "@walletconnect/types";
 import { decodeJWT } from "@walletconnect/relay-auth";
 import { concat, fromString, toString } from "uint8arrays";
 

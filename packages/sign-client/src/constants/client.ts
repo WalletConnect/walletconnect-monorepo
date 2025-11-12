@@ -1,4 +1,4 @@
-import { SignClientTypes } from "@walletconnect/types";
+import type { SignClientTypes } from "@walletconnect/types";
 
 export const SIGN_CLIENT_PROTOCOL = "wc";
 export const SIGN_CLIENT_VERSION = 2;

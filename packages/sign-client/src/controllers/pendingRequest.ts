@@ -1,6 +1,6 @@
 import { Store } from "@walletconnect/core";
 import { Logger } from "@walletconnect/logger";
-import { ICore, PendingRequestTypes } from "@walletconnect/types";
+import type { ICore, PendingRequestTypes } from "@walletconnect/types";
 import { REQUEST_CONTEXT, SIGN_CLIENT_STORAGE_PREFIX } from "../constants/index.js";
 
 export class PendingRequest extends Store<number, PendingRequestTypes.Struct> {

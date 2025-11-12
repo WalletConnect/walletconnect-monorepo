@@ -1,6 +1,6 @@
 import { detect } from "detect-browser";
 import { FIVE_MINUTES, fromMiliseconds, toMiliseconds } from "@walletconnect/time";
-import {
+import type {
   SignClientTypes,
   RelayerClientMetadata,
   EngineTypes,

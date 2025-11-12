@@ -1,14 +1,14 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import {
-  ICore,
-  PairingTypes,
+  type ICore,
+  type PairingTypes,
   IPairing,
-  IPairingPrivate,
-  IStore,
-  RelayerTypes,
-  PairingJsonRpcTypes,
-  ExpirerTypes,
-  EventClientTypes,
+  type IPairingPrivate,
+  type IStore,
+  type RelayerTypes,
+  type PairingJsonRpcTypes,
+  type ExpirerTypes,
+  type EventClientTypes,
 } from "@walletconnect/types";
 import {
   getInternalError,

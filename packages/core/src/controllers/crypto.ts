@@ -1,6 +1,6 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
-import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
+import { type ICore, ICrypto, type IKeyChain } from "@walletconnect/types";
 import * as relayAuth from "@walletconnect/relay-auth";
 import { fromString } from "uint8arrays/from-string";
 import {

@@ -1,4 +1,4 @@
-import { SessionTypes, ProposalTypes, RelayerTypes, EngineTypes } from "@walletconnect/types";
+import type { SessionTypes, ProposalTypes, RelayerTypes, EngineTypes } from "@walletconnect/types";
 import { ErrorResponse } from "@walletconnect/jsonrpc-types";
 import {
   getNamespacesChains,

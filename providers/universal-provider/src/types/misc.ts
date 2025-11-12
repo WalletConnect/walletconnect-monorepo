@@ -1,5 +1,5 @@
 import SignClient from "@walletconnect/sign-client";
-import {
+import type {
   SignClientTypes,
   ProposalTypes,
   AuthTypes,

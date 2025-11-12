@@ -1,5 +1,5 @@
 import { merge } from "es-toolkit/compat";
-import { SessionTypes } from "@walletconnect/types";
+import type { SessionTypes } from "@walletconnect/types";
 import {
   isCaipNamespace,
   isValidObject,

@@ -9,7 +9,7 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import { CoreTypes, ICore } from "@walletconnect/types";
+import { type CoreTypes, ICore } from "@walletconnect/types";
 
 import {
   CORE_CONTEXT,

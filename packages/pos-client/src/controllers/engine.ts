@@ -1,5 +1,5 @@
 import { SignClient } from "@walletconnect/sign-client";
-import { ISignClient, ProposalTypes } from "@walletconnect/types";
+import type { ISignClient, ProposalTypes } from "@walletconnect/types";
 import { payloadId } from "@walletconnect/jsonrpc-utils";
 import { parseChainId } from "@walletconnect/utils";
 import { Logger, pino } from "@walletconnect/logger";

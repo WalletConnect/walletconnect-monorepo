@@ -1,5 +1,5 @@
 import SignClient from "@walletconnect/sign-client";
-import { SessionTypes } from "@walletconnect/types";
+import type { SessionTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 
 import {

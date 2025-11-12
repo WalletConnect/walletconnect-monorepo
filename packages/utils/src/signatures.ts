@@ -5,7 +5,7 @@ import bs58 from "bs58";
 import { blake2b } from "@noble/hashes/blake2";
 import { encode as msgpackEncode, decode as msgpackDecode } from "@msgpack/msgpack";
 import { base32 } from "@scure/base";
-import { AuthTypes } from "@walletconnect/types";
+import type { AuthTypes } from "@walletconnect/types";
 
 import { parseChainId } from "./caip.js";
 

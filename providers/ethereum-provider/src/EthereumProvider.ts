@@ -14,7 +14,7 @@ import {
   UniversalProvider,
   UniversalProviderOpts,
 } from "@walletconnect/universal-provider";
-import { AuthTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
+import type { AuthTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import {
   STORAGE_KEY,

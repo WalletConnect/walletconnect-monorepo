@@ -1,7 +1,7 @@
 import HttpConnection from "@walletconnect/jsonrpc-http-connection";
 import { JsonRpcProvider } from "@walletconnect/jsonrpc-provider";
 import Client from "@walletconnect/sign-client";
-import { EngineTypes, SessionTypes } from "@walletconnect/types";
+import type { EngineTypes, SessionTypes } from "@walletconnect/types";
 import EventEmitter from "events";
 import { GENERIC_SUBPROVIDER_NAME, PROVIDER_EVENTS } from "../constants/index.js";
 import {
