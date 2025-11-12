@@ -7,6 +7,7 @@
   "license": "SEE LICENSE IN LICENSE.md",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
+  "react-native": "dist/index.js",
   "unpkg": "dist/index.umd.js",
   "types": "dist/types/index.d.ts",
   "sideEffects": false,
@@ -14,7 +15,9 @@
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
-      "module": "./dist/index.js",
+      "react-native": "./dist/index.js",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
       "default": "./dist/index.cjs"
     }
   },
