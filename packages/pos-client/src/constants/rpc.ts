@@ -1,7 +1,7 @@
 import { POS_CLIENT_VERSION } from "./client.js";
 
-export const RPC_URL = ({ projectId }: { projectId: string }) => {
-  return `https://rpc.walletconnect.org/v1/json-rpc?projectId=${projectId}&st=node&sv=js-pos-${POS_CLIENT_VERSION}`;
+export const RPC_URL = ({ projectId, deviceId }: { projectId: string; deviceId: string }) => {
+  return `https://rpc.walletconnect.org/v1/json-rpc?projectId=${projectId}&st=node&sv=js-pos-${POS_CLIENT_VERSION}&deviceId=${deviceId}`;
 };
 
 export const RPC_ERROR_CODES = {

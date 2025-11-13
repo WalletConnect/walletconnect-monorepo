@@ -598,7 +598,7 @@ export class Engine extends IPOSClientEngine {
   };
 
   private getRpcUrl = () => {
-    return RPC_URL({ projectId: this.client.opts.projectId });
+    return RPC_URL({ projectId: this.client.opts.projectId, deviceId: this.client.opts.deviceId });
   };
 
   private persistSessionTopic = async (topic: string) => {
