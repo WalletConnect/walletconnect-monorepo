@@ -436,7 +436,21 @@ export class Engine extends IPOSClientEngine {
       let transactionResult;
       while (!transactionResult) {
         if (numCheckAttempts >= MAX_TRANSACTION_STATUS_CHECKS) {
-          throw new Error(`Transaction status not found for id: ${transaction.id}`);
+          // throw new Error(`Transaction status not found for id: ${transaction.id}`);
+
+          //TODO: Check this
+          this.logger.debug({ transaction }, "Transaction failed");
+          this.emit("payment_failed", {
+            error: {
+              message: `Transaction status not found for id: ${transaction.id}`,
+              code: 4001,
+            },
+            transaction,
+          });
+          transactionResult = {
+            status: "FAILED",
+            error: `Transaction status not found for id: ${transaction.id}`,
+          };
         }
         numCheckAttempts++;
 
