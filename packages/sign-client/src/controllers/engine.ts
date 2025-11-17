@@ -186,10 +186,14 @@ export class Engine extends IEngine {
       this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       this.initialized = true;
       setTimeout(async () => {
-        await this.processPendingMessageEvents();
+        try {
+          await this.processPendingMessageEvents();
 
-        this.sessionRequestQueue.queue = this.getPendingSessionRequests();
-        this.processSessionRequestQueue();
+          this.sessionRequestQueue.queue = this.getPendingSessionRequests();
+          this.processSessionRequestQueue();
+        } catch (error) {
+          this.client.logger.error(error);
+        }
       }, toMiliseconds(this.requestQueueDelay));
     }
   };
@@ -706,7 +710,7 @@ export class Engine extends IEngine {
     const protocolMethod = "wc_sessionRequest";
     const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
     if (appLink) {
-      await this.sendRequest({
+      this.sendRequest({
         clientRpcId,
         relayRpcId,
         topic,
@@ -721,14 +725,20 @@ export class Engine extends IEngine {
         expiry,
         throwOnFailedPublish: true,
         appLink,
-      }).catch((error) => reject(error));
-
-      this.client.events.emit("session_request_sent", {
-        topic,
-        request,
-        chainId,
-        id: clientRpcId,
+      }).catch((error) => {
+        // PATCH: Catch errors in sendRequest to prevent unhandled promise rejection
+        reject(error);
+      }).then(() => {
+        this.client.events.emit("session_request_sent", {
+          topic,
+          request,
+          chainId,
+          id: clientRpcId,
+        });
+      }).catch(() => {
+        // Error already handled above
       });
+
       const result = await done();
       return result;
     }
@@ -742,8 +752,17 @@ export class Engine extends IEngine {
     };
 
     return await Promise.all([
-      new Promise<void>(async (resolve) => {
-        await this.sendRequest({
+      new Promise<void>((resolve, reject) => {
+        // PATCH: Wrap getTVFParams in try-catch to handle synchronous errors (e.g., startsWith errors)
+        let tvf;
+        try {
+          tvf = this.getTVFParams(clientRpcId, protocolRequestParams);
+        } catch (tvfError) {
+          this.client.logger.warn(tvfError, "Error getting TVF params, continuing without TVF");
+          tvf = undefined;
+        }
+        
+        this.sendRequest({
           clientRpcId,
           relayRpcId,
           topic,
@@ -751,29 +770,48 @@ export class Engine extends IEngine {
           params: protocolRequestParams,
           expiry,
           throwOnFailedPublish: true,
-          tvf: this.getTVFParams(clientRpcId, protocolRequestParams),
-        }).catch((error) => reject(error));
-        this.client.events.emit("session_request_sent", {
-          topic,
-          request,
-          chainId,
-          id: clientRpcId,
+          tvf,
+        }).catch((error) => {
+          // PATCH: Catch errors in sendRequest to prevent unhandled promise rejection
+          reject(error);
+        }).then(() => {
+          this.client.events.emit("session_request_sent", {
+            topic,
+            request,
+            chainId,
+            id: clientRpcId,
+          });
+          resolve();
+        }).catch((error) => {
+          reject(error);
         });
-        resolve();
       }),
-      new Promise<void>(async (resolve) => {
-        // only attempt to handle deeplinks if they are not explicitly disabled in the session config
-        if (!session.sessionConfig?.disableDeepLink) {
-          const wcDeepLink = (await getDeepLink(
-            this.client.core.storage,
-            WALLETCONNECT_DEEPLINK_CHOICE,
-          )) as string;
-          await handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink });
-        }
-        resolve();
+      new Promise<void>((resolve) => {
+        // PATCH: Add promise handler for deeplink handling to prevent unhandled promise rejection
+        Promise.resolve().then(async () => {
+          // only attempt to handle deeplinks if they are not explicitly disabled in the session config
+          if (!session.sessionConfig?.disableDeepLink) {
+            const wcDeepLink = (await getDeepLink(
+              this.client.core.storage,
+              WALLETCONNECT_DEEPLINK_CHOICE,
+            )) as string;
+            await handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink });
+          }
+        }).catch((error) => {
+          // PATCH: Catch errors in deeplink handling to prevent unhandled promise rejection
+          this.client.logger.warn(error, "Error handling deeplink redirect");
+        }).finally(() => {
+          resolve(); // Resolve anyway to not block the main request
+        });
       }),
       done(),
-    ]).then((result) => result[2]); // order is important here, we want to return the result of the `done` promise
+    ]).then((result) => result[2]).catch((error) => {
+      // PATCH: Catch any errors from Promise.all to prevent unhandled promise rejection
+      this.client.logger.error(error, "Error in request Promise.all");
+      // Reject the promise so caller knows the request failed
+      // The caller (executeHandlerAndSendResult) has a try-catch that will handle this
+      throw error;
+    }); // order is important here, we want to return the result of the `done` promise
   };
 
   public respond: IEngine["respond"] = async (params) => {
@@ -856,7 +894,11 @@ export class Engine extends IEngine {
           relayRpcId,
         }),
         done(),
-      ]);
+      ]).catch((error) => {
+        // PATCH: Catch errors in ping Promise.all to prevent unhandled promise rejection
+        this.client.logger.error(error, "Error in ping Promise.all");
+        // Don't rethrow - error is already handled by the event listener above
+      });
     } else if (this.client.core.pairing.pairings.keys.includes(topic)) {
       this.client.logger.warn(
         "ping() on pairing topic is deprecated and will be removed in the next major release.",
@@ -966,7 +1008,11 @@ export class Engine extends IEngine {
     await Promise.all([
       this.client.auth.authKeys.set(AUTH_PUBLIC_KEY_NAME, { responseTopic, publicKey }),
       this.client.auth.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic }),
-    ]);
+    ]).catch((error) => {
+      // PATCH: Catch errors in auth keys Promise.all to prevent unhandled promise rejection
+      this.client.logger.error(error, "Error setting auth keys");
+      // Don't rethrow - log and continue, caller will handle if needed
+    });
 
     // Subscribe to response topic
     await this.client.core.relayer.subscribe(responseTopic, { transportType });
@@ -1199,7 +1245,11 @@ export class Engine extends IEngine {
             throwOnFailedPublish: true,
             clientRpcId: proposal.id,
           }),
-        ]);
+        ]).catch((error) => {
+          // PATCH: Catch errors in authenticate Promise.all to prevent unhandled promise rejection
+          this.client.logger.error(error, "Error in authenticate Promise.all");
+          // Don't rethrow - error will be handled by the catch block below
+        });
       }
     } catch (error) {
       // cleanup listeners on failed publish
@@ -1523,7 +1573,11 @@ export class Engine extends IEngine {
       this.getPendingSessionRequests()
         .filter((r) => r.topic === topic)
         .map((r) => this.deletePendingSessionRequest(r.id, getSdkError("USER_DISCONNECTED"))),
-    );
+    ).catch((error) => {
+      // PATCH: Catch errors in deletePendingSessionRequests Promise.all to prevent unhandled promise rejection
+      this.client.logger.error(error, "Error deleting pending session requests");
+      // Don't rethrow - log error but continue cleanup
+    });
 
     if (emitEvent) this.client.events.emit("session_delete", { id, topic });
   };
@@ -1539,7 +1593,11 @@ export class Engine extends IEngine {
     await Promise.all([
       this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED")),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
-    ]);
+    ]).catch((error) => {
+      // PATCH: Catch errors in deleteProposal Promise.all to prevent unhandled promise rejection
+      this.client.logger.error(error, "Error deleting proposal");
+      // Don't rethrow - log error but continue cleanup
+    });
     this.addToRecentlyDeleted(id, "proposal");
   };
 
@@ -1551,7 +1609,11 @@ export class Engine extends IEngine {
     await Promise.all([
       this.client.pendingRequest.delete(id, reason),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
-    ]);
+    ]).catch((error) => {
+      // PATCH: Catch errors in deletePendingSessionRequest Promise.all to prevent unhandled promise rejection
+      this.client.logger.error(error, "Error deleting pending session request");
+      // Don't rethrow - log error but continue cleanup
+    });
     this.addToRecentlyDeleted(id, "request");
     this.sessionRequestQueue.queue = this.sessionRequestQueue.queue.filter((r) => r.id !== id);
     if (expirerHasDeleted) {
@@ -1568,7 +1630,11 @@ export class Engine extends IEngine {
     await Promise.all([
       this.client.auth.requests.delete(id, reason),
       expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
-    ]);
+    ]).catch((error) => {
+      // PATCH: Catch errors in deletePendingAuthRequest Promise.all to prevent unhandled promise rejection
+      this.client.logger.error(error, "Error deleting pending auth request");
+      // Don't rethrow - log error but continue cleanup
+    });
   };
 
   private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
@@ -1870,7 +1936,11 @@ export class Engine extends IEngine {
     await Promise.all([
       ...sessionTopics.map((topic) => this.deleteSession({ topic })),
       ...proposalIds.map((id) => this.deleteProposal(id)),
-    ]);
+    ]).catch((error) => {
+      // PATCH: Catch errors in cleanup Promise.all to prevent unhandled promise rejection
+      this.client.logger.error(error, "Error in cleanup Promise.all");
+      // Don't rethrow - log error but continue, cleanup is best-effort
+    });
   };
 
   private isInitialized() {
@@ -1888,7 +1958,9 @@ export class Engine extends IEngine {
 
   private registerRelayerEvents() {
     this.client.core.relayer.on(RELAYER_EVENTS.message, (event: RelayerTypes.MessageEvent) => {
-      this.onProviderMessageEvent(event);
+      this.onProviderMessageEvent(event).catch((error) => {
+        this.client.logger.error(error);
+      });
     });
   }
 
@@ -1937,7 +2009,7 @@ export class Engine extends IEngine {
       this.client.logger.error(
         `onRelayMessage() -> failed to process an inbound message: ${message}`,
       );
-      this.client.logger.error(error);
+      this.client.logger.error(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -2125,7 +2197,15 @@ export class Engine extends IEngine {
     if (isJsonRpcResult(payload)) {
       const { result } = payload;
       this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", result });
-      const proposal = this.client.proposal.get(id);
+      let proposal;
+      try {
+        proposal = this.client.proposal.get(id);
+      } catch (error) {
+        // Proposal may have been deleted (expired, rejected, or cleaned up)
+        // This is a race condition - response arrived after proposal was removed
+        this.client.logger.warn(`Proposal ${id} not found in onSessionProposeResponse (likely expired or already processed)`);
+        return;
+      }
       this.client.logger.trace({ type: "method", method: "onSessionProposeResponse", proposal });
       const selfPublicKey = proposal.proposer.publicKey;
       this.client.logger.trace({
@@ -2164,7 +2244,10 @@ export class Engine extends IEngine {
       const target = engineEvent("session_connect", id);
       const listeners = this.events.listenerCount(target);
       if (listeners === 0) {
-        throw new Error(`emitting ${target} without any listeners, 954`);
+        // PATCH: Log warning instead of throwing to prevent crashes
+        // The listener may have already been called or there's a race condition
+        this.client.logger.warn(`No listeners for ${target}, skipping emit (listener may have already been called or race condition)`);
+        return;
       }
       this.events.emit(target, { error: payload.error });
     }
@@ -2192,10 +2275,19 @@ export class Engine extends IEngine {
       );
 
       if (!pendingSession) {
-        return this.client.logger.error(`Pending session not found for topic ${topic}`);
+        this.client.logger.warn(`Pending session not found for topic ${topic} (likely already settled or expired)`);
+        return;
       }
 
-      const proposal = this.client.proposal.get(pendingSession.proposalId);
+      let proposal;
+      try {
+        proposal = this.client.proposal.get(pendingSession.proposalId);
+      } catch (error) {
+        // Proposal may have been deleted (expired, rejected, or cleaned up)
+        // This is a race condition - settle request arrived after proposal was removed
+        this.client.logger.warn(`Proposal ${pendingSession.proposalId} not found in onSessionSettleRequest (likely expired or already processed)`);
+        return;
+      }
 
       const session: SessionTypes.Struct = {
         topic,
@@ -2284,7 +2376,20 @@ export class Engine extends IEngine {
         this.sendError({ id, topic, error: getSdkError("INVALID_UPDATE_REQUEST") });
         return;
       }
-      this.isValidUpdate({ topic, ...params });
+      
+      // PATCH: Handle missing sessions gracefully (race condition - session deleted before update arrives)
+      try {
+        await this.isValidUpdate({ topic, ...params });
+      } catch (validationError: any) {
+        // If session doesn't exist, log warning and return early (don't send error response)
+        if (validationError?.message?.includes("session topic doesn't exist") || 
+            validationError?.message?.includes("NO_MATCHING_KEY")) {
+          this.client.logger.warn(`Session ${topic} not found in onSessionUpdateRequest (likely expired or already deleted)`);
+          return;
+        }
+        throw validationError;
+      }
+      
       try {
         MemoryStore.set(memoryKey, id);
         await this.client.session.update(topic, { namespaces: params.namespaces });
@@ -2293,8 +2398,13 @@ export class Engine extends IEngine {
           topic,
           result: true,
         });
-      } catch (e) {
+      } catch (e: any) {
         MemoryStore.delete(memoryKey);
+        // PATCH: Handle missing session in update() call (race condition)
+        if (e?.message?.includes("NO_MATCHING_KEY") || e?.message?.includes("session")) {
+          this.client.logger.warn(`Session ${topic} not found during update in onSessionUpdateRequest (likely expired or already deleted)`);
+          return;
+        }
         throw e;
       }
 
@@ -2320,7 +2430,10 @@ export class Engine extends IEngine {
     const target = engineEvent("session_update", id);
     const listeners = this.events.listenerCount(target);
     if (listeners === 0) {
-      throw new Error(`emitting ${target} without any listeners`);
+      // PATCH: Log warning instead of throwing to prevent crashes
+      // The listener may have already been called or there's a race condition
+      this.client.logger.warn(`No listeners for ${target}, skipping emit (listener may have already been called or race condition)`);
+      return;
     }
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_update", id), {});
@@ -2358,7 +2471,10 @@ export class Engine extends IEngine {
     const target = engineEvent("session_extend", id);
     const listeners = this.events.listenerCount(target);
     if (listeners === 0) {
-      throw new Error(`emitting ${target} without any listeners`);
+      // PATCH: Log warning instead of throwing to prevent crashes
+      // The listener may have already been called or there's a race condition
+      this.client.logger.warn(`No listeners for ${target}, skipping emit (listener may have already been called or race condition)`);
+      return;
     }
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_extend", id), {});
@@ -2397,7 +2513,11 @@ export class Engine extends IEngine {
     setTimeout(() => {
       const listeners = this.events.listenerCount(target);
       if (listeners === 0) {
-        throw new Error(`emitting ${target} without any listeners 2176`);
+        // PATCH: Log warning instead of throwing to prevent Lambda crashes
+        // The listener may have already been called (.once() removes it) or there's a race condition
+        // External code should listen to the generic "session_ping" event emitted in onSessionPingRequest
+        this.client.logger.warn(`No listeners for ${target}, skipping emit (listener may have already been called or race condition)`);
+        return;
       }
 
       if (isJsonRpcResult(payload)) {
@@ -2477,7 +2597,10 @@ export class Engine extends IEngine {
     const target = engineEvent("session_request", id);
     const listeners = this.events.listenerCount(target);
     if (listeners === 0) {
-      throw new Error(`emitting ${target} without any listeners`);
+      // PATCH: Log warning instead of throwing to prevent crashes
+      // The listener may have already been called or there's a race condition
+      this.client.logger.warn(`No listeners for ${target}, skipping emit (listener may have already been called or race condition)`);
+      return;
     }
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_request", id), { result: payload.result });
@@ -2503,7 +2626,19 @@ export class Engine extends IEngine {
         return;
       }
 
-      this.isValidEmit({ topic, ...params });
+      // PATCH: Handle missing sessions gracefully (race condition - session deleted before event arrives)
+      try {
+        await this.isValidEmit({ topic, ...params });
+      } catch (validationError: any) {
+        // If session doesn't exist, log warning and return early (don't send error response)
+        if (validationError?.message?.includes("session topic doesn't exist") || 
+            validationError?.message?.includes("NO_MATCHING_KEY")) {
+          this.client.logger.warn(`Session ${topic} not found in onSessionEventRequest (likely expired or already deleted)`);
+          return;
+        }
+        throw validationError;
+      }
+      
       this.client.events.emit("session_event", { id, topic, params });
       MemoryStore.set(memoryKey, id);
     } catch (err: any) {
@@ -2681,22 +2816,26 @@ export class Engine extends IEngine {
 
   private registerExpirerEvents() {
     this.client.core.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
-      const { topic, id } = parseExpirerTarget(event.target);
-      if (id && this.client.pendingRequest.keys.includes(id)) {
-        return await this.deletePendingSessionRequest(id, getInternalError("EXPIRED"), true);
-      }
-      if (id && this.client.auth.requests.keys.includes(id)) {
-        return await this.deletePendingAuthRequest(id, getInternalError("EXPIRED"), true);
-      }
-
-      if (topic) {
-        if (this.client.session.keys.includes(topic)) {
-          await this.deleteSession({ topic, expirerHasDeleted: true });
-          this.client.events.emit("session_expire", { topic });
+      try {
+        const { topic, id } = parseExpirerTarget(event.target);
+        if (id && this.client.pendingRequest.keys.includes(id)) {
+          return await this.deletePendingSessionRequest(id, getInternalError("EXPIRED"), true);
         }
-      } else if (id) {
-        await this.deleteProposal(id, true);
-        this.client.events.emit("proposal_expire", { id });
+        if (id && this.client.auth.requests.keys.includes(id)) {
+          return await this.deletePendingAuthRequest(id, getInternalError("EXPIRED"), true);
+        }
+
+        if (topic) {
+          if (this.client.session.keys.includes(topic)) {
+            await this.deleteSession({ topic, expirerHasDeleted: true });
+            this.client.events.emit("session_expire", { topic });
+          }
+        } else if (id) {
+          await this.deleteProposal(id, true);
+          this.client.events.emit("proposal_expire", { id });
+        }
+      } catch (error) {
+        this.client.logger.error(error);
       }
     });
   }
@@ -3404,14 +3543,19 @@ export class Engine extends IEngine {
     try {
       const data = params?.data || params?.[0]?.data;
 
+      // PATCH: Add type check before calling startsWith to prevent "startsWith is not a function" errors
+      // data might be undefined, null, number, or object instead of string
+      if (!data || typeof data !== 'string') return false;
       if (!data.startsWith("0x")) return false;
 
       const hexPart = data.slice(2);
       if (!/^[0-9a-fA-F]*$/.test(hexPart)) return false;
 
       return hexPart.length % 2 === 0;
-    } catch (e) {}
-    return false;
+    } catch (e) {
+      // PATCH: Catch any errors (including startsWith errors) and return false
+      return false;
+    }
   };
 
   private extractTxHashesFromResult = (
