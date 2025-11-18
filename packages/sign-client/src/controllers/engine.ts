@@ -1987,6 +1987,11 @@ export class Engine extends IEngine {
         encoding: transportType === TRANSPORT_TYPES.link_mode ? BASE64URL : BASE64,
       });
 
+      if (!payload) {
+        this.client.logger.warn(`onRelayMessage() -> decode returned undefined for topic: ${topic}`);
+        return;
+      }
+
       if (isJsonRpcRequest(payload)) {
         this.client.core.history.set(topic, payload);
         await this.onRelayEventRequest({
@@ -2089,7 +2094,13 @@ export class Engine extends IEngine {
 
   private onRelayEventResponse: EnginePrivate["onRelayEventResponse"] = async (event) => {
     const { topic, payload, transportType } = event;
-    const record = await this.client.core.history.get(topic, payload.id);
+    let record;
+    try {
+      record = await this.client.core.history.get(topic, payload.id);
+    } catch (error) {
+      this.client.logger.warn(`onRelayEventResponse() -> history record not found for id ${payload.id}: ${error instanceof Error ? error.message : String(error)}`);
+      return;
+    }
     const resMethod = record.request.method as JsonRpcTypes.WcMethod;
 
     switch (resMethod) {

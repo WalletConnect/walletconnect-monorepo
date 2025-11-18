@@ -143,21 +143,22 @@ export class Crypto implements ICrypto {
       const message = decodeTypeTwoEnvelope(encoded, opts?.encoding);
       return safeJsonParse(message);
     }
-    if (isTypeOneEnvelope(params)) {
-      const selfPublicKey = params.receiverPublicKey;
-      const peerPublicKey = params.senderPublicKey;
-      topic = await this.generateSharedKey(selfPublicKey, peerPublicKey);
-    }
     try {
+      if (isTypeOneEnvelope(params)) {
+        const selfPublicKey = params.receiverPublicKey;
+        const peerPublicKey = params.senderPublicKey;
+        topic = await this.generateSharedKey(selfPublicKey, peerPublicKey);
+      }
       const symKey = this.getSymKey(topic);
       const message = decrypt({ symKey, encoded, encoding: opts?.encoding });
       const payload = safeJsonParse(message);
       return payload;
     } catch (error) {
-      this.logger.error(
+      this.logger.warn(
         `Failed to decode message from topic: '${topic}', clientId: '${await this.getClientId()}'`,
       );
-      this.logger.error(error);
+      this.logger.warn(error instanceof Error ? error.message : String(error));
+      return undefined;
     }
   };
 

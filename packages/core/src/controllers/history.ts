@@ -97,14 +97,18 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.logger.debug(`Updating JSON-RPC response history record`);
     this.logger.trace({ type: "method", method: "update", response });
     if (!this.records.has(response.id)) return;
-    const record = await this.getRecord(response.id);
-    if (typeof record.response !== "undefined") return;
-    record.response = isJsonRpcError(response)
-      ? { error: response.error }
-      : { result: response.result };
-    this.records.set(record.id, record);
-    this.persist();
-    this.events.emit(HISTORY_EVENTS.updated, record);
+    try {
+      const record = await this.getRecord(response.id);
+      if (typeof record.response !== "undefined") return;
+      record.response = isJsonRpcError(response)
+        ? { error: response.error }
+        : { result: response.result };
+      this.records.set(record.id, record);
+      this.persist();
+      this.events.emit(HISTORY_EVENTS.updated, record);
+    } catch (error) {
+      this.logger.warn(`Failed to resolve history record ${response.id}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   public get: IJsonRpcHistory["get"] = async (topic, id) => {
