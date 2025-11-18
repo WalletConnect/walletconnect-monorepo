@@ -1843,24 +1843,27 @@ export class Engine extends IEngine {
     let tvf;
     try {
       record = await this.client.core.history.get(topic, id);
-      const request = record.request;
-      try {
-        tvf = this.getTVFParams(id, request.params, result);
-      } catch (error) {
-        this.client.logger.warn(
-          `sendResult() -> getTVFParams() failed: ${(error as Error)?.message}`,
-        );
+      if (record) {
+        const request = record.request;
+        try {
+          tvf = this.getTVFParams(id, request.params, result);
+        } catch (error) {
+          this.client.logger.warn(
+            `sendResult() -> getTVFParams() failed: ${(error as Error)?.message}`,
+          );
+        }
       }
     } catch (error) {
-      this.client.logger.error(`sendResult() -> history.get(${topic}, ${id}) failed`);
-      throw error;
+      this.client.logger.warn(`sendResult() -> history.get(${topic}, ${id}) failed: ${error instanceof Error ? error.message : String(error)}`);
+      // Continue without record - use default opts if record not found
+      record = null;
     }
 
     if (isLinkMode) {
       const redirectURL = getLinkModeURL(appLink, topic, message);
       await (global as any).Linking.openURL(redirectURL, this.client.name);
     } else {
-      const method = record.request.method as JsonRpcTypes.WcMethod;
+      const method = record ? (record.request.method as JsonRpcTypes.WcMethod) : "wc_sessionRequest";
       const opts = ENGINE_RPC_OPTS[method].res;
 
       opts.tvf = {
@@ -1881,7 +1884,11 @@ export class Engine extends IEngine {
       }
     }
 
-    await this.client.core.history.resolve(payload);
+    try {
+      await this.client.core.history.resolve(payload);
+    } catch (error) {
+      this.client.logger.warn(`sendResult() -> history.resolve() failed for id ${id}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   private sendError: EnginePrivate["sendError"] = async (params) => {
@@ -1904,21 +1911,28 @@ export class Engine extends IEngine {
     try {
       record = await this.client.core.history.get(topic, id);
     } catch (error) {
-      this.client.logger.error(`sendError() -> history.get(${topic}, ${id}) failed`);
-      throw error;
+      this.client.logger.warn(`sendError() -> history.get(${topic}, ${id}) failed: ${error instanceof Error ? error.message : String(error)}`);
+      // Continue without record - use default opts if record not found
+      record = null;
     }
 
     if (isLinkMode) {
       const redirectURL = getLinkModeURL(appLink, topic, message);
       await (global as any).Linking.openURL(redirectURL, this.client.name);
     } else {
-      const method = record.request.method as JsonRpcTypes.WcMethod;
+      const method = record ? (record.request.method as JsonRpcTypes.WcMethod) : "wc_sessionRequest";
       const opts = rpcOpts || ENGINE_RPC_OPTS[method].res;
       // await is intentionally omitted to speed up performance
-      this.client.core.relayer.publish(topic, message, opts);
+      this.client.core.relayer.publish(topic, message, opts).catch((error) => {
+        this.client.logger.error(`sendError() -> relayer.publish() failed for topic ${topic}: ${error instanceof Error ? error.message : String(error)}`);
+      });
     }
 
-    await this.client.core.history.resolve(payload);
+    try {
+      await this.client.core.history.resolve(payload);
+    } catch (error) {
+      this.client.logger.warn(`sendError() -> history.resolve() failed for id ${id}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   private cleanup: EnginePrivate["cleanup"] = async () => {
