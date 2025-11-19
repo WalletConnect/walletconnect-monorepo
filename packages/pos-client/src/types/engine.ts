@@ -77,6 +77,7 @@ export abstract class IPOSClientEngine {
   public abstract createPaymentIntent(params: {
     paymentIntents: POSClientTypes.PaymentIntent[];
     manualControl?: boolean;
+    walletPayEnabled?: boolean;
   }): Promise<void>;
 
   public abstract restart(params?: { reinit?: boolean }): Promise<void>;

@@ -3,6 +3,7 @@ import { ISignClient, ProposalTypes } from "@walletconnect/types";
 import { payloadId } from "@walletconnect/jsonrpc-utils";
 import { parseChainId } from "@walletconnect/utils";
 import { Logger, pino } from "@walletconnect/logger";
+import { FIVE_MINUTES } from "@walletconnect/time";
 
 import {
   IPOSClientEngine,
@@ -10,7 +11,11 @@ import {
   POSClientTypes,
   UtilsTypes,
 } from "../types/index.js";
-import { isValidPaymentIntent, isValidToken } from "../utils/index.js";
+import {
+  formatAcceptedPaymentFromPaymentIntent,
+  isValidPaymentIntent,
+  isValidToken,
+} from "../utils/index.js";
 import {
   CLIENT_STORAGE_OPTIONS,
   MAX_TRANSACTION_STATUS_CHECKS,
@@ -113,7 +118,7 @@ export class Engine extends IPOSClientEngine {
   };
 
   public createPaymentIntent: IPOSClientEngine["createPaymentIntent"] = async (params) => {
-    const { paymentIntents, manualControl } = params;
+    const { paymentIntents, manualControl, walletPayEnabled } = params;
     this.logger.debug({ paymentIntents }, "Creating payment intent");
 
     if (paymentIntents.length === 0) {
@@ -149,6 +154,15 @@ export class Engine extends IPOSClientEngine {
     const namespaces = this.composeNamespaces(paymentIntents);
     const { uri, approval } = await this.signClient.connect({
       optionalNamespaces: namespaces,
+      ...(walletPayEnabled && {
+        walletPay: {
+          version: "1.0.0",
+          acceptedPayments: paymentIntents.map((paymentIntent) =>
+            formatAcceptedPaymentFromPaymentIntent(paymentIntent),
+          ),
+          expiry: FIVE_MINUTES,
+        },
+      }),
     });
     this.logger.debug({ uri }, "Connected to the WalletConnect network");
     if (!uri) {
@@ -327,7 +341,7 @@ export class Engine extends IPOSClientEngine {
 
     try {
       await this.prepareTransactionsFromPaymentIntents();
-      this.sendTransactionsToWallet();
+      await this.sendTransactionsToWallet();
     } catch (error) {
       this.logger.error(error, "Error while sending payments to wallet");
     }
@@ -507,6 +521,15 @@ export class Engine extends IPOSClientEngine {
     await this.persistSessionTopic(session.topic);
     this.emit("connected", { session });
     this.logger.debug("Emitted connected event");
+
+    if (session.walletPayResult) {
+      for (const walletPayResult of session.walletPayResult) {
+        await this.awaitPaymentConfirmed({
+          transaction: { id: walletPayResult.txid } as any,
+          result: walletPayResult.txid,
+        });
+      }
+    }
 
     if (!this.manualControl) {
       await this.sendPaymentsToWallet();

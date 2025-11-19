@@ -596,6 +596,66 @@ describe("Sign Integration", () => {
     expect(pos.engine.manualControl).to.be.true;
   });
 
+  it("should create payment intent with wallet pay enabled", async () => {
+    const paymentIntents: POSClientTypes.PaymentIntent[] = [
+      {
+        token: {
+          network: { name: "Ethereum", chainId: "eip155:8453" },
+          symbol: "USDC",
+          standard: "ERC20",
+          address: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`,
+        },
+        amount: "1",
+        recipient: `eip155:8453:0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C52`,
+      },
+    ];
+
+    wallet.events.once("session_proposal", async (sessionProposal) => {
+      console.log("session_proposal", JSON.stringify(sessionProposal, null, 2));
+      const walletPay = sessionProposal.params.requests?.walletPay;
+      if (!walletPay) {
+        throw new Error("Wallet pay is missing");
+      }
+      await wallet.approve({
+        id: sessionProposal.id,
+        namespaces: {
+          eip155: {
+            ...sessionProposal.params.optionalNamespaces.eip155,
+            accounts: [`eip155:8453:0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C52`],
+          },
+        },
+        proposalRequestsResponses: {
+          walletPay: [
+            {
+              version: walletPay.version,
+              orderId: walletPay.orderId,
+              txid: "0xff16b7197277088039a45f9e23ccbb32077ebeec1e56e49b24b2f3731e1bd452",
+              recipient: walletPay.acceptedPayments[0].recipient,
+              asset: walletPay.acceptedPayments[0].asset,
+              amount: walletPay.acceptedPayments[0].amount,
+            },
+          ],
+        },
+      });
+    });
+
+    pos.once("qr_ready", ({ uri: qrReadyUri }) => {
+      wallet.pair({ uri: qrReadyUri });
+    });
+
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        pos.once("payment_successful", () => {
+          console.log("payment_successful");
+          resolve();
+        });
+      }),
+      pos.createPaymentIntent({ paymentIntents, manualControl: true, walletPayEnabled: true }),
+    ]);
+    // @ts-expect-error - testing private property
+    expect(pos.engine.manualControl).to.be.true;
+  });
+
   it("should reject multiple calls to send payments to wallet", async () => {
     // @ts-expect-error - testing private property
     pos.engine.paymentsSendingInProgress = true;
