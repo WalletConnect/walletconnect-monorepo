@@ -270,7 +270,7 @@ export class Engine extends IEngine {
         active = pairing.active;
       }
     } catch (error) {
-      this.client.logger.error(`connect() -> pairing.get(${topic}) failed`);
+      // Don't log here - error will be logged by caller
       throw error;
     }
     if (!topic || !active) {
@@ -394,7 +394,7 @@ export class Engine extends IEngine {
     try {
       return await this.client.core.pairing.pair(params);
     } catch (error) {
-      this.client.logger.error("pair() failed");
+      // Don't log here - error will be logged by caller
       throw error;
     }
   };
@@ -416,18 +416,18 @@ export class Engine extends IEngine {
     try {
       await this.isValidProposalId(params?.id);
     } catch (error) {
-      this.client.logger.error(`approve() -> proposal.get(${params?.id}) failed`);
       configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found);
+      // Don't log here - error will be logged by caller
       throw error;
     }
 
     try {
       await this.isValidApprove(params);
     } catch (error) {
-      this.client.logger.error("approve() -> isValidApprove() failed");
       configEvent.setError(
         EVENT_CLIENT_SESSION_ERRORS.session_approve_namespace_validation_failure,
       );
+      // Don't log here - error will be logged by caller
       throw error;
     }
 
@@ -540,10 +540,10 @@ export class Engine extends IEngine {
 
       event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_approve_publish_success);
     } catch (error) {
-      this.client.logger.error(error);
       // if the publish fails, delete the session and throw an error
       this.client.session.delete(sessionTopic, getSdkError("USER_DISCONNECTED"));
       await this.client.core.relayer.unsubscribe(sessionTopic);
+      // Don't log here - error will be logged by caller
       throw error;
     }
 
@@ -568,7 +568,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidReject(params);
     } catch (error) {
-      this.client.logger.error("reject() -> isValidReject() failed");
+      // Don't log here - error will be logged by caller
       throw error;
     }
     const { id, reason } = params;
@@ -577,7 +577,7 @@ export class Engine extends IEngine {
       const proposal = this.client.proposal.get(id);
       pairingTopic = proposal.pairingTopic;
     } catch (error) {
-      this.client.logger.error(`reject() -> proposal.get(${id}) failed`);
+      // Don't log here - error will be logged by caller
       throw error;
     }
 
@@ -599,7 +599,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidUpdate(params);
     } catch (error) {
-      this.client.logger.error("update() -> isValidUpdate() failed");
+      // Don't log here - error will be logged by caller
       throw error;
     }
     const { topic, namespaces } = params;
@@ -647,7 +647,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidExtend(params);
     } catch (error) {
-      this.client.logger.error("extend() -> isValidExtend() failed");
+      // Don't log here - error will be logged by caller
       throw error;
     }
 
@@ -685,7 +685,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidRequest(params);
     } catch (error) {
-      this.client.logger.error("request() -> isValidRequest() failed");
+      // Don't log here - error will be logged by caller
       throw error;
     }
     const { chainId, request, topic, expiry = ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl } = params;
@@ -773,7 +773,8 @@ export class Engine extends IEngine {
           tvf,
         }).catch((error) => {
           // PATCH: Catch errors in sendRequest to prevent unhandled promise rejection
-          reject(error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          reject(new Error(`SendRequest failed for method ${request?.method || protocolMethod}, chainId ${chainId || 'none'}: ${errorMessage}`));
         }).then(() => {
           this.client.events.emit("session_request_sent", {
             topic,
@@ -783,6 +784,7 @@ export class Engine extends IEngine {
           });
           resolve();
         }).catch((error) => {
+          // Error already wrapped above, just reject
           reject(error);
         });
       }),
@@ -807,10 +809,16 @@ export class Engine extends IEngine {
       done(),
     ]).then((result) => result[2]).catch((error) => {
       // PATCH: Catch any errors from Promise.all to prevent unhandled promise rejection
-      this.client.logger.error(error, "Error in request Promise.all");
+      // Enhance error with context about which request failed
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const requestMethod = request?.method || 'unknown';
+      const enhancedError = new Error(`Promise.all failed in request - method: ${requestMethod}, chainId: ${chainId || 'none'}, error: ${errorMessage}`);
+      if (error instanceof Error && error.stack) {
+        enhancedError.stack = error.stack;
+      }
+      // Don't log here - error will be logged by caller (executeHandlerAndSendResult)
       // Reject the promise so caller knows the request failed
-      // The caller (executeHandlerAndSendResult) has a try-catch that will handle this
-      throw error;
+      throw enhancedError;
     }); // order is important here, we want to return the result of the `done` promise
   };
 
@@ -869,7 +877,7 @@ export class Engine extends IEngine {
     try {
       await this.isValidPing(params);
     } catch (error) {
-      this.client.logger.error("ping() -> isValidPing() failed");
+      // Don't log here - error will be logged by caller
       throw error;
     }
     const { topic } = params;
@@ -1700,7 +1708,7 @@ export class Engine extends IEngine {
       message = await this.client.core.crypto.encode(topic, payload, { encoding });
     } catch (error) {
       await this.cleanup();
-      this.client.logger.error(`sendRequest() -> core.crypto.encode() for topic ${topic} failed`);
+      // Don't log here - error will be logged by caller
       throw error;
     }
 
@@ -1904,7 +1912,7 @@ export class Engine extends IEngine {
       });
     } catch (error) {
       await this.cleanup();
-      this.client.logger.error(`sendError() -> core.crypto.encode() for topic ${topic} failed`);
+      // Don't log here - error will be logged by caller
       throw error;
     }
     let record;
