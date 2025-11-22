@@ -222,6 +222,53 @@ export class Engine extends IEngine {
     }
   }
 
+  private serializeError(error: unknown): string {
+    if (error instanceof Error) {
+      const parts: string[] = [];
+      if (error.name && error.name !== 'Error') {
+        parts.push(error.name);
+      }
+      if (error.message) {
+        parts.push(error.message);
+      } else if (parts.length === 0) {
+        parts.push('Error');
+      }
+      if (error.code) {
+        parts.push(`(code: ${error.code})`);
+      }
+      if (error.stack && !error.message) {
+        const stackLines = error.stack.split('\n');
+        if (stackLines.length > 0) {
+          parts.push(`at ${stackLines[0].trim()}`);
+        }
+      }
+      return parts.join(' ');
+    }
+    if (typeof error === 'object' && error !== null) {
+      try {
+        const serialized = JSON.stringify(error);
+        if (serialized === '{}') {
+          const keys = Object.keys(error);
+          const ownProps = Object.getOwnPropertyNames(error);
+          if (keys.length === 0 && ownProps.length > 0) {
+            return `[object with non-enumerable properties: ${ownProps.join(', ')}]`;
+          }
+          if (keys.length === 0) {
+            return '[empty object]';
+          }
+        }
+        return serialized;
+      } catch (e) {
+        const errorStr = String(error);
+        if (errorStr === '[object Object]') {
+          return `[object: ${Object.getPrototypeOf(error)?.constructor?.name || 'Object'}]`;
+        }
+        return errorStr;
+      }
+    }
+    return String(error);
+  }
+
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async (params) => {
@@ -773,8 +820,33 @@ export class Engine extends IEngine {
           tvf,
         }).catch((error) => {
           // PATCH: Catch errors in sendRequest to prevent unhandled promise rejection
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          reject(new Error(`SendRequest failed for method ${request?.method || protocolMethod}, chainId ${chainId || 'none'}: ${errorMessage}`));
+          // Capture error details immediately before they might be lost
+          const errorType = error?.constructor?.name || typeof error;
+          const errorKeys = error && typeof error === 'object' ? Object.keys(error) : [];
+          const errorOwnProps = error && typeof error === 'object' ? Object.getOwnPropertyNames(error) : [];
+          const errorStringified = error && typeof error === 'object' ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : String(error);
+          
+          const errorMessage = this.serializeError(error);
+          const wrappedError = new Error(`SendRequest failed for method ${request?.method || protocolMethod}, chainId ${chainId || 'none'}: ${errorMessage}`);
+          
+          // Preserve all error information in stack trace
+          let errorDetails = `Error type: ${errorType}`;
+          if (errorKeys.length > 0) {
+            errorDetails += `, keys: [${errorKeys.join(', ')}]`;
+          }
+          if (errorOwnProps.length > errorKeys.length) {
+            errorDetails += `, ownProps: [${errorOwnProps.join(', ')}]`;
+          }
+          errorDetails += `, stringified: ${errorStringified}`;
+          
+          if (error instanceof Error && error.stack) {
+            wrappedError.stack = `SendRequest error details: ${errorDetails}\nOriginal stack: ${error.stack}\n${wrappedError.stack}`;
+          } else if (error && typeof error === 'object') {
+            wrappedError.stack = `SendRequest error details: ${errorDetails}\n${wrappedError.stack}`;
+          } else {
+            wrappedError.stack = `SendRequest error details: ${errorDetails}\n${wrappedError.stack}`;
+          }
+          reject(wrappedError);
         }).then(() => {
           this.client.events.emit("session_request_sent", {
             topic,
@@ -809,12 +881,34 @@ export class Engine extends IEngine {
       done(),
     ]).then((result) => result[2]).catch((error) => {
       // PATCH: Catch any errors from Promise.all to prevent unhandled promise rejection
-      // Enhance error with context about which request failed
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      // Capture error details immediately before they might be lost
+      const errorType = error?.constructor?.name || typeof error;
+      const errorKeys = error && typeof error === 'object' ? Object.keys(error) : [];
+      const errorOwnProps = error && typeof error === 'object' ? Object.getOwnPropertyNames(error) : [];
+      const errorStringified = error && typeof error === 'object' ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : String(error);
+      
+      const errorMessage = this.serializeError(error);
       const requestMethod = request?.method || 'unknown';
       const enhancedError = new Error(`Promise.all failed in request - method: ${requestMethod}, chainId: ${chainId || 'none'}, error: ${errorMessage}`);
+      
+      // Preserve all error information in stack trace
+      let errorDetails = `Error type: ${errorType}`;
+      if (errorKeys.length > 0) {
+        errorDetails += `, keys: [${errorKeys.join(', ')}]`;
+      } else if (error && typeof error === 'object') {
+        errorDetails += `, keys: [] (empty object)`;
+      }
+      if (errorOwnProps.length > errorKeys.length) {
+        errorDetails += `, ownProps: [${errorOwnProps.join(', ')}]`;
+      }
+      errorDetails += `, stringified: ${errorStringified}`;
+      
       if (error instanceof Error && error.stack) {
-        enhancedError.stack = error.stack;
+        enhancedError.stack = `Promise.all error details: ${errorDetails}\nOriginal stack: ${error.stack}\n${enhancedError.stack}`;
+      } else if (error && typeof error === 'object') {
+        enhancedError.stack = `Promise.all error details: ${errorDetails}\n${enhancedError.stack}`;
+      } else {
+        enhancedError.stack = `Promise.all error details: ${errorDetails}\n${enhancedError.stack}`;
       }
       // Don't log here - error will be logged by caller (executeHandlerAndSendResult)
       // Reject the promise so caller knows the request failed
@@ -2638,7 +2732,16 @@ export class Engine extends IEngine {
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_request", id), { result: payload.result });
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("session_request", id), { error: payload.error });
+      // PATCH: Handle empty error objects from wallet responses
+      let error = payload.error;
+      if (error && typeof error === 'object' && Object.keys(error).length === 0) {
+        error = {
+          message: "Transaction was rejected or failed",
+          code: -32000,
+          data: "Empty error object received from wallet"
+        };
+      }
+      this.events.emit(engineEvent("session_request", id), { error });
     }
   };
 
@@ -2698,7 +2801,16 @@ export class Engine extends IEngine {
     if (isJsonRpcResult(payload)) {
       this.events.emit(engineEvent("session_request", id), { result: payload.result });
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("session_request", id), { error: payload.error });
+      // PATCH: Handle empty error objects from wallet responses
+      let error = payload.error;
+      if (error && typeof error === 'object' && Object.keys(error).length === 0) {
+        error = {
+          message: "Transaction was rejected or failed",
+          code: -32000,
+          data: "Empty error object received from wallet"
+        };
+      }
+      this.events.emit(engineEvent("session_request", id), { error });
     }
   };
 
@@ -2797,8 +2909,17 @@ export class Engine extends IEngine {
       );
       forSession.forEach((r) => {
         // notify .request() handler of the rejection
+        // PATCH: Handle empty error objects
+        let errorToEmit = error;
+        if (errorToEmit && typeof errorToEmit === 'object' && Object.keys(errorToEmit).length === 0) {
+          errorToEmit = {
+            message: "Session request was rejected or failed",
+            code: -32000,
+            data: "Empty error object received"
+          };
+        }
         this.events.emit(engineEvent("session_request", r.request.id), {
-          error,
+          error: errorToEmit,
         });
       });
     }
