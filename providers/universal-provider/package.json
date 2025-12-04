@@ -51,7 +51,7 @@
     "@walletconnect/sign-client": "2.23.0",
     "@walletconnect/types": "2.23.0",
     "@walletconnect/utils": "2.23.0",
-    "es-toolkit": "1.39.3",
+    "es-toolkit": "1.42.0",
     "events": "3.3.0"
   },
   "devDependencies": {
