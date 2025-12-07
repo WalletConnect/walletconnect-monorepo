@@ -1,0 +1,1 @@
+# @walletconnect/pos-client
