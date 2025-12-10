@@ -215,7 +215,7 @@ describe("Canary", () => {
           successful,
           latencyMs,
           [
-            { initLatency: initLatencyMs },
+            { initLatency: warmClientLatencyMs },
             { handshakeLatency: handshakeLatencyMs },
             { proposePairingLatency: clientAConnectLatencyMs },
             { settlePairingLatency: settlePairingLatencyMs - clientAConnectLatencyMs },
