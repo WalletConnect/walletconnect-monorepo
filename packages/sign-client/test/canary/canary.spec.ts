@@ -29,14 +29,22 @@ describe("Canary", () => {
   const metric_prefix = "HappyPath.connects";
   describe("HappyPath", () => {
     it("connects", async () => {
-      const initStart = Date.now();
+      const coldClientStart = Date.now();
       const handshakeClient = await SignClient.init({
         ...TEST_SIGN_CLIENT_OPTIONS_A,
         logger,
       });
-      const initLatencyMs = Date.now() - initStart;
+      const coldClientLatencyMs = Date.now() - coldClientStart;
+      const warmClientStart = Date.now();
+      const warmClient = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS_A,
+        logger,
+      });
+      const warmClientLatencyMs = Date.now() - warmClientStart;
+      log(`Cold client initialized in ${coldClientLatencyMs}ms`);
+      log(`Warm client initialized in ${warmClientLatencyMs}ms`);
       log(
-        `Client A (${await handshakeClient.core.crypto.getClientId()}) initialized in ${initLatencyMs}ms`,
+        `Client A (${await warmClient.core.crypto.getClientId()}) initialized in ${warmClientLatencyMs}ms`,
       );
       const handshakeStart = Date.now();
       //@ts-expect-error
