@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/types",
   "description": "Typings for WalletConnect Protocol",
-  "version": "2.23.0",
+  "version": "2.23.1",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "SEE LICENSE IN LICENSE.md",
@@ -31,7 +31,7 @@
     "@walletconnect/heartbeat": "1.2.2",
     "@walletconnect/jsonrpc-types": "1.0.4",
     "@walletconnect/keyvaluestorage": "1.1.1",
-    "@walletconnect/logger": "3.0.0",
+    "@walletconnect/logger": "3.0.1",
     "events": "3.3.0"
   },
   "repository": {

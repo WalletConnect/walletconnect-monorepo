@@ -1,5 +1,11 @@
 # @walletconnect/react-native-compat
 
+## 2.23.1
+
+### Patch Changes
+
+- [#7085](https://github.com/WalletConnect/walletconnect-monorepo/pull/7085) [`41c8ebd`](https://github.com/WalletConnect/walletconnect-monorepo/commit/41c8ebd19739aa8a346a7c054a75320243860a77) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Updated `@walletconnect/logger` to `3.0.1`
+
 ## 2.23.0
 
 ### Minor Changes
