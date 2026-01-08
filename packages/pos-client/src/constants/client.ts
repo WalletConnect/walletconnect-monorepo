@@ -11,6 +11,6 @@ export const CLIENT_STORAGE_OPTIONS = {
 
 export const POS_CLIENT_VERSION = "1.0.0";
 
-export const MAX_TRANSACTION_STATUS_CHECKS = 10;
+export const MAX_TRANSACTION_STATUS_CHECKS = 50;
 
 export const DEFAULT_LOGGER_LEVEL = "error";
