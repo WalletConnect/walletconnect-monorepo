@@ -12,7 +12,9 @@ interface AccountIdParams extends ChainIdParams {
 const CAIP_DELIMITER = ":";
 
 export function parseChainId(chain: string): ChainIdParams {
-  const [namespace, reference] = chain.split(CAIP_DELIMITER);
+  // PATCH: Ensure chain is a string before calling split to prevent errors
+  const chainStr = typeof chain === 'string' ? chain : String(chain);
+  const [namespace, reference] = chainStr.split(CAIP_DELIMITER);
   return { namespace, reference };
 }
 

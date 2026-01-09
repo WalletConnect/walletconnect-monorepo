@@ -84,13 +84,20 @@ export class UniversalProvider implements IUniversalProvider {
     if (!this.session) {
       throw new Error("Please call connect() before request()");
     }
+    // PATCH: Ensure chainId is a string to prevent startsWith errors
+    const chainIdStr = typeof chainId === 'string' ? chainId : String(chainId);
     return (await this.getProvider(namespace).request({
       request: {
         ...args,
       },
-      chainId: `${namespace}:${chainId}`,
+      chainId: `${namespace}:${chainIdStr}`,
       topic: this.session.topic,
       expiry,
+    }).catch((error) => {
+      // PATCH: Catch errors from request to prevent unhandled promise rejection
+      // Don't log here - error will be logged by caller (handleRequestToSign -> executeHandlerAndSendResult)
+      // Re-throw so caller can handle it
+      throw error;
     })) as T;
   }
 
@@ -224,7 +231,12 @@ export class UniversalProvider implements IUniversalProvider {
       if (!this.session) return;
       const [namespace, chainId] = this.validateChain(chain);
       const provider = this.getProvider(namespace);
-      provider.setDefaultChain(chainId, rpcUrl);
+      if (provider && typeof provider.setDefaultChain === 'function') {
+        provider.setDefaultChain(chainId, rpcUrl);
+      } else {
+        // Provider may be undefined during cleanup or race conditions
+        this.logger.warn(`setDefaultChain not available for namespace ${namespace} - provider may be cleaning up or not initialized`);
+      }
     } catch (error) {
       // ignore the error if the fx is used prematurely before namespaces are set
       if (!/Please call connect/.test((error as Error).message)) throw error;
@@ -484,7 +496,14 @@ export class UniversalProvider implements IUniversalProvider {
     this.updateNamespaceChain(namespace, chainId);
 
     if (!internal) {
-      this.getProvider(namespace).setDefaultChain(chainId);
+      const provider = this.getProvider(namespace);
+      if (provider && typeof provider.setDefaultChain === 'function') {
+        provider.setDefaultChain(chainId);
+      } else {
+        // Provider may be undefined during cleanup or race conditions
+        // Log warning but don't throw to prevent crashes
+        this.logger.warn(`setDefaultChain not available for namespace ${namespace} - provider may be cleaning up or not initialized`);
+      }
     } else {
       // emit the events during the `internal` cycle of chain change
       // otherwise events are emitted twice

@@ -170,7 +170,14 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
       }
 
       const { message } = getInternalError("NO_MATCHING_KEY", `${this.name}: ${key}`);
-      this.logger.error(message);
+      // PATCH: Use warn() for proposals and sessions instead of error() to prevent stack traces
+      // Missing proposals/sessions are expected in race conditions (expired, rejected, cleaned up)
+      // The error is already handled gracefully in onSessionProposeResponse, onSessionUpdateRequest, onSessionEventRequest
+      if (this.name === "proposal" || this.name === "session") {
+        this.logger.warn(message);
+      } else {
+        this.logger.error(message);
+      }
       throw new Error(message);
     }
     return value;

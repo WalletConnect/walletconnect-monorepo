@@ -13,11 +13,35 @@ const CAPABILITIES_KEYS = [
 ];
 
 const hexToDecimal = (hex?: string) => {
-  return hex && hex.startsWith("0x") ? BigInt(hex).toString(10) : hex;
+  // PATCH: Add type check before calling startsWith to prevent "startsWith is not a function" errors
+  // Use explicit type guard that can't be optimized away by bundler
+  if (hex == null) {
+    return hex;
+  }
+  const hexType = typeof hex;
+  if (hexType !== 'string') {
+    // Return as string to ensure decimalToHex receives a string
+    return String(hex);
+  }
+  // At this point we know hex is a string, safe to call startsWith
+  return hex.startsWith("0x") ? BigInt(hex).toString(10) : hex;
 };
 
 const decimalToHex = (decimal: string) => {
-  return decimal && decimal.startsWith("0x") ? decimal : `0x${BigInt(decimal).toString(16)}`;
+  // PATCH: Add type check before calling startsWith to prevent "startsWith is not a function" errors
+  // Use explicit type guard that can't be optimized away by bundler
+  if (decimal == null) {
+    return decimal;
+  }
+  const decimalType = typeof decimal;
+  if (decimalType !== 'string') {
+    return decimal;
+  }
+  // At this point we know decimal is a string, safe to call startsWith
+  if (decimal.startsWith("0x")) {
+    return decimal;
+  }
+  return `0x${BigInt(decimal).toString(16)}`;
 };
 
 const getCapabilitiesFromObject = (object: Record<string, any>) => {
@@ -55,12 +79,16 @@ export const extractCapabilitiesFromSession = (
   const globalCapabilities = getCapabilitiesFromObject(sessionProperties);
 
   for (const chain of chainIds) {
-    const chainId = hexToDecimal(chain);
+    // PATCH: Ensure chain is a string before calling hexToDecimal
+    const chainStr = typeof chain === 'string' ? chain : String(chain);
+    const chainId = hexToDecimal(chainStr);
     if (!chainId) {
       continue;
     }
 
-    result[decimalToHex(chainId)] = globalCapabilities;
+    // PATCH: Ensure chainId is a string before calling decimalToHex
+    const chainIdStr = typeof chainId === 'string' ? chainId : String(chainId);
+    result[decimalToHex(chainIdStr)] = globalCapabilities;
 
     const chainSpecific = scopedProperties?.[`${EIP155_PREFIX}:${chainId}`];
 
@@ -68,8 +96,10 @@ export const extractCapabilitiesFromSession = (
       const addressSpecific = chainSpecific?.[`${EIP155_PREFIX}:${chainId}:${address}`];
 
       // use the address specific capabilities if they exist, otherwise use the chain specific capabilities
-      result[decimalToHex(chainId)] = {
-        ...result[decimalToHex(chainId)],
+      // PATCH: Ensure chainId is a string before calling decimalToHex
+      const chainIdStr = typeof chainId === 'string' ? chainId : String(chainId);
+      result[decimalToHex(chainIdStr)] = {
+        ...result[decimalToHex(chainIdStr)],
         ...getCapabilitiesFromObject(addressSpecific || chainSpecific),
       };
     }
