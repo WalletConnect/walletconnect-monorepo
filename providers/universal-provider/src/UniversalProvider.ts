@@ -344,6 +344,7 @@ export class UniversalProvider implements IUniversalProvider {
             namespace: combinedNamespace,
           });
           break;
+        case "solaxy":
         default:
           this.rpcProviders[namespace] = new GenericProvider({
             namespace: combinedNamespace,
