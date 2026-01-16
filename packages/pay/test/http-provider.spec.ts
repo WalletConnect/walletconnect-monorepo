@@ -5,7 +5,11 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { HttpProvider, createHttpProvider, isHttpProviderAvailable } from "../src/providers/http.js";
+import {
+  HttpProvider,
+  createHttpProvider,
+  isHttpProviderAvailable,
+} from "../src/providers/http.js";
 import type { PayProviderConfig } from "../src/types/index.js";
 
 // Mock fetch globally
@@ -265,7 +269,10 @@ describe("HttpProvider", () => {
 
     it("should throw error on API failure", async () => {
       mockFetch.mockResolvedValueOnce(
-        createMockResponse(mockApiResponses.errorResponse("payment_not_found", "Payment not found"), 404),
+        createMockResponse(
+          mockApiResponses.errorResponse("payment_not_found", "Payment not found"),
+          404,
+        ),
       );
 
       await expect(
@@ -549,7 +556,10 @@ describe("HttpProvider", () => {
 
     it("should throw error on API failure", async () => {
       mockFetch.mockResolvedValueOnce(
-        createMockResponse(mockApiResponses.errorResponse("invalid_signature", "Invalid signature"), 422),
+        createMockResponse(
+          mockApiResponses.errorResponse("invalid_signature", "Invalid signature"),
+          422,
+        ),
       );
 
       await expect(

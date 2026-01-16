@@ -263,7 +263,10 @@ export class HttpProvider implements PayProvider {
       amount: raw.amount,
       etaS: raw.etaS,
       actions: raw.actions
-        .filter((a): a is RawAction & { type: "walletRpc"; data: RawWalletRpcAction } => a.type === "walletRpc")
+        .filter(
+          (a): a is RawAction & { type: "walletRpc"; data: RawWalletRpcAction } =>
+            a.type === "walletRpc",
+        )
         .map((a) => this.transformAction(a.data)),
     };
   }
@@ -271,7 +274,11 @@ export class HttpProvider implements PayProvider {
   /**
    * Fetch/resolve build actions from the API
    */
-  private async fetch(paymentId: string, optionId: string, data: string = ""): Promise<RawAction[]> {
+  private async fetch(
+    paymentId: string,
+    optionId: string,
+    data: string = "",
+  ): Promise<RawAction[]> {
     const response = await this.request<RawFetchResponse>(
       "POST",
       `/v1/gateway/payment/${paymentId}/fetch`,
@@ -283,7 +290,11 @@ export class HttpProvider implements PayProvider {
   /**
    * Resolve all actions for an option (handles build actions)
    */
-  private async resolveActions(paymentId: string, optionId: string, actions: RawAction[]): Promise<Action[]> {
+  private async resolveActions(
+    paymentId: string,
+    optionId: string,
+    actions: RawAction[],
+  ): Promise<Action[]> {
     const resolved: Action[] = [];
 
     for (const action of actions) {
@@ -323,7 +334,11 @@ export class HttpProvider implements PayProvider {
       paymentId,
       info: response.info
         ? {
-            status: response.info.status as PaymentOptionsResponse["info"] extends { status: infer S } ? S : never,
+            status: response.info.status as PaymentOptionsResponse["info"] extends {
+              status: infer S;
+            }
+              ? S
+              : never,
             amount: response.info.amount,
             expiresAt: response.info.expiresAt,
             merchant: response.info.merchant,
