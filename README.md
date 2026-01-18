@@ -40,6 +40,79 @@ sudo xcode-select --switch /Library/Developer/CommandLineTools
 sudo xcode-select --reset
 ```
 
+## Simple WalletConnect Example (Beginner)
+
+This example shows how to connect a wallet using **WalletConnect v2** and log the connected Ethereum address in a basic JavaScript app.
+
+### Install Dependencies
+
+```bash
+npm install @walletconnect/sign-client @walletconnect/modal ethers
+```
+### Example Code
+
+```js
+import SignClient from '@walletconnect/sign-client'
+import { WalletConnectModal } from '@walletconnect/modal'
+import { ethers } from 'ethers'
+
+// 1. Get your Project ID from WalletConnect Cloud and paste it here
+const projectId = 'YOUR_REAL_PROJECT_ID_HERE' 
+
+const modal = new WalletConnectModal({
+  projectId,
+  themeMode: 'dark'
+})
+
+async function connectWallet() {
+  try {
+    // Initialization
+    const client = await SignClient.init({
+      projectId,
+      metadata: {
+        name: 'WalletConnect Demo',
+        description: 'Beginner WalletConnect v2 Example',
+        url: 'https://example.com',
+        icons: ['https://walletconnect.com/walletconnect-logo.png']
+      }
+    })
+
+    // Request connection
+    const { uri, approval } = await client.connect({
+      requiredNamespaces: {
+        eip155: {
+          methods: ['eth_sendTransaction', 'eth_sign', 'personal_sign', 'eth_signTypedData'],
+          chains: ['eip155:1'], // Mainnet
+          events: ['chainChanged', 'accountsChanged']
+        }
+      }
+    })
+
+    // Open modal
+    if (uri) {
+      modal.openModal({ uri })
+      
+      // Wait for user approval
+      const session = await approval()
+      
+      // Close modal once connected
+      modal.closeModal()
+
+      // 2. Get address from session
+      // Extracting address from format "eip155:1:0xAddress..."
+      const account = session.namespaces.eip155.accounts[0].split(':')[2] 
+      console.log('Connected Address:', account)
+    }
+  } catch (error) {
+    // Catch error if user closes modal or rejects connection
+    console.error('Connection failed or rejected:', error)
+    modal.closeModal() 
+  }
+}
+
+connectWallet()
+```
+
 ## License
 
 Apache 2.0
