@@ -53,7 +53,7 @@
     "@walletconnect/types": "2.23.3",
     "@walletconnect/utils": "2.23.3",
     "@walletconnect/window-getters": "1.0.1",
-    "es-toolkit": "1.39.3",
+    "es-toolkit": "1.44.0",
     "events": "3.3.0",
     "uint8arrays": "3.1.1"
   },

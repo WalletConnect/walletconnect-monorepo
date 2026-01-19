@@ -51,13 +51,13 @@
     "@walletconnect/sign-client": "2.23.3",
     "@walletconnect/types": "2.23.3",
     "@walletconnect/utils": "2.23.3",
-    "es-toolkit": "1.39.3",
+    "es-toolkit": "1.44.0",
     "events": "3.3.0"
   },
   "devDependencies": {
-    "ethers": "6.15.0",
-    "hardhat": "^3.0.6",
-    "uint8arrays": "3.0.0",
+    "ethers": "6.16.0",
+    "hardhat": "^3.1.4",
+    "uint8arrays": "3.1.1",
     "wait-on": "9.0.1",
     "web3": "4.16.0"
   },
