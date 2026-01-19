@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { getApplicationModule } from "./module/index.ts";
+import { getApplicationModule, getPayModule } from "./module/index.ts";
 
 // Polyfill TextEncode / TextDecode
 import "fast-text-encoding";
@@ -75,4 +75,19 @@ if (typeof global?.Application === "undefined") {
     // eslint-disable-next-line no-console
     console.error("react-native-compat: Application module is not available");
   }
+}
+
+// Set up globalThis.ReactNative.NativeModules.RNWalletConnectPay for @walletconnect/pay
+try {
+  const payModule = getPayModule();
+  if (payModule) {
+    if (typeof globalThis.ReactNative === "undefined") {
+      globalThis.ReactNative = { NativeModules: {} };
+    } else if (!globalThis.ReactNative.NativeModules) {
+      globalThis.ReactNative.NativeModules = {};
+    }
+    globalThis.ReactNative.NativeModules.RNWalletConnectPay = payModule;
+  }
+} catch (e) {
+  // Pay module not available - this is fine, it's optional
 }

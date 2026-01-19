@@ -9,10 +9,10 @@ import java.util.HashMap
 
 class RNWalletConnectModulePackage : TurboReactPackage() {
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
-    return if (name == RNWalletConnectModuleModule.NAME) {
-      RNWalletConnectModuleModule(reactContext)
-    } else {
-      null
+    return when (name) {
+      RNWalletConnectModuleModule.NAME -> RNWalletConnectModuleModule(reactContext)
+      RNWalletConnectPayModule.NAME -> RNWalletConnectPayModule(reactContext)
+      else -> null
     }
   }
 
@@ -20,15 +20,29 @@ class RNWalletConnectModulePackage : TurboReactPackage() {
     return ReactModuleInfoProvider {
       val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()
       val isTurboModule: Boolean = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
+      
+      // Existing WalletConnect module
       moduleInfos[RNWalletConnectModuleModule.NAME] = ReactModuleInfo(
         RNWalletConnectModuleModule.NAME,
         RNWalletConnectModuleModule.NAME,
         false,  // canOverrideExistingModule
         false,  // needsEagerInit
-        true,  // hasConstants
+        true,   // hasConstants
         false,  // isCxxModule
         isTurboModule // isTurboModule
       )
+      
+      // WalletConnect Pay module
+      moduleInfos[RNWalletConnectPayModule.NAME] = ReactModuleInfo(
+        RNWalletConnectPayModule.NAME,
+        RNWalletConnectPayModule.NAME,
+        false,  // canOverrideExistingModule
+        false,  // needsEagerInit
+        false,  // hasConstants
+        false,  // isCxxModule
+        isTurboModule // isTurboModule
+      )
+      
       moduleInfos
     }
   }

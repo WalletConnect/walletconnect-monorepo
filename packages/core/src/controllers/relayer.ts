@@ -270,6 +270,9 @@ export class Relayer extends IRelayer {
 
   public async transportClose() {
     this.transportExplicitlyClosed = true;
+    clearTimeout(this.reconnectTimeout);
+    this.reconnectTimeout = undefined;
+    this.reconnectInProgress = false;
     await this.transportDisconnect();
   }
 
@@ -577,10 +580,12 @@ export class Relayer extends IRelayer {
   private onProviderErrorHandler = (error: Error) => {
     this.logger.fatal(`Fatal socket error: ${error.message}`);
     this.events.emit(RELAYER_EVENTS.error, error);
-    // close the transport when a fatal error is received as there's no way to recover from it
-    // usual cases are missing/invalid projectId, expired jwt token, invalid origin etc
     this.logger.fatal("Fatal socket error received, closing transport");
-    this.transportClose();
+    this.transportExplicitlyClosed = true;
+    clearTimeout(this.reconnectTimeout);
+    this.reconnectTimeout = undefined;
+    this.reconnectInProgress = false;
+    this.transportClose().catch((e) => this.logger.warn(e));
   };
 
   private registerProviderListeners = () => {

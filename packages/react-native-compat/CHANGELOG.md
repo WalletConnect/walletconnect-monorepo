@@ -1,5 +1,13 @@
 # @walletconnect/react-native-compat
 
+## 2.23.3
+
+### Patch Changes
+
+- [#7124](https://github.com/WalletConnect/walletconnect-monorepo/pull/7124) [`d98d994`](https://github.com/WalletConnect/walletconnect-monorepo/commit/d98d994cb8ee467375c33e5d793337f8ad261716) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - feat(react-native-compat): add RNWalletConnectPay native module for iOS and Android
+
+## 2.23.2
+
 ## 2.23.1
 
 ### Patch Changes

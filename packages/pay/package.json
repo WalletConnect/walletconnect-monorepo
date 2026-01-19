@@ -1,0 +1,59 @@
+{
+  "name": "@walletconnect/pay",
+  "description": "Pay SDK for WalletConnect - TypeScript wrapper for native uniffi module",
+  "version": "1.0.1",
+  "private": false,
+  "author": "WalletConnect, Inc. <walletconnect.com>",
+  "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "unpkg": "dist/index.umd.js",
+  "types": "dist/types/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "module": "./dist/index.js",
+      "default": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "wallet",
+    "walletconnect",
+    "pay",
+    "payments",
+    "crypto"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:pre": "npm run clean; ../../scripts/update_pay_sdk_version.sh",
+    "build:types": "tsc",
+    "build:source": "rollup --config rollup.config.js",
+    "build": "npm run build:pre; npm run build:source; npm run build:types",
+    "test:pre": "rm -rf ./test/tmp",
+    "test": "npm run test:pre; vitest run --dir test --reporter=verbose",
+    "lint": "eslint -c '../../.eslintrc' --fix './src/**/*.ts'",
+    "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
+  },
+  "dependencies": {
+    "@walletconnect/logger": "3.0.2",
+    "@walletconnect/types": "2.23.3",
+    "@walletconnect/utils": "2.23.3"
+  },
+  "peerDependencies": {
+    "react-native": ">=0.64.0"
+  },
+  "peerDependenciesMeta": {
+    "react-native": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "vitest": "3.2.4"
+  }
+}
