@@ -155,6 +155,7 @@ describe("WalletConnectPay with MockProvider", () => {
         options: [
           {
             id: "opt_usdc_base",
+            account: "eip155:8453:0xabc",
             amount: {
               unit: "caip19/eip155:8453/erc20:0xUSDC",
               value: "1000000",
@@ -170,6 +171,7 @@ describe("WalletConnectPay with MockProvider", () => {
           },
           {
             id: "opt_usdc_ethereum",
+            account: "eip155:1:0xabc",
             amount: {
               unit: "caip19/eip155:1/erc20:0xUSDC",
               value: "1000000",
@@ -185,6 +187,7 @@ describe("WalletConnectPay with MockProvider", () => {
           },
           {
             id: "opt_dai",
+            account: "eip155:1:0xabc",
             amount: {
               unit: "caip19/eip155:1/erc20:0xDAI",
               value: "1000000000000000000",

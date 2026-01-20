@@ -22,9 +22,13 @@ export interface PayProviderConfig {
   /** Base URL for the Pay API */
   baseUrl: string;
   /** WalletConnect Project ID */
-  projectId: string;
-  /** API key for authentication */
-  apiKey: string;
+  projectId?: string;
+  /** API key for authentication (either apiKey or appId required) */
+  apiKey?: string;
+  /** App ID for authentication (either apiKey or appId required) */
+  appId?: string;
+  /** Client ID for tracking */
+  clientId?: string;
   /** SDK name for tracking */
   sdkName: string;
   /** SDK version for tracking */

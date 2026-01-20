@@ -33,8 +33,9 @@ The SDK auto-detects the best available provider for your environment.
 import { WalletConnectPay } from "@walletconnect/pay";
 
 const client = new WalletConnectPay({
-  projectId: "your-project-id",
-  apiKey: "your-api-key",
+  appId: "your-app-id",
+  // OR use apiKey instead:
+  // apiKey: "your-api-key",
 });
 ```
 
@@ -134,12 +135,15 @@ if (options.collectData) {
 new WalletConnectPay(options: WalletConnectPayOptions)
 ```
 
-| Option    | Type   | Required | Description                     |
-| --------- | ------ | -------- | ------------------------------- |
-| projectId | string | Yes      | WalletConnect Project ID        |
-| apiKey    | string | Yes      | Pay API key                     |
-| baseUrl   | string | No       | Custom API base URL             |
-| logger    | Logger | No       | Custom logger instance or level |
+| Option   | Type   | Required | Description                                  |
+| -------- | ------ | -------- | -------------------------------------------- |
+| appId    | string | No*      | App ID for authentication                    |
+| apiKey   | string | No*      | API key for authentication                   |
+| clientId | string | No       | Client ID for tracking                       |
+| baseUrl  | string | No       | Custom API base URL                          |
+| logger   | Logger | No       | Custom logger instance or level              |
+
+\* Either `appId` or `apiKey` must be provided for authentication.
 
 #### Methods
 
@@ -224,6 +228,7 @@ type PaymentStatus = "requires_action" | "processing" | "succeeded" | "failed" |
 ```typescript
 interface PaymentOption {
   id: string;
+  account: string; // CAIP-10 account for this option
   amount: PayAmount;
   etaS: number;
   actions: Action[];

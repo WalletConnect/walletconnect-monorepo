@@ -188,6 +188,7 @@ export function createMockPaymentOptionsResponse(
     options: [
       {
         id: "opt_1",
+        account: "eip155:8453:0x1234567890123456789012345678901234567890",
         amount: {
           unit: "caip19/eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
           value: "1000000",
@@ -196,6 +197,7 @@ export function createMockPaymentOptionsResponse(
             assetName: "USD Coin",
             decimals: 6,
             iconUrl: "https://example.com/usdc.png",
+            networkIconUrl: "https://example.com/base.png",
             networkName: "Base",
           },
         },
@@ -225,6 +227,7 @@ export function createMockPaymentOptionsWithInfo(
           assetName: "USD Coin",
           decimals: 6,
           iconUrl: "https://example.com/usdc.png",
+          networkIconUrl: "https://example.com/base.png",
           networkName: "Base",
         },
       },

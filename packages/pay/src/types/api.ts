@@ -29,6 +29,8 @@ export interface AmountDisplay {
   decimals: number;
   /** URL of the icon of the asset (if token) */
   iconUrl?: string;
+  /** URL of the network icon */
+  networkIconUrl?: string;
   /** Name of the network of the asset (if token) */
   networkName?: string;
 }
@@ -145,6 +147,8 @@ export interface PaymentInfo {
 export interface PaymentOption {
   /** ID of the option */
   id: string;
+  /** CAIP-10 account for this option */
+  account: string;
   /** The option's token and amount */
   amount: PayAmount;
   /** Estimated time to complete the option, in seconds */
