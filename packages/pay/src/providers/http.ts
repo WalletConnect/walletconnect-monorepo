@@ -40,6 +40,7 @@ interface RawAction {
  */
 interface RawPaymentOption {
   id: string;
+  account: string;
   amount: {
     unit: string;
     value: string;
@@ -121,10 +122,14 @@ export class HttpProvider implements PayProvider {
     this.baseUrl = config.baseUrl;
     this.headers = {
       "Content-Type": "application/json",
-      "Api-Key": config.apiKey,
       "Sdk-Name": config.sdkName,
       "Sdk-Version": config.sdkVersion,
       "Sdk-Platform": config.sdkPlatform,
+      ...(config.apiKey
+        ? { "Api-Key": config.apiKey }
+        : config.appId
+          ? { "App-Id": config.appId }
+          : {}),
     };
   }
 
@@ -260,6 +265,7 @@ export class HttpProvider implements PayProvider {
   private transformPaymentOption(raw: RawPaymentOption): PaymentOption {
     return {
       id: raw.id,
+      account: raw.account,
       amount: raw.amount,
       etaS: raw.etaS,
       actions: raw.actions

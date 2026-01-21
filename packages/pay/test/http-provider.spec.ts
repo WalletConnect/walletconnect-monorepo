@@ -56,10 +56,11 @@ const testConfig: PayProviderConfig = {
  * Create mock API responses matching the Pay API format
  */
 const mockApiResponses = {
-  paymentOptions: (paymentId: string, includeInfo = false) => ({
+  paymentOptions: (_paymentId: string, includeInfo = false) => ({
     options: [
       {
         id: "opt_1",
+        account: "eip155:8453:0xabc123",
         amount: {
           unit: "caip19/eip155:8453/erc20:0xUSDC",
           value: "1000000",
@@ -704,7 +705,7 @@ describe("HttpProvider", () => {
         ok: true,
         status: 200,
         json: () => Promise.reject(new Error("Invalid JSON")),
-      } as Response);
+      } as unknown as Response);
 
       await expect(
         provider.getPaymentOptions({
