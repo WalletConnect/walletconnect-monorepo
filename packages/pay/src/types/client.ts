@@ -8,12 +8,13 @@ import type { Logger } from "@walletconnect/logger";
  * Options for initializing the Pay client
  */
 export interface WalletConnectPayOptions {
-  /** WalletConnect Project ID */
-  projectId: string;
-  /** API key for Pay service */
-  apiKey: string;
+  /** App ID for authentication (either apiKey or appId required) */
+  appId?: string;
+  /** API key for authentication (either apiKey or appId required) */
+  apiKey?: string;
   /** Custom base URL (defaults to production) */
   baseUrl?: string;
-  /** Custom logger instance */
-  logger?: Logger | string;
+  clientId?: string;
+  /** Custom logger instance or level */
+  logger?: Logger | "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
 }

@@ -30,8 +30,8 @@ import {
 import { createProvider, isProviderAvailable } from "./providers/index.js";
 
 export class WalletConnectPay {
-  public readonly projectId: string;
-  public readonly apiKey: string;
+  public readonly appId?: string;
+  public readonly apiKey?: string;
   public readonly baseUrl: string;
 
   private readonly logger: Logger;
@@ -42,7 +42,7 @@ export class WalletConnectPay {
    * @param opts - Client options
    */
   constructor(opts: WalletConnectPayOptions) {
-    this.projectId = opts.projectId;
+    this.appId = opts.appId;
     this.apiKey = opts.apiKey;
     this.baseUrl = opts.baseUrl ?? PAY_API_BASE_URL;
 
@@ -55,10 +55,13 @@ export class WalletConnectPay {
     this.logger.trace(`${LOGGER_CONTEXT} initialized`);
 
     // Build provider config
+    // Note: appId is used as projectId for error reporting/telemetry
     const providerConfig: PayProviderConfig = {
       baseUrl: this.baseUrl,
-      projectId: this.projectId,
-      apiKey: this.apiKey,
+      projectId: opts.appId,
+      apiKey: opts.apiKey,
+      appId: opts.appId,
+      clientId: opts.clientId,
       sdkName: SDK_NAME,
       sdkVersion: SDK_VERSION,
       sdkPlatform: getSdkPlatform(),
