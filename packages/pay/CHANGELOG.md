@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.2
+
+### Patch Changes
+
+- [#7138](https://github.com/WalletConnect/walletconnect-monorepo/pull/7138) [`2d7ab8c`](https://github.com/WalletConnect/walletconnect-monorepo/commit/2d7ab8cafc47d14f8f8f3beed4b038d46862988d) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Stable release of `@walletconnect/pay`
+
+- Updated dependencies []:
+  - @walletconnect/utils@2.23.4
+  - @walletconnect/types@2.23.4
+
 ## 1.0.1
 
 ### Patch Changes

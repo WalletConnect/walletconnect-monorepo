@@ -1,5 +1,14 @@
 # @walletconnect/sign-client
 
+## 2.23.4
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @walletconnect/utils@2.23.4
+  - @walletconnect/core@2.23.4
+  - @walletconnect/types@2.23.4
+
 ## 2.23.3
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @walletconnect/react-native-compat
 
+## 2.23.4
+
+### Patch Changes
+
+- [#7138](https://github.com/WalletConnect/walletconnect-monorepo/pull/7138) [`2d7ab8c`](https://github.com/WalletConnect/walletconnect-monorepo/commit/2d7ab8cafc47d14f8f8f3beed4b038d46862988d) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Updated Yttrium version iOS-"0.10.15"/Android-"0.10.14"
+
 ## 2.23.3
 
 ### Patch Changes
