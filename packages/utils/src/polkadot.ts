@@ -1,8 +1,8 @@
-import bs58 from "bs58";
+import { base58 } from "@scure/base";
 import { blake2b } from "blakejs";
 
 export function ss58AddressToPublicKey(address: string): Uint8Array {
-  const decoded = bs58.decode(address);
+  const decoded = base58.decode(address);
   if (decoded.length < 33) throw new Error("Too short to contain a public key");
   return decoded.slice(1, 33);
 }
@@ -66,7 +66,7 @@ function normalizeHex(input: string): string {
 }
 
 function guessSignatureTypeFromAddress(address: string): number {
-  const decoded = bs58.decode(address);
+  const decoded = base58.decode(address);
   const prefix = decoded[0];
   if (prefix === 42) return 0x00; // Ed25519
   if (prefix === 60) return 0x02; // Secp256k1
