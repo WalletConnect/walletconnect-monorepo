@@ -15,6 +15,7 @@ import type {
   GetRequiredPaymentActionsParams,
   ConfirmPaymentParams,
   PaymentOption,
+  PaymentStatus,
 } from "../types/index.js";
 import { PayError } from "../types/index.js";
 
@@ -103,6 +104,15 @@ interface RawFetchResponse {
 }
 
 /**
+ * Raw API response for status/confirm
+ */
+interface RawStatusResponse {
+  status: string;
+  isFinal: boolean;
+  pollInMs?: number;
+}
+
+/**
  * Cached payment option for resolving build actions
  */
 interface CachedPaymentOption {
@@ -125,12 +135,21 @@ export class HttpProvider implements PayProvider {
       "Sdk-Name": config.sdkName,
       "Sdk-Version": config.sdkVersion,
       "Sdk-Platform": config.sdkPlatform,
-      ...(config.apiKey
-        ? { "Api-Key": config.apiKey }
-        : config.appId
-          ? { "App-Id": config.appId }
-          : {}),
+      ...this.buildAuthHeader(config),
     };
+  }
+
+  /**
+   * Build authentication header based on config
+   */
+  private buildAuthHeader(config: PayProviderConfig): Record<string, string> {
+    if (config.apiKey) {
+      return { "Api-Key": config.apiKey };
+    }
+    if (config.appId) {
+      return { "App-Id": config.appId };
+    }
+    return {};
   }
 
   /**
@@ -156,87 +175,90 @@ export class HttpProvider implements PayProvider {
   }
 
   /**
+   * Safely decode a URI component, returning the original string on failure
+   */
+  private safeDecodeUri(value: string): string {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  }
+
+  /**
+   * Extract a parameter value from a query string
+   */
+  private extractQueryParam(query: string, paramName: string): string | null {
+    const prefix = `${paramName}=`;
+    for (const param of query.split("&")) {
+      if (param.startsWith(prefix)) {
+        const value = param.slice(prefix.length);
+        if (value.length > 0) return value;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Extract payment ID from a link's query string or path
+   */
+  private extractPidFromLink(link: string): string | null {
+    const queryStart = link.indexOf("?");
+
+    if (queryStart !== -1) {
+      const query = link.slice(queryStart + 1);
+      const pidFromQuery = this.extractQueryParam(query, "pid");
+      if (pidFromQuery) return pidFromQuery;
+    }
+
+    const lastSlash = link.lastIndexOf("/");
+    const lastSegment = lastSlash !== -1 ? link.slice(lastSlash + 1) : link;
+    const cleanSegment = lastSegment.split("?")[0];
+
+    if (cleanSegment.length > 0 && !cleanSegment.includes("%")) {
+      return cleanSegment;
+    }
+
+    return null;
+  }
+
+  /**
+   * Try to extract payment ID from a wc: URI
+   */
+  private tryExtractFromWcUri(uri: string): string | null {
+    const queryStart = uri.indexOf("?");
+    if (queryStart === -1) return null;
+
+    const query = uri.slice(queryStart + 1);
+    const payParam = this.extractQueryParam(query, "pay");
+    if (!payParam) return null;
+
+    const payLink = this.safeDecodeUri(payParam);
+    return this.extractPidFromLink(payLink);
+  }
+
+  /**
    * Extract payment ID from a payment link
    */
   private extractPaymentId(paymentLink: string): string {
-    const urlDecode = (s: string): string => {
-      try {
-        return decodeURIComponent(s);
-      } catch {
-        return s;
-      }
-    };
+    const decoded = this.safeDecodeUri(paymentLink);
 
-    const extractPidFromQuery = (query: string): string | null => {
-      for (const param of query.split("&")) {
-        if (param.startsWith("pid=")) {
-          const id = param.slice(4);
-          if (id.length > 0) return id;
-        }
-      }
-      return null;
-    };
-
-    const extractPidFromLink = (link: string): string | null => {
-      // Check for ?pid= query param
-      const queryStart = link.indexOf("?");
-      if (queryStart !== -1) {
-        const query = link.slice(queryStart + 1);
-        const id = extractPidFromQuery(query);
-        if (id) return id;
-      }
-
-      // Try last path segment
-      const lastSlash = link.lastIndexOf("/");
-      const lastSegment = lastSlash !== -1 ? link.slice(lastSlash + 1) : link;
-      const cleanSegment = lastSegment.split("?")[0];
-
-      if (cleanSegment.length > 0 && !cleanSegment.includes("%")) {
-        return cleanSegment;
-      }
-
-      return null;
-    };
-
-    const extractPayParamValue = (query: string): string | null => {
-      for (const param of query.split("&")) {
-        if (param.startsWith("pay=")) {
-          return urlDecode(param.slice(4));
-        }
-      }
-      return null;
-    };
-
-    const tryExtractFromWcUri = (uri: string): string | null => {
-      const queryStart = uri.indexOf("?");
-      if (queryStart === -1) return null;
-
-      const query = uri.slice(queryStart + 1);
-      const payLink = extractPayParamValue(query);
-      if (!payLink) return null;
-
-      return extractPidFromLink(payLink);
-    };
-
-    const decoded = urlDecode(paymentLink);
-
-    // Check for wc: URI
+    // Check for wc: URI (both decoded and original)
     if (decoded.startsWith("wc:")) {
-      const id = tryExtractFromWcUri(decoded);
+      const id = this.tryExtractFromWcUri(decoded);
       if (id) return id;
     }
 
     if (paymentLink.startsWith("wc:")) {
-      const id = tryExtractFromWcUri(paymentLink);
+      const id = this.tryExtractFromWcUri(paymentLink);
       if (id) return id;
     }
 
-    // Try to extract from decoded link
-    const decodedId = extractPidFromLink(decoded);
+    // Try to extract from decoded link first, then original
+    const decodedId = this.extractPidFromLink(decoded);
     if (decodedId) return decodedId;
 
-    // Try to extract from original link
-    const originalId = extractPidFromLink(paymentLink);
+    const originalId = this.extractPidFromLink(paymentLink);
     if (originalId) return originalId;
 
     throw new PayError(
@@ -294,6 +316,24 @@ export class HttpProvider implements PayProvider {
   }
 
   /**
+   * Check if action is a walletRpc action (type guard)
+   */
+  private isWalletRpcAction(
+    action: RawAction,
+  ): action is RawAction & { type: "walletRpc"; data: RawWalletRpcAction } {
+    return action.type === "walletRpc";
+  }
+
+  /**
+   * Check if action is a build action (type guard)
+   */
+  private isBuildAction(
+    action: RawAction,
+  ): action is RawAction & { type: "build"; data: { data: string } } {
+    return action.type === "build";
+  }
+
+  /**
    * Resolve all actions for an option (handles build actions)
    */
   private async resolveActions(
@@ -304,14 +344,13 @@ export class HttpProvider implements PayProvider {
     const resolved: Action[] = [];
 
     for (const action of actions) {
-      if (action.type === "walletRpc") {
-        resolved.push(this.transformAction(action.data as RawWalletRpcAction));
-      } else if (action.type === "build") {
-        const buildData = (action.data as { data: string }).data;
-        const fetched = await this.fetch(paymentId, optionId, buildData);
+      if (this.isWalletRpcAction(action)) {
+        resolved.push(this.transformAction(action.data));
+      } else if (this.isBuildAction(action)) {
+        const fetched = await this.fetch(paymentId, optionId, action.data.data);
         for (const fetchedAction of fetched) {
-          if (fetchedAction.type === "walletRpc") {
-            resolved.push(this.transformAction(fetchedAction.data as RawWalletRpcAction));
+          if (this.isWalletRpcAction(fetchedAction)) {
+            resolved.push(this.transformAction(fetchedAction.data));
           }
         }
       }
@@ -338,36 +377,50 @@ export class HttpProvider implements PayProvider {
 
     return {
       paymentId,
-      info: response.info
-        ? {
-            status: response.info.status as PaymentOptionsResponse["info"] extends {
-              status: infer S;
-            }
-              ? S
-              : never,
-            amount: response.info.amount,
-            expiresAt: response.info.expiresAt,
-            merchant: response.info.merchant,
-            buyer: response.info.buyer
-              ? {
-                  accountCaip10: response.info.buyer.accountCaip10,
-                  accountProviderName: response.info.buyer.accountProviderName,
-                  accountProviderIcon: response.info.buyer.accountProviderIcon,
-                }
-              : undefined,
-          }
-        : undefined,
+      info: this.transformPaymentInfo(response.info),
       options: response.options.map((o) => this.transformPaymentOption(o)),
-      collectData: response.collectData
+      collectData: this.transformCollectData(response.collectData),
+    };
+  }
+
+  /**
+   * Transform raw payment info to SDK format
+   */
+  private transformPaymentInfo(
+    info: RawPaymentOptionsResponse["info"],
+  ): PaymentOptionsResponse["info"] {
+    if (!info) return undefined;
+
+    return {
+      status: info.status as PaymentStatus,
+      amount: info.amount,
+      expiresAt: info.expiresAt,
+      merchant: info.merchant,
+      buyer: info.buyer
         ? {
-            fields: response.collectData.fields.map((f) => ({
-              id: f.id,
-              name: f.name,
-              required: f.required,
-              fieldType: f.type,
-            })),
+            accountCaip10: info.buyer.accountCaip10,
+            accountProviderName: info.buyer.accountProviderName,
+            accountProviderIcon: info.buyer.accountProviderIcon,
           }
         : undefined,
+    };
+  }
+
+  /**
+   * Transform raw collect data to SDK format
+   */
+  private transformCollectData(
+    collectData: RawPaymentOptionsResponse["collectData"],
+  ): PaymentOptionsResponse["collectData"] {
+    if (!collectData) return undefined;
+
+    return {
+      fields: collectData.fields.map((f) => ({
+        id: f.id,
+        name: f.name,
+        required: f.required,
+        fieldType: f.type,
+      })),
     };
   }
 
@@ -395,43 +448,44 @@ export class HttpProvider implements PayProvider {
   }
 
   async confirmPayment(params: ConfirmPaymentParams): Promise<ConfirmPaymentResponse> {
-    const response = await this.request<{
-      status: string;
-      isFinal: boolean;
-      pollInMs?: number;
-    }>("POST", `/v1/gateway/payment/${params.paymentId}/confirm`, {
-      optionId: params.optionId,
-      results: params.signatures.map((sig) => ({ type: "walletRpc", data: [sig] })),
-      collectedData: params.collectedData
-        ? { fields: params.collectedData.map((f) => ({ id: f.id, value: f.value })) }
-        : undefined,
-    });
+    const response = await this.request<RawStatusResponse>(
+      "POST",
+      `/v1/gateway/payment/${params.paymentId}/confirm`,
+      {
+        optionId: params.optionId,
+        results: params.signatures.map((sig) => ({ type: "walletRpc", data: [sig] })),
+        collectedData: params.collectedData
+          ? { fields: params.collectedData.map((f) => ({ id: f.id, value: f.value })) }
+          : undefined,
+      },
+    );
 
-    // If not final, poll for status
-    let result: ConfirmPaymentResponse = {
-      status: response.status as ConfirmPaymentResponse["status"],
-      isFinal: response.isFinal,
-      pollInMs: response.pollInMs,
-    };
+    let result = this.toConfirmPaymentResponse(response);
 
     while (!result.isFinal) {
       const delay = result.pollInMs ?? 1000;
       await new Promise((resolve) => setTimeout(resolve, delay));
 
-      const statusResponse = await this.request<{
-        status: string;
-        isFinal: boolean;
-        pollInMs?: number;
-      }>("GET", `/v1/gateway/payment/${params.paymentId}/status`);
+      const statusResponse = await this.request<RawStatusResponse>(
+        "GET",
+        `/v1/gateway/payment/${params.paymentId}/status`,
+      );
 
-      result = {
-        status: statusResponse.status as ConfirmPaymentResponse["status"],
-        isFinal: statusResponse.isFinal,
-        pollInMs: statusResponse.pollInMs,
-      };
+      result = this.toConfirmPaymentResponse(statusResponse);
     }
 
     return result;
+  }
+
+  /**
+   * Convert raw status response to ConfirmPaymentResponse
+   */
+  private toConfirmPaymentResponse(raw: RawStatusResponse): ConfirmPaymentResponse {
+    return {
+      status: raw.status as PaymentStatus,
+      isFinal: raw.isFinal,
+      pollInMs: raw.pollInMs,
+    };
   }
 }
 
