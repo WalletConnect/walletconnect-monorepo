@@ -1,3 +1,4 @@
+
 # WalletConnect v2.x.x
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.com
