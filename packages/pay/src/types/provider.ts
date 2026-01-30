@@ -66,7 +66,7 @@ export interface PayProvider {
 /**
  * Provider type identifier
  */
-export type PayProviderType = "native" | "wasm";
+export type PayProviderType = "native" | "http" | "wasm";
 
 /**
  * Provider factory function type
