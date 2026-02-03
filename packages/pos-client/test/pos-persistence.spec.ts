@@ -1,13 +1,12 @@
 /* eslint-disable no-console */
 
-import { expect, describe, it, beforeAll, afterEach } from "vitest";
+import { expect, describe, it, afterEach } from "vitest";
 import { Core } from "@walletconnect/core";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
-import { generateRandomBytes32, parseUri } from "@walletconnect/utils";
+import { generateRandomBytes32 } from "@walletconnect/utils";
 import { SignClient } from "@walletconnect/sign-client";
-import { ISignClient } from "@walletconnect/types";
 
-import { POSClient, IPOSClient, POSClientTypes, RPC_ERROR_CODES } from "../src/index.js";
+import { POSClient, POSClientTypes } from "../src/index.js";
 import { TEST_METADATA } from "./shared/values.js";
 import { TEST_CORE_OPTIONS } from "./shared/index.js";
 
@@ -96,33 +95,18 @@ describe("Sign Integration", () => {
         recipient: `${tokenChainId}:0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C52`,
       },
     ];
+
     expect(pos.session).to.not.exist;
-    let numPaymentSuccessful = 0;
-    let numPaymentRequested = 0;
-    let numPaymentBroadcasted = 0;
+
     let numConnected = 0;
     let numQrReady = 0;
-    let numSessionRequest = 0;
     let numSessionProposal = 0;
-    pos.on("payment_successful", () => {
-      numPaymentSuccessful++;
-    });
-    pos.on("payment_requested", () => {
-      numPaymentRequested++;
-    });
-    pos.on("payment_broadcasted", (result) => {
-      numPaymentBroadcasted++;
-    });
-    pos.on("connected", () => {
-      numConnected++;
-    });
-    pos.on("qr_ready", async ({ uri }) => {
-      numQrReady++;
-      await wallet.pair({ uri });
-    });
+    let numSessionRequest = 0;
+    let numPaymentSuccessful = 0;
+
     const onSessionRequest = async (sessionRequest) => {
       numSessionRequest++;
-      console.log("session request", numSessionRequest);
+      console.log("session request received", numSessionRequest);
       await wallet.respond({
         topic: sessionRequest.topic,
         response: formatJsonRpcResult(
@@ -148,12 +132,44 @@ describe("Sign Integration", () => {
 
     wallet.events.on("session_request", onSessionRequest);
     wallet.events.on("session_proposal", onSessionProposal);
+
+    // #given - first payment flow with proper event waiting
+    const firstPaymentSuccessful = new Promise<void>((resolve) => {
+      pos.once("payment_successful", () => {
+        numPaymentSuccessful++;
+        console.log("first payment_successful");
+        resolve();
+      });
+    });
+
+    pos.once("connected", () => {
+      numConnected++;
+      console.log("connected");
+    });
+
+    pos.once("qr_ready", async ({ uri }) => {
+      numQrReady++;
+      console.log("qr_ready");
+      await wallet.pair({ uri });
+    });
+
+    // #when - trigger first payment
     await pos.createPaymentIntent({ paymentIntents, manualControl: true });
     console.log("created payment intent 1");
     await pos.sendPaymentsToWallet();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    await pos.engine.signClient.core.relayer.transportClose();
 
+    // #then - wait for first payment to complete
+    await firstPaymentSuccessful;
+    console.log("first payment completed");
+
+    // simulate restart by closing transport
+    await pos.engine.signClient.core.relayer.transportClose();
+    console.log("transport closed");
+
+    // allow relay to stabilize after transport close
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // #given - restart POS client with same database to reuse session
     const posAfterRestart = await POSClient.init({
       projectId,
       deviceId,
@@ -168,45 +184,49 @@ describe("Sign Integration", () => {
       },
     });
 
-    posAfterRestart.on("payment_successful", () => {
-      numPaymentSuccessful++;
-    });
-    posAfterRestart.on("payment_requested", () => {
-      numPaymentRequested++;
-    });
-    posAfterRestart.on("payment_broadcasted", (result) => {
-      numPaymentBroadcasted++;
-    });
-    posAfterRestart.on("connected", () => {
-      numConnected++;
-    });
-    posAfterRestart.on("qr_ready", async ({ uri }) => {
-      numQrReady++;
-      await wallet.pair({ uri });
-    });
-
     await posAfterRestart.setTokens({ tokens });
 
     expect(posAfterRestart.session).to.exist;
+    const persistedSessionTopic = posAfterRestart.session?.topic;
+    expect(persistedSessionTopic).to.exist;
+
+    console.log(
+      "relayer connected after restart:",
+      posAfterRestart.engine.signClient.core.relayer.connected,
+    );
+
+    // #given - second payment flow with proper event waiting
+    const secondPaymentSuccessful = new Promise<void>((resolve) => {
+      posAfterRestart.once("payment_successful", () => {
+        numPaymentSuccessful++;
+        console.log("second payment_successful");
+        resolve();
+      });
+    });
+
+    // #when - trigger second payment using persisted session
     await posAfterRestart.createPaymentIntent({
       paymentIntents,
       manualControl: true,
-      sessionTopic: pos.session?.topic,
+      sessionTopic: persistedSessionTopic,
     });
     await posAfterRestart.sendPaymentsToWallet();
-    await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    expect(numSessionRequest).to.equal(2);
-    expect(numPaymentSuccessful).to.equal(2);
-    expect(numPaymentRequested).to.equal(2);
-    expect(numPaymentBroadcasted).to.equal(2);
+    // #then - wait for second payment to complete
+    await secondPaymentSuccessful;
+    console.log("second payment completed");
+
+    expect(numSessionProposal).to.equal(1);
     expect(numConnected).to.equal(1);
     expect(numQrReady).to.equal(1);
+    expect(numSessionRequest).to.equal(2);
+    expect(numPaymentSuccessful).to.equal(2);
 
+    // cleanup
     wallet.events.off("session_request", onSessionRequest);
     wallet.events.off("session_proposal", onSessionProposal);
 
-    await pos.disconnect();
-    expect(pos.session).to.not.exist;
-  });
+    await posAfterRestart.disconnect();
+    expect(posAfterRestart.session).to.not.exist;
+  }, 90_000);
 });

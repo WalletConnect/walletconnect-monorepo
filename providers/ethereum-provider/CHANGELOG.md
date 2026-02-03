@@ -1,5 +1,53 @@
 # @walletconnect/ethereum-provider
 
+## 2.23.4
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @walletconnect/utils@2.23.4
+  - @walletconnect/sign-client@2.23.4
+  - @walletconnect/types@2.23.4
+  - @walletconnect/universal-provider@2.23.4
+
+## 2.23.3
+
+### Patch Changes
+
+- [#7126](https://github.com/WalletConnect/walletconnect-monorepo/pull/7126) [`040e37a`](https://github.com/WalletConnect/walletconnect-monorepo/commit/040e37a2c7a7a52192669faae049cf6e2f1faeeb) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - chore: upgrade @reown/appkit to fix circular dependencies
+
+- Updated dependencies []:
+  - @walletconnect/sign-client@2.23.3
+  - @walletconnect/universal-provider@2.23.3
+  - @walletconnect/utils@2.23.3
+  - @walletconnect/types@2.23.3
+
+## 2.23.2
+
+### Patch Changes
+
+- [#7113](https://github.com/WalletConnect/walletconnect-monorepo/pull/7113) [`b88b8d9`](https://github.com/WalletConnect/walletconnect-monorepo/commit/b88b8d969a6418976e9b8ea5c6841133ac47d108) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - chore: update @walletconnect/logger to 3.0.2
+
+  Updates logger to v3.0.2 which fixes server-side log filtering. The fix ensures `generateServerLogger` uses the `browser.write` option so logs are properly filtered by the configured log level.
+
+- Updated dependencies [[`b88b8d9`](https://github.com/WalletConnect/walletconnect-monorepo/commit/b88b8d969a6418976e9b8ea5c6841133ac47d108), [`8af66e3`](https://github.com/WalletConnect/walletconnect-monorepo/commit/8af66e3ee28390bb181703fa7235df2edcf8741e)]:
+  - @walletconnect/sign-client@2.23.2
+  - @walletconnect/types@2.23.2
+  - @walletconnect/utils@2.23.2
+  - @walletconnect/universal-provider@2.23.2
+
+## 2.23.1
+
+### Patch Changes
+
+- [#7085](https://github.com/WalletConnect/walletconnect-monorepo/pull/7085) [`41c8ebd`](https://github.com/WalletConnect/walletconnect-monorepo/commit/41c8ebd19739aa8a346a7c054a75320243860a77) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Updated `@walletconnect/logger` to `3.0.1`
+
+- Updated dependencies [[`41c8ebd`](https://github.com/WalletConnect/walletconnect-monorepo/commit/41c8ebd19739aa8a346a7c054a75320243860a77)]:
+  - @walletconnect/universal-provider@2.23.1
+  - @walletconnect/sign-client@2.23.1
+  - @walletconnect/types@2.23.1
+  - @walletconnect/utils@2.23.1
+
 ## 2.23.0
 
 ### Minor Changes

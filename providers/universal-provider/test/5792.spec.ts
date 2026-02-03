@@ -220,25 +220,23 @@ describe("UniversalProvider 5792 utils", function () {
         },
       },
     };
-    await Promise.all([
-      new Promise<void>((resolve) => {
-        wallet.client.once("session_request", async (event) => {
-          await wallet.client.respond({
-            topic: event.topic,
-            response: formatJsonRpcResult(event.id, sessionPropertiesResponse),
-          });
-          resolve();
+    // Set up listener BEFORE making request to avoid race condition
+    const responsePromise1 = new Promise<void>((resolve) => {
+      wallet.client.once("session_request", async (event) => {
+        await wallet.client.respond({
+          topic: event.topic,
+          response: formatJsonRpcResult(event.id, sessionPropertiesResponse),
         });
-      }),
-      new Promise<void>(async (resolve) => {
-        const result = await dapp.request({
-          method: "wallet_getCapabilities",
-          params: [walletAddress],
-        });
-        expect(result).to.eql(sessionPropertiesResponse);
         resolve();
-      }),
-    ]);
+      });
+    });
+
+    const result1 = await dapp.request({
+      method: "wallet_getCapabilities",
+      params: [walletAddress],
+    });
+    await responsePromise1;
+    expect(result1).to.eql(sessionPropertiesResponse);
     // now the sessionProperties should be cached
     const updatedSession = dapp.client.session.get(sessionA.topic);
     expect(updatedSession.sessionProperties).to.exist;
@@ -250,40 +248,39 @@ describe("UniversalProvider 5792 utils", function () {
     });
     expect(cachedResult).to.eql(sessionPropertiesResponse);
 
+    // Use a DIFFERENT chain to test that different chainIds params create different cache entries
     const secondCapabilitiesResult = {
-      "0x1": {
+      "0x89": {
         atomicBatch: {
           supported: true,
         },
       },
     };
 
-    await Promise.all([
-      new Promise<void>((resolve) => {
-        wallet.client.once("session_request", async (event) => {
-          await wallet.client.respond({
-            topic: event.topic,
-            response: formatJsonRpcResult(event.id, secondCapabilitiesResult),
-          });
-          resolve();
+    // Set up listener BEFORE making request to avoid race condition
+    const responsePromise2 = new Promise<void>((resolve) => {
+      wallet.client.once("session_request", async (event) => {
+        await wallet.client.respond({
+          topic: event.topic,
+          response: formatJsonRpcResult(event.id, secondCapabilitiesResult),
         });
-      }),
-      new Promise<void>(async (resolve) => {
-        const result = await dapp.request({
-          method: "wallet_getCapabilities",
-          // this req has additional chainId param so it should not use cached result but make a new request to the wallet
-          params: [walletAddress, ["0x1"]],
-        });
-        expect(result).to.eql(secondCapabilitiesResult);
         resolve();
-      }),
-    ]);
+      });
+    });
+
+    // this req has a DIFFERENT chainId param so it should not use cached result but make a new request to the wallet
+    const result2 = await dapp.request({
+      method: "wallet_getCapabilities",
+      params: [walletAddress, ["0x89"]], // Chain 137 - different from chain 1
+    });
+    await responsePromise2;
+    expect(result2).to.eql(secondCapabilitiesResult);
 
     const updatedSession2 = dapp.client.session.get(sessionA.topic);
     expect(updatedSession2.sessionProperties).to.exist;
     expect(updatedSession2.sessionProperties?.capabilities).to.exist;
     expect(Object.keys(updatedSession2.sessionProperties?.capabilities || {}).length).to.eql(2);
-    expect(updatedSession2.sessionProperties?.capabilities[`${walletAddress}0x1`]).to.eql(
+    expect(updatedSession2.sessionProperties?.capabilities[`${walletAddress}0x89`]).to.eql(
       secondCapabilitiesResult,
     );
 
@@ -436,6 +433,155 @@ describe("UniversalProvider 5792 utils", function () {
         },
       },
     });
+    await deleteProviders({ A: dapp, B: wallet });
+  });
+
+  it("should invalidate `wallet_getCapabilities` cache when chain switches and no explicit chainIds provided", async () => {
+    const dapp = await UniversalProvider.init({
+      ...TEST_PROVIDER_OPTS,
+      name: "dapp",
+    });
+    const wallet = await UniversalProvider.init({
+      ...TEST_PROVIDER_OPTS,
+      name: "wallet",
+    });
+    // Connect with multiple chains approved
+    const chains = ["eip155:1", "eip155:137"];
+    const { sessionA } = await testConnectMethod(
+      {
+        dapp,
+        wallet,
+      },
+      {
+        requiredNamespaces: {
+          eip155: {
+            methods: ["wallet_getCapabilities", "wallet_switchEthereumChain"],
+            events,
+            chains,
+          },
+        },
+        namespaces: {
+          eip155: {
+            accounts: chains.map((chain) => `${chain}:${walletAddress}`),
+            methods: ["wallet_getCapabilities", "wallet_switchEthereumChain"],
+            events,
+          },
+        },
+      },
+    );
+    expect(sessionA).to.be.an("object");
+
+    // Initial chain should be chain 1
+    const initialChainId = await dapp.request({ method: "eth_chainId" });
+    expect(initialChainId).to.eql(1);
+
+    // First call to wallet_getCapabilities WITHOUT explicit chainIds
+    const chain1Capabilities = {
+      "0x1": {
+        atomicBatch: {
+          supported: true,
+        },
+      },
+    };
+
+    let walletRequestCount = 0;
+
+    // Set up listener BEFORE making request to avoid race condition
+    const responsePromise1 = new Promise<void>((resolve) => {
+      wallet.client.once("session_request", async (event) => {
+        walletRequestCount++;
+        await wallet.client.respond({
+          topic: event.topic,
+          response: formatJsonRpcResult(event.id, chain1Capabilities),
+        });
+        resolve();
+      });
+    });
+
+    const result1 = await dapp.request({
+      method: "wallet_getCapabilities",
+      params: [walletAddress], // NO explicit chainIds
+    });
+    await responsePromise1;
+    expect(result1).to.eql(chain1Capabilities);
+    expect(walletRequestCount).to.eql(1);
+
+    // Second call with same params should return cached (no new request to wallet)
+    const cachedResult = await dapp.request({
+      method: "wallet_getCapabilities",
+      params: [walletAddress], // NO explicit chainIds
+    });
+    expect(cachedResult).to.eql(chain1Capabilities);
+    // walletRequestCount should still be 1 (no new request)
+    expect(walletRequestCount).to.eql(1);
+
+    // Now switch to chain 137
+    await dapp.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: "0x89" }], // 137 in hex
+    });
+
+    // Verify chain switched
+    const newChainId = await dapp.request({ method: "eth_chainId" });
+    expect(newChainId).to.eql(137);
+
+    // Call wallet_getCapabilities again WITHOUT explicit chainIds
+    // This should trigger a NEW request to the wallet (not use cache)
+    const chain137Capabilities = {
+      "0x89": {
+        atomicBatch: {
+          supported: false,
+        },
+        paymasterService: {
+          supported: true,
+        },
+      },
+    };
+
+    // Set up listener BEFORE making request to avoid race condition
+    // Use a flag to track if the request was received
+    let receivedSecondRequest = false;
+    const responsePromise2 = new Promise<void>((resolve) => {
+      wallet.client.once("session_request", async (event) => {
+        receivedSecondRequest = true;
+        walletRequestCount++;
+        await wallet.client.respond({
+          topic: event.topic,
+          response: formatJsonRpcResult(event.id, chain137Capabilities),
+        });
+        resolve();
+      });
+    });
+
+    const result2 = await dapp.request({
+      method: "wallet_getCapabilities",
+      params: [walletAddress], // NO explicit chainIds - should NOT use cache after chain switch
+    });
+
+    // If cache was properly invalidated, we should receive a new request
+    // Wait for the response with a timeout
+    await Promise.race([
+      responsePromise2,
+      new Promise<void>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Timeout: cache was not invalidated after chain switch")),
+          5000,
+        ),
+      ),
+    ]);
+
+    expect(receivedSecondRequest).to.eql(true, "Expected a new request after chain switch");
+    expect(result2).to.eql(chain137Capabilities);
+
+    // Verify a new request was made to the wallet
+    expect(walletRequestCount).to.eql(2);
+
+    // Verify both capabilities are cached with different keys
+    const updatedSession = dapp.client.session.get(sessionA.topic);
+    expect(updatedSession.sessionProperties?.capabilities).to.exist;
+    // Should have 2 cached entries: one for chain 1 and one for chain 137
+    expect(Object.keys(updatedSession.sessionProperties?.capabilities || {}).length).to.eql(2);
+
     await deleteProviders({ A: dapp, B: wallet });
   });
 });

@@ -216,7 +216,12 @@ class Eip155Provider implements IProvider {
     const sessionCapabilities = session?.sessionProperties?.capabilities || {};
 
     // cache key is address + chainIds to allow requests to be made to different chains
-    const capabilitiesKey = `${address}${chainIds.join(",")}`;
+    // when no chainIds are provided, use the current active chainId to ensure
+    // cache is invalidated when switching chains
+    const cacheChainKey =
+      chainIds.length > 0 ? chainIds.join(",") : `0x${this.chainId.toString(16)}`;
+    const capabilitiesKey = `${address}${cacheChainKey}`;
+
     const legacyCapabilities = sessionCapabilities?.[capabilitiesKey];
     if (legacyCapabilities) {
       return legacyCapabilities;

@@ -491,191 +491,228 @@ describe("Relayer", () => {
       await throttle(6500);
       expect(relayer.connected).to.be.false;
     });
-  });
-  describe("packageName and bundleId validations", () => {
-    beforeEach(async () => {
-      core = new Core({ ...TEST_CORE_OPTIONS, projectId: TEST_PROJECT_ID_MOBILE });
-      relayer = core.relayer;
-      await core.start();
-    });
 
-    it("[Android] packageName included in Cloud Settings - should connect", async () => {
-      // Mock Android environment
-      vi.spyOn(utils, "isAndroid").mockReturnValue(true);
-      vi.spyOn(utils, "isIos").mockReturnValue(false);
-      vi.spyOn(utils, "getAppId").mockReturnValue(TEST_MOBILE_APP_ID);
-
-      relayer = new Relayer({
-        core,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_PROJECT_ID_MOBILE,
-      });
-
-      await relayer.init();
-      await relayer.subscribe(randomTopic);
-
-      // @ts-expect-error - accessing private property for testing
-      const wsUrl = relayer.provider.connection.url;
-      expect(wsUrl).to.include(`packageName=${TEST_MOBILE_APP_ID}`);
-      expect(relayer.connected).to.be.true;
-    });
-
-    it("[Android] packageName undefined - should connect", async () => {
-      // Mock Android environment
-      vi.spyOn(utils, "isAndroid").mockReturnValue(true);
-      vi.spyOn(utils, "isIos").mockReturnValue(false);
-      vi.spyOn(utils, "getAppId").mockReturnValue(undefined);
-
-      relayer = new Relayer({
-        core,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_PROJECT_ID_MOBILE,
-      });
-
-      await relayer.init();
-      await relayer.subscribe(randomTopic);
-
-      // @ts-expect-error - accessing private property for testing
-      const wsUrl = relayer.provider.connection.url;
-      expect(wsUrl).not.to.include("packageName=");
-      expect(relayer.connected).to.be.true;
-    });
-
-    it("[Android] packageName not included in Cloud Settings - should fail", async () => {
-      // Mock Android environment
-      vi.spyOn(utils, "isAndroid").mockReturnValue(true);
-      vi.spyOn(utils, "isIos").mockReturnValue(false);
-      vi.spyOn(utils, "getAppId").mockReturnValue("com.example.wrong");
-
-      relayer = new Relayer({
-        core,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_PROJECT_ID_MOBILE,
-      });
-
-      await relayer.init();
-
-      relayer.subscriber.subscriptions.set(randomTopic, {
-        topic: randomTopic,
-        id: randomTopic,
-        relay: { protocol: "irn" },
-      });
-
-      let errorReceived = false;
-      relayer.on(RELAYER_EVENTS.error, (payload) => {
-        expect(payload.message).to.include("Unauthorized: origin not allowed");
-        errorReceived = true;
-      });
-      await relayer.transportOpen().catch((e) => {});
-      await throttle(1000);
-      expect(errorReceived).to.be.true;
-    });
-
-    it("[iOS] bundleId included in Cloud Settings - should connect", async () => {
-      // Mock iOS environment
-      vi.spyOn(utils, "isAndroid").mockReturnValue(false);
-      vi.spyOn(utils, "isIos").mockReturnValue(true);
-      vi.spyOn(utils, "getAppId").mockReturnValue(TEST_MOBILE_APP_ID);
-
-      relayer = new Relayer({
-        core,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_PROJECT_ID_MOBILE,
-      });
-
-      await relayer.init();
-      await relayer.subscribe(randomTopic);
-
-      // @ts-expect-error - accessing private property for testing
-      const wsUrl = relayer.provider.connection.url;
-      expect(wsUrl).to.include(`bundleId=${TEST_MOBILE_APP_ID}`);
-    });
-
-    it("[iOS] bundleId undefined - should connect", async () => {
-      // Mock iOS environment
-      vi.spyOn(utils, "isAndroid").mockReturnValue(false);
-      vi.spyOn(utils, "isIos").mockReturnValue(true);
-      vi.spyOn(utils, "getAppId").mockReturnValue(undefined);
-
-      relayer = new Relayer({
-        core,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_PROJECT_ID_MOBILE,
-      });
-
-      await relayer.init();
-      relayer.subscriber.subscriptions.set(randomTopic, {
-        topic: randomTopic,
-        id: randomTopic,
-        relay: { protocol: "irn" },
-      });
+    it("should cancel scheduled reconnection when fatal error is received", async () => {
+      // #given - establish connection first
       await relayer.transportOpen();
-
-      // @ts-expect-error - accessing private property for testing
-      const wsUrl = relayer.provider.connection.url;
-      expect(wsUrl).not.to.include("bundleId=");
       expect(relayer.connected).to.be.true;
-    });
 
-    it("[iOS] bundleId not included in Cloud Settings - should fail", async () => {
-      // Mock iOS environment
-      vi.spyOn(utils, "isAndroid").mockReturnValue(false);
-      vi.spyOn(utils, "isIos").mockReturnValue(true);
-      vi.spyOn(utils, "getAppId").mockReturnValue("com.example.wrong");
+      // #when - simulate disconnect which schedules a reconnection
+      relayer.provider.events.emit(RELAYER_PROVIDER_EVENTS.disconnect);
 
-      relayer = new Relayer({
-        core,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_PROJECT_ID_MOBILE,
-      });
-
-      await relayer.init();
-      relayer.subscriber.subscriptions.set(randomTopic, {
-        topic: randomTopic,
-        id: randomTopic,
-        relay: { protocol: "irn" },
-      });
-
-      let errorReceived = false;
-      relayer.on(RELAYER_EVENTS.error, (payload) => {
-        expect(payload.message).to.include("Unauthorized: origin not allowed");
-        errorReceived = true;
-      });
-
-      await relayer.transportOpen().catch((e) => {});
-
-      await throttle(1000);
-      expect(errorReceived).to.be.true;
-    });
-
-    it("[Web] packageName and bundleId not set - should connect", async () => {
-      // Mock non-mobile environment
-      vi.spyOn(utils, "isAndroid").mockReturnValue(false);
-      vi.spyOn(utils, "isIos").mockReturnValue(false);
-      vi.spyOn(utils, "getAppId").mockReturnValue(TEST_MOBILE_APP_ID);
-
-      relayer = new Relayer({
-        core,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_PROJECT_ID_MOBILE,
-      });
-
-      await relayer.init();
-      relayer.subscriber.subscriptions.set(randomTopic, {
-        topic: randomTopic,
-        id: randomTopic,
-        relay: { protocol: "irn" },
-      });
-      await relayer.transportOpen();
+      // Wait to ensure reconnection is scheduled (reconnect timeout is 100ms)
+      await throttle(50);
 
       // @ts-expect-error - accessing private property for testing
-      const wsUrl = relayer.provider.connection.url;
-      expect(wsUrl).not.to.include("packageName=");
-      expect(wsUrl).not.to.include("bundleId=");
-    });
+      expect(relayer.reconnectTimeout).to.not.be.undefined;
 
-    afterEach(() => {
-      vi.restoreAllMocks();
+      // Then fatal error arrives - this should cancel the scheduled reconnection
+      relayer.provider.events.emit(
+        RELAYER_PROVIDER_EVENTS.error,
+        new Error("Unauthorized: origin not allowed"),
+      );
+
+      // #then - wait past the reconnect timeout (100ms) + buffer
+      await throttle(200);
+
+      // The transport should be marked as explicitly closed
+      expect(relayer.transportExplicitlyClosed).to.be.true;
+
+      // @ts-expect-error - accessing private property for testing
+      expect(relayer.reconnectTimeout).to.be.undefined;
+
+      // Wait for heartbeat to ensure no reconnection happens
+      await throttle(6000);
+      expect(relayer.connected).to.be.false;
     });
   });
+  describe.skipIf(!TEST_PROJECT_ID_MOBILE || !TEST_MOBILE_APP_ID)(
+    "packageName and bundleId validations",
+    () => {
+      beforeEach(async () => {
+        core = new Core({ ...TEST_CORE_OPTIONS, projectId: TEST_PROJECT_ID_MOBILE });
+        relayer = core.relayer;
+        await core.start();
+      });
+
+      it("[Android] packageName included in Cloud Settings - should connect", async () => {
+        // Mock Android environment
+        vi.spyOn(utils, "isAndroid").mockReturnValue(true);
+        vi.spyOn(utils, "isIos").mockReturnValue(false);
+        vi.spyOn(utils, "getAppId").mockReturnValue(TEST_MOBILE_APP_ID);
+
+        relayer = new Relayer({
+          core,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_PROJECT_ID_MOBILE,
+        });
+
+        await relayer.init();
+        await relayer.subscribe(randomTopic);
+
+        // @ts-expect-error - accessing private property for testing
+        const wsUrl = relayer.provider.connection.url;
+        expect(wsUrl).to.include(`packageName=${TEST_MOBILE_APP_ID}`);
+        expect(relayer.connected).to.be.true;
+      });
+
+      it("[Android] packageName undefined - should connect", async () => {
+        // Mock Android environment
+        vi.spyOn(utils, "isAndroid").mockReturnValue(true);
+        vi.spyOn(utils, "isIos").mockReturnValue(false);
+        vi.spyOn(utils, "getAppId").mockReturnValue(undefined);
+
+        relayer = new Relayer({
+          core,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_PROJECT_ID_MOBILE,
+        });
+
+        await relayer.init();
+        await relayer.subscribe(randomTopic);
+
+        // @ts-expect-error - accessing private property for testing
+        const wsUrl = relayer.provider.connection.url;
+        expect(wsUrl).not.to.include("packageName=");
+        expect(relayer.connected).to.be.true;
+      });
+
+      it("[Android] packageName not included in Cloud Settings - should fail", async () => {
+        // Mock Android environment
+        vi.spyOn(utils, "isAndroid").mockReturnValue(true);
+        vi.spyOn(utils, "isIos").mockReturnValue(false);
+        vi.spyOn(utils, "getAppId").mockReturnValue("com.example.wrong");
+
+        relayer = new Relayer({
+          core,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_PROJECT_ID_MOBILE,
+        });
+
+        await relayer.init();
+
+        relayer.subscriber.subscriptions.set(randomTopic, {
+          topic: randomTopic,
+          id: randomTopic,
+          relay: { protocol: "irn" },
+        });
+
+        let errorReceived = false;
+        relayer.on(RELAYER_EVENTS.error, (payload) => {
+          expect(payload.message).to.include("Unauthorized: origin not allowed");
+          errorReceived = true;
+        });
+        await relayer.transportOpen().catch((e) => {});
+        await throttle(1000);
+        expect(errorReceived).to.be.true;
+      });
+
+      it("[iOS] bundleId included in Cloud Settings - should connect", async () => {
+        // Mock iOS environment
+        vi.spyOn(utils, "isAndroid").mockReturnValue(false);
+        vi.spyOn(utils, "isIos").mockReturnValue(true);
+        vi.spyOn(utils, "getAppId").mockReturnValue(TEST_MOBILE_APP_ID);
+
+        relayer = new Relayer({
+          core,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_PROJECT_ID_MOBILE,
+        });
+
+        await relayer.init();
+        await relayer.subscribe(randomTopic);
+
+        // @ts-expect-error - accessing private property for testing
+        const wsUrl = relayer.provider.connection.url;
+        expect(wsUrl).to.include(`bundleId=${TEST_MOBILE_APP_ID}`);
+      });
+
+      it("[iOS] bundleId undefined - should connect", async () => {
+        // Mock iOS environment
+        vi.spyOn(utils, "isAndroid").mockReturnValue(false);
+        vi.spyOn(utils, "isIos").mockReturnValue(true);
+        vi.spyOn(utils, "getAppId").mockReturnValue(undefined);
+
+        relayer = new Relayer({
+          core,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_PROJECT_ID_MOBILE,
+        });
+
+        await relayer.init();
+        relayer.subscriber.subscriptions.set(randomTopic, {
+          topic: randomTopic,
+          id: randomTopic,
+          relay: { protocol: "irn" },
+        });
+        await relayer.transportOpen();
+
+        // @ts-expect-error - accessing private property for testing
+        const wsUrl = relayer.provider.connection.url;
+        expect(wsUrl).not.to.include("bundleId=");
+        expect(relayer.connected).to.be.true;
+      });
+
+      it("[iOS] bundleId not included in Cloud Settings - should fail", async () => {
+        // Mock iOS environment
+        vi.spyOn(utils, "isAndroid").mockReturnValue(false);
+        vi.spyOn(utils, "isIos").mockReturnValue(true);
+        vi.spyOn(utils, "getAppId").mockReturnValue("com.example.wrong");
+
+        relayer = new Relayer({
+          core,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_PROJECT_ID_MOBILE,
+        });
+
+        await relayer.init();
+        relayer.subscriber.subscriptions.set(randomTopic, {
+          topic: randomTopic,
+          id: randomTopic,
+          relay: { protocol: "irn" },
+        });
+
+        let errorReceived = false;
+        relayer.on(RELAYER_EVENTS.error, (payload) => {
+          expect(payload.message).to.include("Unauthorized: origin not allowed");
+          errorReceived = true;
+        });
+
+        await relayer.transportOpen().catch((e) => {});
+
+        await throttle(1000);
+        expect(errorReceived).to.be.true;
+      });
+
+      it("[Web] packageName and bundleId not set - should connect", async () => {
+        // Mock non-mobile environment
+        vi.spyOn(utils, "isAndroid").mockReturnValue(false);
+        vi.spyOn(utils, "isIos").mockReturnValue(false);
+        vi.spyOn(utils, "getAppId").mockReturnValue(TEST_MOBILE_APP_ID);
+
+        relayer = new Relayer({
+          core,
+          relayUrl: TEST_CORE_OPTIONS.relayUrl,
+          projectId: TEST_PROJECT_ID_MOBILE,
+        });
+
+        await relayer.init();
+        relayer.subscriber.subscriptions.set(randomTopic, {
+          topic: randomTopic,
+          id: randomTopic,
+          relay: { protocol: "irn" },
+        });
+        await relayer.transportOpen();
+
+        // @ts-expect-error - accessing private property for testing
+        const wsUrl = relayer.provider.connection.url;
+        expect(wsUrl).not.to.include("packageName=");
+        expect(wsUrl).not.to.include("bundleId=");
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+    },
+  );
 });

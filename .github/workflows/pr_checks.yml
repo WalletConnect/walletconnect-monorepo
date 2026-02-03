@@ -35,7 +35,7 @@ jobs:
             providers/signer-connection/dist
             providers/universal-provider/dist
             packages/pos-client/dist
-
+            packages/pay/dist
   code_style:
     runs-on: ubuntu-latest
     strategy:
@@ -69,6 +69,7 @@ jobs:
           - providers/universal-provider
           - providers/ethereum-provider
           - packages/pos-client
+          - packages/pay
     env:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}

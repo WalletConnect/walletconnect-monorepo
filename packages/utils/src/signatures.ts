@@ -1,10 +1,9 @@
 import { keccak_256 } from "@noble/hashes/sha3";
 import { Secp256k1, Signature } from "ox";
 import { sha256, sha512_256 } from "@noble/hashes/sha2";
-import bs58 from "bs58";
 import { blake2b } from "@noble/hashes/blake2";
 import { encode as msgpackEncode, decode as msgpackDecode } from "@msgpack/msgpack";
-import { base32 } from "@scure/base";
+import { base32, base58 } from "@scure/base";
 import { AuthTypes } from "@walletconnect/types";
 
 import { parseChainId } from "./caip.js";
@@ -150,7 +149,7 @@ export function extractSolanaTransactionId(solanaTransaction: string): string {
 
   const signatureBuffer = transactionBuffer.slice(1, 65);
 
-  return bs58.encode(signatureBuffer);
+  return base58.encode(signatureBuffer);
 }
 
 export function getSuiDigest(transaction: string) {
@@ -165,12 +164,12 @@ export function getSuiDigest(transaction: string) {
 
   const hash = blake2b(dataWithTag, { dkLen: 32 });
 
-  return bs58.encode(hash);
+  return base58.encode(hash);
 }
 
 export function getNearTransactionIdFromSignedTransaction(signedTransaction: unknown) {
   const hash = new Uint8Array(sha256(getNearUint8ArrayFromBytes(signedTransaction)));
-  const hashBase58 = bs58.encode(hash);
+  const hashBase58 = base58.encode(hash);
   return hashBase58;
 }
 

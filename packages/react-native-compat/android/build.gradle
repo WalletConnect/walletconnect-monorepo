@@ -99,6 +99,7 @@ android {
 repositories {
   mavenCentral()
   google()
+  maven { url 'https://jitpack.io' }
 }
 
 def kotlin_version = getExtOrDefault("kotlinVersion")
@@ -109,6 +110,17 @@ dependencies {
   //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  
+  // Yttrium - WalletConnect Pay uniffi bindings
+  implementation("com.github.reown-com.yttrium:yttrium-wcpay:0.10.14") {
+    // Exclude JNA jar, we'll use the AAR version for Android
+    exclude group: 'net.java.dev.jna', module: 'jna'
+  }
+  // JNA for Android (AAR with native libraries)
+  implementation "net.java.dev.jna:jna:5.17.0@aar"
+  
+  // Coroutines for async uniffi calls
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
 }
 
 if (isNewArchitectureEnabled()) {

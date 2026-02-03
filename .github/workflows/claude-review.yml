@@ -1,0 +1,53 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened]
+    branches:
+      - v2.0
+  issue_comment:
+    types: [created]
+
+jobs:
+  review:
+    # Run on PR events OR when someone comments '@claude review' on a PR
+    if: |
+      github.event_name == 'pull_request' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        contains(github.event.comment.body, '@claude review')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude Review
+        uses: WalletConnect/actions/claude/auto-review@master
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          project_context: |
+            This is the WalletConnect JavaScript/TypeScript monorepo containing:
+            - packages/sign-client: WalletConnect Sign Client implementation
+            - packages/core: Core WalletConnect functionality
+            - packages/types: TypeScript type definitions
+            - packages/utils: Utility functions
+            - packages/react-native-compat: React Native compatibility layer
+            - providers/universal-provider: Universal provider for multi-chain support
+            - providers/ethereum-provider: Ethereum-specific provider
+            - providers/signer-connection: Signer connection provider
+            - packages/pos-client: Point of Sale client
+            - packages/pay: Payment functionality
+
+            Tech stack: TypeScript, Node.js, Vitest for testing, npm workspaces
+            Focus areas: Web3/blockchain connectivity, WebSocket communications, cryptographic signing
+            Review priority: Security vulnerabilities, type safety, error handling, and breaking changes

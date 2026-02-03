@@ -64,6 +64,7 @@ export const TEST_WALLET_CLIENT_OPTS = {
   relayUrl: TEST_RELAY_URL,
   metadata: TEST_WALLET_METADATA,
   projectId: process.env.TEST_PROJECT_ID,
+  logger: "error",
 };
 
 export const EIP155_TEST_METHODS = [
