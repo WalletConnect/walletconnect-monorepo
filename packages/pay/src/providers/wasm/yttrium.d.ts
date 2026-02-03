@@ -51,17 +51,21 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly __wbg_payjson_free: (a: number, b: number) => void;
-  readonly payjson_confirm_payment: (a: number, b: number, c: number) => any;
-  readonly payjson_get_payment_options: (a: number, b: number, c: number) => any;
-  readonly payjson_get_required_payment_actions: (a: number, b: number, c: number) => any;
-  readonly payjson_new: (a: number, b: number) => [number, number, number];
+  readonly payjson_confirm_payment: (a: number, b: number, c: number) => number;
+  readonly payjson_get_payment_options: (a: number, b: number, c: number) => number;
+  readonly payjson_get_required_payment_actions: (a: number, b: number, c: number) => number;
+  readonly payjson_new: (a: number, b: number, c: number) => void;
   readonly __wbg_intounderlyingbytesource_free: (a: number, b: number) => void;
+  readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly __wbg_intounderlyingsource_free: (a: number, b: number) => void;
   readonly intounderlyingbytesource_autoAllocateChunkSize: (a: number) => number;
   readonly intounderlyingbytesource_cancel: (a: number) => void;
-  readonly intounderlyingbytesource_pull: (a: number, b: any) => any;
-  readonly intounderlyingbytesource_start: (a: number, b: any) => void;
+  readonly intounderlyingbytesource_pull: (a: number, b: number) => number;
+  readonly intounderlyingbytesource_start: (a: number, b: number) => void;
   readonly intounderlyingbytesource_type: (a: number) => number;
+  readonly intounderlyingsink_abort: (a: number, b: number) => number;
+  readonly intounderlyingsink_close: (a: number) => number;
+  readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsource_cancel: (a: number) => void;
   readonly intounderlyingsource_pull: (a: number, b: number) => number;
   readonly __wbindgen_export_0: (a: number) => void;
