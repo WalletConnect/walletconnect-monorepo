@@ -11,6 +11,8 @@ import { POSClient, IPOSClient, POSClientTypes, RPC_ERROR_CODES } from "../src/i
 import { TEST_METADATA } from "./shared/values.js";
 import { TEST_CORE_OPTIONS } from "./shared/index.js";
 
+const TEST_SEPOLIA_CHAIN = "eip155:11155111";
+
 const connectSession = async ({
   pos,
   wallet,
@@ -898,4 +900,62 @@ describe("Sign Integration", () => {
     await new Promise((resolve) => setTimeout(resolve, 2000));
     expect(pos.session).to.not.exist;
   });
+
+  it.only("should accept Sepolia testnet with native ETH payment", async () => {
+    const sepoliaEthToken: POSClientTypes.Token = {
+      network: { name: "Sepolia", chainId: TEST_SEPOLIA_CHAIN },
+      symbol: "ETH",
+      standard: "slip44",
+      address: "60",
+    };
+
+    const paymentIntents: POSClientTypes.PaymentIntent[] = [
+      {
+        token: sepoliaEthToken,
+        amount: "1000000000000000",
+        recipient: `${TEST_SEPOLIA_CHAIN}:0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C52`,
+      },
+    ];
+
+    // #given - using native ETH (slip44:60) on Sepolia testnet
+    // #when - we create a payment intent and connect a session
+    // #then - the backend should accept the Sepolia chain and process the request
+
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        wallet.events.once("session_proposal", async (sessionProposal) => {
+          console.log("session_proposal for Sepolia ETH test");
+          await wallet.approve({
+            id: sessionProposal.id,
+            namespaces: {
+              eip155: {
+                ...sessionProposal.params.optionalNamespaces.eip155,
+                accounts: [`${TEST_SEPOLIA_CHAIN}:0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C52`],
+              },
+            },
+          });
+          resolve();
+        });
+      }),
+      new Promise<void>((resolve) => {
+        pos.once("qr_ready", async ({ uri }) => {
+          console.log("qr_ready for Sepolia ETH test", uri);
+          await wallet.pair({ uri });
+          resolve();
+        });
+      }),
+      pos.createPaymentIntent({ paymentIntents }).catch((error) => {
+        console.log("createPaymentIntent error:", error.message);
+      }),
+    ]);
+
+    await new Promise<void>((resolve) => {
+      wallet.events.on("session_request", (sessionRequest) => {
+        console.log("session_request", JSON.stringify(sessionRequest, null, 2));
+        expect(sessionRequest.params.chainId).to.be.equal(TEST_SEPOLIA_CHAIN);
+        resolve();
+      });
+    });
+    console.log("session_request received");
+  }, 90_000);
 });
