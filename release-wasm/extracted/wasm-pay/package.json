@@ -1,0 +1,16 @@
+{
+  "name": "yttrium",
+  "type": "module",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "files": [
+    "yttrium_bg.wasm",
+    "yttrium.js",
+    "yttrium.d.ts"
+  ],
+  "main": "yttrium.js",
+  "types": "yttrium.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

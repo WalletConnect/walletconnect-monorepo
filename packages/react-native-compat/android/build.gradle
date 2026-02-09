@@ -112,7 +112,7 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   
   // Yttrium - WalletConnect Pay uniffi bindings
-  implementation("com.github.reown-com.yttrium:yttrium-wcpay:0.10.29") {
+  implementation("com.github.reown-com.yttrium:yttrium-wcpay:0.10.38") {
     // Exclude JNA jar, we'll use the AAR version for Android
     exclude group: 'net.java.dev.jna', module: 'jna'
   }

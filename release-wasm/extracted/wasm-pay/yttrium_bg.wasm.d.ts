@@ -1,0 +1,30 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const __wbg_payjson_free: (a: number, b: number) => void;
+export const payjson_confirm_payment: (a: number, b: number, c: number) => number;
+export const payjson_get_payment_options: (a: number, b: number, c: number) => number;
+export const payjson_get_required_payment_actions: (a: number, b: number, c: number) => number;
+export const payjson_new: (a: number, b: number, c: number) => void;
+export const __wbg_intounderlyingbytesource_free: (a: number, b: number) => void;
+export const __wbg_intounderlyingsink_free: (a: number, b: number) => void;
+export const __wbg_intounderlyingsource_free: (a: number, b: number) => void;
+export const intounderlyingbytesource_autoAllocateChunkSize: (a: number) => number;
+export const intounderlyingbytesource_cancel: (a: number) => void;
+export const intounderlyingbytesource_pull: (a: number, b: number) => number;
+export const intounderlyingbytesource_start: (a: number, b: number) => void;
+export const intounderlyingbytesource_type: (a: number) => number;
+export const intounderlyingsink_abort: (a: number, b: number) => number;
+export const intounderlyingsink_close: (a: number) => number;
+export const intounderlyingsink_write: (a: number, b: number) => number;
+export const intounderlyingsource_cancel: (a: number) => void;
+export const intounderlyingsource_pull: (a: number, b: number) => number;
+export const __wbindgen_export_0: (a: number) => void;
+export const __wbindgen_export_1: (a: number, b: number) => number;
+export const __wbindgen_export_2: (a: number, b: number, c: number, d: number) => number;
+export const __wbindgen_export_3: WebAssembly.Table;
+export const __wbindgen_add_to_stack_pointer: (a: number) => number;
+export const __wbindgen_export_4: (a: number, b: number) => void;
+export const __wbindgen_export_5: (a: number, b: number) => void;
+export const __wbindgen_export_6: (a: number, b: number, c: number) => void;
+export const __wbindgen_export_7: (a: number, b: number, c: number, d: number) => void;
