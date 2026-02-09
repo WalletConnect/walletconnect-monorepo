@@ -34,7 +34,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LATEST_RELEASE=$(gh release list --repo reown-com/yttrium --limit 50 | awk '{print $1}' | grep "^wasm-pay-" | head -1)
+          LATEST_RELEASE=$(gh release list --repo reown-com/yttrium --limit 50 --json tagName --jq '.[].tagName' | grep "^wasm-pay-" | head -1)
           if [ -z "$LATEST_RELEASE" ]; then
             echo "No wasm-pay releases found"
             exit 1
