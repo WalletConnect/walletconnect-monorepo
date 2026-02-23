@@ -157,3 +157,52 @@ export function getSdkError(key: SdkErrorKey, context?: string | number) {
     code,
   };
 }
+
+/**
+ * Determines if a relay server error is retryable based on the error code.
+ *
+ * Non-retryable errors include:
+ * - 3000-3999: Authentication/Authorization errors (JWT validation, expired tokens, etc.)
+ * - 1000-1999: Invalid request errors (malformed requests, invalid parameters, etc.)
+ *
+ * Retryable errors include:
+ * - Network errors (no error code)
+ * - 5xx server errors
+ * - Timeout errors
+ *
+ * @param error - The error object from a failed relay request
+ * @returns true if the error should be retried, false if it's permanent
+ */
+export function isRetryableRelayError(error: any): boolean {
+  // If there's no error code, it's likely a network error - should retry
+  if (!error || typeof error !== "object") {
+    return true;
+  }
+
+  // Check for JSON-RPC error structure: { error: { code: number } }
+  const errorCode = error.error?.code ?? error.code;
+
+  if (typeof errorCode !== "number") {
+    // No error code means likely a network/connection error - should retry
+    return true;
+  }
+
+  // Error codes 1000-1999: Invalid request errors (malformed, invalid params) - don't retry
+  if (errorCode >= 1000 && errorCode < 2000) {
+    return false;
+  }
+
+  // Error codes 3000-3999: Authentication/Authorization errors - don't retry
+  // This includes JWT validation errors, expired tokens, invalid credentials, etc.
+  if (errorCode >= 3000 && errorCode < 4000) {
+    return false;
+  }
+
+  // Error codes 5000-5999: User rejection errors - don't retry
+  if (errorCode >= 5000 && errorCode < 6000) {
+    return false;
+  }
+
+  // All other errors are considered retryable (e.g., server errors, temporary failures)
+  return true;
+}
