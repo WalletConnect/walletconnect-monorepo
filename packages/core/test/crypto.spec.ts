@@ -1,11 +1,9 @@
-import "mocha";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
+import { expect, describe, it, beforeEach, vi } from "vitest";
+import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 import * as utils from "@walletconnect/utils";
-import pino from "pino";
 import Sinon from "sinon";
-
 import { Core, CORE_DEFAULT, Crypto } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 
 describe("Crypto", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
@@ -35,8 +33,7 @@ describe("Crypto", () => {
     it("generates a keyPair, sets it in the keychain and returns publicKey", async () => {
       const privateKey = utils.generateRandomBytes32();
       const publicKey = utils.generateRandomBytes32();
-      // Stub `utils.generateKeyPair` to return predictable values.
-      Sinon.stub(utils, "generateKeyPair").returns({ publicKey, privateKey });
+      vi.spyOn(utils, "generateKeyPair").mockReturnValue({ publicKey, privateKey });
       const keychainSpy = Sinon.spy();
       crypto.keychain.set = keychainSpy;
       const returnedPublicKey = await crypto.generateKeyPair();
@@ -70,9 +67,7 @@ describe("Crypto", () => {
   describe("setSymKey", () => {
     it("throws if not initialized", async () => {
       const invalidCrypto = new Crypto(core, logger);
-      await expect(invalidCrypto.setSymKey("key")).to.eventually.be.rejectedWith(
-        "Not initialized. crypto",
-      );
+      await expect(invalidCrypto.setSymKey("key")).rejects.toThrow("Not initialized. crypto");
     });
     it("sets expected topic-symKey pair in keychain, returns topic", async () => {
       const spy = Sinon.spy();
@@ -101,9 +96,7 @@ describe("Crypto", () => {
   describe("deleteKeyPair", () => {
     it("throws if not initialized", async () => {
       const invalidCrypto = new Crypto(core, logger);
-      await expect(invalidCrypto.deleteKeyPair("key")).to.eventually.be.rejectedWith(
-        "Not initialized. crypto",
-      );
+      await expect(invalidCrypto.deleteKeyPair("key")).rejects.toThrow("Not initialized. crypto");
     });
     it("deletes the expected topic-symKey pair from keychain", async () => {
       const publicKey = utils.generateRandomBytes32();
@@ -118,9 +111,7 @@ describe("Crypto", () => {
   describe("deleteSymKey", () => {
     it("throws if not initialized", async () => {
       const invalidCrypto = new Crypto(core, logger);
-      await expect(invalidCrypto.deleteSymKey("key")).to.eventually.be.rejectedWith(
-        "Not initialized. crypto",
-      );
+      await expect(invalidCrypto.deleteSymKey("key")).rejects.toThrow("Not initialized. crypto");
     });
     it("deletes the expected topic-symKey pair from keychain", async () => {
       const topic = utils.generateRandomBytes32();
@@ -140,7 +131,7 @@ describe("Crypto", () => {
 
     it("throws if not initialized", async () => {
       const invalidCrypto = new Crypto(core, logger);
-      await expect(invalidCrypto.encode("topic", payload)).to.eventually.be.rejectedWith(
+      await expect(invalidCrypto.encode("topic", payload)).rejects.toThrow(
         "Not initialized. crypto",
       );
     });
@@ -159,7 +150,7 @@ describe("Crypto", () => {
 
     it("throws if not initialized", async () => {
       const invalidCrypto = new Crypto(core, logger);
-      await expect(invalidCrypto.decode("topic", "encoded")).to.eventually.be.rejectedWith(
+      await expect(invalidCrypto.decode("topic", "encoded")).rejects.toThrow(
         "Not initialized. crypto",
       );
     });
@@ -167,6 +158,10 @@ describe("Crypto", () => {
       const topic = await crypto.setSymKey(symKey);
       const decoded = await crypto.decode(topic, encoded);
       expect(decoded).to.eql(payload);
+    });
+    it("should not throw on failed decrypt", async () => {
+      const decoded = await crypto.decode("non-existent-topic", "dummymessage");
+      expect(decoded).to.eql(undefined);
     });
   });
 });

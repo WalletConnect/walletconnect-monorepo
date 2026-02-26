@@ -1,13 +1,13 @@
-import { Logger } from "pino";
 import { IEvents } from "@walletconnect/events";
+import { Logger } from "@walletconnect/logger";
 
-import { IRelayer, RelayerTypes } from "./relayer";
+import { IRelayer, RelayerTypes } from "./relayer.js";
 
 export declare namespace PublisherTypes {
   export interface Params {
     topic: string;
     message: string;
-    opts: Required<RelayerTypes.PublishOptions>;
+    opts: Omit<RelayerTypes.PublishOptions, "internal">;
   }
 }
 
@@ -16,7 +16,10 @@ export abstract class IPublisher extends IEvents {
 
   public abstract readonly context: string;
 
-  constructor(public relayer: IRelayer, public logger: Logger) {
+  constructor(
+    public relayer: IRelayer,
+    public logger: Logger,
+  ) {
     super();
   }
 
@@ -25,4 +28,9 @@ export abstract class IPublisher extends IEvents {
     message: string,
     opts?: RelayerTypes.PublishOptions,
   ): Promise<void>;
+
+  public abstract publishCustom(params: {
+    payload: any;
+    opts?: RelayerTypes.PublishOptions;
+  }): Promise<void>;
 }

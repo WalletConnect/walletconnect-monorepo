@@ -1,0 +1,68 @@
+{
+  "name": "@walletconnect/react-native-compat",
+  "description": "Native modules and shims for WalletConnect Protocol in React Native Projects",
+  "version": "2.23.6",
+  "author": "WalletConnect, Inc. <walletconnect.com>",
+  "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "main": "index.js",
+  "files": [
+    "dist",
+    "android",
+    "ios",
+    "module",
+    "cpp",
+    "*.podspec",
+    "!ios/build",
+    "!android/build",
+    "!android/gradle",
+    "!android/gradlew",
+    "!android/gradlew.bat",
+    "!android/local.properties",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__",
+    "!**/.*"
+  ],
+  "keywords": [
+    "wallet",
+    "walletconnect",
+    "dapp",
+    "react",
+    "react-native"
+  ],
+  "scripts": {
+    "lint": "eslint -c '../../.eslintrc' --fix './**/*.{js,ts,jsx,tsx}'",
+    "prettier": "prettier --check './**/*.{js,ts,jsx,tsx}'"
+  },
+  "dependencies": {
+    "events": "3.3.0",
+    "fast-text-encoding": "1.0.6",
+    "react-native-url-polyfill": "2.0.0"
+  },
+  "peerDependencies": {
+    "@react-native-async-storage/async-storage": "*",
+    "@react-native-community/netinfo": "*",
+    "expo-application": "*",
+    "react-native": "*",
+    "react-native-get-random-values": "*"
+  },
+  "peerDependenciesMeta": {
+    "expo-application": {
+      "optional": true
+    }
+  },
+  "codegenConfig": {
+    "name": "RNRNWalletConnectModuleSpec",
+    "type": "modules",
+    "jsSrcsDir": "."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WalletConnect/walletconnect-monorepo.git",
+    "directory": "packages/react-native-compat"
+  },
+  "publishConfig": {
+    "provenance": true
+  }
+}

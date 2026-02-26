@@ -12,11 +12,12 @@
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
-    "lib": ["es2019", "dom", "esnext.asynciterable"],
-    "module": "esnext",
-    "moduleResolution": "node",
+    "lib": ["ES2020", "DOM"],
+    "module": "ES2020",
+    "target": "ES2020",
+    "moduleResolution": "Node",
     "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noLib": false,
@@ -30,8 +31,7 @@
     "strict": true,
     "strictFunctionTypes": true,
     "strictNullChecks": true,
-    "strictPropertyInitialization": true,
-    "suppressImplicitAnyIndexErrors": true,
-    "target": "es2017"
-  }
+    "strictPropertyInitialization": true
+  },
+  "include": ["**/package.json", "packages", "providers"]
 }

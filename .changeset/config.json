@@ -1,0 +1,20 @@
+{
+  "changelog": ["@changesets/changelog-github", { "repo": "WalletConnect/walletconnect-monorepo" }],
+  "commit": false,
+  "fixed": [
+    [
+      "@walletconnect/utils",
+      "@walletconnect/core",
+      "@walletconnect/sign-client",
+      "@walletconnect/types",
+      "@walletconnect/ethereum-provider",
+      "@walletconnect/universal-provider",
+      "@walletconnect/react-native-compat",
+      "@walletconnect/signer-connection"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "v2.0",
+  "updateInternalDependencies": "patch"
+}

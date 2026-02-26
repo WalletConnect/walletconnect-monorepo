@@ -1,5 +1,5 @@
-import { Logger } from "pino";
-import { ICore } from "./core";
+import { Logger } from "@walletconnect/logger";
+import { ICore } from "./core.js";
 
 export abstract class IKeyChain {
   public abstract keychain: Map<string, string>;
@@ -8,7 +8,10 @@ export abstract class IKeyChain {
 
   public abstract readonly context: string;
 
-  constructor(public core: ICore, public logger: Logger) {}
+  constructor(
+    public core: ICore,
+    public logger: Logger,
+  ) {}
 
   public abstract init(): Promise<void>;
 

@@ -5,6 +5,10 @@ npm-debug.log*
 lerna-debug.log
 *.lerna_backup
 
+# Bundle
+**/bundle-stats.html
+**/stats.html
+
 # Runtime data
 pids
 *.pid
@@ -30,6 +34,41 @@ zip
 tsconfig.tsbuildinfo
 test.db
 test.db-journal
+**/tmp
 setup
 result*
 ops/grafana/grafana.ini
+.rollup.cache
+
+# react native module
+## Android/IJ
+.classpath
+.cxx
+.gradle
+.idea
+.project
+.settings
+local.properties
+android.iml
+
+## Xcode
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace
+
+## web3wallet dependencies since its deprecated
+packages/web3wallet/package-lock.json

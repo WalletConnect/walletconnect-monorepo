@@ -1,13 +1,13 @@
 /**
  * Types
  */
-type SdkErrorKey = keyof typeof SDK_ERRORS;
-type InternalErrorKey = keyof typeof INTERNAL_ERRORS;
+export type SdkErrorKey = keyof typeof SDK_ERRORS;
+export type InternalErrorKey = keyof typeof INTERNAL_ERRORS;
 
 /**
  * Constants
  */
-const SDK_ERRORS = {
+export const SDK_ERRORS = {
   /* ----- INVALID (1xxx) ----- */
   INVALID_METHOD: {
     message: "Invalid method.",
@@ -93,9 +93,14 @@ const SDK_ERRORS = {
     message: "Session settlement failed.",
     code: 7000,
   },
+  /* ----- PAIRING (10xxx) ----- */
+  WC_METHOD_UNSUPPORTED: {
+    message: "Unsupported wc_ method.",
+    code: 10001,
+  },
 };
 
-const INTERNAL_ERRORS = {
+export const INTERNAL_ERRORS = {
   NOT_INITIALIZED: {
     message: "Not initialized.",
     code: 1,
@@ -151,4 +156,8 @@ export function getSdkError(key: SdkErrorKey, context?: string | number) {
     message: context ? `${message} ${context}` : message,
     code,
   };
+}
+
+export interface SDKError extends Error {
+  code?: number;
 }

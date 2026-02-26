@@ -9,10 +9,11 @@ import {
 import { getDocument, getLocation, getNavigator } from "@walletconnect/window-getters";
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
-import * as qs from "query-string";
+import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
+
+import { getInternalError, SDKError } from "./errors.js";
 
 // -- constants -----------------------------------------//
-
 export const REACT_NATIVE_PRODUCT = "ReactNative";
 
 export const ENV_MAP = {
@@ -48,8 +49,26 @@ export function isReactNative(): boolean {
   return !getDocument() && !!getNavigator() && navigator.product === REACT_NATIVE_PRODUCT;
 }
 
+export function isAndroid(): boolean {
+  return (
+    isReactNative() &&
+    typeof global !== "undefined" &&
+    typeof (global as any)?.Platform !== "undefined" &&
+    (global as any)?.Platform.OS === "android"
+  );
+}
+
+export function isIos(): boolean {
+  return (
+    isReactNative() &&
+    typeof global !== "undefined" &&
+    typeof (global as any)?.Platform !== "undefined" &&
+    (global as any)?.Platform.OS === "ios"
+  );
+}
+
 export function isBrowser(): boolean {
-  return !isNode() && !!getNavigator();
+  return !isNode() && !!getNavigator() && !!getDocument();
 }
 
 export function getEnvironment(): string {
@@ -59,19 +78,72 @@ export function getEnvironment(): string {
   return ENV_MAP.unknown;
 }
 
+export function getAppId(): string | undefined {
+  try {
+    if (
+      isReactNative() &&
+      typeof global !== "undefined" &&
+      typeof (global as any)?.Application !== "undefined"
+    ) {
+      return (global as any).Application?.applicationId;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // -- query -----------------------------------------------//
 
-export function appendToQueryString(queryString: string, newQueryParams: any): string {
-  let queryParams = qs.parse(queryString);
+export function appendToQueryString(
+  queryString: string,
+  newQueryParams: Record<string, string | number | boolean | undefined>,
+): string {
+  const urlSearchParams = new URLSearchParams(queryString);
 
-  queryParams = { ...queryParams, ...newQueryParams };
+  Object.entries(newQueryParams)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        urlSearchParams.set(key, String(value));
+      }
+    });
 
-  queryString = qs.stringify(queryParams);
-
-  return queryString;
+  return urlSearchParams.toString();
 }
 
 // -- metadata ----------------------------------------------//
+
+export function populateAppMetadata(metadata?: SignClientTypes.Metadata): SignClientTypes.Metadata {
+  const appMetadata = getAppMetadata();
+  try {
+    if (metadata?.url && appMetadata.url) {
+      if (new URL(metadata.url).host !== new URL(appMetadata.url).host) {
+        console.warn(
+          `The configured WalletConnect 'metadata.url':${metadata.url} differs from the actual page url:${appMetadata.url}. This is probably unintended and can lead to issues.`,
+        );
+        metadata.url = appMetadata.url;
+      }
+    }
+
+    if (metadata?.icons?.length && metadata.icons.length > 0) {
+      metadata.icons = metadata.icons.filter((icon) => icon !== "");
+    }
+
+    return {
+      ...appMetadata,
+      ...metadata,
+      url: metadata?.url || appMetadata.url,
+      name: metadata?.name || appMetadata.name,
+      description: metadata?.description || appMetadata.description,
+      icons:
+        metadata?.icons?.length && metadata.icons.length > 0 ? metadata.icons : appMetadata.icons,
+    };
+  } catch (error) {
+    console.warn("Error populating app metadata", error);
+    return metadata || appMetadata;
+  }
+}
 
 export function getAppMetadata(): SignClientTypes.Metadata {
   return (
@@ -97,6 +169,17 @@ export function getRelayClientMetadata(protocol: string, version: number): Relay
 // -- rpcUrl ----------------------------------------------//
 
 export function getJavascriptOS() {
+  const env = getEnvironment();
+  // global.Platform is set by react-native-compat
+  if (
+    env === ENV_MAP.reactNative &&
+    typeof global !== "undefined" &&
+    typeof (global as any)?.Platform !== "undefined"
+  ) {
+    const { OS, Version } = (global as any).Platform;
+    return [OS, Version].join("-");
+  }
+
   const info = detect();
   if (info === null) return "unknown";
   const os = info.os ? info.os.replace(" ", "").toLowerCase() : "unknown";
@@ -125,10 +208,20 @@ export function formatRelayRpcUrl({
   sdkVersion,
   auth,
   projectId,
+  useOnCloseEvent,
+  bundleId,
+  packageName,
 }: RelayerTypes.RpcUrlParams) {
   const splitUrl = relayUrl.split("?");
   const ua = formatUA(protocol, version, sdkVersion);
-  const params = { auth, ua, projectId };
+  const params = {
+    auth,
+    ua,
+    projectId,
+    useOnCloseEvent: useOnCloseEvent || undefined,
+    packageName: packageName || undefined,
+    bundleId: bundleId || undefined,
+  };
   const queryString = appendToQueryString(splitUrl[1] || "", params);
   return splitUrl[0] + "?" + queryString;
 }
@@ -145,6 +238,7 @@ export function getHttpUrl(url: string) {
 // -- assert ------------------------------------------------- //
 
 export function assertType(obj: any, key: string, type: string) {
+  // eslint-disable-next-line valid-typeof
   if (!obj[key] || typeof obj[key] !== type) {
     throw new Error(`Missing or invalid "${key}" param`);
   }
@@ -163,7 +257,7 @@ export function formatMessageContext(context: string): string {
 // -- array ------------------------------------------------- //
 
 export function hasOverlap(a: any[], b: any[]): boolean {
-  const matches = a.filter(x => b.includes(x));
+  const matches = a.filter((x) => b.includes(x));
   return matches.length === a.length;
 }
 
@@ -185,8 +279,8 @@ export function mapEntries<A = any, B = any>(
   obj: Record<string, A>,
   cb: (x: A) => B,
 ): Record<string, B> {
-  const res = {};
-  Object.keys(obj).forEach(key => {
+  const res: any = {};
+  Object.keys(obj).forEach((key) => {
     res[key] = cb(obj[key]);
   });
   return res;
@@ -200,43 +294,46 @@ export const enumify = <T extends { [index: string]: U }, U extends string>(x: T
 // -- string ------------------------------------------------- //
 
 export function capitalizeWord(word: string) {
-  return word.trim().replace(/^\w/, c => c.toUpperCase());
+  return word.trim().replace(/^\w/, (c) => c.toUpperCase());
 }
 
 export function capitalize(str: string) {
   return str
     .split(EMPTY_SPACE)
-    .map(w => capitalizeWord(w))
+    .map((w) => capitalizeWord(w))
     .join(EMPTY_SPACE);
 }
 
-// -- time ------------------------------------------------- //
-
-export function calcExpiry(ttl: number, now?: number): number {
-  return fromMiliseconds((now || Date.now()) + toMiliseconds(ttl));
-}
-
-export function isExpired(expiry: number) {
-  return fromMiliseconds(Date.now()) >= toMiliseconds(expiry);
-}
-
 // -- promises --------------------------------------------- //
-export function createDelayedPromise<T>() {
-  const timeout = toMiliseconds(FIVE_MINUTES);
-  let cacheResolve: undefined | ((value?: T) => void);
+export function createDelayedPromise<T>(
+  expiry: number = FIVE_MINUTES,
+  expireErrorMessage?: string,
+) {
+  const timeout = toMiliseconds(expiry || FIVE_MINUTES);
+  let cacheResolve: undefined | ((value: T | PromiseLike<T>) => void);
   let cacheReject: undefined | ((value?: ErrorResponse) => void);
   let cacheTimeout: undefined | NodeJS.Timeout;
+  let result: Promise<Awaited<T>> | Promise<T> | undefined;
 
   const done = () =>
     new Promise<T>((promiseResolve, promiseReject) => {
-      cacheTimeout = setTimeout(promiseReject, timeout);
+      if (result) {
+        return promiseResolve(result);
+      }
+      cacheTimeout = setTimeout(() => {
+        const expiredError = getInternalError("EXPIRED");
+        const err = new Error(expireErrorMessage || expiredError.message) as SDKError;
+        err.code = expiredError.code;
+        promiseReject(err);
+      }, timeout);
       cacheResolve = promiseResolve;
       cacheReject = promiseReject;
     });
   const resolve = (value?: T) => {
     if (cacheTimeout && cacheResolve) {
       clearTimeout(cacheTimeout);
-      cacheResolve(value);
+      cacheResolve(value as T);
+      result = Promise.resolve(value) as Promise<Awaited<T>>;
     }
   };
   const reject = (value?: ErrorResponse) => {
@@ -251,6 +348,23 @@ export function createDelayedPromise<T>() {
     reject,
     done,
   };
+}
+
+export function createExpiringPromise<T>(
+  promise: Promise<T>,
+  expiry: number,
+  expireErrorMessage?: string,
+) {
+  return new Promise(async (resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error(expireErrorMessage)), expiry);
+    try {
+      const result = await promise;
+      resolve(result);
+    } catch (error) {
+      reject(error);
+    }
+    clearTimeout(timeout);
+  });
 }
 
 // -- expirer --------------------------------------------- //
@@ -291,8 +405,188 @@ export function parseExpirerTarget(target: string) {
   return parsed;
 }
 
+export function calcExpiry(ttl: number, now?: number): number {
+  return fromMiliseconds((now || Date.now()) + toMiliseconds(ttl));
+}
+
+export function isExpired(expiry: number) {
+  return Date.now() >= toMiliseconds(expiry);
+}
+
 // -- events ---------------------------------------------- //
 
 export function engineEvent(event: EngineTypes.Event, id?: number | string | undefined) {
   return `${event}${id ? `:${id}` : ""}`;
+}
+
+export function mergeArrays<T>(a: T[] = [], b: T[] = []): T[] {
+  return [...new Set([...a, ...b])];
+}
+
+export async function handleDeeplinkRedirect({
+  id,
+  topic,
+  wcDeepLink,
+}: {
+  id: number;
+  topic: string;
+  wcDeepLink: string;
+}) {
+  try {
+    if (!wcDeepLink) return;
+
+    const json = typeof wcDeepLink === "string" ? JSON.parse(wcDeepLink) : wcDeepLink;
+    const deeplink = json?.href;
+    if (typeof deeplink !== "string") return;
+    const link = formatDeeplinkUrl(deeplink, id, topic);
+    const env = getEnvironment();
+
+    if (env === ENV_MAP.browser) {
+      if (!getDocument()?.hasFocus()) {
+        console.warn("Document does not have focus, skipping deeplink.");
+        return;
+      }
+
+      openDeeplink(link);
+    } else if (env === ENV_MAP.reactNative) {
+      // global.Linking is set by react-native-compat
+      if (typeof (global as any)?.Linking !== "undefined") {
+        await (global as any).Linking.openURL(link);
+      }
+    }
+  } catch (err) {
+    // Silent error, just log in console
+    // eslint-disable-next-line no-console
+    console.error(err);
+  }
+}
+
+export function formatDeeplinkUrl(deeplink: string, requestId: number, sessionTopic: string) {
+  const payload = `requestId=${requestId}&sessionTopic=${sessionTopic}`;
+  if (deeplink.endsWith("/")) deeplink = deeplink.slice(0, -1);
+  let link = `${deeplink}`;
+  if (deeplink.startsWith("https://t.me")) {
+    const startApp = deeplink.includes("?") ? "&startapp=" : "?startapp=";
+    link = `${link}${startApp}${toBase64(payload, true)}`;
+  } else {
+    link = `${link}/wc?${payload}`;
+  }
+  return link;
+}
+
+export function openDeeplink(url: string) {
+  let target = "_self";
+  if (isIframe()) {
+    target = "_top";
+  } else if (isTelegram() || url.startsWith("https://") || url.startsWith("http://")) {
+    target = "_blank";
+  }
+
+  window.open(url, target, "noreferrer noopener");
+}
+
+export async function getDeepLink(storage: IKeyValueStorage, key: string) {
+  let link: string | undefined = "";
+  try {
+    if (isBrowser()) {
+      link = localStorage.getItem(key) as string;
+      if (link) return link;
+    }
+    link = await storage.getItem(key);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(err);
+  }
+  return link;
+}
+
+export function getCommonValuesInArrays<T = string | number | boolean>(arr1: T[], arr2: T[]): T[] {
+  return arr1.filter((value) => arr2.includes(value));
+}
+
+export function getSearchParamFromURL(url: string, param: any) {
+  const include = url.includes(param);
+  if (!include) return null;
+  const params = url.split(/([&,?,=])/);
+  const index = params.indexOf(param);
+  const value = params[index + 2];
+  return value;
+}
+
+export function uuidv4() {
+  if (typeof crypto !== "undefined" && crypto?.randomUUID) {
+    return crypto.randomUUID();
+  }
+
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/gu, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+
+    return v.toString(16);
+  });
+}
+
+export function isTestRun() {
+  return typeof process !== "undefined" && process.env.IS_VITEST === "true";
+}
+
+export function isTelegram() {
+  return (
+    typeof window !== "undefined" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (Boolean((window as any).TelegramWebviewProxy) ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Boolean((window as any).Telegram) ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Boolean((window as any).TelegramWebviewProxyProto))
+  );
+}
+
+export function isIframe() {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return false;
+  }
+}
+
+export function toBase64(input: string, removePadding = false): string {
+  const encoded = Buffer.from(input).toString("base64");
+  return removePadding ? encoded.replace(/[=]/g, "") : encoded;
+}
+
+export function fromBase64(encodedString: string): string {
+  return Buffer.from(encodedString, "base64").toString("utf-8");
+}
+
+export function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export class LimitedSet<T> {
+  private limit: number;
+  private set: Set<T>;
+
+  constructor({ limit }: { limit: number }) {
+    this.limit = limit;
+    this.set = new Set<T>();
+  }
+
+  add(item: T) {
+    if (this.set.has(item)) return;
+
+    if (this.set.size >= this.limit) {
+      // Remove the oldest entry (FIFO)
+      const firstKey = this.set.values().next().value;
+      if (firstKey) {
+        this.set.delete(firstKey);
+      }
+    }
+
+    this.set.add(item);
+  }
+
+  has(item: T) {
+    return this.set.has(item);
+  }
 }

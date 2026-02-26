@@ -1,0 +1,112 @@
+name: Trigger Devin for AppKit Dependencies Update
+
+on:
+  push:
+    branches:
+      - v2.0
+
+permissions:
+  contents: read # Required to read github.event.head_commit.message
+
+jobs:
+  trigger-devin-appkit-deps-update:
+    # This job runs only if the head commit message on the push to main contains 'chore: version packages'
+    if: |
+      contains(github.event.head_commit.message, 'chore: version packages')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack Notification for AppKit Dependencies Update
+        env:
+          DEVIN_SLACK_WEBHOOK_URL: ${{ secrets.DEVIN_SLACK_WEBHOOK_URL }}
+          DEVIN_SLACK_USER_ID: ${{ vars.DEVIN_SLACK_USER_ID }}
+          PROMPT_TEXT: |
+            ## Context
+
+            A commit titled "chore: version packages" (SHA: ${{ github.sha }}) was just pushed to the main branch of the ${{ github.repository }} repository. This commit is typically the result of a merged Pull Request that contains new package versions from a changeset.
+            Your task is to analyze this specific commit and update dependencies in the reown-com/appkit repository.
+
+            Please examine the changes introduced by commit ${{ github.sha }} in the ${{ github.repository }} repository. Focus your examination on:
+            1. The content of any `CHANGELOG.md` files modified in this commit to understand which packages were versioned
+            2. The `package.json` files to identify the exact new versions of packages that were published
+
+            Based on your analysis, create a pull request in the reown-com/appkit repository that updates all walletconnect-monorepo dependencies currently in use in that repository to their latest published versions.
+
+            ## Requirements
+            * **ONLY** update packages that were actually versioned in this "chore: version packages" commit - do not add new dependencies or update packages that weren't part of this release
+            * Update dependencies in package.json files throughout the reown-com/appkit repository
+            * Ensure version updates are consistent across all package.json files in the appkit repository
+            * **Update the lockfile** at the root of the reown-com/appkit monorepo after all package.json files have been updated (run `pnpm install` or equivalent to regenerate the lockfile)
+            * Follow the same pattern as this example PR: https://github.com/reown-com/appkit/pull/4298
+
+            ## Expected Deliverable
+            Create a pull request in the reown-com/appkit repository that:
+            * Has a clear title like "chore: update walletconnect dependencies to latest versions"
+            * Includes a description explaining which packages were updated and their new versions
+            * References this commit (Commit: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) as the source of the version updates
+            * Only updates existing walletconnect-monorepo dependencies that were versioned in the changeset
+
+            ## Repositories Access Required
+            * ${{ github.repository }} (for reading the changelog and package.json changes from the commit)
+            * reown-com/appkit (for creating the PR with dependency updates)
+        run: |
+          # Exit on error
+          set -e
+
+          # Check if the Slack webhook URL is provided and not empty
+          if [ -z "${DEVIN_SLACK_WEBHOOK_URL}" ]; then
+            echo "Error: DEVIN_SLACK_WEBHOOK_URL is not set or is empty."
+            echo "Please ensure this secret is configured in the repository settings (Secrets and variables > Actions)."
+            exit 1
+          fi
+
+          # PROMPT_TEXT is set in the 'env' block and should be fully expanded by GitHub Actions.
+          # Construct the final message text for Slack.
+          MESSAGE_TEXT="<@${DEVIN_SLACK_USER_ID}> ${PROMPT_TEXT}"
+
+          # Create the JSON payload for Slack.
+          # The --arg option in jq handles escaping special characters in MESSAGE_TEXT for valid JSON.
+          echo "Attempting to create JSON payload..."
+          JSON_PAYLOAD=$(jq -n --arg text "$MESSAGE_TEXT" '{text: $text}')
+          JQ_EXIT_CODE=$?
+
+          if [ $JQ_EXIT_CODE -ne 0 ]; then
+            echo "Error: jq command failed to create JSON payload (Exit Code: $JQ_EXIT_CODE)."
+            # Log a snippet of the message text to aid debugging, avoiding overly long logs.
+            echo "Original Message Text (first 200 characters):"
+            echo "${MESSAGE_TEXT:0:200}..."
+            exit 1
+          fi
+
+          echo "Sending Slack notification for AppKit Dependencies Update."
+          # Echo context information using direct GitHub context expressions for clarity and consistency.
+          echo "AppKit Repo: ${{ github.repository }}"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Commit URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+
+          # Send the notification to Slack using curl.
+          # -s: silent mode (no progress meter).
+          # -X POST: specifies the HTTP POST method.
+          # -H "Content-Type: application/json": sets the content type header.
+          # -d "$JSON_PAYLOAD": provides the JSON data for the request body.
+          RESPONSE=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD" \
+            "${DEVIN_SLACK_WEBHOOK_URL}")
+          CURL_EXIT_CODE=$?
+
+          if [ $CURL_EXIT_CODE -ne 0 ]; then
+            echo "Error: curl command failed to send Slack notification (Exit Code: $CURL_EXIT_CODE)."
+            # RESPONSE might be empty or contain an error message from curl itself (e.g., if URL is malformed or network issue).
+            echo "Curl response (if any): $RESPONSE"
+            exit 1
+          fi
+
+          # Check the content of the response from the Slack API.
+          # A successful Slack webhook POST request typically returns the string "ok".
+          if [ "$RESPONSE" = "ok" ]; then
+            echo "Slack notification sent successfully."
+          else
+            echo "Error sending Slack notification: Slack API did not return 'ok'."
+            echo "Response from Slack: $RESPONSE"
+            exit 1
+          fi

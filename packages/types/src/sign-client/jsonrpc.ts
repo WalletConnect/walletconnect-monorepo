@@ -1,16 +1,17 @@
 import { ErrorResponse, JsonRpcResult } from "@walletconnect/jsonrpc-types";
-import { SignClientTypes } from "./client";
-import { RelayerTypes } from "../core/relayer";
-import { SessionTypes } from "./session";
-import { ProposalTypes } from "./proposal";
+
+import { SignClientTypes } from "./client.js";
+import { RelayerTypes } from "../core/relayer.js";
+import { SessionTypes } from "./session.js";
+import { ProposalTypes } from "./proposal.js";
+import { AuthTypes } from "./auth.js";
+import { EngineTypes } from "./engine.js";
 
 export declare namespace JsonRpcTypes {
   // -- core ------------------------------------------------------- //
   export type DefaultResponse = true | ErrorResponse;
 
   export type WcMethod =
-    | "wc_pairingDelete"
-    | "wc_pairingPing"
     | "wc_sessionPropose"
     | "wc_sessionSettle"
     | "wc_sessionUpdate"
@@ -18,7 +19,8 @@ export declare namespace JsonRpcTypes {
     | "wc_sessionDelete"
     | "wc_sessionPing"
     | "wc_sessionRequest"
-    | "wc_sessionEvent";
+    | "wc_sessionEvent"
+    | "wc_sessionAuthenticate";
 
   // -- requests --------------------------------------------------- //
 
@@ -27,37 +29,45 @@ export declare namespace JsonRpcTypes {
       code: number;
       message: string;
     };
-    wc_pairingPing: {};
+    wc_pairingPing: Record<string, unknown>;
     wc_sessionPropose: {
       relays: RelayerTypes.ProtocolOptions[];
       requiredNamespaces: ProposalTypes.RequiredNamespaces;
+      optionalNamespaces: ProposalTypes.OptionalNamespaces;
+      sessionProperties?: ProposalTypes.SessionProperties;
       proposer: {
         publicKey: string;
         metadata: SignClientTypes.Metadata;
       };
+      expiryTimestamp?: number;
     };
     wc_sessionSettle: {
       relay: RelayerTypes.ProtocolOptions;
       namespaces: SessionTypes.Namespaces;
+      sessionProperties?: ProposalTypes.SessionProperties;
+      scopedProperties?: ProposalTypes.ScopedProperties;
+      sessionConfig?: SessionTypes.SessionConfig;
       expiry: number;
       controller: {
         publicKey: string;
         metadata: SignClientTypes.Metadata;
       };
+      proposalRequestsResponses?: EngineTypes.ProposalRequestsResponses;
     };
     wc_sessionUpdate: {
       namespaces: SessionTypes.Namespaces;
     };
-    wc_sessionExtend: {};
+    wc_sessionExtend: Record<string, unknown>;
     wc_sessionDelete: {
       code: number;
       message: string;
     };
-    wc_sessionPing: {};
+    wc_sessionPing: Record<string, unknown>;
     wc_sessionRequest: {
       request: {
         method: string;
         params: any;
+        expiryTimestamp?: number;
       };
       chainId: string;
     };
@@ -68,6 +78,7 @@ export declare namespace JsonRpcTypes {
       };
       chainId: string;
     };
+    wc_sessionAuthenticate: AuthTypes.SessionAuthenticateRequestParams;
   }
 
   // -- responses -------------------------------------------------- //
@@ -85,6 +96,7 @@ export declare namespace JsonRpcTypes {
     wc_sessionPing: true;
     wc_sessionRequest: JsonRpcResult;
     wc_sessionEvent: true;
+    wc_sessionAuthenticate: AuthTypes.SessionAuthenticateResponseParams;
   }
 
   export type Error = ErrorResponse;

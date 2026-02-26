@@ -12,22 +12,20 @@ jobs:
     if: github.event.action == 'opened' || github.event.action == 'synchronize'
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       - name: setup-node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 20.x
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
       - name: install
         run: npm ci
-      - name: bootstrap
-        run: npm run bootstrap
       - name: build
         run: npm run build
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: build-artifact
+          name: build-artifacts
           path: |
             packages/core/dist
             packages/sign-client/dist
@@ -35,27 +33,32 @@ jobs:
             packages/utils/dist
             providers/ethereum-provider/dist
             providers/signer-connection/dist
-
-  lint:
+            providers/universal-provider/dist
+            packages/pos-client/dist
+            packages/pay/dist
+  code_style:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        style-command:
+          - lint
+          - prettier
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       - name: setup-node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 20.x
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
       - name: install
         run: npm ci
-      - name: bootstrap
-        run: npm run bootstrap
-      - name: eslint
-        run: npm run lint
+      - name: check
+        run: npm run ${{ matrix.style-command }}
 
   test:
-    needs: build
+    needs: [build, code_style]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -63,24 +66,27 @@ jobs:
           - packages/sign-client
           - packages/core
           - packages/utils
+          - providers/universal-provider
           - providers/ethereum-provider
+          - packages/pos-client
+          - packages/pay
     env:
       TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
       TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
+      TEST_PROJECT_ID_MOBILE: ${{ vars.TEST_PROJECT_ID_MOBILE }}
+      TEST_MOBILE_APP_ID: ${{ vars.TEST_MOBILE_APP_ID }}
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       - name: setup-node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 20.x
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
       - name: install
         run: npm ci
-      - name: bootstrap
-        run: npm run bootstrap
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: build-artifact
+          name: build-artifacts
       - run: npm run test --prefix=${{ matrix.test-prefix }}

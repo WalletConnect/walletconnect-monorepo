@@ -22,7 +22,7 @@ export const TEST_HASHED_KEY = "a492906ccc809a411bb53a84572b57329375378c6ad7566f
 export const TEST_SYM_KEY = "0653ca620c7b4990392e1c53c4a51c14a2840cd20f0f1524cf435b17b6fe988c";
 
 export const TEST_RELAY_OPTIONS = {
-  protocol: "iridium",
+  protocol: "irn",
   data: undefined,
 };
 

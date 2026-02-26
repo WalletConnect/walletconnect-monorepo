@@ -1,5 +1,4 @@
 {
-  "name": "walletconnect-monorepo",
   "description": "Monorepo for WalletConnect",
   "private": true,
   "keywords": [
@@ -16,22 +15,38 @@
   ],
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
-  "license": "Apache-2.0",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "workspaces": [
+    "packages/types",
+    "packages/utils",
+    "packages/core",
+    "packages/sign-client",
+    "packages/react-native-compat",
+    "providers/universal-provider",
+    "providers/signer-connection",
+    "providers/ethereum-provider",
+    "packages/pos-client",
+    "packages/pay"
+  ],
   "scripts": {
-    "clean": "lerna clean --yes",
-    "bootstrap": "lerna bootstrap --hoist",
-    "lint": "lerna run lint",
-    "build": "lerna run build",
-    "test": "lerna run test",
-    "check": "run-s lint build test",
-    "reset": "run-s clean bootstrap check",
-    "commit-version": "node ops/js/commit-version.js",
-    "new-version": "lerna version --no-git-tag-version",
-    "pre-publish": "run-s new-version reset commit-version",
-    "npm-publish:rc": "lerna exec -- npm publish --access public --tag rc",
-    "npm-publish:latest": "lerna exec -- npm publish --access public --tag latest",
-    "npm-publish:next": "lerna exec -- npm publish --access public --tag next",
-    "npm-publish:canary": "lerna exec -- npm publish --access public --tag canary"
+    "clean": "npm run clean --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "prettier": "npm run prettier --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:ignoreUnhandled": "npm run test:ignoreUnhandled --workspaces --if-present",
+    "check": "npm run lint; npm run build; npm run test",
+    "reset": "npm run clean; npm run check",
+    "new-version": "lerna version --no-private --no-git-tag-version --exact && npm run sh-update-versions",
+    "sh-update-versions": "sh ./scripts/update_lerna_json_version.sh && ./scripts/update_relayer_sdk_version.sh",
+    "pre-publish": "npm run new-version; npm run reset",
+    "npm-publish:rc": "lerna exec --no-private -- npm publish --access public --tag rc",
+    "npm-publish:latest": "lerna exec --no-private -- npm publish --access public --tag latest",
+    "npm-publish:next": "lerna exec --no-private -- npm publish --access public --tag next",
+    "npm-publish:canary": "lerna exec --no-private -- npm publish --access public --tag canary",
+    "changeset": "changeset",
+    "changeset:version": "changeset version --no-commit && npm i && npm run sh-update-versions && sh ./scripts/commit.sh",
+    "changeset:publish": "changeset publish"
   },
   "repository": {
     "type": "git",
@@ -40,8 +55,40 @@
   "bugs": {
     "url": "https://github.com/walletconnect/walletconnect-monorepo/issues"
   },
+  "overrides": {
+    "tar": "^7.5.7",
+    "lodash": "^4.17.23",
+    "vite": "^7.3.1"
+  },
   "devDependencies": {
-    "lerna": "^4.0.0",
-    "npm-run-all": "^4.1.5"
+    "@changesets/changelog-github": "0.5.2",
+    "@changesets/cli": "2.29.8",
+    "@rollup/plugin-alias": "^5.1.1",
+    "@rollup/plugin-commonjs": "22.0.2",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "13.3.0",
+    "@types/node": "18.19.122",
+    "@types/sinon": "21.0.0",
+    "@typescript-eslint/eslint-plugin": "8.53.0",
+    "@typescript-eslint/parser": "8.53.0",
+    "esbuild": "0.25.0",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-n": "^16.0.2",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-prettier": "5.5.5",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-standard": "4.1.0",
+    "lerna": "9.0.3",
+    "prettier": "3.8.0",
+    "rollup": "2.79.2",
+    "rollup-plugin-esbuild": "4.9.3",
+    "rollup-plugin-visualizer": "5.14.0",
+    "sinon": "21.0.1",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
   }
 }

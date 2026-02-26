@@ -1,25 +1,265 @@
-import "mocha";
+import { getSdkError } from "@walletconnect/utils";
 import {
   initTwoClients,
   testConnectMethod,
   deleteClients,
-  uploadToCloudWatch
+  uploadCanaryResultsToCloudWatch,
+  publishToStatusPage,
 } from "../shared";
+import {
+  TEST_RELAY_URL,
+  TEST_REQUEST_PARAMS,
+  TEST_SIGN_CLIENT_OPTIONS_A,
+  TEST_SIGN_CLIENT_OPTIONS_B,
+} from "./../shared/values";
+import { describe, it, expect, afterEach } from "vitest";
+import { SignClient } from "../../src";
+import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { RELAYER_EVENTS } from "@walletconnect/core";
 
-const environment = process.env.ENVIRONMENT || 'dev';
+const environment = process.env.ENVIRONMENT || "dev";
+const region = process.env.REGION || "unknown";
+const logger = process.env.LOGGER || "error";
+const log = (log: string) => {
+  // eslint-disable-next-line no-console
+  console.log(log);
+};
 
-describe("Canary", function() {
-  describe("HappyPath", function() {
-    // TODO: implement a test that depicts
-    // the happy case better
-    it("connects", async function() {
-      const clients = await initTwoClients();
-      await testConnectMethod(clients);
-      deleteClients(clients);
-    });
+describe("Canary", () => {
+  const metric_prefix = "HappyPath.connects";
+  describe("HappyPath", () => {
+    it("connects", async () => {
+      const initStart = Date.now();
+      const handshakeClient = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS_A,
+        logger,
+      });
+      const initLatencyMs = Date.now() - initStart;
+      log(
+        `Client A (${await handshakeClient.core.crypto.getClientId()}) initialized in ${initLatencyMs}ms`,
+      );
+      const handshakeStart = Date.now();
+      //@ts-expect-error
+      await handshakeClient.core.relayer.connect();
+      const handshakeLatencyMs = Date.now() - handshakeStart;
+      log(
+        `Client A (${await handshakeClient.core.crypto.getClientId()}) initialized in ${handshakeLatencyMs}ms`,
+      );
+      await handshakeClient.core.relayer.transportClose();
+
+      const aInitStart = Date.now();
+      const A = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS_A,
+        logger,
+      });
+      const aInitLatencyMs = Date.now() - aInitStart;
+      const clientIdA = await A.core.crypto.getClientId();
+      log(`Client A (${clientIdA}) initialized in ${aInitLatencyMs}ms`);
+
+      const bInitStart = Date.now();
+      const B = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS_B,
+        logger,
+      });
+      const bInitLatencyMs = Date.now() - bInitStart;
+      const clientIdB = await B.core.crypto.getClientId();
+      log(`Client B (${clientIdB}) initialized in ${bInitLatencyMs}ms`);
+
+      const start = Date.now();
+
+      const clients = { A, B };
+      log(
+        `Clients initialized (relay '${TEST_RELAY_URL}'), client ids: A:'${clientIdA}';B:'${clientIdB}'`,
+      );
+      const { pairingA, sessionA, clientAConnectLatencyMs, settlePairingLatencyMs } =
+        await testConnectMethod(clients);
+      log(
+        `Clients connected (relay '${TEST_RELAY_URL}', client ids: A:'${clientIdA}';B:'${clientIdB}' pairing topic '${
+          pairingA.topic
+        }', session topic '${sessionA.topic}')`,
+      );
+
+      const successful = true;
+      const pairingLatencyMs = Date.now() - start;
+
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          clients.B.once("session_request", async (args) => {
+            const pendingRequests = clients.B.pendingRequest.getAll();
+            const { id, topic, params } = pendingRequests[0];
+            expect(params).toEqual(args.params);
+            expect(topic).toEqual(args.topic);
+            expect(id).toEqual(args.id);
+
+            const result = formatJsonRpcResult(id, "0x");
+
+            clients.B.core.relayer.on(RELAYER_EVENTS.publish, (publishPayload: any) => {
+              // only check for the session request response tag
+              if (publishPayload.params.tag !== 1109) {
+                return;
+              }
+              const publishParams = publishPayload.params;
+              expect(publishParams).to.exist;
+              expect(publishParams?.chainId).to.eq(params.chainId);
+              expect(publishParams?.rpcMethods).to.eql([params.request.method]);
+              expect(publishParams?.txHashes).to.eql([result.result]);
+              expect(publishParams?.contractAddresses).to.eql([params.request.params[0].to]);
+              expect(publishParams.message).to.exist;
+              expect(publishParams.message).to.be.a("string");
+              expect(publishParams.ttl).to.exist;
+              expect(publishParams.ttl).to.be.a("number");
+              expect(publishParams.tag).to.exist;
+
+              if (!publishParams) {
+                return console.error("eip155 tvf is undefined in publish payload params");
+              }
+              if (!publishParams.chainId || !publishParams.rpcMethods || !publishParams.txHashes) {
+                return console.error(
+                  "eip155 tvf is missing required fields in publish payload params",
+                );
+              }
+              if (publishParams.txHashes[0] !== result.result) {
+                return console.error(
+                  "eip155 txHashes do not match: signature - eth_sendTransaction in publish payload params",
+                  publishParams.txHashes[0],
+                  result.result,
+                  id,
+                );
+              }
+
+              resolve();
+            });
+            await clients.B.respond({
+              topic,
+              response: result,
+            });
+          });
+        }),
+        new Promise<void>(async (resolve) => {
+          const requestParams = {
+            method: "eth_sendTransaction",
+            params: [
+              {
+                data: "0xa9059cbb00000000000000000000000013a2ff792037aa2cd77fe1f4b522921ac59a9c5200000000000000000000000000000000000000000000000000000000003d0900",
+                from: "0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C52",
+                to: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+              },
+            ],
+          };
+
+          clients.A.core.relayer.on(RELAYER_EVENTS.publish, (publishPayload: any) => {
+            // only check for the session request tag
+            if (publishPayload.params.tag !== 1108) {
+              return;
+            }
+            const publishParams = publishPayload.params;
+            expect(publishParams).to.exist;
+            expect(publishParams?.chainId).to.eq(TEST_REQUEST_PARAMS.chainId);
+            expect(publishParams?.rpcMethods).to.eql([requestParams.method]);
+            expect(publishParams?.txHashes).to.eql([]);
+            expect(publishParams?.contractAddresses).to.eql([requestParams.params[0].to]);
+            expect(publishParams.topic).to.be.equal(sessionA.topic);
+            expect(publishParams.message).to.exist;
+            expect(publishParams.message).to.be.a("string");
+            expect(publishParams.ttl).to.exist;
+            expect(publishParams.ttl).to.be.a("number");
+            expect(publishParams.attestation).to.exist;
+            expect(publishParams.attestation).to.be.a("string");
+            expect(publishParams.tag).to.exist;
+            resolve();
+          });
+
+          await clients.A.request({
+            topic: sessionA.topic,
+            ...TEST_REQUEST_PARAMS,
+            request: {
+              ...TEST_REQUEST_PARAMS.request,
+              ...requestParams,
+            },
+          });
+        }),
+      ]);
+
+      // Send a ping
+      const pingStart = Date.now();
+      await new Promise<void>(async (resolve, reject) => {
+        try {
+          clients.B.once("session_ping", (event) => {
+            expect(sessionA.topic).to.eql(event.topic);
+            resolve();
+          });
+
+          await clients.A.ping({ topic: sessionA.topic });
+        } catch (e) {
+          reject(e);
+        }
+      });
+      const pingLatencyMs = Date.now() - pingStart;
+      const latencyMs = Date.now() - start;
+
+      console.log(`Clients paired after ${pairingLatencyMs}ms`);
+      if (environment !== "dev") {
+        await uploadCanaryResultsToCloudWatch(
+          environment,
+          region,
+          TEST_RELAY_URL,
+          metric_prefix,
+          successful,
+          latencyMs,
+          [
+            { initLatency: initLatencyMs },
+            { handshakeLatency: handshakeLatencyMs },
+            { proposePairingLatency: clientAConnectLatencyMs },
+            { settlePairingLatency: settlePairingLatencyMs - clientAConnectLatencyMs },
+            { pairingLatency: pairingLatencyMs },
+            { pingLatency: pingLatencyMs },
+          ],
+        );
+      }
+
+      if (environment === "prod") {
+        await publishToStatusPage(latencyMs);
+      }
+
+      const clientDisconnect = new Promise<void>((resolve, reject) => {
+        try {
+          clients.B.on("session_delete", (event: any) => {
+            expect(sessionA.topic).to.eql(event.topic);
+            resolve();
+          });
+        } catch (e) {
+          reject();
+        }
+      });
+
+      await clients.A.disconnect({
+        topic: sessionA.topic,
+        reason: getSdkError("USER_DISCONNECTED"),
+      });
+      await clientDisconnect;
+      log("Clients disconnected");
+      for (const client of [clients.A, clients.B]) {
+        if (client.core.relayer.connected) await client.core.relayer.transportClose();
+      }
+      log("Clients deleted");
+    }, 600_000);
   });
-  afterEach(function (done) {
-    const metric_prefix = `${this.currentTest!.parent!.title}.${this.currentTest!.title}`;
-    uploadToCloudWatch(environment, metric_prefix, this.currentTest!.state === 'passed', this.currentTest!.duration!, done);
+  afterEach(async (done) => {
+    const { result } = done.task;
+    const nowTimestamp = Date.now();
+    const latencyMs = nowTimestamp - (result?.startTime || nowTimestamp);
+    const taskState = result?.state;
+    log(`Canary finished in state ${taskState} took ${latencyMs}ms`);
+    if (environment !== "dev" && taskState?.toString() !== "pass") {
+      await uploadCanaryResultsToCloudWatch(
+        environment,
+        region,
+        TEST_RELAY_URL,
+        metric_prefix,
+        false,
+        latencyMs,
+        [],
+      );
+    }
   });
 });

@@ -1,30 +1,47 @@
-import { SignClientTypes } from "./client";
-import { RelayerTypes } from "../core/relayer";
-import { IStore } from "../core/store";
+import { AuthTypes } from "./auth.js";
+import { EngineTypes } from "./engine.js";
+import { SignClientTypes } from "./client.js";
+import { RelayerTypes } from "../core/relayer.js";
+import { IStore } from "../core/store.js";
 
 export declare namespace ProposalTypes {
   interface BaseRequiredNamespace {
-    chains: string[];
+    chains?: string[];
     methods: string[];
     events: string[];
   }
 
-  interface RequiredNamespace extends BaseRequiredNamespace {
-    extension?: BaseRequiredNamespace[];
-  }
+  type RequiredNamespace = BaseRequiredNamespace;
 
   type RequiredNamespaces = Record<string, RequiredNamespace>;
+  type OptionalNamespaces = Record<string, RequiredNamespace>;
+  type SessionProperties = Record<string, string>;
+  type ScopedProperties = Record<string, unknown>;
 
   export interface Struct {
     id: number;
-    expiry: number;
+    /**
+     * @deprecated in favor of expiryTimestamp
+     */
+    expiry?: number;
+    expiryTimestamp: number;
     relays: RelayerTypes.ProtocolOptions[];
     proposer: {
       publicKey: string;
       metadata: SignClientTypes.Metadata;
     };
     requiredNamespaces: RequiredNamespaces;
-    pairingTopic?: string;
+    optionalNamespaces: OptionalNamespaces;
+    sessionProperties?: SessionProperties;
+    scopedProperties?: ScopedProperties;
+    pairingTopic: string;
+    // these two fields are for verifyContext
+    attestation?: string;
+    encryptedId?: string;
+    requests?: {
+      authentication?: AuthTypes.AuthenticateParams[];
+      walletPay?: EngineTypes.WalletPayParams;
+    };
   }
 }
 

@@ -15,17 +15,13 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "editor.codeActionsOnSave": {
-    "source.organizeImports": false
+    "source.organizeImports": "never"
   },
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
   "editor.wordWrapColumn": 90,
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "files.exclude": { "**/.rollup.cache": true, "**/.git": true, "**/dist": true },
   "files.autoSave": "onWindowChange",
   "javascript.updateImportsOnFileMove.enabled": "always",
   "typescript.suggest.autoImports": false,

@@ -1,4 +1,4 @@
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
 import * as relayAuth from "@walletconnect/relay-auth";
@@ -14,18 +14,31 @@ import {
   validateEncoding,
   validateDecoding,
   isTypeOneEnvelope,
+  isTypeTwoEnvelope,
+  encodeTypeTwoEnvelope,
+  decodeTypeTwoEnvelope,
+  deserialize,
+  decodeTypeByte,
+  BASE16,
+  BASE64,
 } from "@walletconnect/utils";
-import { Logger } from "pino";
-import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants";
-import { KeyChain } from "./keychain";
+import { toString } from "uint8arrays";
+
+import { CRYPTO_CONTEXT, CRYPTO_CLIENT_SEED, CRYPTO_JWT_TTL } from "../constants/index.js";
+import { KeyChain } from "./keychain.js";
 
 export class Crypto implements ICrypto {
   public name = CRYPTO_CONTEXT;
   public keychain: ICrypto["keychain"];
+  public readonly randomSessionIdentifier = generateRandomBytes32();
 
   private initialized = false;
-
-  constructor(public core: ICore, public logger: Logger, keychain?: IKeyChain) {
+  private clientId: string | undefined;
+  constructor(
+    public core: ICore,
+    public logger: Logger,
+    keychain?: IKeyChain,
+  ) {
     this.core = core;
     this.logger = generateChildLogger(logger, this.name);
     this.keychain = keychain || new KeyChain(this.core, this.logger);
@@ -42,16 +55,20 @@ export class Crypto implements ICrypto {
     return getLoggerContext(this.logger);
   }
 
-  public hasKeys: ICrypto["hasKeys"] = tag => {
+  public hasKeys: ICrypto["hasKeys"] = (tag) => {
     this.isInitialized();
     return this.keychain.has(tag);
   };
 
   public getClientId: ICrypto["getClientId"] = async () => {
     this.isInitialized();
+    if (this.clientId) {
+      return this.clientId;
+    }
     const seed = await this.getClientSeed();
     const keyPair = relayAuth.generateKeyPair(seed);
     const clientId = relayAuth.encodeIss(keyPair.publicKey);
+    this.clientId = clientId;
     return clientId;
   };
 
@@ -61,11 +78,11 @@ export class Crypto implements ICrypto {
     return this.setPrivateKey(keyPair.publicKey, keyPair.privateKey);
   };
 
-  public signJWT: ICrypto["signJWT"] = async aud => {
+  public signJWT: ICrypto["signJWT"] = async (aud) => {
     this.isInitialized();
     const seed = await this.getClientSeed();
     const keyPair = relayAuth.generateKeyPair(seed);
-    const sub = generateRandomBytes32();
+    const sub = this.randomSessionIdentifier;
     const ttl = CRYPTO_JWT_TTL;
     const jwt = await relayAuth.signJWT(sub, aud, ttl, keyPair);
     return jwt;
@@ -103,6 +120,11 @@ export class Crypto implements ICrypto {
     this.isInitialized();
     const params = validateEncoding(opts);
     const message = safeJsonStringify(payload);
+
+    if (isTypeTwoEnvelope(params)) {
+      return encodeTypeTwoEnvelope(message, opts?.encoding);
+    }
+
     if (isTypeOneEnvelope(params)) {
       const selfPublicKey = params.senderPublicKey;
       const peerPublicKey = params.receiverPublicKey;
@@ -110,22 +132,48 @@ export class Crypto implements ICrypto {
     }
     const symKey = this.getSymKey(topic);
     const { type, senderPublicKey } = params;
-    const result = encrypt({ type, symKey, message, senderPublicKey });
+    const result = encrypt({ type, symKey, message, senderPublicKey, encoding: opts?.encoding });
     return result;
   };
 
   public decode: ICrypto["decode"] = async (topic, encoded, opts) => {
     this.isInitialized();
     const params = validateDecoding(encoded, opts);
+    if (isTypeTwoEnvelope(params)) {
+      const message = decodeTypeTwoEnvelope(encoded, opts?.encoding);
+      return safeJsonParse(message);
+    }
     if (isTypeOneEnvelope(params)) {
       const selfPublicKey = params.receiverPublicKey;
       const peerPublicKey = params.senderPublicKey;
       topic = await this.generateSharedKey(selfPublicKey, peerPublicKey);
     }
-    const symKey = this.getSymKey(topic);
-    const message = decrypt({ symKey, encoded });
-    const payload = safeJsonParse(message);
-    return payload;
+    try {
+      const symKey = this.getSymKey(topic);
+      const message = decrypt({ symKey, encoded, encoding: opts?.encoding });
+      const payload = safeJsonParse(message);
+      return payload;
+    } catch (error) {
+      this.logger.error(
+        `Failed to decode message from topic: '${topic}', clientId: '${await this.getClientId()}'`,
+      );
+      this.logger.error(error);
+    }
+  };
+
+  public getPayloadType: ICrypto["getPayloadType"] = (encoded, encoding = BASE64) => {
+    const deserialized = deserialize({ encoded, encoding });
+    return decodeTypeByte(deserialized.type);
+  };
+
+  public getPayloadSenderPublicKey: ICrypto["getPayloadSenderPublicKey"] = (
+    encoded,
+    encoding = BASE64,
+  ) => {
+    const deserialized = deserialize({ encoded, encoding });
+    return deserialized.senderPublicKey
+      ? toString(deserialized.senderPublicKey, BASE16)
+      : undefined;
   };
 
   // ---------- Private ----------------------------------------------- //

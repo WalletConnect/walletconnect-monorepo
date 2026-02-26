@@ -1,0 +1,389 @@
+name: Update Pay WASM & Native Dependencies
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force update even if version matches"
+        required: false
+        default: "false"
+        type: boolean
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: v2.0
+
+      - name: Get current WASM version
+        id: current_wasm
+        run: |
+          VERSION=$(grep -oP 'YTTRIUM_PAY_VERSION = "\K[^"]+' packages/pay/src/providers/wasm/wasm-data.ts || echo "0.0.0")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current WASM version: $VERSION"
+
+      - name: Get current Swift (podspec) version
+        id: current_swift
+        run: |
+          VERSION=$(grep -oP 'YttriumWrapper", "\K[^"]+' packages/react-native-compat/react-native-compat.podspec || echo "0.0.0")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current Swift version: $VERSION"
+
+      - name: Get current Kotlin (build.gradle) version
+        id: current_kotlin
+        run: |
+          VERSION=$(grep -oP 'yttrium-wcpay:\K[0-9.]+' packages/react-native-compat/android/build.gradle || echo "0.0.0")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current Kotlin version: $VERSION"
+
+      - name: Get latest WASM release
+        id: latest_wasm
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_RELEASE=$(gh release list --repo reown-com/yttrium --limit 50 --json tagName --jq '.[].tagName' | grep "^wasm-pay-" | head -1)
+          if [ -z "$LATEST_RELEASE" ]; then
+            echo "No wasm-pay releases found"
+            echo "found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          LATEST_VERSION=${LATEST_RELEASE#wasm-pay-}
+          echo "tag=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "found=true" >> $GITHUB_OUTPUT
+          echo "Latest WASM release: $LATEST_RELEASE (version: $LATEST_VERSION)"
+
+      - name: Get latest Swift release
+        id: latest_swift
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAGS=$(gh release list --repo reown-com/yttrium --limit 10 --json tagName --jq '.[].tagName' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$')
+
+          for TAG in $TAGS; do
+            ASSETS=$(gh release view "$TAG" --repo reown-com/yttrium --json assets --jq '.assets[].name')
+            if echo "$ASSETS" | grep -q "libyttrium.xcframework.zip"; then
+              echo "Found Swift release: $TAG"
+              echo "tag=$TAG" >> $GITHUB_OUTPUT
+              echo "version=$TAG" >> $GITHUB_OUTPUT
+              echo "found=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          done
+
+          echo "No Swift release with libyttrium.xcframework.zip found"
+          echo "found=false" >> $GITHUB_OUTPUT
+
+      - name: Get latest Kotlin release
+        id: latest_kotlin
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAGS=$(gh release list --repo reown-com/yttrium --limit 10 --json tagName --jq '.[].tagName' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$')
+
+          for TAG in $TAGS; do
+            ASSETS=$(gh release view "$TAG" --repo reown-com/yttrium --json assets --jq '.assets[].name')
+            if echo "$ASSETS" | grep -q "kotlin-wcpay-artifacts.zip"; then
+              echo "Found Kotlin release: $TAG"
+              echo "tag=$TAG" >> $GITHUB_OUTPUT
+              echo "version=$TAG" >> $GITHUB_OUTPUT
+              echo "found=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          done
+
+          echo "No Kotlin release with kotlin-wcpay-artifacts.zip found"
+          echo "found=false" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
+        id: compare
+        run: |
+          FORCE="${{ inputs.force }}"
+
+          # WASM
+          WASM_CURRENT="${{ steps.current_wasm.outputs.version }}"
+          WASM_LATEST="${{ steps.latest_wasm.outputs.version }}"
+          WASM_FOUND="${{ steps.latest_wasm.outputs.found }}"
+          WASM_NEEDS="false"
+          if [ "$WASM_FOUND" = "true" ] && { [ "$WASM_CURRENT" != "$WASM_LATEST" ] || [ "$FORCE" = "true" ]; }; then
+            WASM_NEEDS="true"
+            echo "WASM update needed: $WASM_CURRENT -> $WASM_LATEST"
+          else
+            echo "WASM is up to date ($WASM_CURRENT)"
+          fi
+          echo "wasm_needs_update=$WASM_NEEDS" >> $GITHUB_OUTPUT
+
+          # Swift
+          SWIFT_CURRENT="${{ steps.current_swift.outputs.version }}"
+          SWIFT_LATEST="${{ steps.latest_swift.outputs.version }}"
+          SWIFT_FOUND="${{ steps.latest_swift.outputs.found }}"
+          SWIFT_NEEDS="false"
+          if [ "$SWIFT_FOUND" = "true" ] && { [ "$SWIFT_CURRENT" != "$SWIFT_LATEST" ] || [ "$FORCE" = "true" ]; }; then
+            SWIFT_NEEDS="true"
+            echo "Swift update needed: $SWIFT_CURRENT -> $SWIFT_LATEST"
+          else
+            echo "Swift is up to date ($SWIFT_CURRENT)"
+          fi
+          echo "swift_needs_update=$SWIFT_NEEDS" >> $GITHUB_OUTPUT
+
+          # Kotlin
+          KOTLIN_CURRENT="${{ steps.current_kotlin.outputs.version }}"
+          KOTLIN_LATEST="${{ steps.latest_kotlin.outputs.version }}"
+          KOTLIN_FOUND="${{ steps.latest_kotlin.outputs.found }}"
+          KOTLIN_NEEDS="false"
+          if [ "$KOTLIN_FOUND" = "true" ] && { [ "$KOTLIN_CURRENT" != "$KOTLIN_LATEST" ] || [ "$FORCE" = "true" ]; }; then
+            KOTLIN_NEEDS="true"
+            echo "Kotlin update needed: $KOTLIN_CURRENT -> $KOTLIN_LATEST"
+          else
+            echo "Kotlin is up to date ($KOTLIN_CURRENT)"
+          fi
+          echo "kotlin_needs_update=$KOTLIN_NEEDS" >> $GITHUB_OUTPUT
+
+          # Any update needed?
+          if [ "$WASM_NEEDS" = "true" ] || [ "$SWIFT_NEEDS" = "true" ] || [ "$KOTLIN_NEEDS" = "true" ]; then
+            echo "any_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_update=false" >> $GITHUB_OUTPUT
+            echo "All versions are up to date"
+          fi
+
+          # react-native-compat updated?
+          if [ "$SWIFT_NEEDS" = "true" ] || [ "$KOTLIN_NEEDS" = "true" ]; then
+            echo "rn_compat_needs_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "rn_compat_needs_update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download WASM release
+        if: steps.compare.outputs.wasm_needs_update == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download ${{ steps.latest_wasm.outputs.tag }} \
+            --repo reown-com/yttrium \
+            --pattern "*.zip" \
+            --dir ./release-wasm
+
+          echo "Downloaded WASM release:"
+          ls -lh ./release-wasm/
+
+          unzip -o ./release-wasm/*.zip -d ./release-wasm/extracted
+          echo "Extracted contents:"
+          find ./release-wasm/extracted -type f
+
+      - name: Setup Node.js
+        if: steps.compare.outputs.any_update == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        if: steps.compare.outputs.any_update == 'true'
+        run: npm ci
+
+      - name: Process WASM and update files
+        if: steps.compare.outputs.wasm_needs_update == 'true'
+        run: |
+          DEST_DIR="packages/pay/src/providers/wasm"
+          VERSION="${{ steps.latest_wasm.outputs.version }}"
+
+          # Find the WASM file
+          WASM_FILE=$(find ./release-wasm/extracted -name "yttrium_bg.wasm" | head -1)
+          if [ -z "$WASM_FILE" ]; then
+            echo "Error: yttrium_bg.wasm not found"
+            find ./release-wasm/extracted -type f
+            exit 1
+          fi
+          echo "Found WASM file: $WASM_FILE"
+          echo "Original size: $(stat -c%s "$WASM_FILE") bytes"
+
+          # Use Node.js with brotli npm package to compress and encode
+          node -e "
+            const fs = require('fs');
+            const compress = require('brotli/compress');
+
+            const wasmFile = '$WASM_FILE';
+            const destDir = '$DEST_DIR';
+            const version = '$VERSION';
+
+            const wasmBytes = fs.readFileSync(wasmFile);
+            console.log('Original size:', wasmBytes.length, 'bytes');
+
+            const compressed = Buffer.from(compress(wasmBytes, { quality: 11 }));
+            console.log('Compressed size:', compressed.length, 'bytes');
+
+            const base64 = compressed.toString('base64');
+            console.log('Base64 length:', base64.length, 'characters');
+
+            const content = [
+              '// Auto-generated: Brotli-compressed WASM base64',
+              'export const YTTRIUM_PAY_VERSION = \"' + version + '\";',
+              'export const YTTRIUM_PAY = \"' + base64 + '\";',
+              ''
+            ].join('\n');
+
+            fs.writeFileSync(destDir + '/wasm-data.ts', content);
+            console.log('Created wasm-data.ts');
+          "
+
+          # Copy JS and TS files
+          JS_FILE=$(find ./release-wasm/extracted -name "yttrium.js" | head -1)
+          DTS_FILE=$(find ./release-wasm/extracted -name "yttrium.d.ts" | head -1)
+
+          if [ -n "$JS_FILE" ]; then
+            cp "$JS_FILE" "$DEST_DIR/yttrium.js"
+            echo "Copied yttrium.js"
+          fi
+
+          if [ -n "$DTS_FILE" ]; then
+            cp "$DTS_FILE" "$DEST_DIR/yttrium.d.ts"
+            echo "Copied yttrium.d.ts"
+          fi
+
+          echo "Updated files in $DEST_DIR:"
+          ls -lh "$DEST_DIR/"
+
+      - name: Update podspec with Swift version
+        if: steps.compare.outputs.swift_needs_update == 'true'
+        run: |
+          VERSION="${{ steps.latest_swift.outputs.version }}"
+          CURRENT="${{ steps.current_swift.outputs.version }}"
+          sed -i "s/\"YttriumWrapper\", \"$CURRENT\"/\"YttriumWrapper\", \"$VERSION\"/" packages/react-native-compat/react-native-compat.podspec
+          echo "Updated podspec: YttriumWrapper $CURRENT -> $VERSION"
+          grep "YttriumWrapper" packages/react-native-compat/react-native-compat.podspec
+
+      - name: Update build.gradle with Kotlin version
+        if: steps.compare.outputs.kotlin_needs_update == 'true'
+        run: |
+          VERSION="${{ steps.latest_kotlin.outputs.version }}"
+          CURRENT="${{ steps.current_kotlin.outputs.version }}"
+          sed -i "s/yttrium-wcpay:$CURRENT/yttrium-wcpay:$VERSION/" packages/react-native-compat/android/build.gradle
+          echo "Updated build.gradle: yttrium-wcpay $CURRENT -> $VERSION"
+          grep "yttrium-wcpay" packages/react-native-compat/android/build.gradle
+
+      - name: Run prettier on generated TS files
+        if: steps.compare.outputs.wasm_needs_update == 'true'
+        run: npx prettier --write "packages/pay/src/providers/wasm/*.ts"
+
+      - name: Patch yttrium.js for React Native compatibility
+        if: steps.compare.outputs.wasm_needs_update == 'true'
+        run: |
+          npx prettier --write packages/pay/src/providers/wasm/yttrium.js
+          node scripts/patch_yttrium_lazy_init.js
+
+      - name: Add changeset for Pay WASM
+        if: steps.compare.outputs.wasm_needs_update == 'true'
+        run: |
+          WASM_VERSION="${{ steps.latest_wasm.outputs.version }}"
+          cat > .changeset/update-pay-wasm.md << EOF
+          ---
+          "@walletconnect/pay": patch
+          ---
+
+          chore: update Pay WASM to $WASM_VERSION
+          EOF
+          echo "Created changeset for @walletconnect/pay"
+
+      - name: Add changeset for react-native-compat
+        if: steps.compare.outputs.rn_compat_needs_update == 'true'
+        run: |
+          SWIFT_UPDATED="${{ steps.compare.outputs.swift_needs_update }}"
+          KOTLIN_UPDATED="${{ steps.compare.outputs.kotlin_needs_update }}"
+
+          CHANGES=""
+          if [ "$SWIFT_UPDATED" = "true" ]; then
+            CHANGES="${CHANGES}  - Update YttriumWrapper (iOS) to ${{ steps.latest_swift.outputs.version }}"$'\n'
+          fi
+          if [ "$KOTLIN_UPDATED" = "true" ]; then
+            CHANGES="${CHANGES}  - Update yttrium-wcpay (Android) to ${{ steps.latest_kotlin.outputs.version }}"$'\n'
+          fi
+
+          cat > .changeset/update-rn-compat-yttrium.md << EOF
+          ---
+          "@walletconnect/react-native-compat": patch
+          ---
+
+          chore: update yttrium native dependencies
+          ${CHANGES}
+          EOF
+          echo "Created changeset for @walletconnect/react-native-compat"
+
+      - name: Create Pull Request
+        if: steps.compare.outputs.any_update == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          WASM_UPDATED="${{ steps.compare.outputs.wasm_needs_update }}"
+          SWIFT_UPDATED="${{ steps.compare.outputs.swift_needs_update }}"
+          KOTLIN_UPDATED="${{ steps.compare.outputs.kotlin_needs_update }}"
+
+          # Build version suffix for branch name
+          UPDATES=""
+          if [ "$WASM_UPDATED" = "true" ]; then
+            UPDATES="${UPDATES}-wasm-${{ steps.latest_wasm.outputs.version }}"
+          fi
+          if [ "$SWIFT_UPDATED" = "true" ]; then
+            UPDATES="${UPDATES}-swift-${{ steps.latest_swift.outputs.version }}"
+          fi
+          if [ "$KOTLIN_UPDATED" = "true" ]; then
+            UPDATES="${UPDATES}-kotlin-${{ steps.latest_kotlin.outputs.version }}"
+          fi
+
+          BRANCH="chore/update-yttrium${UPDATES}"
+          TITLE="chore: update yttrium dependencies${UPDATES}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          rm -rf ./release-wasm
+
+          git checkout -b "$BRANCH"
+          git add packages/pay/src/providers/wasm/ \
+               packages/react-native-compat/react-native-compat.podspec \
+               packages/react-native-compat/android/build.gradle \
+               .changeset/
+          git commit -m "$TITLE"
+          git push -u origin "$BRANCH"
+
+          # Build PR body
+          BODY="## Summary"$'\n\n'
+          BODY+="Updates yttrium dependencies from [reown-com/yttrium](https://github.com/reown-com/yttrium)."$'\n\n'
+          BODY+="### Changes"$'\n'
+
+          if [ "$WASM_UPDATED" = "true" ]; then
+            BODY+=$'\n'"**Pay WASM** (\`@walletconnect/pay\`)"$'\n'
+            BODY+="- Version: \`${{ steps.current_wasm.outputs.version }}\` → \`${{ steps.latest_wasm.outputs.version }}\`"$'\n'
+            BODY+="- Release: [${{ steps.latest_wasm.outputs.tag }}](https://github.com/reown-com/yttrium/releases/tag/${{ steps.latest_wasm.outputs.tag }})"$'\n'
+            BODY+="- Updated \`wasm-data.ts\`, \`yttrium.js\`, \`yttrium.d.ts\`"$'\n'
+          fi
+
+          if [ "$SWIFT_UPDATED" = "true" ]; then
+            BODY+=$'\n'"**YttriumWrapper iOS** (\`@walletconnect/react-native-compat\`)"$'\n'
+            BODY+="- Version: \`${{ steps.current_swift.outputs.version }}\` → \`${{ steps.latest_swift.outputs.version }}\`"$'\n'
+            BODY+="- Release: [${{ steps.latest_swift.outputs.tag }}](https://github.com/reown-com/yttrium/releases/tag/${{ steps.latest_swift.outputs.tag }})"$'\n'
+            BODY+="- Updated \`react-native-compat.podspec\`"$'\n'
+          fi
+
+          if [ "$KOTLIN_UPDATED" = "true" ]; then
+            BODY+=$'\n'"**yttrium-wcpay Android** (\`@walletconnect/react-native-compat\`)"$'\n'
+            BODY+="- Version: \`${{ steps.current_kotlin.outputs.version }}\` → \`${{ steps.latest_kotlin.outputs.version }}\`"$'\n'
+            BODY+="- Release: [${{ steps.latest_kotlin.outputs.tag }}](https://github.com/reown-com/yttrium/releases/tag/${{ steps.latest_kotlin.outputs.tag }})"$'\n'
+            BODY+="- Updated \`android/build.gradle\`"$'\n'
+          fi
+
+          BODY+=$'\n'"---"$'\n'
+          BODY+="*Auto-generated by [update_pay_wasm.yml](https://github.com/${{ github.repository }}/actions/workflows/update_pay_wasm.yml)*"
+
+          gh pr create \
+            --title "$TITLE" \
+            --base v2.0 \
+            --body "$BODY"
+
+          echo "PR created successfully"

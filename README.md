@@ -2,63 +2,42 @@
 
 Open protocol for connecting Wallets to Dapps - https://walletconnect.com
 
-## Setup development
+## Setup
 
-The following dependencies are required for relay server:
+1. Ensure [nodejs](https://nodejs.org) and [npm](https://www.npmjs.com)
+2. Clone the repository
+3. Install all package dependencies, by running `npm install` from the root folder
 
-- git
-- make
-- docker version 20.10
+## Running checks for all packages
 
-To setup the local redis and relay server you can run:
+To ensure all packages lint, build and test correctly, we can run the following command from the root folder:
 
-```sh
-make dev
+> **For tests to pass in the following command, you will need your own `TEST_PROJECT_ID` value**,
+> which will be generated for you when you set up a new project on [WalletConnect Cloud](https://cloud.walletconnect.com).
+
+```zsh
+TEST_PROJECT_ID=YOUR_PROJECT_ID npm run check
 ```
 
-## Test Client
+## Command Overview
 
-Client unit tests can be run against: local (`make dev`), staging, and production server
+- `clean` - Removes build folders from all packages
+- `lint` - Runs [eslint](https://eslint.org/) checks
+- `prettier` - Runs [prettier](https://prettier.io/) checks
+- `build` - Builds all packages
+- `test` - Tests all packages
+- `check` - Shorthand to run lint, build and test commands
+- `reset` - Shorthand to run clean and check commands
 
-```sh
-# local (dev)
-make test-client
+## Troubleshooting
 
-# staging server
-make test-staging
+1. If you are experiencing issues with installation ensure you install `npm i -g node-gyp`
+2. You will need to have xcode command line tools installed
+3. If there are issues with xcode command line tools try running
 
-# production server
-make test-production
-```
-
-## Additional help
-
-```
-bootstrap-lerna      setups lerna for the monorepo management
-build-container      builds relay docker image
-build-lerna          builds the npm packages in "./packages"
-build-nginx          builds nginx docker image
-build                builds docker images
-clean-all            cleans lerna bootstrap
-clean                removes all build outputs
-cloudflare           setups cloudflare API token secret
-config               configures domain and certbot email
-deploy-monitoring    same as deploy but also has monitoring stack
-deploy               deploys production stack with './config' file contents
-dev                  runs relay on watch mode and shows logs
-help                 Show this help
-pull                 downloads docker images
-redeploy             redeploys the prodution containers and rebuilds them
-relay-logs           follows the relay container logs. Doesn't work with 'make dev'
-reset                removes config and lerna bootstrap
-rm-redis             stops the redis container
-start-redis          starts redis docker container for local development
-stop                 stops the whole docker stack
-test-relay           runs "./servers/relay" tests against the locally running relay. Make sure you run 'make dev' before.
-test-client          runs "./packages/sign-client" tests against the locally running relay. Make sure you run 'make dev' before.
-test-production      tests client against relay.walletconnect.com
-test-staging         tests client against staging.walletconnect.com
-
+```zsh
+sudo xcode-select --switch /Library/Developer/CommandLineTools
+sudo xcode-select --reset
 ```
 
 ## License

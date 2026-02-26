@@ -1,30 +1,50 @@
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
-import { ICore, IStore, PairingTypes, ProposalTypes, SessionTypes } from "@walletconnect/types";
-import { getInternalError, isProposalStruct, isSessionStruct } from "@walletconnect/utils";
-import { Logger } from "pino";
-import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants";
-import isEqual from "lodash.isequal";
+import { isEqual } from "es-toolkit/compat";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
+import { ICore, IStore } from "@walletconnect/types";
+import {
+  getInternalError,
+  isProposalStruct,
+  isSessionStruct,
+  isUndefined,
+} from "@walletconnect/utils";
+import { CORE_STORAGE_PREFIX, STORE_STORAGE_VERSION } from "../constants/index.js";
 
-type StoreStruct = SessionTypes.Struct | PairingTypes.Struct | ProposalTypes.Struct;
-
-export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
+export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Data> {
   public map = new Map<Key, Data>();
   public version = STORE_STORAGE_VERSION;
 
   private cached: Data[] = [];
   private initialized = false;
 
+  /**
+   * Regenerates the value key to retrieve it from cache
+   */
+  private getKey: ((data: Data) => Key) | undefined;
+
   private storagePrefix = CORE_STORAGE_PREFIX;
 
+  // stores recently deleted key to return different rejection message when key is not found
+  private recentlyDeleted: Key[] = [];
+  private recentlyDeletedLimit = 200;
+
+  /**
+   * @param {ICore} core Core
+   * @param {Logger} logger Logger
+   * @param {string} name Store's name
+   * @param {Store<Key, Data>["getKey"]} getKey Regenerates the value key to retrieve it from cache
+   * @param {string} storagePrefix Prefixes value keys
+   */
   constructor(
     public core: ICore,
     public logger: Logger,
     public name: string,
-    storagePrefix = CORE_STORAGE_PREFIX,
+    storagePrefix: string = CORE_STORAGE_PREFIX,
+    getKey: Store<Key, Data>["getKey"] = undefined,
   ) {
     super(core, logger, name, storagePrefix);
     this.logger = generateChildLogger(logger, this.name);
     this.storagePrefix = storagePrefix;
+    this.getKey = getKey;
   }
 
   public init: IStore<Key, Data>["init"] = async () => {
@@ -33,8 +53,10 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
 
       await this.restore();
 
-      this.cached.forEach(value => {
-        if (isProposalStruct(value)) {
+      this.cached.forEach((value) => {
+        if (this.getKey && value !== null && !isUndefined(value)) {
+          this.map.set(this.getKey(value), value);
+        } else if (isProposalStruct(value)) {
           // TODO(pedro) revert type casting as any
           this.map.set(value.id as any, value);
         } else if (isSessionStruct(value)) {
@@ -52,8 +74,8 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     return getLoggerContext(this.logger);
   }
 
-  get storageKey(): string {
-    return this.storagePrefix + this.version + "//" + this.name;
+  get storageKey() {
+    return this.storagePrefix + this.version + this.core.customStoragePrefix + "//" + this.name;
   }
 
   get length() {
@@ -80,7 +102,7 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     }
   };
 
-  public get: IStore<Key, Data>["get"] = key => {
+  public get: IStore<Key, Data>["get"] = (key) => {
     this.isInitialized();
     this.logger.debug(`Getting value`);
     this.logger.trace({ type: "method", method: "get", key });
@@ -88,11 +110,12 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     return value;
   };
 
-  public getAll: IStore<Key, Data>["getAll"] = filter => {
+  public getAll: IStore<Key, Data>["getAll"] = (filter) => {
+    this.isInitialized();
     if (!filter) return this.values;
 
-    return this.values.filter(value =>
-      Object.keys(filter).every(key => isEqual(value[key], filter[key])),
+    return this.values.filter((value) =>
+      Object.keys(filter).every((key) => isEqual(value[key], filter[key])),
     );
   };
 
@@ -111,10 +134,19 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
     this.logger.debug(`Deleting value`);
     this.logger.trace({ type: "method", method: "delete", key, reason });
     this.map.delete(key);
+    this.addToRecentlyDeleted(key);
     await this.persist();
   };
 
   // ---------- Private ----------------------------------------------- //
+
+  private addToRecentlyDeleted(key: Key) {
+    this.recentlyDeleted.push(key);
+    // limit the size of the recentlyDeleted array, truncate the 100 oldest entries.
+    if (this.recentlyDeleted.length >= this.recentlyDeletedLimit) {
+      this.recentlyDeleted.splice(0, this.recentlyDeletedLimit / 2);
+    }
+  }
 
   private async setDataStore(value: Data[]) {
     await this.core.storage.setItem<Data[]>(this.storageKey, value);
@@ -128,6 +160,15 @@ export class Store<Key, Data extends StoreStruct> extends IStore<Key, Data> {
   private getData(key: Key) {
     const value = this.map.get(key);
     if (!value) {
+      if (this.recentlyDeleted.includes(key)) {
+        const { message } = getInternalError(
+          "MISSING_OR_INVALID",
+          `Record was recently deleted - ${this.name}: ${key}`,
+        );
+        this.logger.error(message);
+        throw new Error(message);
+      }
+
       const { message } = getInternalError("NO_MATCHING_KEY", `${this.name}: ${key}`);
       this.logger.error(message);
       throw new Error(message);

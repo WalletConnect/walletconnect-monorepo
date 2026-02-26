@@ -13,7 +13,7 @@ export class SubscriberTopicMap implements ISubscriberTopicMap {
     this.map.set(topic, [...ids, id]);
   };
 
-  public get: ISubscriberTopicMap["get"] = topic => {
+  public get: ISubscriberTopicMap["get"] = (topic) => {
     const ids = this.map.get(topic);
     return ids || [];
   };
@@ -31,7 +31,7 @@ export class SubscriberTopicMap implements ISubscriberTopicMap {
     if (!this.map.has(topic)) return;
     const ids = this.get(topic);
     if (!this.exists(topic, id)) return;
-    const remaining = ids.filter(x => x !== id);
+    const remaining = ids.filter((x) => x !== id);
     if (!remaining.length) {
       this.map.delete(topic);
       return;

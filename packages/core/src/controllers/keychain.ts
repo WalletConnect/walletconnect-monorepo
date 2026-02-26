@@ -1,9 +1,12 @@
-import { Logger } from "pino";
-import { generateChildLogger, getLoggerContext } from "@walletconnect/logger";
+import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
 import { ICore, IKeyChain } from "@walletconnect/types";
 import { getInternalError, mapToObj, objToMap } from "@walletconnect/utils";
 
-import { CORE_STORAGE_PREFIX, KEYCHAIN_CONTEXT, KEYCHAIN_STORAGE_VERSION } from "../constants";
+import {
+  CORE_STORAGE_PREFIX,
+  KEYCHAIN_CONTEXT,
+  KEYCHAIN_STORAGE_VERSION,
+} from "../constants/index.js";
 
 export class KeyChain implements IKeyChain {
   public keychain = new Map<string, string>();
@@ -13,7 +16,10 @@ export class KeyChain implements IKeyChain {
   private initialized = false;
   private storagePrefix = CORE_STORAGE_PREFIX;
 
-  constructor(public core: ICore, public logger: Logger) {
+  constructor(
+    public core: ICore,
+    public logger: Logger,
+  ) {
     this.core = core;
     this.logger = generateChildLogger(logger, this.name);
   }
@@ -33,10 +39,10 @@ export class KeyChain implements IKeyChain {
   }
 
   get storageKey() {
-    return this.storagePrefix + this.version + "//" + this.name;
+    return this.storagePrefix + this.version + this.core.customStoragePrefix + "//" + this.name;
   }
 
-  public has: IKeyChain["has"] = tag => {
+  public has: IKeyChain["has"] = (tag) => {
     this.isInitialized();
     return this.keychain.has(tag);
   };
@@ -47,7 +53,7 @@ export class KeyChain implements IKeyChain {
     await this.persist();
   };
 
-  public get: IKeyChain["get"] = tag => {
+  public get: IKeyChain["get"] = (tag) => {
     this.isInitialized();
     const key = this.keychain.get(tag);
     if (typeof key === "undefined") {
@@ -57,7 +63,7 @@ export class KeyChain implements IKeyChain {
     return key;
   };
 
-  public del: IKeyChain["del"] = async tag => {
+  public del: IKeyChain["del"] = async (tag) => {
     this.isInitialized();
     this.keychain.delete(tag);
     await this.persist();

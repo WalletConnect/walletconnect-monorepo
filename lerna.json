@@ -1,7 +1,10 @@
 {
-  "version": "2.0.0-rc.0",
-  "packages": [
-    "packages/*",
-    "providers/*"
-  ]
+  "npmClient": "npm",
+  "packages": ["packages/*", "providers/*"],
+  "command": {
+    "run": {
+      "ignore": ["packages/web3wallet"]
+    }
+  },
+  "version": "2.23.6"
 }

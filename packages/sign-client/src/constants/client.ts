@@ -10,7 +10,7 @@ export const SIGN_CLIENT_DEFAULT = {
   name: SIGN_CLIENT_CONTEXT,
   logger: "error",
   controller: false,
-  relayUrl: "wss://relay.walletconnect.com",
+  relayUrl: "wss://relay.walletconnect.org",
 };
 
 export const SIGN_CLIENT_EVENTS: Record<SignClientTypes.Event, SignClientTypes.Event> = {
@@ -18,16 +18,19 @@ export const SIGN_CLIENT_EVENTS: Record<SignClientTypes.Event, SignClientTypes.E
   session_update: "session_update",
   session_extend: "session_extend",
   session_ping: "session_ping",
-  pairing_ping: "pairing_ping",
   session_delete: "session_delete",
   session_expire: "session_expire",
-  pairing_delete: "pairing_delete",
-  pairing_expire: "pairing_expire",
   session_request: "session_request",
+  session_request_sent: "session_request_sent",
   session_event: "session_event",
   proposal_expire: "proposal_expire",
+  session_authenticate: "session_authenticate",
+  session_request_expire: "session_request_expire",
+  session_connect: "session_connect",
 };
 
 export const SIGN_CLIENT_STORAGE_OPTIONS = {
   database: ":memory:",
 };
+
+export const WALLETCONNECT_DEEPLINK_CHOICE = "WALLETCONNECT_DEEPLINK_CHOICE";

@@ -1,6 +1,5 @@
-import "mocha";
-import { getDefaultLoggerOptions } from "@walletconnect/logger";
-import pino from "pino";
+import { expect, describe, it } from "vitest";
+import { getDefaultLoggerOptions, pino } from "@walletconnect/logger";
 
 import {
   Core,
@@ -10,16 +9,25 @@ import {
   KEYCHAIN_CONTEXT,
   KEYCHAIN_STORAGE_VERSION,
 } from "../src";
-import { expect, TEST_CORE_OPTIONS } from "./shared";
+import { TEST_CORE_OPTIONS } from "./shared";
 
 describe("Keychain", () => {
   const logger = pino(getDefaultLoggerOptions({ level: CORE_DEFAULT.logger }));
-  const core = new Core(TEST_CORE_OPTIONS);
 
-  it("provides the expected `storageKey` format", () => {
-    const keychain = new KeyChain(core, logger);
-    expect(keychain.storageKey).to.equal(
-      CORE_STORAGE_PREFIX + KEYCHAIN_STORAGE_VERSION + "//" + KEYCHAIN_CONTEXT,
-    );
+  describe("storageKey", () => {
+    it("provides the expected default `storageKey` format", () => {
+      const core = new Core(TEST_CORE_OPTIONS);
+      const keychain = new KeyChain(core, logger);
+      expect(keychain.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + KEYCHAIN_STORAGE_VERSION + "//" + KEYCHAIN_CONTEXT,
+      );
+    });
+    it("provides the expected custom `storageKey` format", () => {
+      const core = new Core({ ...TEST_CORE_OPTIONS, customStoragePrefix: "test" });
+      const keychain = new KeyChain(core, logger);
+      expect(keychain.storageKey).to.equal(
+        CORE_STORAGE_PREFIX + KEYCHAIN_STORAGE_VERSION + ":test" + "//" + KEYCHAIN_CONTEXT,
+      );
+    });
   });
 });

@@ -1,18 +1,76 @@
+/* eslint-disable no-console */
 import { SignClientTypes } from "@walletconnect/types";
-import "mocha";
-// import { expect } from "chai";
-
-import SignClient from "../../src";
-
-import { TEST_SIGN_CLIENT_OPTIONS_A, TEST_SIGN_CLIENT_OPTIONS_B } from "./values";
+import { createExpiringPromise } from "@walletconnect/utils";
+import { testConnectMethod, TestConnectParams } from "./connect.js";
+import SignClient from "../../src/index.js";
+import {
+  TESTS_CONNECT_RETRIES,
+  TESTS_CONNECT_TIMEOUT,
+  TEST_SIGN_CLIENT_OPTIONS_A,
+  TEST_SIGN_CLIENT_OPTIONS_B,
+} from "./values.js";
 
 export interface Clients {
   A: SignClient;
   B: SignClient;
 }
 
-export async function initTwoClients(clientOpts: SignClientTypes.Options = {}) {
-  const A = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS_A, ...clientOpts });
-  const B = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS_B, ...clientOpts });
+export async function initTwoClients(
+  clientOptsA: SignClientTypes.Options = {},
+  clientOptsB: SignClientTypes.Options = {},
+  sharedClientOpts: SignClientTypes.Options = {},
+) {
+  const A = await SignClient.init({
+    name: "A",
+    ...TEST_SIGN_CLIENT_OPTIONS_A,
+    ...sharedClientOpts,
+    ...clientOptsA,
+  });
+
+  const B = await SignClient.init({
+    name: "B",
+    ...TEST_SIGN_CLIENT_OPTIONS_B,
+    ...sharedClientOpts,
+    ...clientOptsB,
+  });
+  A.core.relayer.publisher.publishTimeout = 120_000;
+  B.core.relayer.publisher.publishTimeout = 120_000;
   return { A, B };
+}
+
+export async function initTwoPairedClients(
+  clientOptsA: SignClientTypes.Options = {},
+  clientOptsB: SignClientTypes.Options = {},
+  sharedClientOpts: SignClientTypes.Options = {},
+  connectParams?: TestConnectParams,
+) {
+  let clients: Clients;
+  let pairingA;
+  let sessionA;
+  let retries = 0;
+  while (!pairingA) {
+    if (retries > TESTS_CONNECT_RETRIES) {
+      throw new Error("Could not pair clients");
+    }
+    try {
+      clients = (await createExpiringPromise(
+        initTwoClients(clientOptsA, clientOptsB, sharedClientOpts),
+        TESTS_CONNECT_TIMEOUT,
+      )) as Clients;
+      const settled: any = await createExpiringPromise(
+        new Promise((resolve, reject) => {
+          testConnectMethod(clients, connectParams).then(resolve).catch(reject);
+        }),
+        TESTS_CONNECT_TIMEOUT * 2,
+        "testConnectMethod(clients)",
+      );
+      pairingA = settled.pairingA;
+      sessionA = settled.sessionA;
+    } catch (e) {
+      console.error("Error initTwoPairedClients, attempts: ", retries, e);
+    }
+    retries++;
+  }
+
+  return { clients, pairingA, sessionA };
 }

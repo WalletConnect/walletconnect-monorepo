@@ -1,28 +1,32 @@
 import { getSdkError } from "@walletconnect/utils";
-import "mocha";
 import SignClient from "../../src";
 import {
-  expect,
   initTwoClients,
   testConnectMethod,
   TEST_SIGN_CLIENT_OPTIONS,
+  uploadLoadTestConnectionDataToCloudWatch,
   deleteClients,
   Clients,
   TEST_EMIT_PARAMS,
   throttle,
+  batchArray,
 } from "./../shared";
+import { TEST_RELAY_URL } from "./../shared/values";
+import { describe, it, expect } from "vitest";
+
+const environment = process.env.ENVIRONMENT || "dev";
 
 describe("Sign Client Concurrency", () => {
   it("should successfully handle concurrent clients", async () => {
-    const clientPairs = process.env.CLIENTS ? parseInt(process.env.CLIENTS) : 300;
+    const clientPairs = process.env.CLIENTS ? parseInt(process.env.CLIENTS) : 300000;
     const messagesToBeExchanged = process.env.MESSAGES_PER_CLIENT
       ? parseInt(process.env.MESSAGES_PER_CLIENT)
       : 1000; // minimum messages to be exchanged between clients
     const relayUrl =
       process.env.RELAY_URL || process.env.TEST_RELAY_URL || TEST_SIGN_CLIENT_OPTIONS.relayUrl;
-    const heartbeatInterval = process.env.HEARTBEAT_INTERVAL
+    const heartbeatIntervalMs = process.env.HEARTBEAT_INTERVAL
       ? parseInt(process.env.HEARTBEAT_INTERVAL)
-      : 100;
+      : 3000;
 
     const pairings: any[] = [];
     const messagesReceived: any = {};
@@ -40,7 +44,7 @@ describe("Sign Client Concurrency", () => {
           0,
         )}`,
       );
-    }, heartbeatInterval);
+    }, heartbeatIntervalMs);
 
     const processMessages = async (data: any, clientIndex: number) => {
       const { clients, sessionA } = data;
@@ -107,28 +111,76 @@ describe("Sign Client Concurrency", () => {
     };
 
     // init clients and pair
-    for await (const i of Array.from(Array(clientPairs).keys())) {
-      await new Promise<void>(async resolve => {
-        const timeout = setTimeout(() => {
-          log(`Client ${i} hung up`);
-          resolve();
-        }, 5000);
+    // we connect 10 clients at a time
+    for await (const batch of batchArray(Array.from(Array(clientPairs).keys()), 100)) {
+      const connections: {
+        handshakeLatencyMs: number;
+        pairingLatencyMs: number;
+      }[] = await Promise.all(
+        batch
+          .map((i) => {
+            return new Promise<{
+              handshakeLatencyMs: number;
+              pairingLatencyMs: number;
+              connected: boolean;
+            }>(async (resolve) => {
+              const timeout = setTimeout(() => {
+                log(`Client ${i} hung up`);
+                resolve({ handshakeLatencyMs: -1, pairingLatencyMs: -1, connected: false });
+              }, 120_000);
 
-        const clients: Clients = await initTwoClients({ relayUrl });
-        await throttle(10);
-        expect(clients.A instanceof SignClient).to.eql(true);
-        expect(clients.B instanceof SignClient).to.eql(true);
-        const { sessionA } = await testConnectMethod(clients);
-        pairings.push({ clients, sessionA });
-        clearTimeout(timeout);
-        resolve();
-      });
+              const now = new Date().getTime();
+              const clients: Clients = await initTwoClients({}, {}, { relayUrl });
+              const handshakeLatencyMs = new Date().getTime() - now;
+              await throttle(10);
+              expect(clients.A instanceof SignClient).to.eql(true);
+              expect(clients.B instanceof SignClient).to.eql(true);
+              const { sessionA } = await testConnectMethod(clients);
+              pairings.push({ clients, sessionA });
+              clearTimeout(timeout);
+              const pairingLatencyMs = new Date().getTime() - now;
+              resolve({
+                handshakeLatencyMs,
+                pairingLatencyMs,
+                connected: true,
+              });
+            });
+          })
+          .filter(
+            (connectionResult: {
+              handshakeLatencyMs: number;
+              pairingLatencyMs: number;
+              connected: boolean;
+            }) => connectionResult.connected,
+          ),
+      );
+      const averagePairingLatency =
+        connections.map((connection) => connection.pairingLatencyMs).reduce((a, b) => a + b, 0) /
+        connections.length;
+      const averageHandhsakeLatency =
+        connections.map((connection) => connection.handshakeLatencyMs).reduce((a, b) => a + b, 0) /
+        connections.length;
+      const failures = batch.length - connections.length;
+      log(
+        `${connections.length} out of ${batch.length} connected (${averagePairingLatency}ms avg pairing latency, ${averageHandhsakeLatency}ms avg handshake latency)`,
+      );
+
+      const metric_prefix = `Pairing`;
+      await uploadLoadTestConnectionDataToCloudWatch(
+        environment,
+        TEST_RELAY_URL,
+        metric_prefix,
+        connections.length,
+        failures,
+        averagePairingLatency,
+        averageHandhsakeLatency,
+      );
     }
 
     // process all messages between clients in parallel
     await Promise.all(
       pairings.map(({ clients, sessionA }, i) => {
-        return new Promise<void>(async resolve => {
+        return new Promise<void>(async (resolve) => {
           await processMessages({ clients, sessionA }, i);
           resolve();
         });
@@ -154,7 +206,7 @@ describe("Sign Client Concurrency", () => {
             reject();
           }
         }),
-        new Promise<void>(resolve => {
+        new Promise<void>((resolve) => {
           clients.A.disconnect({
             topic: sessionA.topic,
             reason: getSdkError("USER_DISCONNECTED"),
@@ -168,5 +220,5 @@ describe("Sign Client Concurrency", () => {
       deleteClients(data.clients);
     }
     clearInterval(heartBeat);
-  });
+  }, 1_200_000);
 });
