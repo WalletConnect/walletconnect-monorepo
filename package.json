@@ -84,7 +84,7 @@
     "eslint-plugin-standard": "4.1.0",
     "lerna": "9.0.3",
     "prettier": "3.8.0",
-    "rollup": "2.79.2",
+    "rollup": "2.80.0",
     "rollup-plugin-esbuild": "4.9.3",
     "rollup-plugin-visualizer": "5.14.0",
     "sinon": "21.0.1",
