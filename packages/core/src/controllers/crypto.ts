@@ -154,6 +154,13 @@ export class Crypto implements ICrypto {
       const payload = safeJsonParse(message);
       return payload;
     } catch (error) {
+      if (error instanceof Error && error.message.includes("No matching key")) {
+        this.logger.warn(
+          `SymKey missing for topic '${topic}' — likely deleted session`,
+        );
+        return;
+      }
+
       this.logger.error(
         `Failed to decode message from topic: '${topic}', clientId: '${await this.getClientId()}'`,
       );

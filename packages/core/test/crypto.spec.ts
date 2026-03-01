@@ -163,5 +163,17 @@ describe("Crypto", () => {
       const decoded = await crypto.decode("non-existent-topic", "dummymessage");
       expect(decoded).to.eql(undefined);
     });
+    it("should not throw if symKey was deleted before decode", async () => {
+      const symKey = utils.generateRandomBytes32();
+      const topic = await crypto.setSymKey(symKey);
+
+      const payload = { hello: "world" };
+      const encoded = await crypto.encode(topic, payload);
+
+      // simulate deletion race
+      await crypto.deleteSymKey(topic);
+
+      await expect(crypto.decode(topic, encoded)).resolves.toBeUndefined();
+    });
   });
 });
