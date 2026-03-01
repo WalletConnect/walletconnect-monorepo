@@ -224,8 +224,8 @@ export function isTypeTwoEnvelope(
 }
 
 export function getCryptoKeyFromKeyData(keyData: P256KeyDataType): Uint8Array {
-  const xBuffer = Buffer.from(keyData.x, "base64");
-  const yBuffer = Buffer.from(keyData.y, "base64");
+  const xBuffer = fromString(fromBase64URL(keyData.x), BASE64);
+  const yBuffer = fromString(fromBase64URL(keyData.y), BASE64);
 
   // Concatenate x and y coordinates with 0x04 prefix (uncompressed point format)
   return concat([new Uint8Array([0x04]), xBuffer, yBuffer]);
@@ -235,7 +235,10 @@ export function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
   const [headerBase64Url, payloadBase64Url, signatureBase64Url] = token.split(".");
 
   // Decode the signature
-  const signatureBuffer = Buffer.from(fromBase64URL(signatureBase64Url), "base64");
+  const signatureBuffer = fromString(
+    fromBase64URL(signatureBase64Url),
+    BASE64
+  );
 
   // Check if signature length is correct (64 bytes for P-256)
   if (signatureBuffer.length !== 64) {
@@ -250,7 +253,7 @@ export function verifyP256Jwt<T>(token: string, keyData: P256KeyDataType) {
   const signingInput = `${headerBase64Url}.${payloadBase64Url}`;
 
   // Hash the signing input
-  const messageHash = sha256(signingInput);
+  const messageHash = sha256(fromString(signingInput, UTF8));
 
   // Get the public key in uncompressed point format
   const publicKey = getCryptoKeyFromKeyData(keyData);
