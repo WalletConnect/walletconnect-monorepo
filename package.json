@@ -90,5 +90,8 @@
     "sinon": "21.0.1",
     "typescript": "5.9.3",
     "vitest": "3.2.4"
+  },
+  "dependencies": {
+    "uint8arrays": "^5.1.0"
   }
 }

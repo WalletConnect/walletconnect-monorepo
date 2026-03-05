@@ -5,7 +5,10 @@ import { blake2b } from "@noble/hashes/blake2";
 import { encode as msgpackEncode, decode as msgpackDecode } from "@msgpack/msgpack";
 import { base32, base58 } from "@scure/base";
 import { AuthTypes } from "@walletconnect/types";
+import { fromString, toString } from "uint8arrays";
+import concat from "uint8arrays/concat";
 
+const textEncoder = new TextEncoder();
 import { parseChainId } from "./caip.js";
 
 const DEFAULT_RPC_URL = "https://rpc.walletconnect.org/v1";
@@ -13,7 +16,7 @@ const DEFAULT_RPC_URL = "https://rpc.walletconnect.org/v1";
 export function hashEthereumMessage(message: string) {
   const prefix = `\x19Ethereum Signed Message:\n${message.length}`;
   const prefixedMessage = new TextEncoder().encode(prefix + message);
-  return "0x" + Buffer.from(keccak_256(prefixedMessage)).toString("hex");
+  return "0x" + toString(keccak_256(prefixedMessage), "hex");
 }
 
 export async function verifySignature(
@@ -145,7 +148,7 @@ export function extractSolanaTransactionId(solanaTransaction: string): string {
     throw new Error("Transaction too short");
   }
 
-  const transactionBuffer = Buffer.from(solanaTransaction, "base64");
+  const transactionBuffer = fromString(solanaTransaction, "base64");
 
   const signatureBuffer = transactionBuffer.slice(1, 65);
 
@@ -153,7 +156,7 @@ export function extractSolanaTransactionId(solanaTransaction: string): string {
 }
 
 export function getSuiDigest(transaction: string) {
-  const txBytes = new Uint8Array(Buffer.from(transaction, "base64"));
+  const txBytes = fromString(transaction, "base64");
 
   const typeTagBytes = Array.from(`TransactionData::`).map((e) => e.charCodeAt(0));
 
@@ -188,7 +191,7 @@ export function getNearUint8ArrayFromBytes(bytes: unknown) {
 }
 
 export function getAlgorandTransactionId(transaction: string) {
-  const signedTxnBytes = Buffer.from(transaction, "base64");
+  const signedTxnBytes = fromString(transaction, "base64");
 
   const decoded = msgpackDecode(signedTxnBytes) as any;
 
@@ -200,8 +203,8 @@ export function getAlgorandTransactionId(transaction: string) {
   const serializedUnsignedTxn = msgpackEncode(unsignedTxn);
 
   // Prepend "TX" prefix
-  const txPrefix = Buffer.from("TX");
-  const toHash = Buffer.concat([txPrefix, Buffer.from(serializedUnsignedTxn)]);
+  const txPrefix = textEncoder.encode("TX");
+  const toHash = concat([txPrefix, serializedUnsignedTxn]);
 
   const hash = sha512_256(toHash);
 
@@ -209,7 +212,7 @@ export function getAlgorandTransactionId(transaction: string) {
   return base32.encode(hash).replace(/=+$/, "");
 }
 
-function encodeVarint(value: number | bigint): Buffer {
+function encodeVarint(value: number | bigint): Uint8Array {
   const result: number[] = [];
   let v = BigInt(value);
   while (v >= 0x80n) {
@@ -217,7 +220,7 @@ function encodeVarint(value: number | bigint): Buffer {
     v >>= 7n;
   }
   result.push(Number(v));
-  return Buffer.from(result);
+  return new Uint8Array(result);
 }
 
 export function getSignDirectHash(payload: {
@@ -235,28 +238,28 @@ export function getSignDirectHash(payload: {
     signature: string;
   };
 }) {
-  const bodyBytes = Buffer.from(payload.signed.bodyBytes, "base64");
-  const authInfoBytes = Buffer.from(payload.signed.authInfoBytes, "base64");
-  const signature = Buffer.from(payload.signature.signature, "base64");
+  const bodyBytes = fromString(payload.signed.bodyBytes, "base64");
+  const authInfoBytes = fromString(payload.signed.authInfoBytes, "base64");
+  const signature = fromString(payload.signature.signature, "base64");
 
-  const chunks: Buffer[] = [];
+  const chunks: Uint8Array[] = [];
 
-  chunks.push(Buffer.from([0x0a]));
+  chunks.push(new Uint8Array([0x0a]));
   chunks.push(encodeVarint(bodyBytes.length));
   chunks.push(bodyBytes);
 
-  chunks.push(Buffer.from([0x12]));
+  chunks.push(new Uint8Array([0x12]));
   chunks.push(encodeVarint(authInfoBytes.length));
   chunks.push(authInfoBytes);
 
-  chunks.push(Buffer.from([0x1a]));
+  chunks.push(new Uint8Array([0x1a]));
   chunks.push(encodeVarint(signature.length));
   chunks.push(signature);
 
-  const txRawBytes = Buffer.concat(chunks);
+  const txRawBytes = concat(chunks);
   const hashBytes = sha256(txRawBytes);
 
-  return Buffer.from(hashBytes).toString("hex").toUpperCase();
+  return toString(hashBytes, "hex").toUpperCase();
 }
 
 export function getWalletSendCallsHashes(

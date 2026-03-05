@@ -10,6 +10,7 @@ import { getDocument, getLocation, getNavigator } from "@walletconnect/window-ge
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
+import { fromString, toString } from "uint8arrays";
 
 import { getInternalError, SDKError } from "./errors.js";
 
@@ -551,12 +552,12 @@ export function isIframe() {
 }
 
 export function toBase64(input: string, removePadding = false): string {
-  const encoded = Buffer.from(input).toString("base64");
+  const encoded = toString(new TextEncoder().encode(input), "base64");
   return removePadding ? encoded.replace(/[=]/g, "") : encoded;
 }
 
 export function fromBase64(encodedString: string): string {
-  return Buffer.from(encodedString, "base64").toString("utf-8");
+  return new TextDecoder().decode(fromString(encodedString, "base64"));
 }
 
 export function sleep(ms: number) {

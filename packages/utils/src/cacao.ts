@@ -1,6 +1,11 @@
 import { AuthTypes } from "@walletconnect/types";
 import { getCommonValuesInArrays } from "./misc.js";
 import { verifySignature } from "./signatures.js";
+import { fromString, toString } from "uint8arrays";
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
 const didPrefix = "did:pkh:";
 const NAMESPACE_DISPLAY_NAMES = {
   eip155: "Ethereum",
@@ -225,11 +230,11 @@ export function getReCapActions(abilities: any[]) {
 }
 
 export function base64Encode(input: unknown): string {
-  return Buffer.from(JSON.stringify(input)).toString("base64");
+  return toString(textEncoder.encode(JSON.stringify(input)), "base64");
 }
 
 export function base64Decode(encodedString: string): string {
-  return JSON.parse(Buffer.from(encodedString, "base64").toString("utf-8"));
+  return JSON.parse(textDecoder.decode(fromString(encodedString, "base64")));
 }
 
 export function isValidRecap(recap: any) {

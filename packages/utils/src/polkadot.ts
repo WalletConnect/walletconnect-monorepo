@@ -1,5 +1,6 @@
 import { base58 } from "@scure/base";
 import { blake2b } from "blakejs";
+import { fromString, toString } from "uint8arrays";
 
 export function ss58AddressToPublicKey(address: string): Uint8Array {
   const decoded = base58.decode(address);
@@ -32,7 +33,7 @@ export function addSignatureToExtrinsic({
   const tipBytes = compactEncodeBigInt(tip);
 
   const body = new Uint8Array([
-    0x00, // MultiAddress::Id
+    0x00,
     ...publicKey,
     signatureType,
     ...signature,
@@ -49,7 +50,7 @@ export function addSignatureToExtrinsic({
 export function deriveExtrinsicHash(signedExtrinsicHex: string): string {
   const bytes = hexToBytes(signedExtrinsicHex);
   const hash = blake2b(bytes, undefined, 32);
-  return "0x" + Buffer.from(hash).toString("hex");
+  return "0x" + toString(hash, "hex");
 }
 
 function hexToBytes(hex: string): Uint8Array {
@@ -68,9 +69,9 @@ function normalizeHex(input: string): string {
 function guessSignatureTypeFromAddress(address: string): number {
   const decoded = base58.decode(address);
   const prefix = decoded[0];
-  if (prefix === 42) return 0x00; // Ed25519
-  if (prefix === 60) return 0x02; // Secp256k1
-  return 0x01; // Default Sr25519
+  if (prefix === 42) return 0x00;
+  if (prefix === 60) return 0x02;
+  return 0x01;
 }
 
 function compactEncodeInt(value: number): Uint8Array {
@@ -118,11 +119,12 @@ export function buildSignedExtrinsicHash(payload: {
   };
   signature: string;
 }) {
-  const signature = Uint8Array.from(Buffer.from(payload.signature, "hex"));
+  const signature = fromString(payload.signature, "hex");
 
   const publicKey = ss58AddressToPublicKey(payload.transaction.address);
   const signed = addSignatureToExtrinsic({ publicKey, signature, payload: payload.transaction });
-  const hexSigned = Buffer.from(signed).toString("hex");
+
+  const hexSigned = toString(signed, "hex");
   const hash = deriveExtrinsicHash(hexSigned);
 
   return hash;
