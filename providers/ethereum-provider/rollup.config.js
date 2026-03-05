@@ -1,23 +1,23 @@
-import { name, dependencies, peerDependencies } from "./package.json";
-import createConfig, { input, plugins } from "../../rollup.config";
+import pkg from "./package.json" with { type: "json" };
+import createConfig, { input, plugins } from "../../rollup.config.js";
 import alias from "@rollup/plugin-alias";
-import path from "path";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
-// `ethereum-provider` has dynamic imports, so we need to enable inlineDynamicImports
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const options = { inlineDynamicImports: true };
 
-// keep `@reown/appkit/core` in the external dependencies, else the builds will balloon in size
-const externalDependencies = Object.keys({ ...dependencies, ...peerDependencies }).concat(
+const externalDependencies = Object.keys({ ...pkg.dependencies, ...pkg.peerDependencies }).concat(
   "@reown/appkit/core",
 );
-export default createConfig(name, externalDependencies, options, options, options, [
+export default createConfig(pkg.name, externalDependencies, options, options, options, [
   {
     input,
     plugins: [
       alias({
         entries: [
           {
-            // this config allows separate files to be used for the browser and native builds
             find: "./utils/appkit",
             replacement: path.resolve(__dirname, `src/utils/appkit.native.ts`),
           },
@@ -30,7 +30,7 @@ export default createConfig(name, externalDependencies, options, options, option
       file: "./dist/index.native.js",
       format: "cjs",
       exports: "named",
-      name,
+      name: pkg.name,
       sourcemap: true,
       ...options,
     },

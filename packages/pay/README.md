@@ -278,4 +278,4 @@ try {
 
 ## License
 
-Apache-2.0
+WalletConnect Community License

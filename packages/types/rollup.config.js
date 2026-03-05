@@ -1,4 +1,4 @@
-import { name, dependencies } from "./package.json";
-import createConfig from "../../rollup.config";
+import pkg from "./package.json" with { type: "json" };
+import createConfig from "../../rollup.config.js";
 
-export default createConfig(name, Object.keys(dependencies));
+export default createConfig(pkg.name, Object.keys(pkg.dependencies));
