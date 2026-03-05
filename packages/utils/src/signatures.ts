@@ -6,7 +6,7 @@ import { encode as msgpackEncode, decode as msgpackDecode } from "@msgpack/msgpa
 import { base32, base58 } from "@scure/base";
 import { AuthTypes } from "@walletconnect/types";
 import { fromString, toString } from "uint8arrays";
-import concat from "uint8arrays/concat";
+import { concat } from "uint8arrays/concat";
 
 const textEncoder = new TextEncoder();
 import { parseChainId } from "./caip.js";
