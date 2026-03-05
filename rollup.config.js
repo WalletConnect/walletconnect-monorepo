@@ -2,7 +2,7 @@ import esbuild from "rollup-plugin-esbuild";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
-import visualizer from "rollup-plugin-visualizer";
+import { visualizer } from "rollup-plugin-visualizer";
 
 export const input = "./src/index.ts";
 export const plugins = [
@@ -49,6 +49,7 @@ export default function createConfig(
           file: "./dist/index.cjs",
           format: "cjs",
           exports: "named",
+          interop: "auto",
           name: packageName,
           sourcemap: true,
           ...cjs,

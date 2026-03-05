@@ -58,7 +58,7 @@
     "events": "3.3.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudwatch": "3.971.0",
+    "@aws-sdk/client-cloudwatch": "3.1000.0",
     "ethers": "6.16.0"
   },
   "repository": {

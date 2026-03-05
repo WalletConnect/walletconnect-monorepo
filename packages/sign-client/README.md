@@ -14,4 +14,4 @@ Also available quick start for [Dapps](https://docs.reown.com/api/sign/dapp-usag
 
 ## License
 
-Apache 2.0
+WalletConnect Community License

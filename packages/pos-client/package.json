@@ -5,7 +5,7 @@
   "private": false,
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
-  "license": "Apache-2.0",
+  "license": "SEE LICENSE IN LICENSE.md",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "unpkg": "dist/index.umd.js",
