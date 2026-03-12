@@ -1,3 +1,4 @@
+import { fromString, toString } from "uint8arrays";
 import { AuthTypes } from "@walletconnect/types";
 import { getCommonValuesInArrays } from "./misc.js";
 import { verifySignature } from "./signatures.js";
@@ -225,11 +226,11 @@ export function getReCapActions(abilities: any[]) {
 }
 
 export function base64Encode(input: unknown): string {
-  return Buffer.from(JSON.stringify(input)).toString("base64");
+  return toString(fromString(JSON.stringify(input), "utf8"), "base64pad");
 }
 
 export function base64Decode(encodedString: string): string {
-  return JSON.parse(Buffer.from(encodedString, "base64").toString("utf-8"));
+  return JSON.parse(toString(fromString(encodedString, "base64pad"), "utf8"));
 }
 
 export function isValidRecap(recap: any) {
