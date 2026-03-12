@@ -583,7 +583,7 @@ export class Relayer extends IRelayer {
   };
 
   private onConnectHandler = () => {
-    this.logger.warn({}, "Relayer connected 🛜");
+    this.logger.info({}, "Relayer connected 🛜");
     this.startPingTimeout();
     this.events.emit(RELAYER_EVENTS.connect);
   };
