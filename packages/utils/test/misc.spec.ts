@@ -290,3 +290,32 @@ describe("Misc", () => {
     });
   });
 });
+
+import { toString } from "uint8arrays";
+
+describe("base64 compatibility with Buffer", () => {
+  it("should match Buffer base64 output ignoring padding", () => {
+    const input = "1";
+
+    const bufferResult = Buffer.from(input)
+      .toString("base64")
+      .replace(/=+$/, "");
+
+    const uint8Result = toString(new TextEncoder().encode(input), "base64");
+
+    expect(uint8Result).toEqual(bufferResult);
+  });
+
+  it("should match Buffer base64 output when removing padding", () => {
+    const input = "1";
+
+    const bufferResult = Buffer.from(input)
+      .toString("base64")
+      .replace(/=/g, "");
+
+    const uint8Result = toString(new TextEncoder().encode(input), "base64")
+      .replace(/=/g, "");
+
+    expect(uint8Result).toEqual(bufferResult);
+  });
+});
