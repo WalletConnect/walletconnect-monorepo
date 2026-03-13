@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.7
+
+### Patch Changes
+
+- [#7190](https://github.com/WalletConnect/walletconnect-monorepo/pull/7190) [`98f5ed7`](https://github.com/WalletConnect/walletconnect-monorepo/commit/98f5ed7c3ee982849d1aa23071920e936260a684) Thanks [@github-actions](https://github.com/apps/github-actions)! - chore: update Pay WASM to 0.10.50
+
+- Updated dependencies []:
+  - @walletconnect/utils@2.23.8
+  - @walletconnect/types@2.23.8
+
 ## 1.0.6
 
 ### Patch Changes

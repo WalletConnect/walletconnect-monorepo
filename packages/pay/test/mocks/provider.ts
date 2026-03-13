@@ -202,6 +202,7 @@ export function createMockPaymentOptionsResponse(
           },
         },
         etaS: 5,
+        expiresAt: Math.floor(Date.now() / 1000) + 300,
         actions: [],
       },
     ],
@@ -355,6 +356,7 @@ export function createMockPaymentOptionsWithOptionCollectData(): PaymentOptionsR
           },
         },
         etaS: 5,
+        expiresAt: Math.floor(Date.now() / 1000) + 300,
         actions: [],
         collectData: {
           fields: [
@@ -388,6 +390,7 @@ export function createMockPaymentOptionsWithOptionCollectData(): PaymentOptionsR
           },
         },
         etaS: 30,
+        expiresAt: Math.floor(Date.now() / 1000) + 600,
         actions: [],
       },
     ],

@@ -1,5 +1,12 @@
 # @walletconnect/utils
 
+## 2.23.8
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @walletconnect/types@2.23.8
+
 ## 2.23.7
 
 ### Patch Changes

@@ -8,7 +8,13 @@
 /**
  * Payment status representing the lifecycle of a payment
  */
-export type PaymentStatus = "requires_action" | "processing" | "succeeded" | "failed" | "expired";
+export type PaymentStatus =
+  | "requires_action"
+  | "processing"
+  | "succeeded"
+  | "failed"
+  | "expired"
+  | "cancelled";
 
 /**
  * Type of data collection field
@@ -155,6 +161,8 @@ export interface PaymentOption {
   amount: PayAmount;
   /** Estimated time to complete the option, in seconds */
   etaS: number;
+  /** Option expiration timestamp, in seconds since epoch */
+  expiresAt?: number;
   /** Actions required to complete the option */
   actions: Action[];
   /** Option-specific data collection requirements */

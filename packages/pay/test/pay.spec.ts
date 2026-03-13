@@ -50,6 +50,8 @@ describe("WalletConnectPay with MockProvider", () => {
       expect(result.options[0].id).toBe("opt_1");
       expect(result.options[0].amount.unit).toContain("eip155:8453");
       expect(result.options[0].amount.display.assetSymbol).toBe("USDC");
+      expect(result.options[0].expiresAt).toBeDefined();
+      expect(typeof result.options[0].expiresAt).toBe("number");
     });
 
     it("should return payment options with payment info when requested", async () => {
@@ -115,9 +117,12 @@ describe("WalletConnectPay with MockProvider", () => {
       expect(optionWithCollect?.collectData?.fields[1].fieldType).toBe("checkbox");
       expect(optionWithCollect?.collectData?.url).toBe("https://example.com/collect");
 
+      expect(optionWithCollect?.expiresAt).toBeDefined();
+
       const optionWithoutCollect = result.options.find((o) => o.id === "opt_without_collect");
       expect(optionWithoutCollect).toBeDefined();
       expect(optionWithoutCollect?.collectData).toBeUndefined();
+      expect(optionWithoutCollect?.expiresAt).toBeDefined();
     });
 
     it("should throw error for non-existent payment", async () => {
@@ -401,6 +406,22 @@ describe("WalletConnectPay with MockProvider", () => {
       const result = await mockProvider.confirmPayment(params);
 
       expect(result.status).toBe("expired");
+      expect(result.isFinal).toBe(true);
+    });
+
+    it("should handle cancelled payment", async () => {
+      const mockResponse = createMockConfirmResponse("cancelled", true);
+      mockProvider.setConfirmResponse("pay_cancelled", "opt_1", mockResponse);
+
+      const params: ConfirmPaymentParams = {
+        paymentId: "pay_cancelled",
+        optionId: "opt_1",
+        signatures: ["0xsig1"],
+      };
+
+      const result = await mockProvider.confirmPayment(params);
+
+      expect(result.status).toBe("cancelled");
       expect(result.isFinal).toBe(true);
     });
 

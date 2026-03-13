@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/react-native-compat",
   "description": "Native modules and shims for WalletConnect Protocol in React Native Projects",
-  "version": "2.23.7",
+  "version": "2.23.8",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "SEE LICENSE IN LICENSE.md",
