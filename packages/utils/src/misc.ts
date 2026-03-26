@@ -1,3 +1,4 @@
+import { fromString, toString } from "uint8arrays";
 import { detect } from "detect-browser";
 import { FIVE_MINUTES, fromMiliseconds, toMiliseconds } from "@walletconnect/time";
 import {
@@ -551,12 +552,12 @@ export function isIframe() {
 }
 
 export function toBase64(input: string, removePadding = false): string {
-  const encoded = Buffer.from(input).toString("base64");
+  const encoded = toString(fromString(input, "utf8"), "base64pad");
   return removePadding ? encoded.replace(/[=]/g, "") : encoded;
 }
 
 export function fromBase64(encodedString: string): string {
-  return Buffer.from(encodedString, "base64").toString("utf-8");
+  return toString(fromString(encodedString, "base64pad"), "utf8");
 }
 
 export function sleep(ms: number) {
