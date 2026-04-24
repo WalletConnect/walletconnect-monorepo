@@ -5,6 +5,7 @@
  *
  * *This API requires the following crate features to be activated: `ReadableStreamType`*
  */
+
 type ReadableStreamType = "bytes";
 export type Hex = `0x${string}`;
 export type Address = Hex;
@@ -19,27 +20,34 @@ export type TransactionReceipt = {};
 export class IntoUnderlyingByteSource {
   private constructor();
   free(): void;
+  [Symbol.dispose](): void;
+  cancel(): void;
   pull(controller: ReadableByteStreamController): Promise<any>;
   start(controller: ReadableByteStreamController): void;
-  cancel(): void;
   readonly autoAllocateChunkSize: number;
   readonly type: ReadableStreamType;
 }
+
 export class IntoUnderlyingSink {
   private constructor();
   free(): void;
+  [Symbol.dispose](): void;
   abort(reason: any): Promise<any>;
   close(): Promise<any>;
   write(chunk: any): Promise<any>;
 }
+
 export class IntoUnderlyingSource {
   private constructor();
   free(): void;
-  pull(controller: ReadableStreamDefaultController): Promise<any>;
+  [Symbol.dispose](): void;
   cancel(): void;
+  pull(controller: ReadableStreamDefaultController): Promise<any>;
 }
+
 export class PayJson {
   free(): void;
+  [Symbol.dispose](): void;
   confirm_payment(request_json: string): Promise<string>;
   get_payment_options(request_json: string): Promise<string>;
   get_required_payment_actions(request_json: string): Promise<string>;
@@ -68,18 +76,21 @@ export interface InitOutput {
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsource_cancel: (a: number) => void;
   readonly intounderlyingsource_pull: (a: number, b: number) => number;
-  readonly __wbindgen_export_0: (a: number) => void;
-  readonly __wbindgen_export_1: (a: number, b: number) => number;
-  readonly __wbindgen_export_2: (a: number, b: number, c: number, d: number) => number;
-  readonly __wbindgen_export_3: WebAssembly.Table;
+  readonly __wasm_bindgen_func_elem_1335: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_1565: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_1897: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_2731: (a: number, b: number, c: number, d: number) => void;
+  readonly __wasm_bindgen_func_elem_2733: (a: number, b: number, c: number, d: number) => void;
+  readonly __wasm_bindgen_func_elem_1338: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_1572: (a: number, b: number) => void;
+  readonly __wbindgen_export: (a: number, b: number) => number;
+  readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_export3: (a: number) => void;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
-  readonly __wbindgen_export_4: (a: number, b: number) => void;
-  readonly __wbindgen_export_5: (a: number, b: number) => void;
-  readonly __wbindgen_export_6: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_export_7: (a: number, b: number, c: number, d: number) => void;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;
+
 /**
  * Instantiates the given `module`, which can either be bytes or
  * a precompiled `WebAssembly.Module`.
