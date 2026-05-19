@@ -26,7 +26,8 @@
     "providers/signer-connection",
     "providers/ethereum-provider",
     "packages/pos-client",
-    "packages/pay"
+    "packages/pay",
+    "packages/walletkit-wdk-adapter"
   ],
   "scripts": {
     "clean": "npm run clean --workspaces --if-present",
