@@ -37,6 +37,7 @@ export declare namespace CoreTypes {
       universal?: string;
       linkMode?: boolean;
     };
+    customData?: Record<string, any>;
   }
 }
 

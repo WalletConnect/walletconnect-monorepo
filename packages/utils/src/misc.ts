@@ -10,6 +10,7 @@ import { getDocument, getLocation, getNavigator } from "@walletconnect/window-ge
 import { getWindowMetadata } from "@walletconnect/window-metadata";
 import { ErrorResponse } from "@walletconnect/jsonrpc-utils";
 import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
+import { validateMetadataCustomData } from "./validators";
 
 import { getInternalError, SDKError } from "./errors.js";
 
@@ -128,6 +129,17 @@ export function populateAppMetadata(metadata?: SignClientTypes.Metadata): SignCl
 
     if (metadata?.icons?.length && metadata.icons.length > 0) {
       metadata.icons = metadata.icons.filter((icon) => icon !== "");
+    }
+
+    if (metadata?.customData) {
+      const customDataError = validateMetadataCustomData(
+        metadata.customData,
+        "populateAppMetadata",
+      );
+      if (customDataError) {
+        console.warn("Metadata customData validation failed:", customDataError.message);
+        delete metadata.customData;
+      }
     }
 
     return {

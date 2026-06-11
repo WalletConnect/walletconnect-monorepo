@@ -502,3 +502,48 @@ function parseApprovedNamespaces(namespaces: SessionTypes.Namespaces) {
 export function isValidRequestExpiry(expiry: number, boundaries: { min: number; max: number }) {
   return isValidNumber(expiry, false) && expiry <= boundaries.max && expiry >= boundaries.min;
 }
+
+// -- metadata validation -------------------------------------------------- //
+
+export function isValidMetadataCustomData(customData: Record<string, any> | undefined): boolean {
+  if (!customData) return true;
+
+  try {
+    const serialized = JSON.stringify(customData);
+    const sizeInBytes = new TextEncoder().encode(serialized).length;
+    const maxSizeInBytes = 1024 * 1024; // 1MB
+
+    return sizeInBytes <= maxSizeInBytes;
+  } catch (error) {
+    return false;
+  }
+}
+
+export function getMetadataCustomDataSize(customData: Record<string, any> | undefined): number {
+  if (!customData) return 0;
+
+  try {
+    const serialized = JSON.stringify(customData);
+    return new TextEncoder().encode(serialized).length;
+  } catch (error) {
+    return 0;
+  }
+}
+
+export function validateMetadataCustomData(
+  customData: Record<string, any> | undefined,
+  context: string,
+): ErrorObject {
+  if (!customData) return null;
+
+  if (!isValidMetadataCustomData(customData)) {
+    const sizeInBytes = getMetadataCustomDataSize(customData);
+    const maxSizeInBytes = 1024 * 1024; // 1MB
+    return getInternalError(
+      "INVALID_METADATA_CUSTOM_DATA",
+      `${context} customData exceeds maximum size limit. Size: ${sizeInBytes} bytes, Max: ${maxSizeInBytes} bytes (1MB)`,
+    );
+  }
+
+  return null;
+}
