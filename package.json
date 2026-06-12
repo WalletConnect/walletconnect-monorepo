@@ -74,7 +74,7 @@
     "@types/sinon": "21.0.0",
     "@typescript-eslint/eslint-plugin": "8.57.2",
     "@typescript-eslint/parser": "8.57.2",
-    "esbuild": "0.25.0",
+    "esbuild": "0.28.1",
     "eslint": "8.57.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-config-standard": "17.1.0",
@@ -90,6 +90,6 @@
     "rollup-plugin-visualizer": "5.14.0",
     "sinon": "21.0.3",
     "typescript": "5.9.3",
-    "vitest": "3.2.4"
+    "vitest": "4.1.8"
   }
 }
