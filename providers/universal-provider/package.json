@@ -55,7 +55,7 @@
     "events": "3.3.0"
   },
   "devDependencies": {
-    "ethers": "6.16.0",
+    "ethers": "6.17.0",
     "hardhat": "^3.1.4",
     "uint8arrays": "3.1.1",
     "wait-on": "9.0.1",

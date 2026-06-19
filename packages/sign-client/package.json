@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-cloudwatch": "3.1000.0",
-    "ethers": "6.16.0"
+    "ethers": "6.17.0"
   },
   "repository": {
     "type": "git",
