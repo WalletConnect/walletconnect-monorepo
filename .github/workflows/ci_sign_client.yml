@@ -50,7 +50,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: sign-client
-          IMAGE_TAG: v2.0
+          IMAGE_TAG: v2.0-legacy
         with:
           context: .
           file: packages/sign-client/Dockerfile
