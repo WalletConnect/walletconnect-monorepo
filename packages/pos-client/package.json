@@ -49,6 +49,6 @@
     "@walletconnect/utils": "2.23.10"
   },
   "devDependencies": {
-    "vitest": "3.2.4"
+    "vitest": "4.1.10"
   }
 }
