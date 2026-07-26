@@ -70,7 +70,7 @@ export class Relayer extends IRelayer {
 
   public core: ICore;
   public logger: Logger;
-  public events = new EventEmitter();
+  public events: EventEmitter = new EventEmitter();
   public provider: IJsonRpcProvider;
   public messages: IMessageTracker;
   public subscriber: ISubscriber;

@@ -13,7 +13,7 @@ import {
 
 export class Expirer extends IExpirer {
   public expirations = new Map<string, ExpirerTypes.Expiration>();
-  public events = new EventEmitter();
+  public events: EventEmitter = new EventEmitter();
   public name = EXPIRER_CONTEXT;
   public version = EXPIRER_STORAGE_VERSION;
 
