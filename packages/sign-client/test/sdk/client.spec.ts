@@ -333,7 +333,8 @@ describe.sequential("Sign Client Integration", () => {
 
       await deleteClients(clients);
     });
-    it("connect (with old pairing)", async () => {
+    // relay no longer allows >2 subscribers on the topic & resusing pairing is deprecated
+    it.skip("connect (with old pairing)", async () => {
       const {
         clients,
         pairingA: { topic: pairingTopic },

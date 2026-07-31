@@ -46,11 +46,8 @@
   },
   "dependencies": {
     "@reown/appkit": "1.8.19",
-    "@walletconnect/jsonrpc-provider": "1.0.14",
     "@walletconnect/jsonrpc-types": "1.0.4",
-    "@walletconnect/jsonrpc-utils": "1.0.8",
     "@walletconnect/keyvaluestorage": "1.1.1",
-    "@walletconnect/sign-client": "2.23.10",
     "@walletconnect/types": "2.23.10",
     "@walletconnect/universal-provider": "2.23.10",
     "@walletconnect/utils": "2.23.10",
@@ -58,7 +55,7 @@
   },
   "devDependencies": {
     "hardhat": "^3.1.4",
-    "ethers": "6.16.0",
+    "ethers": "6.17.0",
     "@rollup/plugin-alias": "^6.0.0",
     "uint8arrays": "3.1.1",
     "wait-on": "9.0.1",
