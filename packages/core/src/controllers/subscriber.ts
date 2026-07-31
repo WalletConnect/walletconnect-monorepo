@@ -34,7 +34,7 @@ export class Subscriber extends ISubscriber {
   public subscriptions = new Map<string, SubscriberTypes.Active>();
 
   public topicMap = new SubscriberTopicMap();
-  public events = new EventEmitter();
+  public events: EventEmitter = new EventEmitter();
   public name = SUBSCRIBER_CONTEXT;
   public version = SUBSCRIBER_STORAGE_VERSION;
   public pending = new Map<string, SubscriberTypes.Params>();

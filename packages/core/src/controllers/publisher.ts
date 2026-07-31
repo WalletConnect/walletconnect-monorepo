@@ -23,7 +23,7 @@ type IPublishType = {
 };
 
 export class Publisher extends IPublisher {
-  public events = new EventEmitter();
+  public events: EventEmitter = new EventEmitter();
   public name = PUBLISHER_CONTEXT;
   public queue = new Map<string, IPublishType>();
 

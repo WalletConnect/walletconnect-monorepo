@@ -14,7 +14,7 @@ import {
 
 export class JsonRpcHistory extends IJsonRpcHistory {
   public records = new Map<number, JsonRpcRecord>();
-  public events = new EventEmitter();
+  public events: EventEmitter = new EventEmitter();
   public name = HISTORY_CONTEXT;
   public version = HISTORY_STORAGE_VERSION;
 
