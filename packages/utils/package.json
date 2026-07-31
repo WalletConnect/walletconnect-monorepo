@@ -49,7 +49,6 @@
     "@walletconnect/logger": "3.0.2",
     "@walletconnect/relay-api": "1.0.11",
     "@walletconnect/relay-auth": "1.1.0",
-    "@walletconnect/safe-json": "1.0.2",
     "@walletconnect/time": "1.0.2",
     "@walletconnect/types": "2.23.10",
     "@walletconnect/window-getters": "1.0.1",
