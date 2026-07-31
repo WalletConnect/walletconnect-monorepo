@@ -58,7 +58,7 @@ export class Pairing implements IPairing {
   public name = PAIRING_CONTEXT;
   public version = PAIRING_STORAGE_VERSION;
 
-  public events = new EventEmitter();
+  public events: EventEmitter = new EventEmitter();
   public pairings: IStore<string, PairingTypes.Struct>;
 
   private initialized = false;
