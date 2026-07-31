@@ -290,7 +290,12 @@ export function isValidRecap(recap: any) {
   });
 }
 
-export function createRecap(resource: string, ability: string, actions: string[], limits = {}) {
+export function createRecap(
+  resource: string,
+  ability: string,
+  actions: string[],
+  limits = {},
+): RecapType {
   actions?.sort((a, b) => a.localeCompare(b));
   return {
     att: { [resource]: assignAbilityToActions(ability, actions, limits) },
