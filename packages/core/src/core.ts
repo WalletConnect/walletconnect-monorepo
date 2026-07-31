@@ -171,19 +171,19 @@ export class Core extends ICore {
 
   // ---------- Events ----------------------------------------------- //
 
-  public on = (name: any, listener: any) => {
+  public on = (name: any, listener: any): EventEmitter => {
     return this.events.on(name, listener);
   };
 
-  public once = (name: any, listener: any) => {
+  public once = (name: any, listener: any): EventEmitter => {
     return this.events.once(name, listener);
   };
 
-  public off = (name: any, listener: any) => {
+  public off = (name: any, listener: any): EventEmitter => {
     return this.events.off(name, listener);
   };
 
-  public removeListener = (name: any, listener: any) => {
+  public removeListener = (name: any, listener: any): EventEmitter => {
     return this.events.removeListener(name, listener);
   };
 
