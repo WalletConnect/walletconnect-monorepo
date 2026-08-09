@@ -282,6 +282,34 @@ describe("URI", () => {
     );
   });
 
+  it("should reject other single-line SIWE fields containing line breaks", () => {
+    const baseRequest = {
+      type: "caip122",
+      aud: "https://app.web3inbox.com/login",
+      domain: "app.web3inbox",
+      version: "1",
+      nonce: "32891756",
+      iat: "2024-03-13T09:00:43.888Z",
+    };
+    const iss = "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09";
+
+    expect(() =>
+      formatMessage({ ...baseRequest, domain: "app.web3inbox\nURI: https://evil.com" }, iss),
+    ).to.throw("Domain must not contain line breaks");
+
+    expect(() =>
+      formatMessage({ ...baseRequest, aud: "https://app.web3inbox.com/login\nNonce: forged" }, iss),
+    ).to.throw("URI must not contain line breaks");
+
+    expect(() => formatMessage({ ...baseRequest, nonce: "32891756\nVersion: 9" }, iss)).to.throw(
+      "Nonce must not contain line breaks",
+    );
+
+    expect(
+      formatMessage({ ...baseRequest, domain: "app.web3inbox", aud: "https://app.web3inbox.com" }, iss),
+    ).to.include("app.web3inbox wants you to sign in");
+  });
+
   it("should reject recap-derived statements containing line breaks", () => {
     const iss = "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09";
     // recap content is untrusted: a malicious resource name with a newline must not be
