@@ -62,6 +62,22 @@ export async function validateSignedCacao(params: { cacao: AuthTypes.Cacao; proj
   } catch (error) {
     return false;
   }
+  // SIWE exp/nbf are reconstructed into the signed message but were never
+  // enforced here — an expired (or not-yet-valid) CACAO with a good signature
+  // still settled sessions. Fail closed when present and outside the window.
+  if (payload.exp !== undefined) {
+    const expMs = Date.parse(payload.exp);
+    if (Number.isNaN(expMs) || Date.now() >= expMs) {
+      return false;
+    }
+  }
+  if (payload.nbf !== undefined) {
+    const nbfMs = Date.parse(payload.nbf);
+    if (Number.isNaN(nbfMs) || Date.now() < nbfMs) {
+      return false;
+    }
+  }
+
   const walletAddress = getDidAddress(payload.iss) as string;
   const isValid = await verifySignature(
     walletAddress,
