@@ -3497,6 +3497,14 @@ export class Engine extends IEngine {
     try {
       const txHashes = this.extractTxHashesFromResult(params.request, result);
       tvf.txHashes = txHashes;
+      // TEMP QA logging (draft PR): surface collected Stellar tx hashes for explorer lookup
+      if (result && params.request.method.startsWith("stellar_")) {
+        // eslint-disable-next-line no-console
+        console.log(
+          `[TVF] ${params.request.method} (${params.chainId}) collected txHashes:`,
+          txHashes,
+        );
+      }
       tvf.contractAddresses = this.isValidContractData(params.request.params)
         ? [params.request.params?.[0]?.to]
         : [];
