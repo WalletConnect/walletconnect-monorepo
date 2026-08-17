@@ -104,6 +104,7 @@ import {
   getAlgorandTransactionId,
   buildSignedExtrinsicHash,
   getSignDirectHash,
+  getStellarTransactionHash,
   LimitedSet,
   getWalletSendCallsHashes,
   getCantonTransactionHashes,
@@ -3563,6 +3564,10 @@ export class Engine extends IEngine {
 
       if (method === "cosmos_signDirect") {
         return [getSignDirectHash(result)];
+      }
+
+      if (method === "stellar_signXDR") {
+        return [getStellarTransactionHash(result.signedXDR, request.params?.chain)];
       }
 
       if (method === "wallet_sendCalls") {
