@@ -4,7 +4,6 @@ import {
   TEST_RELAY_URL_US,
   TEST_RELAY_URL_AP,
   TEST_RELAY_URL_EU,
-  TEST_RELAY_URL_SA,
   TEST_PROJECT_ID,
   TEST_REQUEST_PARAMS,
   throttle,
@@ -158,10 +157,9 @@ describe("Region Switch Communication", () => {
       const usUrl = getStagingUrl(TEST_RELAY_URL_US);
       const euUrl = getStagingUrl(TEST_RELAY_URL_EU);
       const apUrl = getStagingUrl(TEST_RELAY_URL_AP);
-      const saUrl = getStagingUrl(TEST_RELAY_URL_SA);
 
       log(`Using US URL: ${usUrl}`);
-      log(`Available regions: US, EU (${euUrl}), AP (${apUrl}), SA (${saUrl})`);
+      log(`Available regions: US, EU (${euUrl}), AP (${apUrl})`);
 
       const { clients, sessionA } = await initTwoPairedClients(
         { relayUrl: usUrl },
@@ -176,7 +174,6 @@ describe("Region Switch Communication", () => {
         { name: "US", url: usUrl },
         { name: "EU", url: euUrl },
         { name: "AP", url: apUrl },
-        { name: "SA", url: saUrl },
       ];
 
       // Randomly select regions for each client
