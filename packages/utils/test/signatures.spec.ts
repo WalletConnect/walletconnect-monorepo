@@ -563,6 +563,16 @@ Expiration Time: 2022-10-11T23:03:35.700Z`;
       expect(getStellarTransactionHash(signedXDR, "stellar:testnet")).toBe(expectedHash);
     });
 
+    it("should compute the transaction hash from a signed stellar V0 envelope (pubnet)", () => {
+      // ENVELOPE_TYPE_TX_V0 (discriminant 0) — exercises the include-leading-zeros path.
+      // Hash cross-checked against @stellar/stellar-sdk's Transaction.hash().
+      const signedXDR =
+        "AAAAAG5btGuvFysDlQ/whfTBH8NWx1qRgzGpjtSDnJx3krOBAAAAZAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAsAAAAAAAAAZAAAAAAAAAABd5KzgQAAAEAu0xW2vwIqtuAu4/FFLWHBooGpvqn/N6iHgEX45savBk7SyoFGKIlyhG7ETZQ93tbF1OC/5ym6SdXmwIhIPQUD";
+      const expectedHash = "5b709eff53cb92c20d2c79e007f6b53ba9be04d6073119d142ffa70d7ea5c7cb";
+
+      expect(getStellarTransactionHash(signedXDR, "stellar:pubnet")).toBe(expectedHash);
+    });
+
     it("should fail to compute a stellar transaction hash for an unknown network", () => {
       const signedXDR =
         "AAAAAgAAAAAEJr/kOejtZoeowwp8zwNy2Q5PJ4BGTWfjsi8nOzNmrwABOIQDtAXqAA5+nQAAAAEAAAAAAAAAAAAAAABqgtc9AAAAAAAAAAQAAAAAAAAADAAAAAFVU0RDAAAAADuZETgO/piLoKiQDrHP5E82b32+lGvtB3JA9/Yk3xXFAAAAAXlYTE0AAAAAIjbXcP4NPgFSGXXVz3rEhCtwldaxqddo0+mmMumZBr4AAAAAWC0vBxJeEy11BinxAAAAAG57ynoAAAAAAAAADAAAAAFVU0RDAAAAADuZETgO/piLoKiQDrHP5E82b32+lGvtB3JA9/Yk3xXFAAAAAXlYTE0AAAAAIjbXcP4NPgFSGXXVz3rEhCtwldaxqddo0+mmMumZBr4AAAACy0F4AAGqIxIKms6JAAAAAG57nJcAAAAAAAAAAwAAAAF5WExNAAAAACI213D+DT4BUhl11c96xIQrcJXWsanXaNPppjLpmQa+AAAAAVVTREMAAAAAO5kROA7+mIugqJAOsc/kTzZvfb6Ua+0HckD39iTfFcUAAAAAstBeAA36DJRYpIptAAAAAG52hUIAAAAAAAAAAwAAAAF5WExNAAAAACI213D+DT4BUhl11c96xIQrcJXWsanXaNPppjLpmQa+AAAAAVVTREMAAAAAO5kROA7+mIugqJAOsc/kTzZvfb6Ua+0HckD39iTfFcUAAAACy0F4AA0hty1TaHPUAAAAAG56kgAAAAAAAAAAATszZq8AAABAxLKQz2a6NY74WUVxGbWvafiKXhExlAIu2WM2MKUNOidwRDZb3EDY/JP2TbM5rWXlmwZGKHE8iLYs19u/n2LgAA==";
