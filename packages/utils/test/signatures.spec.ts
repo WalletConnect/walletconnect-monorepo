@@ -6,6 +6,7 @@ import {
   getAlgorandTransactionId,
   getNearTransactionIdFromSignedTransaction,
   getSignDirectHash,
+  getStellarTransactionHash,
   getSuiDigest,
   hashEthereumMessage,
   isValidEip1271Signature,
@@ -658,6 +659,72 @@ Issued At: 2022-10-10T23:03:35.700Z`;
       const hash = getSignDirectHash(result);
       console.log("hash", hash);
       expect(hash).toBe(expectedHash);
+    });
+
+    // Stellar test vectors are real transactions fetched from Horizon
+    // (hash == the `hash` field of `GET /transactions/{hash}`).
+    it("should compute the transaction hash from a signed stellar V1 envelope (pubnet)", () => {
+      const signedXDR =
+        "AAAAAgAAAAAEJr/kOejtZoeowwp8zwNy2Q5PJ4BGTWfjsi8nOzNmrwABOIQDtAXqAA5+nQAAAAEAAAAAAAAAAAAAAABqgtc9AAAAAAAAAAQAAAAAAAAADAAAAAFVU0RDAAAAADuZETgO/piLoKiQDrHP5E82b32+lGvtB3JA9/Yk3xXFAAAAAXlYTE0AAAAAIjbXcP4NPgFSGXXVz3rEhCtwldaxqddo0+mmMumZBr4AAAAAWC0vBxJeEy11BinxAAAAAG57ynoAAAAAAAAADAAAAAFVU0RDAAAAADuZETgO/piLoKiQDrHP5E82b32+lGvtB3JA9/Yk3xXFAAAAAXlYTE0AAAAAIjbXcP4NPgFSGXXVz3rEhCtwldaxqddo0+mmMumZBr4AAAACy0F4AAGqIxIKms6JAAAAAG57nJcAAAAAAAAAAwAAAAF5WExNAAAAACI213D+DT4BUhl11c96xIQrcJXWsanXaNPppjLpmQa+AAAAAVVTREMAAAAAO5kROA7+mIugqJAOsc/kTzZvfb6Ua+0HckD39iTfFcUAAAAAstBeAA36DJRYpIptAAAAAG52hUIAAAAAAAAAAwAAAAF5WExNAAAAACI213D+DT4BUhl11c96xIQrcJXWsanXaNPppjLpmQa+AAAAAVVTREMAAAAAO5kROA7+mIugqJAOsc/kTzZvfb6Ua+0HckD39iTfFcUAAAACy0F4AA0hty1TaHPUAAAAAG56kgAAAAAAAAAAATszZq8AAABAxLKQz2a6NY74WUVxGbWvafiKXhExlAIu2WM2MKUNOidwRDZb3EDY/JP2TbM5rWXlmwZGKHE8iLYs19u/n2LgAA==";
+      const expectedHash = "f988eec2a159fa6031ef519bf4730dd50e86eb61f692334292d2d2b40d1465f1";
+
+      expect(getStellarTransactionHash(signedXDR, "stellar:pubnet")).toBe(expectedHash);
+      // pubnet is the default network
+      expect(getStellarTransactionHash(signedXDR)).toBe(expectedHash);
+    });
+
+    it("should compute the canonical fee-bump hash from a signed stellar fee-bump envelope (pubnet)", () => {
+      const signedXDR =
+        "AAAABQAAAAA0mMHF8QGzwsMRBhe9i8PSIqxjNjKyQMyXZODBAdhAUwAAAAAAA5+BAAAAAgAAAAA6Hd6p+AA5GTO2bJqKN/hbBfWcOh2Ow8cnTY3iIFFVPAADnrgDoCvmAAAZVgAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAABAAAAADod3qn4ADkZM7Zsmoo3+FsF9Zw6HY7DxydNjeIgUVU8AAAAGAAAAAAAAAAB1/5EvQrxHWArEJHy9KH03yEtRE0DIeoyrbPMHLurCgQAAAAEd29yawAAAAMAAAASAAAAAAAAAAA6Hd6p+AA5GTO2bJqKN/hbBfWcOh2Ow8cnTY3iIFFVPAAAAA0AAAAgAAAAjpSFVoEyx/Ev5d2V/desEr+GEqMyXKvrs5wXFqwAAAAFAAAAAAIrSjwAAAAAAAAAAQAAAAAAAAABAAAAB9ssFCkNSWTjgF8lJ90TKTm6X7P8ysVrML+rj9CRARYnAAAAAwAAAAYAAAAB1/5EvQrxHWArEJHy9KH03yEtRE0DIeoyrbPMHLurCgQAAAAQAAAAAQAAAAIAAAAPAAAABUJsb2NrAAAAAAAAAwACsj8AAAAAAAAABgAAAAHX/kS9CvEdYCsQkfL0ofTfIS1ETQMh6jKts8wcu6sKBAAAABAAAAABAAAAAwAAAA8AAAAEUGFpbAAAABIAAAAAAAAAADod3qn4ADkZM7Zsmoo3+FsF9Zw6HY7DxydNjeIgUVU8AAAAAwACsj8AAAAAAAAABgAAAAHX/kS9CvEdYCsQkfL0ofTfIS1ETQMh6jKts8wcu6sKBAAAABQAAAABABvFygAAAAAAAAXIAAAAAAADnrgAAAABIFFVPAAAAEBbcalx54eMMHwWJz7tzgOoxIVmMl4pexbgwTLzxnyMtAhZ2nZlsF18jIMDBaubSNSNPi4YRHkSajpyOcdZOzsCAAAAAAAAAAEB2EBTAAAAQDOlpIeUB73BImAZJCSAt0cuKZXHlKG+TJ+j+fCeFe9bDc5wHzMlDjU6YlB6geCuxRi7QwTq4RgxrOIJ9HICfg8=";
+      // this is H_fb (the hash explorers index), not the inner tx hash
+      const expectedHash = "5906453d5a367b4a8a1af9bbbc934904841718ec1ca1345874904e15f97bf83b";
+
+      expect(getStellarTransactionHash(signedXDR, "stellar:pubnet")).toBe(expectedHash);
+    });
+
+    it("should compute the transaction hash from a signed stellar V1 envelope (testnet)", () => {
+      const signedXDR =
+        "AAAAAgAAAAAJDqKNhO2/XZAvmR1Wynm2lxfIUQwB6TDzqNVOlQgQTgAAm74AJGh0ABKiOwAAAAEAAAAAAAAAAAAAAABqgthtAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABmtIg9IzJFxPz3yuidCMj3LiE2SB3XYOl8DvtohHRPVAAAAAJc2V0X3ByaWNlAAAAAAAAAwAAABIAAAAAAAAAAAkOoo2E7b9dkC+ZHVbKebaXF8hRDAHpMPOo1U6VCBBOAAAADwAAAAZFVEhVU0QAAAAAAAoAAAAAAAAAAAAAAARomVswAAAAAQAAAAAAAAAAAAAAAZrSIPSMyRcT898ronQjI9y4hNkgd12DpfA77aIR0T1QAAAACXNldF9wcmljZQAAAAAAAAMAAAASAAAAAAAAAAAJDqKNhO2/XZAvmR1Wynm2lxfIUQwB6TDzqNVOlQgQTgAAAA8AAAAGRVRIVVNEAAAAAAAKAAAAAAAAAAAAAAAEaJlbMAAAAAAAAAABAAAAAAAAAAQAAAAGAAAAAcbgeSm1T8h+V5r+/0u+qUVZIopr5hDeGKj1+u37faSgAAAAEAAAAAEAAAADAAAADwAAAAdIYXNSb2xlAAAAABIAAAAAAAAAAAkOoo2E7b9dkC+ZHVbKebaXF8hRDAHpMPOo1U6VCBBOAAAADwAAAAZPUkFDTEUAAAAAAAEAAAAGAAAAAcbgeSm1T8h+V5r+/0u+qUVZIopr5hDeGKj1+u37faSgAAAAFAAAAAEAAAAHve3Sc2JfmD0Hu+w96oFCzEX1XxFR0uE/NeSf2Vqmia8AAAAH4IWMslKp5yCKjCiGPIRV6yV0LdrLOEfRrCRSwjur0G8AAAABAAAABgAAAAGa0iD0jMkXE/PfK6J0IyPcuITZIHddg6XwO+2iEdE9UAAAABQAAAABADikCAAAAAAAAAJUAAAAAAAATa0AAAABlQgQTgAAAEDSMm2vdKNsB2TCk+Pbb6vSYgq6Zd5F0E4H5BfMi4lwWEcYFAq2Mp+e12wr1qU+Ni7+2BTqZUkb+uK7lVM8PqkN";
+      const expectedHash = "c9b2d35ab15c055acb422872a8f1680a84ad6b8ad0d56271cfb74c083edf2007";
+
+      expect(getStellarTransactionHash(signedXDR, "stellar:testnet")).toBe(expectedHash);
+    });
+
+    it("should compute the transaction hash from a signed stellar V0 envelope (pubnet)", () => {
+      // ENVELOPE_TYPE_TX_V0 (discriminant 0) — exercises the include-leading-zeros path.
+      // Hash cross-checked against @stellar/stellar-sdk's Transaction.hash().
+      const signedXDR =
+        "AAAAAG5btGuvFysDlQ/whfTBH8NWx1qRgzGpjtSDnJx3krOBAAAAZAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAsAAAAAAAAAZAAAAAAAAAABd5KzgQAAAEAu0xW2vwIqtuAu4/FFLWHBooGpvqn/N6iHgEX45savBk7SyoFGKIlyhG7ETZQ93tbF1OC/5ym6SdXmwIhIPQUD";
+      const expectedHash = "5b709eff53cb92c20d2c79e007f6b53ba9be04d6073119d142ffa70d7ea5c7cb";
+
+      expect(getStellarTransactionHash(signedXDR, "stellar:pubnet")).toBe(expectedHash);
+    });
+
+    it("should compute the correct stellar hash when a signature ends in four zero bytes", () => {
+      // Adversarial: the last 4 bytes of the (structurally valid) signature are
+      // 0x00000000, which an ascending signature-array scan mistakes for a
+      // zero-length signature array, hashing the signatures into the payload.
+      // Hash cross-checked against @stellar/stellar-sdk's Transaction.hash().
+      const signedXDR =
+        "AAAAAgAAAABuW7RrrxcrA5UP8IX0wR/DVsdakYMxqY7Ug5ycd5KzgQAAAGQAAAAASZYC0wAAAAEAAAAAAAAAAAAAAABw29iAAAAAAAAAAAEAAAAAAAAAAQAAAABuW7RrrxcrA5UP8IX0wR/DVsdakYMxqY7Ug5ycd5KzgQAAAAAAAAAAAJiWgAAAAAAAAAABd5KzgQAAAEDGLpyx0gomLUe6OHNM90dIb/J8FPe2mR/+9m8suCVKNCF3UH6jhJthgRaiYAchg4uS+yAghMuqqTVHvyAAAAAA";
+      const expectedHash = "17e5f1f36ff6edc099fc190d24da41e48ab9dd9f0b0be6c6d68d9eba028ed8d3";
+
+      expect(getStellarTransactionHash(signedXDR, "stellar:pubnet")).toBe(expectedHash);
+    });
+
+    it("should fail to compute a stellar transaction hash for an unknown network", () => {
+      const signedXDR =
+        "AAAAAgAAAAAEJr/kOejtZoeowwp8zwNy2Q5PJ4BGTWfjsi8nOzNmrwABOIQDtAXqAA5+nQAAAAEAAAAAAAAAAAAAAABqgtc9AAAAAAAAAAQAAAAAAAAADAAAAAFVU0RDAAAAADuZETgO/piLoKiQDrHP5E82b32+lGvtB3JA9/Yk3xXFAAAAAXlYTE0AAAAAIjbXcP4NPgFSGXXVz3rEhCtwldaxqddo0+mmMumZBr4AAAAAWC0vBxJeEy11BinxAAAAAG57ynoAAAAAAAAADAAAAAFVU0RDAAAAADuZETgO/piLoKiQDrHP5E82b32+lGvtB3JA9/Yk3xXFAAAAAXlYTE0AAAAAIjbXcP4NPgFSGXXVz3rEhCtwldaxqddo0+mmMumZBr4AAAACy0F4AAGqIxIKms6JAAAAAG57nJcAAAAAAAAAAwAAAAF5WExNAAAAACI213D+DT4BUhl11c96xIQrcJXWsanXaNPppjLpmQa+AAAAAVVTREMAAAAAO5kROA7+mIugqJAOsc/kTzZvfb6Ua+0HckD39iTfFcUAAAAAstBeAA36DJRYpIptAAAAAG52hUIAAAAAAAAAAwAAAAF5WExNAAAAACI213D+DT4BUhl11c96xIQrcJXWsanXaNPppjLpmQa+AAAAAVVTREMAAAAAO5kROA7+mIugqJAOsc/kTzZvfb6Ua+0HckD39iTfFcUAAAACy0F4AA0hty1TaHPUAAAAAG56kgAAAAAAAAAAATszZq8AAABAxLKQz2a6NY74WUVxGbWvafiKXhExlAIu2WM2MKUNOidwRDZb3EDY/JP2TbM5rWXlmwZGKHE8iLYs19u/n2LgAA==";
+      expect(() => getStellarTransactionHash(signedXDR, "stellar:futurenet")).to.throw();
+    });
+
+    it("should fail to compute a stellar transaction hash from a malformed envelope", () => {
+      // too short
+      expect(() => getStellarTransactionHash("AAAA")).to.throw();
+      // valid base64 but not a TransactionEnvelope (unknown discriminant, no signature array)
+      expect(() =>
+        getStellarTransactionHash("q83vASNFZ4mrze8BI0VniavN7wEjRWeJq83vAQ==", "stellar:pubnet"),
+      ).to.throw();
     });
   });
 });
