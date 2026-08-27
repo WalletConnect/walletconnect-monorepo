@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createEncodedRecap,
   createRecap,
@@ -9,6 +9,7 @@ import {
   getCommonValuesInArrays,
   getDecodedRecapFromResources,
   getMethodsFromRecap,
+  hashEthereumMessage,
   isValidRecap,
   mergeRecaps,
   populateAuthPayload,
@@ -323,6 +324,45 @@ describe("URI", () => {
 
     const isValid = await validateSignedCacao({ cacao });
     expect(isValid).to.eql(false);
+  });
+
+  it("should hash a plaintext SIWE message whose domain starts with `0x` for eip1271 cacaos", async () => {
+    // Regression: `isValidEip1271Signature` detected a pre-hashed message via `startsWith("0x")`,
+    // so a domain such as `0xsplits.xyz` made the reconstructed plaintext message get spliced
+    // into the `eth_call` calldata unhashed, yielding invalid hex and a deterministic `false`.
+    const address = "0x3613699A6c5D8BC97a08805876c8005543125F09";
+    const cacao = {
+      h: { t: "caip122" },
+      p: {
+        iss: `did:pkh:eip155:1:${address}`,
+        domain: "0xsplits.xyz",
+        aud: "https://0xsplits.xyz/login",
+        version: "1",
+        nonce: "32891756",
+        iat: "2024-03-13T09:00:43.888Z",
+        statement: "Sign in to 0xsplits",
+      },
+      s: {
+        t: "eip1271" as const,
+        s: "0xc1505719b2504095116db01baaf276361efd3a73c28cf8cc28dabefa945b8d536011289ac0a3b048600c1e692ff173ca944246cf7ceb319ac2262d27b395c82b1c",
+      },
+    };
+    const eip1271MagicValue = "0x1626ba7e";
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      json: () => Promise.resolve({ result: eip1271MagicValue.padEnd(66, "0") }),
+    } as unknown as Response);
+    try {
+      const isValid = await validateSignedCacao({ cacao, projectId: "test-project-id" });
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string);
+      const data: string = body.params[0].data;
+      expect(data).toMatch(/^0x[0-9a-f]+$/i);
+      const expectedHash = hashEthereumMessage(formatMessage(cacao.p, cacao.p.iss));
+      expect(data.slice(10, 74)).to.eql(expectedHash.slice(2));
+      expect(isValid).to.eql(true);
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
   describe("encodeRecap / decodeRecap with unpadded base64", () => {

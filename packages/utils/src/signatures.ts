@@ -21,6 +21,16 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes;
 }
 
+// EIP-1271 `isValidSignature(bytes32 _hash, bytes _signature)` takes a 32-byte digest, so only a
+// `0x`-prefixed 64-character hex string can be an already-hashed message. Anything else — notably a
+// plaintext SIWE/CACAO message whose domain happens to start with `0x` (e.g. `0xsplits.xyz`) — must
+// still be hashed per EIP-191 before being spliced into the calldata.
+const BYTES32_HEX_REGEX = /^0x[0-9a-fA-F]{64}$/;
+
+function isBytes32Hex(value: string): boolean {
+  return BYTES32_HEX_REGEX.test(value);
+}
+
 export function hashEthereumMessage(message: string) {
   const prefix = `\x19Ethereum Signed Message:\n${message.length}`;
   const prefixedMessage = new TextEncoder().encode(prefix + message);
@@ -89,7 +99,7 @@ export async function isValidEip1271Signature(
     const nonPrefixedSignature = signature.substring(2);
     const dynamicTypeLength = (nonPrefixedSignature.length / 2).toString(16).padStart(64, "0");
     const nonPrefixedHashedMessage = (
-      reconstructedMessage.startsWith("0x")
+      isBytes32Hex(reconstructedMessage)
         ? reconstructedMessage
         : hashEthereumMessage(reconstructedMessage)
     ).substring(2);
