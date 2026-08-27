@@ -1,5 +1,18 @@
 # @walletconnect/sign-client
 
+## 2.24.0
+
+### Minor Changes
+
+- [#7329](https://github.com/WalletConnect/walletconnect-monorepo/pull/7329) [`fa9227f`](https://github.com/WalletConnect/walletconnect-monorepo/commit/fa9227f783944dbdaefe6fc03c4de70c2ff9c194) Thanks [@jakubuid](https://github.com/jakubuid)! - Collect TVF transaction hashes for Stellar: compute the canonical transaction hash from signed `stellar_signXDR` envelopes (V0, V1 and fee-bump — with the signature-array scan hardened against signatures ending in zero bytes) and extract `tx_hash` from `stellar_signAndSubmitXDR` responses.
+
+### Patch Changes
+
+- Updated dependencies [[`499fb78`](https://github.com/WalletConnect/walletconnect-monorepo/commit/499fb784d311fa4de9ed3cdfd21c9c4e43040e01), [`83ba7d4`](https://github.com/WalletConnect/walletconnect-monorepo/commit/83ba7d4003911bdfa25b41f17ea13f6120d78754), [`a610bfe`](https://github.com/WalletConnect/walletconnect-monorepo/commit/a610bfe31482adfc2596ef0a0f6306cf8060cc87), [`fa9227f`](https://github.com/WalletConnect/walletconnect-monorepo/commit/fa9227f783944dbdaefe6fc03c4de70c2ff9c194), [`f8bfc24`](https://github.com/WalletConnect/walletconnect-monorepo/commit/f8bfc24580bf7fe2047ba480885c79f76106c055)]:
+  - @walletconnect/core@2.24.0
+  - @walletconnect/utils@2.24.0
+  - @walletconnect/types@2.24.0
+
 ## 2.23.10
 
 ### Patch Changes
