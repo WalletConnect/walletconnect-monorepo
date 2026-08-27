@@ -117,6 +117,67 @@ Expiration Time: 2022-10-11T23:03:35.700Z`;
       expect(isValid).toBe(true);
     });
   });
+  describe("EIP-1271 message hashing", () => {
+    const chainId = "eip155:1";
+    const projectId = "test-project-id";
+    const address = "0x2faf83c542b68f1b4cdc0e770e8cb9f567b08f71";
+    const signature =
+      "0xc1505719b2504095116db01baaf276361efd3a73c28cf8cc28dabefa945b8d536011289ac0a3b048600c1e692ff173ca944246cf7ceb319ac2262d27b395c82b1c";
+    const eip1271MagicValue = "0x1626ba7e";
+
+    // Captures the `eth_call` calldata `isValidEip1271Signature` would send, without touching
+    // the network. The stubbed RPC answers with the magic value so the call is treated as valid.
+    const captureCalldata = async (message: string) => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        json: () => Promise.resolve({ result: eip1271MagicValue.padEnd(66, "0") }),
+      } as unknown as Response);
+      try {
+        const isValid = await isValidEip1271Signature(
+          address,
+          message,
+          signature,
+          chainId,
+          projectId,
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string);
+        return { isValid, data: body.params[0].data as string };
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    };
+
+    it("hashes a plaintext SIWE message whose domain starts with `0x`", async () => {
+      // Regression: a `startsWith("0x")` check treated this plaintext message as a pre-hashed
+      // digest, splicing it unhashed into the calldata and producing invalid hex.
+      const message = `0xsplits.xyz wants you to sign in with your Ethereum account:
+${address}
+
+URI: https://0xsplits.xyz
+Version: 1
+Chain ID: 1
+Nonce: 1665443015700
+Issued At: 2022-10-10T23:03:35.700Z`;
+      const { isValid, data } = await captureCalldata(message);
+      expect(data).toMatch(/^0x[0-9a-f]+$/i);
+      expect(data.slice(0, 10)).toBe(eip1271MagicValue);
+      expect(data.slice(10, 74)).toBe(hashEthereumMessage(message).slice(2));
+      expect(isValid).toBe(true);
+    });
+
+    it("passes a pre-hashed 32-byte message through unchanged", async () => {
+      const hash = "0xb48c43838346726a55fe0023cd2fc14b26144b6a9d36284a436b62e934bf382d";
+      const { data } = await captureCalldata(hash);
+      expect(data.slice(10, 74)).toBe(hash.slice(2));
+    });
+
+    it("hashes a `0x`-prefixed message that is not a 32-byte hash", async () => {
+      // A short hex string (e.g. an address) cannot be an EIP-1271 `bytes32` digest.
+      const message = "0xdeadbeef";
+      const { data } = await captureCalldata(message);
+      expect(data.slice(10, 74)).toBe(hashEthereumMessage(message).slice(2));
+    });
+  });
   describe("EIP-191 signatures", () => {
     it("should validate a valid signature", () => {
       const address = "0x13A2Ff792037AA2cd77fE1f4B522921ac59a9C52";
