@@ -22,9 +22,14 @@ function base64ToBytes(b64: string): Uint8Array {
 }
 
 export function hashEthereumMessage(message: string) {
-  const prefix = `\x19Ethereum Signed Message:\n${message.length}`;
-  const prefixedMessage = new TextEncoder().encode(prefix + message);
-  return "0x" + toString(keccak_256(prefixedMessage), "base16");
+  // EIP-191 (version 0x45) prefixes the UTF-8 *byte* length of the message. `message.length`
+  // counts UTF-16 code units instead, which differs for any non-ASCII character (e.g. a SIWE
+  // statement such as `Sign in to Café ☕`) and yields a hash that no compliant signer produces.
+  const messageBytes = new TextEncoder().encode(message);
+  const prefixBytes = new TextEncoder().encode(
+    `\x19Ethereum Signed Message:\n${messageBytes.length}`,
+  );
+  return "0x" + toString(keccak_256(concat([prefixBytes, messageBytes])), "base16");
 }
 
 export async function verifySignature(
