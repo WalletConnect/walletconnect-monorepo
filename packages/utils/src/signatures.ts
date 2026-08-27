@@ -288,13 +288,16 @@ function readUint32BE(bytes: Uint8Array, offset: number): number {
  * WalletConnect Stellar RPC spec mandates wallets emit.
  */
 function findStellarSignatureArrayOffset(bytes: Uint8Array): number {
+  // Scan from the maximum count downward: a real multi-signature array must be
+  // found before the vacuously-matching zero count, which would otherwise win
+  // whenever a signature happens to end in four zero bytes.
   for (
-    let signatureCount = 0;
-    signatureCount <= STELLAR_MAX_ENVELOPE_SIGNATURES;
-    signatureCount++
+    let signatureCount = STELLAR_MAX_ENVELOPE_SIGNATURES;
+    signatureCount >= 0;
+    signatureCount--
   ) {
     const offset = bytes.length - 4 - STELLAR_DECORATED_SIGNATURE_LENGTH * signatureCount;
-    if (offset < 4) break;
+    if (offset < 4) continue;
     if (readUint32BE(bytes, offset) !== signatureCount) continue;
     let isValid = true;
     for (let i = 0; i < signatureCount; i++) {

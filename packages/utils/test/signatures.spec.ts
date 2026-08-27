@@ -635,6 +635,18 @@ Issued At: 2022-10-10T23:03:35.700Z`;
       expect(getStellarTransactionHash(signedXDR, "stellar:pubnet")).toBe(expectedHash);
     });
 
+    it("should compute the correct stellar hash when a signature ends in four zero bytes", () => {
+      // Adversarial: the last 4 bytes of the (structurally valid) signature are
+      // 0x00000000, which an ascending signature-array scan mistakes for a
+      // zero-length signature array, hashing the signatures into the payload.
+      // Hash cross-checked against @stellar/stellar-sdk's Transaction.hash().
+      const signedXDR =
+        "AAAAAgAAAABuW7RrrxcrA5UP8IX0wR/DVsdakYMxqY7Ug5ycd5KzgQAAAGQAAAAASZYC0wAAAAEAAAAAAAAAAAAAAABw29iAAAAAAAAAAAEAAAAAAAAAAQAAAABuW7RrrxcrA5UP8IX0wR/DVsdakYMxqY7Ug5ycd5KzgQAAAAAAAAAAAJiWgAAAAAAAAAABd5KzgQAAAEDGLpyx0gomLUe6OHNM90dIb/J8FPe2mR/+9m8suCVKNCF3UH6jhJthgRaiYAchg4uS+yAghMuqqTVHvyAAAAAA";
+      const expectedHash = "17e5f1f36ff6edc099fc190d24da41e48ab9dd9f0b0be6c6d68d9eba028ed8d3";
+
+      expect(getStellarTransactionHash(signedXDR, "stellar:pubnet")).toBe(expectedHash);
+    });
+
     it("should fail to compute a stellar transaction hash for an unknown network", () => {
       const signedXDR =
         "AAAAAgAAAAAEJr/kOejtZoeowwp8zwNy2Q5PJ4BGTWfjsi8nOzNmrwABOIQDtAXqAA5+nQAAAAEAAAAAAAAAAAAAAABqgtc9AAAAAAAAAAQAAAAAAAAADAAAAAFVU0RDAAAAADuZETgO/piLoKiQDrHP5E82b32+lGvtB3JA9/Yk3xXFAAAAAXlYTE0AAAAAIjbXcP4NPgFSGXXVz3rEhCtwldaxqddo0+mmMumZBr4AAAAAWC0vBxJeEy11BinxAAAAAG57ynoAAAAAAAAADAAAAAFVU0RDAAAAADuZETgO/piLoKiQDrHP5E82b32+lGvtB3JA9/Yk3xXFAAAAAXlYTE0AAAAAIjbXcP4NPgFSGXXVz3rEhCtwldaxqddo0+mmMumZBr4AAAACy0F4AAGqIxIKms6JAAAAAG57nJcAAAAAAAAAAwAAAAF5WExNAAAAACI213D+DT4BUhl11c96xIQrcJXWsanXaNPppjLpmQa+AAAAAVVTREMAAAAAO5kROA7+mIugqJAOsc/kTzZvfb6Ua+0HckD39iTfFcUAAAAAstBeAA36DJRYpIptAAAAAG52hUIAAAAAAAAAAwAAAAF5WExNAAAAACI213D+DT4BUhl11c96xIQrcJXWsanXaNPppjLpmQa+AAAAAVVTREMAAAAAO5kROA7+mIugqJAOsc/kTzZvfb6Ua+0HckD39iTfFcUAAAACy0F4AA0hty1TaHPUAAAAAG56kgAAAAAAAAAAATszZq8AAABAxLKQz2a6NY74WUVxGbWvafiKXhExlAIu2WM2MKUNOidwRDZb3EDY/JP2TbM5rWXlmwZGKHE8iLYs19u/n2LgAA==";
