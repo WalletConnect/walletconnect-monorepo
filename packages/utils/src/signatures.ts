@@ -263,6 +263,118 @@ export function getSignDirectHash(payload: {
   return toString(hashBytes, "base16").toUpperCase();
 }
 
+const STELLAR_NETWORK_PASSPHRASES: Record<string, string> = {
+  pubnet: "Public Global Stellar Network ; September 2015",
+  testnet: "Test SDF Network ; September 2015",
+};
+
+// XDR EnvelopeType discriminants (https://developers.stellar.org/docs/learn/encyclopedia/data-format/xdr)
+const STELLAR_ENVELOPE_TYPE_TX_V0 = 0;
+const STELLAR_ENVELOPE_TYPE_TX = 2;
+const STELLAR_ENVELOPE_TYPE_TX_FEE_BUMP = 5;
+// DecoratedSignature with an ed25519 signature: hint (4 bytes) + length (4 bytes, =64) + signature (64 bytes)
+const STELLAR_DECORATED_SIGNATURE_LENGTH = 72;
+const STELLAR_ED25519_SIGNATURE_LENGTH = 64;
+const STELLAR_MAX_ENVELOPE_SIGNATURES = 20;
+
+function readUint32BE(bytes: Uint8Array, offset: number): number {
+  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(offset, false);
+}
+
+/**
+ * Locates the start of the trailing `DecoratedSignature signatures<20>` XDR array
+ * of a Stellar TransactionEnvelope without parsing the transaction body.
+ * Assumes ed25519 signatures (fixed 72-byte entries), which is what the
+ * WalletConnect Stellar RPC spec mandates wallets emit.
+ */
+function findStellarSignatureArrayOffset(bytes: Uint8Array): number {
+  // Scan from the maximum count downward: a real multi-signature array must be
+  // found before the vacuously-matching zero count, which would otherwise win
+  // whenever a signature happens to end in four zero bytes.
+  for (
+    let signatureCount = STELLAR_MAX_ENVELOPE_SIGNATURES;
+    signatureCount >= 0;
+    signatureCount--
+  ) {
+    const offset = bytes.length - 4 - STELLAR_DECORATED_SIGNATURE_LENGTH * signatureCount;
+    if (offset < 4) continue;
+    if (readUint32BE(bytes, offset) !== signatureCount) continue;
+    let isValid = true;
+    for (let i = 0; i < signatureCount; i++) {
+      const entryOffset = offset + 4 + STELLAR_DECORATED_SIGNATURE_LENGTH * i;
+      // each entry's signature length field must be exactly 64 (ed25519)
+      if (readUint32BE(bytes, entryOffset + 4) !== STELLAR_ED25519_SIGNATURE_LENGTH) {
+        isValid = false;
+        break;
+      }
+    }
+    if (isValid) return offset;
+  }
+  throw new Error("getStellarTransactionHash: could not locate envelope signature array");
+}
+
+/**
+ * Computes the Stellar transaction hash from a base64-encoded, signed
+ * TransactionEnvelope XDR, as `sha256(network_id || envelope_type || transaction_body)`.
+ * The hash is deterministic from the envelope — signatures are computed over it,
+ * so they are stripped rather than hashed.
+ *
+ * For fee-bump envelopes this yields the canonical fee-bump hash. For plain
+ * transactions wrapped by a relayer later, this yields the inner hash, which
+ * Horizon also resolves.
+ *
+ * @param signedXDR base64-encoded TransactionEnvelope XDR (V0, V1 or fee-bump)
+ * @param chain CAIP-2 chain id (`stellar:pubnet` / `stellar:testnet`), defaults to pubnet
+ * @returns lowercase hex transaction hash (64 chars)
+ */
+export function getStellarTransactionHash(signedXDR: string, chain?: string): string {
+  const bytes = base64ToBytes(signedXDR);
+  if (bytes.length < 8) {
+    throw new Error("getStellarTransactionHash: envelope too short");
+  }
+
+  const discriminant = readUint32BE(bytes, 0);
+  let envelopeType: number;
+  let bodyStart: number;
+  switch (discriminant) {
+    case STELLAR_ENVELOPE_TYPE_TX_V0:
+      // V0 transactions are hashed as ENVELOPE_TYPE_TX over the envelope bytes
+      // INCLUDING the leading 4 zero bytes — they double as the legacy
+      // AccountID key-type tag of the pre-protocol-13 Transaction struct.
+      envelopeType = STELLAR_ENVELOPE_TYPE_TX;
+      bodyStart = 0;
+      break;
+    case STELLAR_ENVELOPE_TYPE_TX:
+      envelopeType = STELLAR_ENVELOPE_TYPE_TX;
+      bodyStart = 4;
+      break;
+    case STELLAR_ENVELOPE_TYPE_TX_FEE_BUMP:
+      envelopeType = STELLAR_ENVELOPE_TYPE_TX_FEE_BUMP;
+      bodyStart = 4;
+      break;
+    default:
+      throw new Error(`getStellarTransactionHash: unsupported envelope type: ${discriminant}`);
+  }
+
+  const signatureArrayOffset = findStellarSignatureArrayOffset(bytes);
+
+  const networkReference = chain?.split(":").pop() ?? "pubnet";
+  const passphrase = STELLAR_NETWORK_PASSPHRASES[networkReference];
+  if (!passphrase) {
+    throw new Error(`getStellarTransactionHash: unknown Stellar network: ${networkReference}`);
+  }
+  const networkId = sha256(new TextEncoder().encode(passphrase));
+
+  const envelopeTypeBytes = new Uint8Array([0, 0, 0, envelopeType]);
+  const payload = concat([
+    networkId,
+    envelopeTypeBytes,
+    bytes.slice(bodyStart, signatureArrayOffset),
+  ]);
+
+  return toString(sha256(payload), "base16");
+}
+
 export function getWalletSendCallsHashes(
   result: string | { id: string; capabilities: { caip345: { transactionHashes: string[] } } },
 ) {

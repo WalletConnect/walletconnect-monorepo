@@ -235,4 +235,12 @@ export const TVF_METHODS = {
   canton_prepareSignExecute: {
     key: "",
   },
+
+  // stellar
+  stellar_signXDR: {
+    key: "",
+  },
+  stellar_signAndSubmitXDR: {
+    key: "tx_hash",
+  },
 };
