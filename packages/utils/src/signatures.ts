@@ -353,9 +353,7 @@ export function getStellarTransactionHash(signedXDR: string, chain?: string): st
       bodyStart = 4;
       break;
     default:
-      throw new Error(
-        `getStellarTransactionHash: unsupported envelope type: ${discriminant}`,
-      );
+      throw new Error(`getStellarTransactionHash: unsupported envelope type: ${discriminant}`);
   }
 
   const signatureArrayOffset = findStellarSignatureArrayOffset(bytes);
