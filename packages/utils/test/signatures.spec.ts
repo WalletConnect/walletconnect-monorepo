@@ -102,7 +102,14 @@ Expiration Time: 2022-10-11T23:03:35.700Z`;
         `isValidEip1271Signature failed: chainId must be in CAIP-2 format, received: ${invalidChainIdThree}`,
       );
     });
-    it("should verify 1271 multi-sig", async () => {
+    // Skipped 2026-08-27: live call against Safe 0x9a1148b5D6a2D34CA46111379d0FD1352a0ade4a on
+    // Sepolia. Its owners changed and its threshold was raised from 2 to 3 the same day
+    // (tx 0xaca940ded685d75fec9a8b6afb6519b027bc01f247be2d3b2c4acca741ff9010, block 11577052).
+    // The fixture below carries only 2 signatures, so the Safe now reverts with GS020
+    // ("Signatures data too short") and the test fails deterministically. Re-enable once the
+    // fixture is re-signed by 3 current owners or the test targets a contract with immutable state.
+    // The pre-hashed pass-through path stays covered by the fetch-stubbed "EIP-1271 message hashing" tests.
+    it.skip("should verify 1271 multi-sig", async () => {
       const signature =
         "0x6037120d3995a626caa8dac775220ef5c91ece120a8ffa599bf28dbd1c40f1e1398cb941dd9fc4e880b988f279c603cedf7fe0609aa2b9cad829861d9798803b1be2a4308f50367f32a84baa7965102c87ab22db69a70ba3d3717f951e07007fea5901c524425171f8ff9143b64fe3223155a26ee0aab54b03058ab99187bc5ad71c";
       const message = "0xb48c43838346726a55fe0023cd2fc14b26144b6a9d36284a436b62e934bf382d";
