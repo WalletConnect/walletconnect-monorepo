@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/pos-client",
   "description": "POS Client for WalletConnect Protocol",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "private": false,
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
@@ -42,9 +42,9 @@
   "dependencies": {
     "@walletconnect/jsonrpc-utils": "1.0.8",
     "@walletconnect/logger": "3.0.2",
-    "@walletconnect/sign-client": "2.23.10",
-    "@walletconnect/types": "2.23.10",
-    "@walletconnect/utils": "2.23.10"
+    "@walletconnect/sign-client": "2.24.0",
+    "@walletconnect/types": "2.24.0",
+    "@walletconnect/utils": "2.24.0"
   },
   "devDependencies": {
     "vitest": "3.2.7"

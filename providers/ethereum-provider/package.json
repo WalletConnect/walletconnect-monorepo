@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/ethereum-provider",
   "description": "Ethereum Provider for WalletConnect Protocol",
-  "version": "2.23.10",
+  "version": "2.24.0",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "repository": {
@@ -48,9 +48,9 @@
     "@reown/appkit": "1.8.19",
     "@walletconnect/jsonrpc-types": "1.0.4",
     "@walletconnect/keyvaluestorage": "1.1.1",
-    "@walletconnect/types": "2.23.10",
-    "@walletconnect/universal-provider": "2.23.10",
-    "@walletconnect/utils": "2.23.10",
+    "@walletconnect/types": "2.24.0",
+    "@walletconnect/universal-provider": "2.24.0",
+    "@walletconnect/utils": "2.24.0",
     "events": "3.3.0"
   },
   "devDependencies": {

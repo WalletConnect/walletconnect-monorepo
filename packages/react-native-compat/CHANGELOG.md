@@ -1,5 +1,11 @@
 # @walletconnect/react-native-compat
 
+## 2.24.0
+
+### Patch Changes
+
+- [#7304](https://github.com/WalletConnect/walletconnect-monorepo/pull/7304) [`83ba7d4`](https://github.com/WalletConnect/walletconnect-monorepo/commit/83ba7d4003911bdfa25b41f17ea13f6120d78754) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Remove unused declared dependencies (`@walletconnect/safe-json` from utils, `@walletconnect/types` from pay, `@walletconnect/core` and `@walletconnect/jsonrpc-provider` from pos-client, `events` from react-native-compat, `uint8arrays` from signer-connection, `@walletconnect/jsonrpc-provider`, `@walletconnect/jsonrpc-utils` and `@walletconnect/sign-client` from ethereum-provider). No runtime changes.
+
 ## 2.23.10
 
 ### Patch Changes
