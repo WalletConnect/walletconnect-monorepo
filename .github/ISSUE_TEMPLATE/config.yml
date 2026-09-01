@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Feature or new chain requests
+    url: https://walletconnect.com/
+    about: Contact the WalletConnect team via the Contact Sales button on our website.
   - name: Ask a question
     url: https://github.com/WalletConnect/walletconnect-monorepo/discussions/new
     about: Ask questions and discuss with other community members.
