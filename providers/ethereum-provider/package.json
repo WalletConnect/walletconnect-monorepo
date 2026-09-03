@@ -45,7 +45,7 @@
     "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}'"
   },
   "dependencies": {
-    "@reown/appkit": "1.8.19",
+    "@reown/appkit": "1.8.23",
     "@walletconnect/jsonrpc-types": "1.0.4",
     "@walletconnect/keyvaluestorage": "1.1.1",
     "@walletconnect/types": "2.24.0",
