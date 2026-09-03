@@ -55,7 +55,7 @@
     "@walletconnect/window-metadata": "1.0.1",
     "blakejs": "1.2.1",
     "detect-browser": "5.3.0",
-    "ox": "0.9.3",
+    "ox": "0.14.44",
     "uint8arrays": "3.1.1"
   },
   "devDependencies": {
