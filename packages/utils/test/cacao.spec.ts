@@ -305,6 +305,63 @@ describe("URI", () => {
     expect(() => formatMessage(request, iss)).to.throw("Statement must not contain line breaks");
   });
 
+  it("should return false from validateSignedCacao when exp is in the past", async () => {
+    const cacao = {
+      h: { t: "caip122" },
+      p: {
+        iss: "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
+        domain: "app.web3inbox",
+        aud: "https://app.web3inbox.com/login",
+        version: "1",
+        nonce: "32891756",
+        iat: "2020-01-01T00:00:00.000Z",
+        exp: "2020-01-01T01:00:00.000Z",
+      },
+      s: { t: "eip191" as const, s: "0x" },
+    };
+
+    const isValid = await validateSignedCacao({ cacao });
+    expect(isValid).to.eql(false);
+  });
+
+  it("should return false from validateSignedCacao when nbf is in the future", async () => {
+    const cacao = {
+      h: { t: "caip122" },
+      p: {
+        iss: "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
+        domain: "app.web3inbox",
+        aud: "https://app.web3inbox.com/login",
+        version: "1",
+        nonce: "32891756",
+        iat: "2020-01-01T00:00:00.000Z",
+        nbf: "2099-01-01T00:00:00.000Z",
+      },
+      s: { t: "eip191" as const, s: "0x" },
+    };
+
+    const isValid = await validateSignedCacao({ cacao });
+    expect(isValid).to.eql(false);
+  });
+
+  it("should return false from validateSignedCacao for unparseable exp", async () => {
+    const cacao = {
+      h: { t: "caip122" },
+      p: {
+        iss: "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
+        domain: "app.web3inbox",
+        aud: "https://app.web3inbox.com/login",
+        version: "1",
+        nonce: "32891756",
+        iat: "2020-01-01T00:00:00.000Z",
+        exp: "not-a-date",
+      },
+      s: { t: "eip191" as const, s: "0x" },
+    };
+
+    const isValid = await validateSignedCacao({ cacao });
+    expect(isValid).to.eql(false);
+  });
+
   it("should return false from validateSignedCacao for statements with line breaks", async () => {
     // formatMessage throws for malformed statements; validateSignedCacao must remap that to
     // a boolean `false` rather than propagating the exception to callers.
