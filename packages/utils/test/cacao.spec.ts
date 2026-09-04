@@ -16,6 +16,7 @@ import {
   mergeEncodedRecaps,
   validateSignedCacao,
 } from "../src";
+import { Address, Hex, PersonalMessage, Secp256k1, Signature } from "ox";
 
 describe("URI", () => {
   describe("merge recaps", () => {
@@ -303,6 +304,33 @@ describe("URI", () => {
     };
 
     expect(() => formatMessage(request, iss)).to.throw("Statement must not contain line breaks");
+  });
+
+  it("should validate an eip191 cacao whose statement contains non-ASCII characters", async () => {
+    // Regression: `hashEthereumMessage` prefixed the UTF-16 length instead of the UTF-8 byte
+    // length, so any CACAO with a non-ASCII statement or domain failed verification for every wallet.
+    const privateKey = `0x${"11".repeat(32)}` as const; // test-only key
+    const address = Address.fromPublicKey(Secp256k1.getPublicKey({ privateKey }));
+    const iss = `did:pkh:eip155:1:${address}`;
+    const payload = {
+      iss,
+      domain: "example.com",
+      aud: "https://example.com/login",
+      version: "1",
+      nonce: "32891756",
+      iat: "2024-03-13T09:00:43.888Z",
+      statement: "Sign in to Café ☕ — 登录 🚀",
+    };
+    const message = formatMessage(payload, iss);
+    const signature = Signature.toHex(
+      Secp256k1.sign({
+        payload: PersonalMessage.getSignPayload(Hex.fromString(message)),
+        privateKey,
+      }),
+    );
+    const cacao = { h: { t: "caip122" }, p: payload, s: { t: "eip191" as const, s: signature } };
+
+    expect(await validateSignedCacao({ cacao })).to.eql(true);
   });
 
   it("should return false from validateSignedCacao for statements with line breaks", async () => {
