@@ -1119,14 +1119,35 @@ export class Engine extends IEngine {
 
       const approvedMethods: string[] = [];
       const approvedAccounts: string[] = [];
+      const expectedAuth = request.authPayload;
       for (const cacao of cacaos) {
         const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
         if (!isValid) {
           this.client.logger.error(cacao, "Signature verification failed");
-          reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
+          return reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
         }
 
         const { p: payload } = cacao;
+        // Bind CACAO challenge fields to the outstanding authenticate request.
+        // Signature validity alone is not enough: a valid CACAO for a different
+        // domain/aud/nonce must not settle this session.
+        if (
+          payload.domain !== expectedAuth.domain ||
+          payload.aud !== expectedAuth.aud ||
+          payload.nonce !== expectedAuth.nonce
+        ) {
+          this.client.logger.error(cacao, "CACAO does not match auth request");
+          return reject(
+            getSdkError("SESSION_SETTLEMENT_FAILED", "CACAO does not match auth request"),
+          );
+        }
+        const issChain = getNamespacedDidChainId(payload.iss);
+        if (!issChain || !expectedAuth.chains.includes(issChain)) {
+          this.client.logger.error(cacao, "CACAO iss chain not in auth request");
+          return reject(
+            getSdkError("SESSION_SETTLEMENT_FAILED", "CACAO iss chain not in auth request"),
+          );
+        }
         const recap = getRecapFromResources(payload.resources);
 
         const approvedChains: string[] = [getNamespacedDidChainId(payload.iss) as string];
@@ -1308,6 +1329,7 @@ export class Engine extends IEngine {
 
     const approvedMethods: string[] = [];
     const approvedAccounts: string[] = [];
+    const expectedAuth = pendingRequest.authPayload;
     for (const cacao of auths) {
       const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
       if (!isValid) {
@@ -1328,9 +1350,43 @@ export class Engine extends IEngine {
         throw new Error(invalidErr.message);
       }
 
+      const { p: payload } = cacao;
+      if (
+        payload.domain !== expectedAuth.domain ||
+        payload.aud !== expectedAuth.aud ||
+        payload.nonce !== expectedAuth.nonce
+      ) {
+        event.setError(EVENT_CLIENT_AUTHENTICATE_ERRORS.invalid_cacao);
+        const mismatchErr = getSdkError(
+          "SESSION_SETTLEMENT_FAILED",
+          "CACAO does not match auth request",
+        );
+        await this.sendError({
+          id,
+          topic: responseTopic,
+          error: mismatchErr,
+          encodeOpts,
+        });
+        throw new Error(mismatchErr.message);
+      }
+      const issChain = getNamespacedDidChainId(payload.iss);
+      if (!issChain || !expectedAuth.chains.includes(issChain)) {
+        event.setError(EVENT_CLIENT_AUTHENTICATE_ERRORS.invalid_cacao);
+        const chainErr = getSdkError(
+          "SESSION_SETTLEMENT_FAILED",
+          "CACAO iss chain not in auth request",
+        );
+        await this.sendError({
+          id,
+          topic: responseTopic,
+          error: chainErr,
+          encodeOpts,
+        });
+        throw new Error(chainErr.message);
+      }
+
       event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.cacaos_verified);
 
-      const { p: payload } = cacao;
       const recap = getRecapFromResources(payload.resources);
 
       const approvedChains: string[] = [getNamespacedDidChainId(payload.iss) as string];

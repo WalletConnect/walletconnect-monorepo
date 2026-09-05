@@ -153,6 +153,70 @@ describe.concurrent("Authenticated Sessions", () => {
 
     await deleteClients({ A: dapp, B: wallet });
   });
+  // Valid CACAO signature for a different nonce must not settle the outstanding auth request
+  it("should reject authenticated session when CACAO nonce does not match request", async () => {
+    const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+    const requestedChains = ["eip155:1"];
+    const requestedMethods = ["personal_sign"];
+    const { uri, response } = await dapp.authenticate({
+      chains: requestedChains,
+      domain: "localhost",
+      nonce: "expected-nonce",
+      uri: "aud",
+      methods: requestedMethods,
+    });
+    const wallet = await SignClient.init({
+      ...TEST_SIGN_CLIENT_OPTIONS,
+      name: "wallet",
+      metadata: TEST_APP_METADATA_B,
+    });
+    const sessionsBefore = dapp.session.getAll().length;
+    await Promise.all([
+      new Promise<void>((resolve, reject) => {
+        wallet.on("session_authenticate", async (payload) => {
+          try {
+            const authPayload = populateAuthPayload({
+              authPayload: payload.params.authPayload,
+              chains: requestedChains,
+              methods: requestedMethods,
+            });
+            // Sign a CACAO bound to a different nonce than the pending request
+            const mismatched = { ...authPayload, nonce: "attacker-nonce" };
+            const iss = `${requestedChains[0]}:${cryptoWallet.address}`;
+            const message = wallet.engine.formatAuthMessage({
+              request: mismatched,
+              iss,
+            });
+            const sig = await cryptoWallet.signMessage(message);
+            const auth = buildAuthObject(
+              mismatched,
+              {
+                t: "eip191",
+                s: sig,
+              },
+              iss,
+            );
+            await expect(
+              wallet.approveSessionAuthenticate({
+                id: payload.id,
+                auths: [auth],
+              }),
+            ).rejects.toThrow(/CACAO does not match auth request/);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }),
+      new Promise<void>((resolve) => {
+        wallet.pair({ uri });
+        resolve();
+      }),
+      expect(response()).rejects.toThrow(),
+    ]);
+    expect(dapp.session.getAll().length).to.eq(sessionsBefore);
+    await deleteClients({ A: dapp, B: wallet });
+  });
   // this test simulates the scenario where the wallet supports subset of the requested chains and all methods
   // and replies with a single signature
   it("should establish authenticated session with single signature. Case 2", async () => {
