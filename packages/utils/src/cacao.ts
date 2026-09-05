@@ -104,12 +104,25 @@ export const formatMessage = (cacao: AuthTypes.FormatMessageParams, iss: string)
     statement = formatStatementFromRecap(statement, decoded);
   }
 
-  // Per EIP-4361 the statement is a single line and must not contain line breaks.
-  // Validate the final statement (after recap formatting) so that neither a caller-supplied
-  // statement nor untrusted recap-derived text can forge other fields (URI, Nonce, etc.) in
-  // the signed message via embedded `\r`/`\n`.
-  if (statement && /\r|\n/.test(statement)) {
-    throw new Error("Statement must not contain line breaks (`\\r` or `\\n`)");
+  // Per EIP-4361 single-line fields must not contain line breaks. Reject caller-supplied
+  // domain / aud / uri / version / nonce / iat (and optional exp/nbf/requestId) as well as
+  // the final statement (after recap formatting) so embedded `\r`/`\n` cannot forge other
+  // fields in the signed message.
+  const singleLineFields: Array<[string, string | undefined]> = [
+    ["Domain", cacao.domain],
+    ["URI", cacao.aud || cacao.uri],
+    ["Version", cacao.version],
+    ["Nonce", cacao.nonce],
+    ["Issued At", cacao.iat],
+    ["Expiration Time", cacao.exp],
+    ["Not Before", cacao.nbf],
+    ["Request ID", cacao.requestId],
+    ["Statement", statement],
+  ];
+  for (const [name, value] of singleLineFields) {
+    if (value && /\r|\n/.test(value)) {
+      throw new Error(`${name} must not contain line breaks (\`\\r\` or \`\\n\`)`);
+    }
   }
 
   const message = [
