@@ -1453,7 +1453,7 @@ describe("buildApprovedNamespaces (validators)", () => {
         },
       },
     });
-    // it should not inclide bip122 namespace since the supported chains do not match with the proposal
+    // it should not include bip122 namespace since the supported chains do not match with the proposal
     expect(result).toEqual({
       eip155: {
         chains: chainsEip,
