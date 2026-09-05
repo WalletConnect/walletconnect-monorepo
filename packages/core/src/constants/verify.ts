@@ -6,3 +6,6 @@ export const VERIFY_SERVER = VERIFY_SERVER_ORG;
 export const VERIFY_SERVER_V3 = `${VERIFY_SERVER}/v3`;
 
 export const TRUSTED_VERIFY_URLS = [VERIFY_SERVER_COM, VERIFY_SERVER_ORG];
+
+export const isTrustedVerifyOrigin = (origin: string): boolean =>
+  TRUSTED_VERIFY_URLS.includes(origin);
