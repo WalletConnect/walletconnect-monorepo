@@ -26,7 +26,7 @@ import {
   ErrorResponse,
   getBigIntRpcId,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
+import { FIVE_MINUTES, fromMiliseconds, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import {
   EnginePrivate,
   EngineTypes,
@@ -124,7 +124,10 @@ import {
   ENGINE_QUEUE_STATES,
   AUTH_PUBLIC_KEY_NAME,
   TVF_METHODS,
+  RESUBSCRIBE_INTERVAL,
+  MAX_RESUBSCRIBE_ATTEMPTS_ON_PENDING_RESULTS,
 } from "../constants/index.js";
+import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 
 export class Engine extends IEngine {
   public name = ENGINE_CONTEXT;
@@ -174,6 +177,18 @@ export class Engine extends IEngine {
     }
   > = new Map();
 
+  // most flows depend on sending a request and receiving a result from the peer sign-client sdk
+  // this map is used to store the messages that are waiting for a result
+  // the key is the clientRpcId of the request, the value is the topic of the request
+  private requestWaitingForResult: Map<
+    number,
+    {
+      topic: string;
+      waitingSince: number;
+      resubscribeAttempts?: number;
+    }
+  > = new Map();
+
   constructor(client: IEngine["client"]) {
     super(client);
   }
@@ -181,6 +196,7 @@ export class Engine extends IEngine {
   public init: IEngine["init"] = async () => {
     if (!this.initialized) {
       await this.cleanup();
+      this.registerHeartbeatEvents();
       this.registerRelayerEvents();
       this.registerExpirerEvents();
       this.registerPairingEvents();
@@ -380,7 +396,7 @@ export class Engine extends IEngine {
     });
 
     await this.setProposal(proposal.id, proposal);
-
+    this.requestWaitingForResult.set(proposal.id, { topic, waitingSince: Date.now() });
     await this.sendProposeSession({
       proposal,
       publishOpts: {
@@ -393,6 +409,7 @@ export class Engine extends IEngine {
       },
     }).catch((error) => {
       this.deleteProposal(proposal.id);
+      this.requestWaitingForResult.delete(proposal.id);
       throw error;
     });
 
@@ -762,6 +779,8 @@ export class Engine extends IEngine {
       chainId,
     };
 
+    this.requestWaitingForResult.set(clientRpcId, { topic, waitingSince: Date.now() });
+
     return await Promise.all([
       new Promise<void>(async (resolve) => {
         await this.sendRequest({
@@ -773,7 +792,10 @@ export class Engine extends IEngine {
           expiry,
           throwOnFailedPublish: true,
           tvf: this.getTVFParams(clientRpcId, protocolRequestParams),
-        }).catch((error) => reject(error));
+        }).catch((error) => {
+          this.requestWaitingForResult.delete(clientRpcId);
+          reject(error);
+        });
         this.client.events.emit("session_request_sent", {
           topic,
           request,
@@ -868,13 +890,20 @@ export class Engine extends IEngine {
         else resolve();
       });
       await Promise.all([
-        this.sendRequest({
-          topic,
-          method: "wc_sessionPing",
-          params: {},
-          throwOnFailedPublish: true,
-          clientRpcId,
-          relayRpcId,
+        new Promise<void>(async (resolve) => {
+          this.requestWaitingForResult.set(clientRpcId, { topic, waitingSince: Date.now() });
+          await this.sendRequest({
+            topic,
+            method: "wc_sessionPing",
+            params: {},
+            throwOnFailedPublish: true,
+            clientRpcId,
+            relayRpcId,
+          }).catch((error) => {
+            this.requestWaitingForResult.delete(clientRpcId);
+            reject(error);
+          });
+          resolve();
         }),
         done(),
       ]);
@@ -1923,6 +1952,47 @@ export class Engine extends IEngine {
     await this.client.core.relayer.confirmOnlineStateOrThrow();
   }
 
+  // ---------- Heartbeat Event ----------------------------------- //
+
+  /**
+   * This function is used to register the heartbeat events for the engine
+   * It checks if any requests are still waiting for a result and resubscribes to the topic if needed
+   * It also logs a warning if the request is still waiting for a result after the maximum number of attempts
+   * It also logs a debug message if the request is resubscribed to the topic
+   * It also logs a warning if the request is still waiting for a result after the maximum number of attempts
+   */
+  private registerHeartbeatEvents() {
+    this.client.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
+      for (const [clientRpcId, request] of this.requestWaitingForResult.entries()) {
+        const attempts = (request.resubscribeAttempts || 0) + 1;
+        if (fromMiliseconds(Date.now() - request.waitingSince) > attempts * RESUBSCRIBE_INTERVAL) {
+          if (attempts <= MAX_RESUBSCRIBE_ATTEMPTS_ON_PENDING_RESULTS) {
+            this.client.logger.debug(
+              `Resubscribing to topic ${request.topic} for request ${clientRpcId}, attempt ${attempts}`,
+            );
+            try {
+              this.requestWaitingForResult.set(clientRpcId, {
+                ...request,
+                resubscribeAttempts: attempts,
+              });
+              await this.client.core.relayer.subscribe(request.topic, {
+                internal: { throwOnFailedPublish: true },
+              });
+            } catch (error) {
+              this.client.logger.warn(
+                `Failed to resubscribe to topic ${request.topic} for request ${clientRpcId}, attempt ${attempts}`,
+              );
+            }
+          } else {
+            this.client.logger.warn(
+              `Request ${clientRpcId} still hasn't received a result after ${attempts * RESUBSCRIBE_INTERVAL}s, giving up`,
+            );
+          }
+        }
+      }
+    });
+  }
+
   // ---------- Relay Events Router ----------------------------------- //
 
   private registerRelayerEvents() {
@@ -2071,6 +2141,8 @@ export class Engine extends IEngine {
     const { topic, payload, transportType } = event;
     const record = await this.client.core.history.get(topic, payload.id);
     const resMethod = record.request.method as JsonRpcTypes.WcMethod;
+
+    this.requestWaitingForResult.delete(payload.id);
 
     switch (resMethod) {
       case "wc_sessionPropose":
