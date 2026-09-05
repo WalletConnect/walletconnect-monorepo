@@ -414,8 +414,8 @@ export function formatStatementFromRecap(statement = "", recap: RecapType) {
     statementForRecap.push(abilities.join(", ").replace(".,", "."));
   });
 
-  const recapStatemet = statementForRecap.join(" ");
-  const recapStatement = `${base}${recapStatemet}`;
+  const recapStatementBody = statementForRecap.join(" ");
+  const recapStatement = `${base}${recapStatementBody}`;
   // add a space if there is a statement
   return `${statement ? statement + " " : ""}${recapStatement}`;
 }
