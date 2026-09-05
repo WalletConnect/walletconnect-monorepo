@@ -247,6 +247,11 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   static async init(opts: EthereumProviderOptions): Promise<EthereumProvider> {
+    if (!opts.projectId?.trim()) {
+      throw new Error(
+        "projectId is required and cannot be empty or whitespace. Get one at https://cloud.walletconnect.com/"
+      );
+    }
     const provider = new EthereumProvider();
     await provider.initialize(opts);
     return provider;
