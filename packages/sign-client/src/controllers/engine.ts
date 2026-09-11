@@ -1123,7 +1123,10 @@ export class Engine extends IEngine {
         const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
         if (!isValid) {
           this.client.logger.error(cacao, "Signature verification failed");
-          reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
+          // must abort settlement entirely - a session built from an unverified cacao
+          // would still be subscribed and persisted even though the caller was told
+          // verification failed
+          return reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
         }
 
         const { p: payload } = cacao;

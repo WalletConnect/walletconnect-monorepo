@@ -4,7 +4,9 @@ import {
   buildApprovedNamespaces,
   buildAuthObject,
   getSdkError,
+  hashKey,
   populateAuthPayload,
+  TYPE_1,
 } from "@walletconnect/utils";
 import { AuthTypes } from "@walletconnect/types";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
@@ -1383,5 +1385,91 @@ describe.concurrent("Authenticated Sessions", () => {
       wallet.pair({ uri }),
     ]);
     await deleteClients({ A: dapp, B: wallet });
+  });
+
+  // Regression: a cacao that fails signature verification, or that verifies but answers
+  // a different request, must not produce a session. Both used to reject the caller's
+  // promise and then carry on to subscribe and persist a session anyway.
+  describe("cacao verification must abort settlement", () => {
+    it("should not establish a session when the cacao signature is invalid", async () => {
+      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_APP_METADATA_B,
+      });
+
+      const requestedChains = ["eip155:1"];
+      const requestedMethods = ["personal_sign"];
+      const { uri, response } = await dapp.authenticate({
+        chains: requestedChains,
+        domain: "localhost",
+        nonce: "1",
+        uri: "aud",
+        methods: requestedMethods,
+      });
+
+      // `response()` must be called before the wallet answers: createDelayedPromise only
+      // wires up its resolve/reject inside `done()`, so a settlement that lands before the
+      // first call is dropped and a later call returns a fresh promise that never settles
+      // attach the rejection handler at creation - the response can settle while the test
+      // is still awaiting the wallet, and a bare `response()` would surface as an
+      // unhandled rejection before a later `.catch` could pick it up
+      const settled = response().then(
+        () => undefined,
+        (err: any) => err,
+      );
+
+      const forged = new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          const authPayload = populateAuthPayload({
+            authPayload: payload.params.authPayload,
+            chains: requestedChains,
+            methods: requestedMethods,
+          });
+          // an address the wallet holds no key for, and a signature that is not one
+          const iss = `${requestedChains[0]}:0x1111111111111111111111111111111111111111`;
+          const auth = buildAuthObject(
+            authPayload,
+            { t: "eip191", s: `0x${"de".repeat(64)}1b` },
+            iss,
+          );
+
+          // `approveSessionAuthenticate` correctly refuses to send this, so publish the
+          // response directly to exercise the dapp-side handler the way an attacker would
+          const receiverPublicKey = payload.params.requester.publicKey;
+          const senderPublicKey = await wallet.core.crypto.generateKeyPair();
+          const responseTopic = hashKey(receiverPublicKey);
+          const message = await wallet.core.crypto.encode(
+            responseTopic,
+            formatJsonRpcResult(payload.id, {
+              cacaos: [auth],
+              responder: { publicKey: senderPublicKey, metadata: wallet.metadata },
+            }),
+            { type: TYPE_1, receiverPublicKey, senderPublicKey },
+          );
+          await wallet.core.relayer.publish(
+            responseTopic,
+            message,
+            ENGINE_RPC_OPTS.wc_sessionAuthenticate.res,
+          );
+          resolve();
+        });
+      });
+
+      await wallet.pair({ uri });
+      await forged;
+
+      const outcome = await settled;
+      expect(outcome).to.exist;
+      expect(outcome.message).to.include("Signature verification failed");
+
+      // the caller was told it failed - the SDK must not be holding a session regardless
+      await throttle(2_000);
+      expect(dapp.session.getAll().length).to.eq(0);
+      expect(dapp.session.keys.length).to.eq(0);
+
+      await deleteClients({ A: dapp, B: wallet });
+    });
   });
 });
