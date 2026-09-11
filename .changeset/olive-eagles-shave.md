@@ -1,7 +1,7 @@
 ---
-"@walletconnect/sign-client": minor
-"@walletconnect/utils": minor
-"@walletconnect/types": minor
+"@walletconnect/sign-client": patch
+"@walletconnect/utils": patch
+"@walletconnect/types": patch
 ---
 
 Fail closed when CACAO signature verification throws, and stop those throws escaping

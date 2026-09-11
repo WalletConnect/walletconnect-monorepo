@@ -1,6 +1,6 @@
 ---
-"@walletconnect/sign-client": minor
-"@walletconnect/utils": minor
+"@walletconnect/sign-client": patch
+"@walletconnect/utils": patch
 ---
 
 Bind `wc_sessionAuthenticate` responses to the request that was sent.

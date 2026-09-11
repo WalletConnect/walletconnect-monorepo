@@ -1,5 +1,5 @@
 ---
-"@walletconnect/sign-client": minor
+"@walletconnect/sign-client": patch
 ---
 
 Abort authenticated session settlement when a CACAO fails signature verification.
