@@ -15,6 +15,7 @@ import {
   populateAuthPayload,
   mergeEncodedRecaps,
   validateSignedCacao,
+  isCacaoBoundToRequest,
 } from "../src";
 
 describe("URI", () => {
@@ -536,5 +537,140 @@ describe("URI", () => {
       expect(message).to.include(`Resources:`);
       expect(message).to.include(request.resources[0]);
     });
+  });
+});
+
+describe("isCacaoBoundToRequest", () => {
+  // The dapp's own request, as `authenticate()` builds it.
+  const request = {
+    domain: "honest.example",
+    aud: "https://honest.example/login",
+    nonce: "HONEST-NONCE-0000000001",
+    chains: ["eip155:1"],
+  };
+
+  const buildCacao = (overrides: Record<string, any> = {}) => ({
+    h: { t: "caip122" as const },
+    p: {
+      iss: "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
+      domain: request.domain,
+      aud: request.aud,
+      version: "1",
+      nonce: request.nonce,
+      iat: "2024-03-13T09:00:43.888Z",
+      ...overrides,
+    },
+    s: { t: "eip191" as const, s: "0x" },
+  });
+
+  it("should accept a cacao that answers the request", () => {
+    expect(isCacaoBoundToRequest({ cacao: buildCacao(), request }).valid).to.eql(true);
+  });
+
+  it("should reject a cacao issued for another domain", () => {
+    // The cross-context case: a genuine signature, for a site the dapp never asked about.
+    const result = isCacaoBoundToRequest({
+      cacao: buildCacao({ domain: "evil.example" }),
+      request,
+    });
+    expect(result.valid).to.eql(false);
+    expect(result.reason).to.include("domain mismatch");
+  });
+
+  it("should reject a cacao answering a nonce the dapp never issued", () => {
+    const result = isCacaoBoundToRequest({
+      cacao: buildCacao({ nonce: "EVIL-NONCE-9999999999" }),
+      request,
+    });
+    expect(result.valid).to.eql(false);
+    expect(result.reason).to.include("nonce mismatch");
+  });
+
+  it("should reject a cacao with a mismatched aud", () => {
+    const result = isCacaoBoundToRequest({
+      cacao: buildCacao({ aud: "https://evil.example" }),
+      request,
+    });
+    expect(result.valid).to.eql(false);
+    expect(result.reason).to.include("aud mismatch");
+  });
+
+  it("should resolve `aud` the way formatMessage does, accepting `uri` instead", () => {
+    // formatMessage signs `cacao.aud || cacao.uri`, so the binding check must
+    // resolve it identically or a wallet using `uri` would be rejected wrongly.
+    const cacao = buildCacao({ aud: undefined, uri: request.aud });
+    expect(isCacaoBoundToRequest({ cacao, request }).valid).to.eql(true);
+  });
+
+  it("should reject a cacao issued for a chain that was not requested", () => {
+    const result = isCacaoBoundToRequest({
+      cacao: buildCacao({ iss: "did:pkh:eip155:137:0x3613699A6c5D8BC97a08805876c8005543125F09" }),
+      request,
+    });
+    expect(result.valid).to.eql(false);
+    expect(result.reason).to.include("not requested");
+  });
+
+  it("should accept any issued chain when the request did not constrain chains", () => {
+    const cacao = buildCacao({
+      iss: "did:pkh:eip155:137:0x3613699A6c5D8BC97a08805876c8005543125F09",
+    });
+    expect(isCacaoBoundToRequest({ cacao, request: { ...request, chains: [] } }).valid).to.eql(
+      true,
+    );
+  });
+
+  it("should reject an expired cacao", () => {
+    const result = isCacaoBoundToRequest({
+      cacao: buildCacao({ exp: new Date(Date.now() - 60_000).toISOString() }),
+      request,
+    });
+    expect(result.valid).to.eql(false);
+    expect(result.reason).to.include("expired");
+  });
+
+  it("should reject a cacao that is not yet valid", () => {
+    const result = isCacaoBoundToRequest({
+      cacao: buildCacao({ nbf: new Date(Date.now() + 60_000).toISOString() }),
+      request,
+    });
+    expect(result.valid).to.eql(false);
+    expect(result.reason).to.include("not yet valid");
+  });
+
+  it("should fail closed on an unparsable exp or nbf", () => {
+    // `new Date("nonsense").getTime()` is NaN and every comparison against it is
+    // false, so an unguarded bounds check would let a malformed value through.
+    expect(isCacaoBoundToRequest({ cacao: buildCacao({ exp: "nonsense" }), request }).valid).to.eql(
+      false,
+    );
+    expect(isCacaoBoundToRequest({ cacao: buildCacao({ nbf: "nonsense" }), request }).valid).to.eql(
+      false,
+    );
+  });
+
+  it("should ignore statement and resources, which wallets legitimately rewrite", () => {
+    // populateAuthPayload appends the recap statement and rewrites resources, so
+    // comparing either would reject every conformant wallet.
+    const populated = populateAuthPayload({
+      authPayload: {
+        ...request,
+        type: "caip122",
+        version: "1",
+        iat: "2024-03-13T09:00:43.888Z",
+        statement: "I accept the terms",
+        resources: [createEncodedRecap("eip155", "request", ["personal_sign"])],
+      } as any,
+      chains: request.chains,
+      methods: ["personal_sign"],
+    });
+
+    expect(populated.statement).to.not.eql("I accept the terms");
+
+    const cacao = buildCacao({
+      statement: populated.statement,
+      resources: populated.resources,
+    });
+    expect(isCacaoBoundToRequest({ cacao, request }).valid).to.eql(true);
   });
 });

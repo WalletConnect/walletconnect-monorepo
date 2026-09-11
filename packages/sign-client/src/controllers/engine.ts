@@ -88,6 +88,7 @@ import {
   mergeEncodedRecaps,
   getRecapFromResources,
   validateSignedCacao,
+  isCacaoBoundToRequest,
   getNamespacedDidChainId,
   parseChainId,
   getLinkModeURL,
@@ -1127,6 +1128,19 @@ export class Engine extends IEngine {
           // would still be subscribed and persisted even though the caller was told
           // verification failed
           return reject(getSdkError("SESSION_SETTLEMENT_FAILED", "Signature verification failed"));
+        }
+
+        // a valid signature only proves `iss` signed this cacao, not that the cacao
+        // answers the request we sent - bind it to the request before acting on it
+        const binding = isCacaoBoundToRequest({ cacao, request: request.authPayload });
+        if (!binding.valid) {
+          this.client.logger.error(cacao, `Cacao does not match the request: ${binding.reason}`);
+          return reject(
+            getSdkError(
+              "SESSION_SETTLEMENT_FAILED",
+              `Cacao does not match the request: ${binding.reason}`,
+            ),
+          );
         }
 
         const { p: payload } = cacao;

@@ -1471,5 +1471,65 @@ describe.concurrent("Authenticated Sessions", () => {
 
       await deleteClients({ A: dapp, B: wallet });
     });
+
+    it("should not establish a session when a valid cacao answers a different request", async () => {
+      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_APP_METADATA_B,
+      });
+
+      const requestedChains = ["eip155:1"];
+      const requestedMethods = ["personal_sign"];
+      const { uri, response } = await dapp.authenticate({
+        chains: requestedChains,
+        domain: "localhost",
+        nonce: "the-nonce-the-dapp-issued",
+        uri: "aud",
+        methods: requestedMethods,
+      });
+
+      // attach the rejection handler at creation - the response can settle while the test
+      // is still awaiting the wallet, and a bare `response()` would surface as an
+      // unhandled rejection before a later `.catch` could pick it up
+      const settled = response().then(
+        () => undefined,
+        (err: any) => err,
+      );
+
+      const responded = new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          const authPayload = populateAuthPayload({
+            authPayload: payload.params.authPayload,
+            chains: requestedChains,
+            methods: requestedMethods,
+          });
+          // sign a genuinely valid cacao, but over a nonce the dapp never issued.
+          // the signature verifies; only the context is wrong.
+          const tampered = { ...authPayload, nonce: "a-nonce-from-somewhere-else" };
+          const iss = `${requestedChains[0]}:${cryptoWallet.address}`;
+          const sig = await cryptoWallet.signMessage(
+            wallet.engine.formatAuthMessage({ request: tampered, iss }),
+          );
+          const auth = buildAuthObject(tampered, { t: "eip191", s: sig }, iss);
+          await wallet.approveSessionAuthenticate({ id: payload.id, auths: [auth] });
+          resolve();
+        });
+      });
+
+      await wallet.pair({ uri });
+      await responded;
+
+      const outcome = await settled;
+      expect(outcome).to.exist;
+      expect(outcome.message).to.include("Cacao does not match the request");
+
+      await throttle(2_000);
+      expect(dapp.session.getAll().length).to.eq(0);
+      expect(dapp.session.keys.length).to.eq(0);
+
+      await deleteClients({ A: dapp, B: wallet });
+    });
   });
 });
