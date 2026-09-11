@@ -160,7 +160,7 @@ export class WalletConnectPay {
       {
         paymentId: params.paymentId,
         optionId: params.optionId,
-        signaturesCount: params.signatures.length,
+        dataCount: (params.data ?? params.signatures ?? []).length,
         hasCollectedData: !!params.collectedData,
       },
       `${LOGGER_CONTEXT} confirmPayment`,

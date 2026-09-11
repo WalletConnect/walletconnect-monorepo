@@ -425,6 +425,51 @@ describe("WalletConnectPay with MockProvider", () => {
       expect(result.isFinal).toBe(true);
     });
 
+    it("should build a wire request carrying only the data field", async () => {
+      const { buildConfirmPaymentRequest } = await import("../src/providers/utils.js");
+
+      // Legacy signatures land on the wire under "data"; the deprecated
+      // "signatures" key is never sent (yttrium treats it as an alias and
+      // rejects requests carrying both).
+      const legacyWire = JSON.parse(
+        buildConfirmPaymentRequest({
+          paymentId: "pay_123",
+          optionId: "opt_1",
+          signatures: ["0xsig1"],
+        }),
+      );
+      expect(legacyWire.data).toEqual(["0xsig1"]);
+      expect("signatures" in legacyWire).toBe(false);
+
+      // JSON object payloads (e.g. TRON) are sent verbatim
+      const tronResult = { raw_data_hex: "0a02", signature: ["0xabc"] };
+      const tronWire = JSON.parse(
+        buildConfirmPaymentRequest({
+          paymentId: "pay_tron",
+          optionId: "opt_1",
+          data: [tronResult, "0x123"],
+        }),
+      );
+      expect(tronWire.data).toEqual([tronResult, "0x123"]);
+      expect("signatures" in tronWire).toBe(false);
+    });
+
+    it("should confirm payment with JSON object data (TRON)", async () => {
+      const mockResponse = createMockConfirmResponse("succeeded", true);
+      mockProvider.setConfirmResponse("pay_tron", "opt_1", mockResponse);
+
+      const params: ConfirmPaymentParams = {
+        paymentId: "pay_tron",
+        optionId: "opt_1",
+        data: [{ raw_data_hex: "0a02", signature: ["0xabc"] }],
+      };
+
+      const result = await mockProvider.confirmPayment(params);
+
+      expect(result.status).toBe("succeeded");
+      expect(mockProvider.calls.confirmPayment[0].data).toHaveLength(1);
+    });
+
     it("should pass multiple signatures", async () => {
       const mockResponse = createMockConfirmResponse("succeeded", true);
       mockProvider.setConfirmResponse("pay_multi_sig", "opt_swap", mockResponse);

@@ -90,12 +90,12 @@ class RNWalletConnectPayModule internal constructor(context: ReactApplicationCon
   }
 
   /**
-   * Confirm a payment with signatures
+   * Confirm a payment with wallet RPC results
    * @param requestJson JSON string:
    *   {
    *     "paymentId": string,
    *     "optionId": string,
-   *     "signatures": string[],
+   *     "data": (string | object)[],  // "signatures" accepted as legacy alias
    *     "collectedData"?: [{ "id": string, "value": string }]
    *   }
    * @param promise Resolves with JSON string of ConfirmPaymentResponse
