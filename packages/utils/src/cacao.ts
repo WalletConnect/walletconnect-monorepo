@@ -63,15 +63,101 @@ export async function validateSignedCacao(params: { cacao: AuthTypes.Cacao; proj
     return false;
   }
   const walletAddress = getDidAddress(payload.iss) as string;
-  const isValid = await verifySignature(
-    walletAddress,
-    reconstructed,
-    signature,
-    getNamespacedDidChainId(payload.iss) as string,
-    projectId as string,
-  );
+  try {
+    return await verifySignature(
+      walletAddress,
+      reconstructed,
+      signature,
+      getNamespacedDidChainId(payload.iss) as string,
+      projectId as string,
+    );
+  } catch (error) {
+    // `verifySignature` throws on attacker-controlled input rather than returning
+    // false: an unknown `s.t`, a malformed eip191 signature (`Signature.fromHex` /
+    // `recoverAddress`), or an `iss` whose chain is not CAIP-2. Fail closed, so the
+    // public contract of this function stays a boolean validity check.
+    return false;
+  }
+}
 
-  return isValid;
+export type CacaoRequestBinding = {
+  domain: string;
+  nonce: string;
+  aud?: string;
+  uri?: string;
+  chains?: string[];
+};
+
+/**
+ * Checks that a CACAO answers the request that was actually sent.
+ *
+ * `validateSignedCacao` only proves that the address in `iss` signed the CACAO's
+ * own payload - the request is not one of its inputs, so on its own it cannot
+ * tell an answer to this request apart from a genuine CACAO the same wallet
+ * issued for a different site. This is the missing half of that check.
+ *
+ * Only fields a conformant wallet echoes back verbatim are compared:
+ * `populateAuthPayload` rewrites `statement` and `resources` and narrows
+ * `chains`, so those are deliberately excluded and the chain is bound through
+ * `iss` instead. `aud` is resolved the same way `formatMessage` resolves it,
+ * since that is what the wallet actually signed.
+ */
+export function isCacaoBoundToRequest(params: {
+  cacao: AuthTypes.Cacao;
+  request: CacaoRequestBinding;
+}): { valid: boolean; reason?: string } {
+  const { cacao, request } = params;
+  const { p: payload } = cacao;
+
+  if (payload.domain !== request.domain) {
+    return {
+      valid: false,
+      reason: `domain mismatch: requested ${request.domain}, got ${payload.domain}`,
+    };
+  }
+
+  if (payload.nonce !== request.nonce) {
+    return {
+      valid: false,
+      reason: `nonce mismatch: requested ${request.nonce}, got ${payload.nonce}`,
+    };
+  }
+
+  const expectedAud = request.aud || request.uri;
+  const receivedAud = payload.aud || payload.uri;
+  if (expectedAud && receivedAud !== expectedAud) {
+    return {
+      valid: false,
+      reason: `aud mismatch: requested ${expectedAud}, got ${receivedAud}`,
+    };
+  }
+
+  if (request.chains?.length) {
+    const issuedChain = getNamespacedDidChainId(payload.iss);
+    if (!issuedChain || !request.chains.includes(issuedChain)) {
+      return {
+        valid: false,
+        reason: `cacao issued for chain ${issuedChain} which was not requested`,
+      };
+    }
+  }
+
+  const now = Date.now();
+
+  if (payload.exp) {
+    const exp = new Date(payload.exp).getTime();
+    // an unparsable bound must fail closed - `NaN < now` is false
+    if (isNaN(exp)) return { valid: false, reason: `malformed exp: ${payload.exp}` };
+    if (exp < now) return { valid: false, reason: "cacao has expired" };
+  }
+
+  if (payload.nbf) {
+    const nbf = new Date(payload.nbf).getTime();
+    if (isNaN(nbf)) return { valid: false, reason: `malformed nbf: ${payload.nbf}` };
+    if (nbf > now) return { valid: false, reason: "cacao is not yet valid" };
+  }
+
+  return { valid: true };
 }
 
 export const formatMessage = (cacao: AuthTypes.FormatMessageParams, iss: string) => {

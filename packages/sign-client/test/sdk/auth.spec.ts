@@ -4,7 +4,9 @@ import {
   buildApprovedNamespaces,
   buildAuthObject,
   getSdkError,
+  hashKey,
   populateAuthPayload,
+  TYPE_1,
 } from "@walletconnect/utils";
 import { AuthTypes } from "@walletconnect/types";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
@@ -1383,5 +1385,225 @@ describe.concurrent("Authenticated Sessions", () => {
       wallet.pair({ uri }),
     ]);
     await deleteClients({ A: dapp, B: wallet });
+  });
+
+  // Regression: a cacao that fails signature verification, or that verifies but answers
+  // a different request, must not produce a session. Both used to reject the caller's
+  // promise and then carry on to subscribe and persist a session anyway.
+  describe("cacao verification must abort settlement", () => {
+    it("should not establish a session when the cacao signature is invalid", async () => {
+      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_APP_METADATA_B,
+      });
+
+      const requestedChains = ["eip155:1"];
+      const requestedMethods = ["personal_sign"];
+      const { uri, response } = await dapp.authenticate({
+        chains: requestedChains,
+        domain: "localhost",
+        nonce: "1",
+        uri: "aud",
+        methods: requestedMethods,
+      });
+
+      // `response()` must be called before the wallet answers: createDelayedPromise only
+      // wires up its resolve/reject inside `done()`, so a settlement that lands before the
+      // first call is dropped and a later call returns a fresh promise that never settles
+      // attach the rejection handler at creation - the response can settle while the test
+      // is still awaiting the wallet, and a bare `response()` would surface as an
+      // unhandled rejection before a later `.catch` could pick it up
+      const settled = response().then(
+        () => undefined,
+        (err: any) => err,
+      );
+
+      const forged = new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          const authPayload = populateAuthPayload({
+            authPayload: payload.params.authPayload,
+            chains: requestedChains,
+            methods: requestedMethods,
+          });
+          // an address the wallet holds no key for, and a signature that is not one
+          const iss = `${requestedChains[0]}:0x1111111111111111111111111111111111111111`;
+          const auth = buildAuthObject(
+            authPayload,
+            { t: "eip191", s: `0x${"de".repeat(64)}1b` },
+            iss,
+          );
+
+          // `approveSessionAuthenticate` correctly refuses to send this, so publish the
+          // response directly to exercise the dapp-side handler the way an attacker would
+          const receiverPublicKey = payload.params.requester.publicKey;
+          const senderPublicKey = await wallet.core.crypto.generateKeyPair();
+          const responseTopic = hashKey(receiverPublicKey);
+          const message = await wallet.core.crypto.encode(
+            responseTopic,
+            formatJsonRpcResult(payload.id, {
+              cacaos: [auth],
+              responder: { publicKey: senderPublicKey, metadata: wallet.metadata },
+            }),
+            { type: TYPE_1, receiverPublicKey, senderPublicKey },
+          );
+          await wallet.core.relayer.publish(
+            responseTopic,
+            message,
+            ENGINE_RPC_OPTS.wc_sessionAuthenticate.res,
+          );
+          resolve();
+        });
+      });
+
+      await wallet.pair({ uri });
+      await forged;
+
+      const outcome = await settled;
+      expect(outcome).to.exist;
+      expect(outcome.message).to.include("Signature verification failed");
+
+      // the caller was told it failed - the SDK must not be holding a session regardless
+      await throttle(2_000);
+      expect(dapp.session.getAll().length).to.eq(0);
+      expect(dapp.session.keys.length).to.eq(0);
+
+      await deleteClients({ A: dapp, B: wallet });
+    });
+
+    it("should reject rather than hang when signature verification throws", async () => {
+      // `verifySignature` throws for an unknown `s.t` instead of returning false. That
+      // rejection escaped the async event listener, so the caller's promise stayed
+      // pending until the one hour request expiry - and under node's default handling
+      // the unhandled rejection took the process down with it.
+      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_APP_METADATA_B,
+      });
+
+      const requestedChains = ["eip155:1"];
+      const requestedMethods = ["personal_sign"];
+      const { uri, response } = await dapp.authenticate({
+        chains: requestedChains,
+        domain: "localhost",
+        nonce: "1",
+        uri: "aud",
+        methods: requestedMethods,
+      });
+
+      const settled = response().then(
+        () => undefined,
+        (err: any) => err,
+      );
+
+      const forged = new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          const authPayload = populateAuthPayload({
+            authPayload: payload.params.authPayload,
+            chains: requestedChains,
+            methods: requestedMethods,
+          });
+          const iss = `${requestedChains[0]}:${cryptoWallet.address}`;
+          const auth = buildAuthObject(
+            authPayload,
+            { t: "not-a-signature-type" as any, s: "0x" },
+            iss,
+          );
+
+          const receiverPublicKey = payload.params.requester.publicKey;
+          const senderPublicKey = await wallet.core.crypto.generateKeyPair();
+          const responseTopic = hashKey(receiverPublicKey);
+          const message = await wallet.core.crypto.encode(
+            responseTopic,
+            formatJsonRpcResult(payload.id, {
+              cacaos: [auth],
+              responder: { publicKey: senderPublicKey, metadata: wallet.metadata },
+            }),
+            { type: TYPE_1, receiverPublicKey, senderPublicKey },
+          );
+          await wallet.core.relayer.publish(
+            responseTopic,
+            message,
+            ENGINE_RPC_OPTS.wc_sessionAuthenticate.res,
+          );
+          resolve();
+        });
+      });
+
+      await wallet.pair({ uri });
+      await forged;
+
+      const outcome = await settled;
+      expect(outcome).to.exist;
+      expect(outcome.message).to.include("Signature verification failed");
+
+      await throttle(2_000);
+      expect(dapp.session.getAll().length).to.eq(0);
+
+      await deleteClients({ A: dapp, B: wallet });
+    });
+
+    it("should not establish a session when a valid cacao answers a different request", async () => {
+      const dapp = await SignClient.init({ ...TEST_SIGN_CLIENT_OPTIONS, name: "dapp" });
+      const wallet = await SignClient.init({
+        ...TEST_SIGN_CLIENT_OPTIONS,
+        name: "wallet",
+        metadata: TEST_APP_METADATA_B,
+      });
+
+      const requestedChains = ["eip155:1"];
+      const requestedMethods = ["personal_sign"];
+      const { uri, response } = await dapp.authenticate({
+        chains: requestedChains,
+        domain: "localhost",
+        nonce: "the-nonce-the-dapp-issued",
+        uri: "aud",
+        methods: requestedMethods,
+      });
+
+      // attach the rejection handler at creation - the response can settle while the test
+      // is still awaiting the wallet, and a bare `response()` would surface as an
+      // unhandled rejection before a later `.catch` could pick it up
+      const settled = response().then(
+        () => undefined,
+        (err: any) => err,
+      );
+
+      const responded = new Promise<void>((resolve) => {
+        wallet.on("session_authenticate", async (payload) => {
+          const authPayload = populateAuthPayload({
+            authPayload: payload.params.authPayload,
+            chains: requestedChains,
+            methods: requestedMethods,
+          });
+          // sign a genuinely valid cacao, but over a nonce the dapp never issued.
+          // the signature verifies; only the context is wrong.
+          const tampered = { ...authPayload, nonce: "a-nonce-from-somewhere-else" };
+          const iss = `${requestedChains[0]}:${cryptoWallet.address}`;
+          const sig = await cryptoWallet.signMessage(
+            wallet.engine.formatAuthMessage({ request: tampered, iss }),
+          );
+          const auth = buildAuthObject(tampered, { t: "eip191", s: sig }, iss);
+          await wallet.approveSessionAuthenticate({ id: payload.id, auths: [auth] });
+          resolve();
+        });
+      });
+
+      await wallet.pair({ uri });
+      await responded;
+
+      const outcome = await settled;
+      expect(outcome).to.exist;
+      expect(outcome.message).to.include("Cacao does not match the request");
+
+      await throttle(2_000);
+      expect(dapp.session.getAll().length).to.eq(0);
+      expect(dapp.session.keys.length).to.eq(0);
+
+      await deleteClients({ A: dapp, B: wallet });
+    });
   });
 });
