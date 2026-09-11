@@ -1082,7 +1082,7 @@ export class Engine extends IEngine {
     // handle fallback session proposal response
     const onSessionConnect = async ({ error, session }: any) => {
       // cleanup listener for authenticate response
-      this.events.off(authenticateEventTarget, onAuthenticate);
+      this.events.off(authenticateEventTarget, onAuthenticateResponse);
       if (error) reject(error);
       else if (session) {
         resolve({
@@ -1222,9 +1222,24 @@ export class Engine extends IEngine {
       });
     };
 
+    // `onAuthenticate` is an async event listener, so anything it throws becomes an
+    // unhandled rejection - fatal under node's default handling - and leaves the
+    // caller's promise pending until the request expires. Route failures to the same
+    // rejection path instead.
+    const onAuthenticateResponse = (payload: any) =>
+      onAuthenticate(payload).catch((error: any) => {
+        this.client.logger.error(error, "Failed to process authenticate response");
+        reject(
+          getSdkError(
+            "SESSION_SETTLEMENT_FAILED",
+            error?.message || "Failed to process authenticate response",
+          ),
+        );
+      });
+
     // subscribe to response events
     this.events.once<"session_connect">(sessionConnectEventTarget, onSessionConnect);
-    this.events.once(authenticateEventTarget, onAuthenticate);
+    this.events.once(authenticateEventTarget, onAuthenticateResponse);
 
     let linkModeURL;
     try {
@@ -1260,7 +1275,7 @@ export class Engine extends IEngine {
     } catch (error) {
       // cleanup listeners on failed publish
       this.events.off(sessionConnectEventTarget, onSessionConnect);
-      this.events.off(authenticateEventTarget, onAuthenticate);
+      this.events.off(authenticateEventTarget, onAuthenticateResponse);
       throw error;
     }
 

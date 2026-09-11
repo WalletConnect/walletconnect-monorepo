@@ -108,6 +108,11 @@ export declare namespace AuthTypes {
 
   type CacaoPayload = {
     iss: string;
+    /**
+     * `formatMessage` signs `aud || uri`, so a wallet may send either. Modelled here
+     * so consumers can read it without casting to `FormatMessageParams`.
+     */
+    uri?: string;
   } & BaseAuthRequestParams;
 
   interface CacaoHeader {

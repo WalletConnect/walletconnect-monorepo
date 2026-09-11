@@ -63,15 +63,21 @@ export async function validateSignedCacao(params: { cacao: AuthTypes.Cacao; proj
     return false;
   }
   const walletAddress = getDidAddress(payload.iss) as string;
-  const isValid = await verifySignature(
-    walletAddress,
-    reconstructed,
-    signature,
-    getNamespacedDidChainId(payload.iss) as string,
-    projectId as string,
-  );
-
-  return isValid;
+  try {
+    return await verifySignature(
+      walletAddress,
+      reconstructed,
+      signature,
+      getNamespacedDidChainId(payload.iss) as string,
+      projectId as string,
+    );
+  } catch (error) {
+    // `verifySignature` throws on attacker-controlled input rather than returning
+    // false: an unknown `s.t`, a malformed eip191 signature (`Signature.fromHex` /
+    // `recoverAddress`), or an `iss` whose chain is not CAIP-2. Fail closed, so the
+    // public contract of this function stays a boolean validity check.
+    return false;
+  }
 }
 
 export type CacaoRequestBinding = {
@@ -118,7 +124,7 @@ export function isCacaoBoundToRequest(params: {
   }
 
   const expectedAud = request.aud || request.uri;
-  const receivedAud = payload.aud || (payload as AuthTypes.FormatMessageParams).uri;
+  const receivedAud = payload.aud || payload.uri;
   if (expectedAud && receivedAud !== expectedAud) {
     return {
       valid: false,

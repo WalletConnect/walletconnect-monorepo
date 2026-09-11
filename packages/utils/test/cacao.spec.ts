@@ -306,6 +306,34 @@ describe("URI", () => {
     expect(() => formatMessage(request, iss)).to.throw("Statement must not contain line breaks");
   });
 
+  it("should return false rather than throw for signature types verifySignature rejects", async () => {
+    // `verifySignature` throws on attacker-controlled input instead of returning false:
+    // an unknown `s.t` hits its `default:` branch, and a malformed eip191 signature
+    // throws out of `Signature.fromHex` / `recoverAddress`. Both reach the dapp through
+    // an authenticate response, so `validateSignedCacao` must fail closed.
+    const base = {
+      h: { t: "caip122" as const },
+      p: {
+        iss: "did:pkh:eip155:1:0x3613699A6c5D8BC97a08805876c8005543125F09",
+        domain: "app.web3inbox",
+        aud: "https://app.web3inbox.com/login",
+        version: "1",
+        nonce: "32891756",
+        iat: "2024-03-13T09:00:43.888Z",
+        statement: "Sign in",
+      },
+    };
+
+    const unknownType = { ...base, s: { t: "not-a-signature-type" as any, s: "0x" } };
+    await expect(validateSignedCacao({ cacao: unknownType })).resolves.toEqual(false);
+
+    const malformedEip191 = { ...base, s: { t: "eip191" as const, s: "0xnothex" } };
+    await expect(validateSignedCacao({ cacao: malformedEip191 })).resolves.toEqual(false);
+
+    const truncatedEip191 = { ...base, s: { t: "eip191" as const, s: "0xdeadbeef" } };
+    await expect(validateSignedCacao({ cacao: truncatedEip191 })).resolves.toEqual(false);
+  });
+
   it("should return false from validateSignedCacao for statements with line breaks", async () => {
     // formatMessage throws for malformed statements; validateSignedCacao must remap that to
     // a boolean `false` rather than propagating the exception to callers.
