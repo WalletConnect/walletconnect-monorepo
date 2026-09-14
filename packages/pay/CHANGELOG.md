@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- [#7344](https://github.com/WalletConnect/walletconnect-monorepo/pull/7344) [`579b882`](https://github.com/WalletConnect/walletconnect-monorepo/commit/579b882e14cefefa91513cc03b2db0413357129c) Thanks [@jakubuid](https://github.com/jakubuid)! - WalletConnect Pay: `confirmPayment` now takes `data`, whose elements may be plain signature strings or JSON objects/arrays (e.g. TRON's `{raw_data_hex, signature}` confirm payload), forwarded to the gateway as JSON. `signatures` is deprecated and used as a fallback when `data` is omitted. Bumps yttrium to 0.10.59 (WASM blob + iOS YttriumWrapper) and 0.10.60 (Android yttrium-wcpay).
+
+### Patch Changes
+
+- Updated dependencies [[`44395d0`](https://github.com/WalletConnect/walletconnect-monorepo/commit/44395d007904ffe5264a9b2247548028ebd1f824), [`896c6b0`](https://github.com/WalletConnect/walletconnect-monorepo/commit/896c6b01bf8ea0a80dbd44b3fcd0124b6f1fca49)]:
+  - @walletconnect/utils@2.25.0
+
 ## 1.0.10
 
 ### Patch Changes
