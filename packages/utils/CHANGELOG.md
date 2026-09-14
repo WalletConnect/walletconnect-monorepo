@@ -1,5 +1,47 @@
 # @walletconnect/utils
 
+## 2.25.0
+
+### Patch Changes
+
+- [#7341](https://github.com/WalletConnect/walletconnect-monorepo/pull/7341) [`44395d0`](https://github.com/WalletConnect/walletconnect-monorepo/commit/44395d007904ffe5264a9b2247548028ebd1f824) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Fail closed when CACAO signature verification throws, and stop those throws escaping
+  the authenticate response handler.
+
+  `verifySignature` throws rather than returning `false` on several attacker-controlled
+  inputs: an unknown `s.t` hits its `default:` branch, a malformed eip191 signature
+  throws out of `Signature.fromHex`/`recoverAddress`, and a non-CAIP-2 chain in `iss`
+  throws before the eip1271 request is made. `validateSignedCacao` guarded only
+  `formatMessage`, so those propagated to callers.
+
+  On the dapp side that escaped `onAuthenticate`, an async event listener whose rejection
+  nothing observed, so `authenticate()` stayed pending until the one hour request expiry
+  instead of rejecting — and under node's default unhandled-rejection handling the
+  process exited. `validateSignedCacao` now fails closed, keeping its documented boolean
+  contract, and the authenticate response handler routes any remaining failure to the
+  same rejection path.
+
+  Also models `uri` on `AuthTypes.CacaoPayload`, since `formatMessage` signs `aud || uri`
+  and a wallet may send either.
+
+- [#7341](https://github.com/WalletConnect/walletconnect-monorepo/pull/7341) [`896c6b0`](https://github.com/WalletConnect/walletconnect-monorepo/commit/896c6b01bf8ea0a80dbd44b3fcd0124b6f1fca49) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Bind `wc_sessionAuthenticate` responses to the request that was sent.
+
+  A verified signature only proves that the address in `iss` signed the CACAO's own
+  payload. `validateSignedCacao` reconstructs the signed message from that same
+  payload and does not take the request as an argument, so it cannot tell an answer
+  to this request apart from a genuine CACAO the same wallet issued for a different
+  site — and no caller compared `domain`, `aud` or `nonce` either. A CACAO a user
+  signed for one site was therefore accepted by an unrelated dapp.
+
+  Authenticate responses are now checked against the originating request with the new
+  `isCacaoBoundToRequest` export from `@walletconnect/utils`, which compares `domain`,
+  `aud` and `nonce`, requires the chain in `iss` to have been requested, and enforces
+  `exp`/`nbf`. Fields that wallets legitimately rewrite are deliberately not compared:
+  `populateAuthPayload` appends the recap statement, rewrites `resources` and narrows
+  `chains`, so comparing those would reject every conformant wallet.
+
+- Updated dependencies [[`44395d0`](https://github.com/WalletConnect/walletconnect-monorepo/commit/44395d007904ffe5264a9b2247548028ebd1f824)]:
+  - @walletconnect/types@2.25.0
+
 ## 2.24.0
 
 ### Minor Changes
