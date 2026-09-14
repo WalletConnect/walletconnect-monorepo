@@ -454,6 +454,27 @@ describe("WalletConnectPay with MockProvider", () => {
       expect("signatures" in tronWire).toBe(false);
     });
 
+    it("should accept interface-typed objects in data without a cast", async () => {
+      const { buildConfirmPaymentRequest } = await import("../src/providers/utils.js");
+
+      // Interfaces have no implicit index signature, so they are not assignable
+      // to Record<string, unknown>; `data` must accept them as plain objects.
+      interface TronSignedTransaction {
+        raw_data_hex: string;
+        signature: string[];
+      }
+      const signed: TronSignedTransaction = { raw_data_hex: "0a02", signature: ["0xabc"] };
+
+      const wire = JSON.parse(
+        buildConfirmPaymentRequest({
+          paymentId: "pay_tron",
+          optionId: "opt_1",
+          data: [signed],
+        }),
+      );
+      expect(wire.data).toEqual([{ raw_data_hex: "0a02", signature: ["0xabc"] }]);
+    });
+
     it("should confirm payment with JSON object data (TRON)", async () => {
       const mockResponse = createMockConfirmResponse("succeeded", true);
       mockProvider.setConfirmResponse("pay_tron", "opt_1", mockResponse);

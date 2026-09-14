@@ -209,9 +209,12 @@ export interface ConfirmPaymentParams {
    * Wallet RPC results. Each element is either a plain string (signature,
    * tx hash) or a JSON object/array (e.g. TRON's
    * `{"raw_data_hex": ..., "signature": [...]}`), sent to the gateway as
-   * JSON. Falls back to `signatures` when omitted.
+   * JSON. Typed as `object` rather than `Record<string, unknown>` so values
+   * declared as TypeScript interfaces (which lack an implicit index
+   * signature) are accepted without a cast. Falls back to `signatures` when
+   * omitted.
    */
-  data?: (string | Record<string, unknown> | unknown[])[];
+  data?: (string | object)[];
   /** Collected data fields (if required) */
   collectedData?: CollectDataFieldResult[];
 }
