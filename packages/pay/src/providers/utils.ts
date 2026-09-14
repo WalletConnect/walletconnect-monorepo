@@ -40,7 +40,10 @@ export function buildConfirmPaymentRequest(params: ConfirmPaymentParams): string
   return JSON.stringify({
     paymentId: params.paymentId,
     optionId: params.optionId,
-    signatures: params.signatures,
+    // Yttrium accepts exactly one of data/signatures ("signatures" is a
+    // legacy alias of "data"): always send "data", falling back to the
+    // deprecated signatures list.
+    data: params.data ?? params.signatures ?? [],
     collectedData: params.collectedData,
   });
 }

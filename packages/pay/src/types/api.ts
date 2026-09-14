@@ -201,8 +201,17 @@ export interface ConfirmPaymentParams {
   paymentId: string;
   /** Option ID */
   optionId: string;
-  /** Signatures from wallet RPC calls */
-  signatures: string[];
+  /**
+   * @deprecated Use `data` instead. Used as a fallback when `data` is omitted.
+   */
+  signatures?: string[];
+  /**
+   * Wallet RPC results. Each element is either a plain string (signature,
+   * tx hash) or a JSON object/array (e.g. TRON's
+   * `{"raw_data_hex": ..., "signature": [...]}`), sent to the gateway as
+   * JSON. Falls back to `signatures` when omitted.
+   */
+  data?: (string | Record<string, unknown> | unknown[])[];
   /** Collected data fields (if required) */
   collectedData?: CollectDataFieldResult[];
 }
