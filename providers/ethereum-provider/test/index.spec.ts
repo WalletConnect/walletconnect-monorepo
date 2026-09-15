@@ -692,4 +692,44 @@ describe("EthereumProvider", function () {
       provider.signer.session.namespaces.eip155.accounts = cachedAccounts;
     });
   });
+
+  describe("projectId validation", function () {
+    it("should throw when projectId is empty string", async () => {
+      try {
+        await EthereumProvider.init({
+          projectId: "",
+          chains: [1],
+          showQrModal: false,
+          metadata: TEST_APP_METADATA_A,
+        });
+        throw new Error("Expected EthereumProvider.init to throw");
+      } catch (error: any) {
+        expect(error.message).toContain("projectId is required");
+      }
+    });
+
+    it("should throw when projectId is whitespace only", async () => {
+      try {
+        await EthereumProvider.init({
+          projectId: "   ",
+          chains: [1],
+          showQrModal: false,
+          metadata: TEST_APP_METADATA_A,
+        });
+        throw new Error("Expected EthereumProvider.init to throw");
+      } catch (error: any) {
+        expect(error.message).toContain("projectId is required");
+      }
+    });
+
+    it("should not throw when projectId is valid", async () => {
+      const validProvider = await EthereumProvider.init({
+        projectId: "test-project-id-123",
+        chains: [1],
+        showQrModal: false,
+        metadata: TEST_APP_METADATA_A,
+      });
+      expect(validProvider).toBeDefined();
+    });
+  });
 });
