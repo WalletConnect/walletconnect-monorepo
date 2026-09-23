@@ -3,6 +3,10 @@ import { EngineTypes } from "@walletconnect/types";
 
 export const ENGINE_CONTEXT = "engine";
 
+export const MAX_RESUBSCRIBE_ATTEMPTS_ON_PENDING_RESULTS = 3;
+
+export const RESUBSCRIBE_INTERVAL = 30;
+
 export const ENGINE_RPC_OPTS: EngineTypes.RpcOptsMap = {
   wc_sessionPropose: {
     req: {
