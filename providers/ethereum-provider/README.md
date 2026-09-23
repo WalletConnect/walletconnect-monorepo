@@ -25,6 +25,8 @@ const provider = await EthereumProvider.init({
   storage, // OPTIONAL custom storage implementation
   storageOptions, // OPTIONAL storage config options
   qrModalOptions, // OPTIONAL - `undefined` by default
+  client, // OPTIONAL existing @walletconnect/sign-client instance to reuse instead of creating a new one
+  core, // OPTIONAL existing @walletconnect/core instance to share (ignored when `client` is provided)
 });
 ```
 

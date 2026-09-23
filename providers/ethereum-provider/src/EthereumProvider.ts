@@ -206,6 +206,11 @@ export type ChainsProps =
       optionalChains: ArrayOneOrMore<number>;
     };
 
+/**
+ * @note `client` and `core` (inherited from `UniversalProviderOpts`) accept an existing
+ * `@walletconnect/sign-client` or `@walletconnect/core` instance to reuse instead of creating new ones.
+ * `client` takes precedence over `core`.
+ */
 export type EthereumProviderOptions = {
   projectId: string;
   /**
@@ -597,6 +602,8 @@ export class EthereumProvider implements IEthereumProvider {
       customStoragePrefix: opts.customStoragePrefix,
       telemetryEnabled: opts.telemetryEnabled,
       logger: opts.logger,
+      client: opts.client,
+      core: opts.core,
     });
     this.registerEventListeners();
     await this.loadPersistedSession();
