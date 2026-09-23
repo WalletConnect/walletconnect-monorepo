@@ -3,6 +3,7 @@ import Web3 from "web3";
 import { ContractFactory, ethers, toBeHex } from "ethers";
 
 import { SESSION_REQUEST_EXPIRY_BOUNDARIES, SignClient } from "@walletconnect/sign-client";
+import { Core } from "@walletconnect/core";
 import { parseChainId } from "@walletconnect/utils";
 
 import { WalletClient } from "./shared/index.js";
@@ -19,6 +20,7 @@ import {
   TEST_ETHEREUM_METHODS_OPTIONAL,
   TEST_WALLET_METADATA,
   TEST_APP_METADATA_A,
+  TEST_RELAY_URL,
 } from "./shared/constants.js";
 import { EthereumProviderOptions } from "../src/EthereumProvider.js";
 
@@ -690,6 +692,83 @@ describe("EthereumProvider", function () {
       expect(newChainId2).to.eql(chains[1]);
 
       provider.signer.session.namespaces.eip155.accounts = cachedAccounts;
+    });
+  });
+
+  describe("client & core reuse", () => {
+    it("should reuse a provided SignClient instance", async () => {
+      const client = await SignClient.init({
+        projectId: process.env.TEST_PROJECT_ID || "",
+        relayUrl: TEST_RELAY_URL,
+        metadata: TEST_APP_METADATA_A,
+      });
+      const provider = await EthereumProvider.init({
+        projectId: process.env.TEST_PROJECT_ID || "",
+        chains: [CHAIN_ID],
+        showQrModal: false,
+        metadata: TEST_APP_METADATA_A,
+        client,
+      });
+      // the provider must reuse the caller's client (and its core) instead of creating new ones
+      expect(provider.signer.client).toBe(client);
+      expect(provider.signer.client.core).toBe(client.core);
+
+      const walletClient = await SignClient.init({
+        projectId: process.env.TEST_PROJECT_ID || "",
+        relayUrl: TEST_RELAY_URL,
+        metadata: TEST_WALLET_METADATA,
+      });
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          walletClient.on("session_proposal", async (proposal) => {
+            await walletClient.approve({
+              id: proposal.id,
+              namespaces: {
+                eip155: {
+                  accounts: [`eip155:${CHAIN_ID}:${walletAddress}`],
+                  methods: proposal.params.optionalNamespaces.eip155.methods,
+                  events: proposal.params.optionalNamespaces.eip155.events,
+                },
+              },
+            });
+            resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          provider.on("display_uri", (uri) => {
+            walletClient.pair({ uri });
+            resolve();
+          });
+        }),
+        provider.connect(),
+      ]);
+
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      expect(accounts[0]).to.include(walletAddress);
+      // the settled session is stored in the shared client
+      expect(provider.session?.topic).toBeDefined();
+      expect(client.session.keys).to.include(provider.session?.topic);
+
+      await provider.signer.client.core.relayer.transportClose();
+      await walletClient.core.relayer.transportClose();
+    });
+
+    it("should reuse a provided Core instance", async () => {
+      const core = new Core({
+        projectId: process.env.TEST_PROJECT_ID || "",
+        relayUrl: TEST_RELAY_URL,
+      });
+      const provider = await EthereumProvider.init({
+        projectId: process.env.TEST_PROJECT_ID || "",
+        chains: [CHAIN_ID],
+        showQrModal: false,
+        metadata: TEST_APP_METADATA_A,
+        core,
+      });
+      // a fresh SignClient is created, but it must be bound to the caller's core
+      expect(provider.signer.client.core).toBe(core);
+
+      await provider.signer.client.core.relayer.transportClose();
     });
   });
 });

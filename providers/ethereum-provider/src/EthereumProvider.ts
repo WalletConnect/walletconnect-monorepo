@@ -226,6 +226,16 @@ export type EthereumProviderOptions = {
   disableProviderPing?: boolean;
   relayUrl?: string;
   storageOptions?: KeyValueStorageOptions;
+  /**
+   * @note Optional pre-initialized `@walletconnect/sign-client` instance. When provided, the provider reuses it
+   * instead of creating a new Sign Client (and Core). Takes precedence over `core`.
+   */
+  client?: UniversalProviderOpts["client"];
+  /**
+   * @note Optional pre-initialized `@walletconnect/core` instance to share with other clients.
+   * Ignored when `client` is provided.
+   */
+  core?: UniversalProviderOpts["core"];
 } & ChainsProps &
   UniversalProviderOpts;
 
@@ -597,6 +607,8 @@ export class EthereumProvider implements IEthereumProvider {
       customStoragePrefix: opts.customStoragePrefix,
       telemetryEnabled: opts.telemetryEnabled,
       logger: opts.logger,
+      client: opts.client,
+      core: opts.core,
     });
     this.registerEventListeners();
     await this.loadPersistedSession();
