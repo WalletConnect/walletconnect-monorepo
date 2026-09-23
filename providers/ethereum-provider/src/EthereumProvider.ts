@@ -206,6 +206,11 @@ export type ChainsProps =
       optionalChains: ArrayOneOrMore<number>;
     };
 
+/**
+ * @note `client` and `core` (inherited from `UniversalProviderOpts`) accept an existing
+ * `@walletconnect/sign-client` or `@walletconnect/core` instance to reuse instead of creating new ones.
+ * `client` takes precedence over `core`.
+ */
 export type EthereumProviderOptions = {
   projectId: string;
   /**
@@ -226,16 +231,6 @@ export type EthereumProviderOptions = {
   disableProviderPing?: boolean;
   relayUrl?: string;
   storageOptions?: KeyValueStorageOptions;
-  /**
-   * @note Optional pre-initialized `@walletconnect/sign-client` instance. When provided, the provider reuses it
-   * instead of creating a new Sign Client (and Core). Takes precedence over `core`.
-   */
-  client?: UniversalProviderOpts["client"];
-  /**
-   * @note Optional pre-initialized `@walletconnect/core` instance to share with other clients.
-   * Ignored when `client` is provided.
-   */
-  core?: UniversalProviderOpts["core"];
 } & ChainsProps &
   UniversalProviderOpts;
 

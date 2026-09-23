@@ -2,8 +2,14 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import Web3 from "web3";
 import { ContractFactory, ethers, toBeHex } from "ethers";
 
-import { SESSION_REQUEST_EXPIRY_BOUNDARIES, SignClient } from "@walletconnect/sign-client";
-import { Core } from "@walletconnect/core";
+import {
+  SESSION_CONTEXT,
+  SESSION_REQUEST_EXPIRY_BOUNDARIES,
+  SIGN_CLIENT_STORAGE_PREFIX,
+  SignClient,
+} from "@walletconnect/sign-client";
+import { Core, STORE_STORAGE_VERSION } from "@walletconnect/core";
+import { SessionTypes } from "@walletconnect/types";
 import { parseChainId } from "@walletconnect/utils";
 
 import { WalletClient } from "./shared/index.js";
@@ -696,25 +702,12 @@ describe("EthereumProvider", function () {
   });
 
   describe("client & core reuse", () => {
-    it("should reuse a provided SignClient instance", async () => {
-      const client = await SignClient.init({
-        projectId: process.env.TEST_PROJECT_ID || "",
-        relayUrl: TEST_RELAY_URL,
-        metadata: TEST_APP_METADATA_A,
-      });
-      const provider = await EthereumProvider.init({
-        projectId: process.env.TEST_PROJECT_ID || "",
-        chains: [CHAIN_ID],
-        showQrModal: false,
-        metadata: TEST_APP_METADATA_A,
-        client,
-      });
-      // the provider must reuse the caller's client (and its core) instead of creating new ones
-      expect(provider.signer.client).toBe(client);
-      expect(provider.signer.client.core).toBe(client.core);
+    const projectId = process.env.TEST_PROJECT_ID || "";
 
+    // pairs the provider with a fresh wallet client that approves the proposal
+    const connectWithWallet = async (provider: EthereumProvider) => {
       const walletClient = await SignClient.init({
-        projectId: process.env.TEST_PROJECT_ID || "",
+        projectId,
         relayUrl: TEST_RELAY_URL,
         metadata: TEST_WALLET_METADATA,
       });
@@ -742,33 +735,56 @@ describe("EthereumProvider", function () {
         }),
         provider.connect(),
       ]);
-
       const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
       expect(accounts[0]).to.include(walletAddress);
-      // the settled session is stored in the shared client
       expect(provider.session?.topic).toBeDefined();
+      return walletClient;
+    };
+
+    it("should reuse a provided SignClient instance", async () => {
+      const client = await SignClient.init({
+        projectId,
+        relayUrl: TEST_RELAY_URL,
+        metadata: TEST_APP_METADATA_A,
+      });
+      const provider = await EthereumProvider.init({
+        projectId,
+        chains: [CHAIN_ID],
+        showQrModal: false,
+        metadata: TEST_APP_METADATA_A,
+        client,
+      });
+      expect(provider.signer.client).toBe(client);
+      expect(provider.signer.client.core).toBe(client.core);
+
+      const walletClient = await connectWithWallet(provider);
+      // the settled session is stored in the shared client
       expect(client.session.keys).to.include(provider.session?.topic);
 
-      await provider.signer.client.core.relayer.transportClose();
+      await client.core.relayer.transportClose();
       await walletClient.core.relayer.transportClose();
     });
 
     it("should reuse a provided Core instance", async () => {
-      const core = new Core({
-        projectId: process.env.TEST_PROJECT_ID || "",
-        relayUrl: TEST_RELAY_URL,
-      });
+      const core = new Core({ projectId, relayUrl: TEST_RELAY_URL });
       const provider = await EthereumProvider.init({
-        projectId: process.env.TEST_PROJECT_ID || "",
+        projectId,
         chains: [CHAIN_ID],
         showQrModal: false,
         metadata: TEST_APP_METADATA_A,
         core,
       });
-      // a fresh SignClient is created, but it must be bound to the caller's core
       expect(provider.signer.client.core).toBe(core);
 
-      await provider.signer.client.core.relayer.transportClose();
+      const walletClient = await connectWithWallet(provider);
+      // the settled session is persisted through the shared core's storage
+      const sessionStorageKey = `${SIGN_CLIENT_STORAGE_PREFIX}${STORE_STORAGE_VERSION}${core.customStoragePrefix}//${SESSION_CONTEXT}`;
+      const storedSessions =
+        (await core.storage.getItem<SessionTypes.Struct[]>(sessionStorageKey)) || [];
+      expect(storedSessions.map((session) => session.topic)).to.include(provider.session?.topic);
+
+      await core.relayer.transportClose();
+      await walletClient.core.relayer.transportClose();
     });
   });
 });
