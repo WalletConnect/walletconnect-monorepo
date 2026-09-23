@@ -1,5 +1,16 @@
 # @walletconnect/ethereum-provider
 
+## 2.25.1
+
+### Patch Changes
+
+- [#7356](https://github.com/WalletConnect/walletconnect-monorepo/pull/7356) [`78c4e04`](https://github.com/WalletConnect/walletconnect-monorepo/commit/78c4e04fde3b445a9b35c262146bdab2cdc61f5a) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - `EthereumProvider.init` now forwards the `client` and `core` options to `UniversalProvider.init`. Previously they were accepted by the type but silently dropped, so a new Sign Client and Core were always created. Passing an existing `@walletconnect/sign-client` or `@walletconnect/core` instance now reuses it, matching `UniversalProvider.init`.
+
+- Updated dependencies [[`c247899`](https://github.com/WalletConnect/walletconnect-monorepo/commit/c247899075d017d1463f86adfebd9694b51f8ef8)]:
+  - @walletconnect/utils@2.25.1
+  - @walletconnect/universal-provider@2.25.1
+  - @walletconnect/types@2.25.1
+
 ## 2.25.0
 
 ### Patch Changes
