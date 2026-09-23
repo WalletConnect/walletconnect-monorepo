@@ -1,5 +1,14 @@
 # @walletconnect/utils
 
+## 2.25.1
+
+### Patch Changes
+
+- [#7328](https://github.com/WalletConnect/walletconnect-monorepo/pull/7328) [`c247899`](https://github.com/WalletConnect/walletconnect-monorepo/commit/c247899075d017d1463f86adfebd9694b51f8ef8) Thanks [@ganchoradkov](https://github.com/ganchoradkov)! - Fix `hashEthereumMessage` prefixing the JavaScript string length (UTF-16 code units) instead of the UTF-8 byte length required by EIP-191. Any SIWE/CACAO message containing a non-ASCII character (e.g. a localized or emoji statement, or a Unicode domain) hashed to a value that no compliant signer produces, so `eip191` and `eip1271` verification deterministically failed for every wallet type. Hashes of ASCII messages are unchanged; this restores the pre-2.18.0 behaviour (`ethers` `hashMessage`). Consumers calling `hashEthereumMessage` directly now receive the standard EIP-191 hash for non-ASCII input.
+
+- Updated dependencies []:
+  - @walletconnect/types@2.25.1
+
 ## 2.25.0
 
 ### Patch Changes
