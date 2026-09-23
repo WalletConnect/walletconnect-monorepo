@@ -13,6 +13,7 @@ import {
   isValidEip191Signature,
   verifySignature,
 } from "../src";
+import { Address, Hex, PersonalMessage, Secp256k1, Signature } from "ox";
 
 describe("utils/signature", () => {
   describe("EIP-1271 signatures", () => {
@@ -211,6 +212,70 @@ Issued At: 2022-10-10T23:03:35.700Z`;
       const message = `Hello AppKit! 0xyadayada`;
       const signature = "0xd7ec09eb8ecb1ba9af45380e14d3ef1a1ec2376e0adfc0a9b591e";
       expect(() => isValidEip191Signature(address, message, signature)).toThrow();
+    });
+  });
+  describe("hashEthereumMessage", () => {
+    // EIP-191 prefixes the UTF-8 *byte* length of the message. `String.prototype.length` counts
+    // UTF-16 code units, so the two diverge for any non-ASCII character. `ox` and a hardcoded
+    // ethers v6 vector serve as independent oracles rather than sharing the implementation.
+    const nonAsciiMessage = "Sign in to Café ☕ — 登录 🚀"; // 25 UTF-16 code units, 36 UTF-8 bytes
+    const privateKey = `0x${"11".repeat(32)}` as const; // test-only key
+    const signer = Address.fromPublicKey(Secp256k1.getPublicKey({ privateKey }));
+    const signPersonal = (message: string) =>
+      Signature.toHex(
+        Secp256k1.sign({
+          payload: PersonalMessage.getSignPayload(Hex.fromString(message)),
+          privateKey,
+        }),
+      );
+
+    it("matches the EIP-191 hash produced by ox for ASCII and non-ASCII messages", () => {
+      const vectors = [
+        "Hello AppKit!",
+        "Sign in to Café ☕",
+        "登录到应用",
+        "Let's go 🚀",
+        "münchen.de wants you to sign in with your Ethereum account:",
+      ];
+      for (const message of vectors) {
+        expect(hashEthereumMessage(message)).toBe(
+          PersonalMessage.getSignPayload(Hex.fromString(message)),
+        );
+      }
+    });
+
+    it("matches a hardcoded ethers v6 `hashMessage` vector for a non-ASCII message", () => {
+      expect(hashEthereumMessage(nonAsciiMessage)).toBe(
+        "0xcd1958ff51f1424d4f13bb000803af76db0321edda656f3c39566d1d46c26113",
+      );
+    });
+
+    it("verifies an eip191 signature over a non-ASCII message from a compliant signer", () => {
+      const signature = signPersonal(nonAsciiMessage);
+      expect(isValidEip191Signature(signer, nonAsciiMessage, signature)).toBe(true);
+      expect(isValidEip191Signature(signer, `${nonAsciiMessage} `, signature)).toBe(false);
+    });
+
+    it("embeds the byte-length EIP-191 hash of a non-ASCII message in EIP-1271 calldata", async () => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        json: () => Promise.resolve({ result: "0x1626ba7e".padEnd(66, "0") }),
+      } as unknown as Response);
+      try {
+        await isValidEip1271Signature(
+          signer,
+          nonAsciiMessage,
+          signPersonal(nonAsciiMessage),
+          "eip155:1",
+          "test-project-id",
+        );
+        const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string);
+        const data: string = body.params[0].data;
+        expect(data.slice(10, 74)).toBe(
+          PersonalMessage.getSignPayload(Hex.fromString(nonAsciiMessage)).slice(2),
+        );
+      } finally {
+        fetchSpy.mockRestore();
+      }
     });
   });
   describe("tvf", () => {
