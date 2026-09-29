@@ -22,11 +22,10 @@ class RNWalletConnectModuleModule internal constructor(context: ReactApplication
       appName = "unknown"
     }
 
-    val constants: MutableMap<String, String> = HashMap()
-    constants.put("applicationId", getReactApplicationContext().getPackageName());
-    constants.put("applicationName", appName);
-    return constants
-  }
+    return mapOf(
+      "applicationId" to reactApplicationContext.packageName,
+      "applicationName" to appName
+    )
 
   @ReactMethod
   override fun isAppInstalled(packageName: String?, promise: Promise) {
