@@ -6,13 +6,16 @@ import { Logger } from "@walletconnect/logger";
 
 import {
   convertChainIdToNumber,
+  fetchWalletFeeConfig,
   getAccountsFromSession,
   getChainsFromApprovedSession,
   getWalletConnectHost,
   isHostLaunch,
+  isSameWalletFee,
   mergeRequiredOptionalNamespaces,
   parseCaip10Account,
   populateNamespacesChains,
+  selectWalletFee,
   setGlobal,
 } from "./utils/index.js";
 import Eip155Provider from "./providers/eip155.js";
@@ -34,6 +37,8 @@ import {
   EmitAccountsChangedOnChainChange,
   WalletConnectHost,
   WalletConnectHostMessage,
+  WalletFee,
+  WalletFeeConfig,
 } from "./types/index.js";
 
 import {
@@ -62,6 +67,10 @@ export class UniversalProvider implements IUniversalProvider {
 
   private disableProviderPing = false;
   private connectParams?: ConnectParams;
+  // raw wallet fee config, cached per session topic
+  private walletFeeConfig?: { topic: string; config?: WalletFeeConfig };
+  private walletFeeRequest?: Promise<void>;
+  private walletFee?: WalletFee;
 
   static async init(opts: UniversalProviderOpts) {
     const provider = new UniversalProvider(opts);
@@ -258,6 +267,15 @@ export class UniversalProvider implements IUniversalProvider {
     }
   }
 
+  /**
+   * The wallet's fee config for the active chain, or `undefined` if there's none.
+   * Loaded only on a host launch whose session has a `wallet_guide_id`. Waits for an in-flight request.
+   */
+  public async getWalletFee(): Promise<WalletFee | undefined> {
+    await this.walletFeeRequest;
+    return this.walletFee;
+  }
+
   public async cleanupPendingPairings(opts: PairingsCleanupOpts = {}): Promise<void> {
     try {
       this.logger.info("Cleaning up inactive pairings...");
@@ -299,6 +317,8 @@ export class UniversalProvider implements IUniversalProvider {
     await this.createClient();
     await this.checkStorage();
     this.registerEventListeners();
+    // omit `await` to avoid delaying init
+    this.loadWalletFee();
   }
 
   private async createClient() {
@@ -439,6 +459,7 @@ export class UniversalProvider implements IUniversalProvider {
       const _session = this.client?.session.get(topic);
       this.session = { ..._session, namespaces } as SessionTypes.Struct;
       this.onSessionUpdate();
+      this.loadWalletFee();
       this.events.emit("session_update", { topic, params });
     });
 
@@ -544,6 +565,7 @@ export class UniversalProvider implements IUniversalProvider {
         currentCaipChainId,
         previousCaipChainId,
       });
+      this.updateWalletFee();
     }
 
     await this.persist("namespaces", this.namespaces);
@@ -596,6 +618,49 @@ export class UniversalProvider implements IUniversalProvider {
   private onConnect() {
     this.createProviders();
     this.events.emit("connect", { session: this.session });
+    this.loadWalletFee();
+  }
+
+  private loadWalletFee() {
+    const session = this.session;
+    // the wallet's value; `this.sessionProperties` is what the app requested
+    const walletId = session?.sessionProperties?.wallet_guide_id;
+    if (!session || !this.isHostLaunch || typeof walletId !== "string" || !walletId) return;
+
+    const request: Promise<void> = fetchWalletFeeConfig({
+      apiUrl: this.providerOpts.walletFeeApiUrl,
+      projectId: this.client.core.projectId,
+      walletId,
+      logger: this.logger,
+    }).then((config) => {
+      // ignore the result if the session was cleaned up or a newer request started
+      if (this.walletFeeRequest !== request) return;
+      this.walletFeeConfig = { topic: session.topic, config };
+      this.updateWalletFee();
+    });
+    this.walletFeeRequest = request;
+  }
+
+  // recomputes the fee for the active chain from the cached config, and emits it if it changed
+  private updateWalletFee() {
+    const cached = this.walletFeeConfig;
+    const chainId = this.getActiveChain();
+    const fee =
+      cached?.config && chainId && cached.topic === this.session?.topic
+        ? selectWalletFee(cached.config, chainId)
+        : undefined;
+    if (isSameWalletFee(fee, this.walletFee)) return;
+    this.walletFee = fee;
+    this.events.emit("wallet_fee_changed", fee);
+  }
+
+  private getActiveChain(): string | undefined {
+    try {
+      const [namespace, chainId] = this.validateChain();
+      return namespace && chainId ? `${namespace}:${chainId}` : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   private async cleanup() {
@@ -603,6 +668,9 @@ export class UniversalProvider implements IUniversalProvider {
     this.namespaces = undefined;
     this.optionalNamespaces = undefined;
     this.sessionProperties = undefined;
+    this.walletFeeRequest = undefined;
+    this.walletFeeConfig = undefined;
+    this.updateWalletFee();
     await this.deleteFromStore("namespaces");
     await this.deleteFromStore("optionalNamespaces");
     await this.deleteFromStore("sessionProperties");
