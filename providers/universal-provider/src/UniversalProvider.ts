@@ -32,6 +32,7 @@ import {
   DefaultChainChanged,
   OnChainChanged,
   EmitAccountsChangedOnChainChange,
+  WalletConnectHost,
   WalletConnectHostMessage,
 } from "./types/index.js";
 
@@ -219,8 +220,9 @@ export class UniversalProvider implements IUniversalProvider {
 
     if (uri) {
       this.uri = uri;
-      if (this.isHostLaunch) {
-        this.sendPairingUriToHost(uri);
+      const host = getWalletConnectHost();
+      if (host) {
+        this.sendPairingUriToHost(host, uri);
       } else {
         this.events.emit("display_uri", uri);
       }
@@ -331,11 +333,9 @@ export class UniversalProvider implements IUniversalProvider {
     this.logger.trace(`SignClient Initialized`);
   }
 
-  private sendPairingUriToHost(uri: string) {
+  private sendPairingUriToHost(host: Required<WalletConnectHost>, uri: string) {
     const message: WalletConnectHostMessage = { type: "wc_session_offer", uri };
     try {
-      const host = getWalletConnectHost();
-      if (!host) throw new Error("window.walletConnectHost is no longer available");
       host.postMessage(message);
     } catch (error) {
       this.logger.error(error, "Failed to send the pairing URI to the host");
