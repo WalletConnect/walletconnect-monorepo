@@ -26,7 +26,7 @@ export interface UniversalProviderOpts extends SignClientTypes.Options {
   name?: string;
   disableProviderPing?: boolean;
   session?: SessionTypes.Struct;
-  /** Base URL of the wallet fee API, defaults to `https://api.walletconnect.com` */
+  /** Base URL of the wallet fee API, without a trailing slash. Defaults to `https://api.walletconnect.com` */
   walletFeeApiUrl?: string;
 }
 

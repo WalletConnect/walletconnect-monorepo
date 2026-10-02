@@ -124,7 +124,7 @@ provider.on("wallet_fee_changed", (fee: WalletFee | undefined) => {
 - It resolves `undefined` when there's no config, or when the active chain has neither a recipient nor a referral code. It waits for a request in flight and never throws: failures and timeouts (3 seconds) resolve `undefined` and log a warning.
 - The config is fetched once per session. Switching chains recomputes the fee without another request.
 - `wallet_fee_changed` is emitted whenever the value `getWalletFee()` returns changes, including `undefined` on disconnect.
-- To target another API, for example staging, pass `walletFeeApiUrl` to `init()`. It defaults to `https://api.walletconnect.com`.
+- To target another API, for example staging, pass `walletFeeApiUrl` to `init()`, without a trailing slash. It defaults to `https://api.walletconnect.com`.
 
 ## Provider Methods
 

@@ -27,7 +27,7 @@ export async function fetchWalletFeeConfig({
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), WALLET_FEE_TIMEOUT_MS);
   try {
-    const response = await fetch(`${apiUrl.replace(/\/+$/, "")}/wallet-fee/v1/config?${params}`, {
+    const response = await fetch(`${apiUrl}/wallet-fee/v1/config?${params}`, {
       signal: controller.signal,
     });
     if (response.status === 204) {

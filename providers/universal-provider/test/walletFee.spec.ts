@@ -59,7 +59,7 @@ async function connect({
     ...TEST_PROVIDER_OPTS,
     name: "dapp",
     storageOptions: { database },
-    walletFeeApiUrl: "https://staging.example.com/",
+    walletFeeApiUrl: "https://staging.example.com",
   });
   const wallet = await UniversalProvider.init({ ...TEST_PROVIDER_OPTS, name: "wallet" });
   const events: (WalletFee | undefined)[] = [];
@@ -155,6 +155,7 @@ describe("UniversalProvider wallet fee", () => {
       );
       expect(requests).toHaveLength(1);
       expect(requests[0].origin).toBe("https://staging.example.com");
+      expect(requests[0].pathname).toBe("/wallet-fee/v1/config");
       expect(requests[0].searchParams.get("projectId")).toBe(TEST_PROVIDER_OPTS.projectId);
       expect(requests[0].searchParams.get("walletId")).toBe(WALLET_ID);
 
