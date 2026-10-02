@@ -191,3 +191,26 @@ export type EmitAccountsChangedOnChainChange = {
   currentCaipChainId: string;
   previousCaipChainId?: string;
 };
+
+/**
+ * Message a dApp posts to the host wallet to hand over a pairing URI.
+ */
+export type WalletHostSessionOffer = {
+  type: "wc_session_offer";
+  uri: string;
+};
+
+/**
+ * Bridge a wallet injects into its in-app browser before the page loads.
+ */
+export interface WalletConnectHost {
+  /** Set to `true` by the wallet only when it opened the app from its Explore section. */
+  autoConnect?: boolean;
+  postMessage?: (message: WalletHostSessionOffer) => void;
+}
+
+declare global {
+  interface Window {
+    walletConnectHost?: WalletConnectHost;
+  }
+}
