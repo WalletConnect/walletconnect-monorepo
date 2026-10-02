@@ -17,3 +17,7 @@ export const BUNDLER_URL = `${RPC_URL}bundler`;
 export const CALL_STATUS_STORAGE_KEY = "call_status";
 
 export const CALL_STATUS_RESULT_EXPIRY = 86400; // 24 hours in seconds
+
+export const WALLET_FEE_API_URL = "https://api.walletconnect.com";
+
+export const WALLET_FEE_TIMEOUT_MS = 3000;
