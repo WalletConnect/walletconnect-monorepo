@@ -80,13 +80,13 @@ provider.on("session_delete", ({ id, topic }) => {
 
 ## Host-originated launch
 
-A host that opens your app, such as a wallet's in-app browser launching it from its Explore section, can inject a bridge before the page loads:
+A host that opens your app, such as a wallet's in-app browser launching it from its Explore section, can inject a bridge as `window.walletConnectHost` before the page loads. Its shape is exported as `WalletConnectHost`:
 
 ```typescript
-window.walletConnectHost = {
-  autoConnect: true,
-  postMessage: (message: { type: "wc_session_offer"; uri: string }) => void,
-};
+interface WalletConnectHost {
+  autoConnect?: boolean;
+  postMessage?: (message: { type: "wc_session_offer"; uri: string }) => void;
+}
 ```
 
 When `autoConnect` is `true` and `postMessage` is a function, `connect()` sends the pairing URI to the host as `{ type: "wc_session_offer", uri }` and **does not emit `display_uri`**, so no QR code or modal opens. The host hands the URI to its wallet, and `connect()` resolves once the wallet approves the session.
