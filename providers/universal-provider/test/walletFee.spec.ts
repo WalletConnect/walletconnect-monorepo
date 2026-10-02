@@ -1,8 +1,8 @@
 import { expect, describe, it, afterEach, vi } from "vitest";
+import { RELAYER_SDK_VERSION } from "@walletconnect/core";
 
 import UniversalProvider, { WalletFee } from "../src/index.js";
 import { fetchWalletFeeConfig, selectWalletFee } from "../src/utils/index.js";
-import { UNIVERSAL_PROVIDER_SDK_VERSION } from "../src/constants/index.js";
 import {
   deleteProviders,
   disconnectSocket,
@@ -90,7 +90,7 @@ describe("UniversalProvider wallet fee", () => {
         projectId: "pid",
         walletId: WALLET_ID,
         st: "universal-provider",
-        sv: `js-${UNIVERSAL_PROVIDER_SDK_VERSION}`,
+        sv: `js-${RELAYER_SDK_VERSION}`,
       });
     });
 

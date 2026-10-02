@@ -1,10 +1,7 @@
+import { RELAYER_SDK_VERSION } from "@walletconnect/core";
 import { Logger } from "@walletconnect/logger";
 
-import {
-  UNIVERSAL_PROVIDER_SDK_VERSION,
-  WALLET_FEE_API_URL,
-  WALLET_FEE_TIMEOUT_MS,
-} from "../constants/index.js";
+import { WALLET_FEE_API_URL, WALLET_FEE_TIMEOUT_MS } from "../constants/index.js";
 import { WalletFee, WalletFeeConfig } from "../types/index.js";
 
 /**
@@ -25,7 +22,7 @@ export async function fetchWalletFeeConfig({
     projectId: projectId ?? "",
     walletId,
     st: "universal-provider",
-    sv: `js-${UNIVERSAL_PROVIDER_SDK_VERSION}`,
+    sv: `js-${RELAYER_SDK_VERSION}`,
   });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), WALLET_FEE_TIMEOUT_MS);
