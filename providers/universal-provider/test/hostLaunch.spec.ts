@@ -1,6 +1,6 @@
 import { expect, describe, it, afterEach, vi } from "vitest";
 
-import UniversalProvider, { WalletConnectHost, WalletHostSessionOffer } from "../src/index.js";
+import UniversalProvider, { WalletConnectHost, WalletConnectHostMessage } from "../src/index.js";
 import {
   deleteProviders,
   disconnectSocket,
@@ -13,16 +13,16 @@ const getDbName = (_prefix: string) => {
   return `./test/tmp/${_prefix}.db`;
 };
 
-function stubWalletHost(host: WalletConnectHost | undefined) {
+function stubHost(host: WalletConnectHost | undefined) {
   vi.stubGlobal("window", { walletConnectHost: host });
 }
 
-// fake bridge that captures the offers the dapp sends to the host wallet
-function stubWalletBridge() {
-  const offers: WalletHostSessionOffer[] = [];
+// fake bridge that captures the offers the dapp sends to the host
+function stubHostBridge() {
+  const offers: WalletConnectHostMessage[] = [];
   let deliverUri: (uri: string) => void = () => undefined;
   const pairingUri = new Promise<string>((resolve) => (deliverUri = resolve));
-  stubWalletHost({
+  stubHost({
     autoConnect: true,
     postMessage: (message) => {
       offers.push(message);
@@ -32,50 +32,50 @@ function stubWalletBridge() {
   return { offers, pairingUri };
 }
 
-describe("UniversalProvider wallet launch", () => {
+describe("UniversalProvider host launch", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  describe("isWalletLaunch", () => {
-    const isWalletLaunch = () => {
+  describe("isHostLaunch", () => {
+    const isHostLaunch = () => {
       const provider = new UniversalProvider(TEST_PROVIDER_OPTS);
-      const result = UniversalProvider.isWalletLaunch();
+      const result = UniversalProvider.isHostLaunch();
       // the instance getter is available before `init()` and agrees with the static check
-      expect(provider.isWalletLaunch).toBe(result);
+      expect(provider.isHostLaunch).toBe(result);
       return result;
     };
 
     it("returns false during SSR", () => {
       vi.stubGlobal("window", undefined);
-      expect(isWalletLaunch()).toBe(false);
+      expect(isHostLaunch()).toBe(false);
     });
 
     it("returns false without the bridge", () => {
-      stubWalletHost(undefined);
-      expect(isWalletLaunch()).toBe(false);
+      stubHost(undefined);
+      expect(isHostLaunch()).toBe(false);
     });
 
     it.each([undefined, false, "true", 1])("returns false when autoConnect is %s", (value) => {
-      stubWalletHost({ autoConnect: value as boolean, postMessage: () => undefined });
-      expect(isWalletLaunch()).toBe(false);
+      stubHost({ autoConnect: value as boolean, postMessage: () => undefined });
+      expect(isHostLaunch()).toBe(false);
     });
 
     it("returns false without postMessage", () => {
-      stubWalletHost({ autoConnect: true });
-      expect(isWalletLaunch()).toBe(false);
+      stubHost({ autoConnect: true });
+      expect(isHostLaunch()).toBe(false);
     });
 
     it("returns true with autoConnect and postMessage", () => {
-      stubWalletHost({ autoConnect: true, postMessage: () => undefined });
-      expect(isWalletLaunch()).toBe(true);
+      stubHost({ autoConnect: true, postMessage: () => undefined });
+      expect(isHostLaunch()).toBe(true);
     });
   });
 
   describe("connect", () => {
-    it("sends the pairing URI to the wallet instead of emitting display_uri", async () => {
+    it("sends the pairing URI to the host instead of emitting display_uri", async () => {
       const dappDbName = getDbName(`dappDB-wallet-launch-${Date.now()}`);
-      const { offers, pairingUri } = stubWalletBridge();
+      const { offers, pairingUri } = stubHostBridge();
       const dapp = await UniversalProvider.init({
         ...TEST_PROVIDER_OPTS,
         name: "dapp",
@@ -92,9 +92,9 @@ describe("UniversalProvider wallet launch", () => {
       expect(dapp.session?.topic).toBe(sessionA.topic);
       await deleteProviders({ A: dapp, B: wallet });
 
-      // a restored session needs no connect(), so nothing is sent to the wallet
+      // a restored session needs no connect(), so nothing is sent to the host
       const postMessage = vi.fn();
-      stubWalletHost({ autoConnect: true, postMessage });
+      stubHost({ autoConnect: true, postMessage });
       const restoredDapp = await UniversalProvider.init({
         ...TEST_PROVIDER_OPTS,
         name: "dapp",
@@ -106,7 +106,7 @@ describe("UniversalProvider wallet launch", () => {
     });
 
     it("rejects connect() when postMessage throws, and a retry sends a new offer", async () => {
-      stubWalletHost({
+      stubHost({
         autoConnect: true,
         postMessage: () => {
           throw new Error("bridge is gone");
@@ -118,12 +118,12 @@ describe("UniversalProvider wallet launch", () => {
       dapp.on("display_uri", onDisplayUri);
 
       await expect(dapp.connect({ optionalNamespaces: TEST_REQUIRED_NAMESPACES })).rejects.toThrow(
-        "Failed to send the pairing URI to the host wallet: bridge is gone",
+        "Failed to send the pairing URI to the host: bridge is gone",
       );
       expect(onDisplayUri).not.toHaveBeenCalled();
       const failedUri = dapp.uri;
 
-      const { offers, pairingUri } = stubWalletBridge();
+      const { offers, pairingUri } = stubHostBridge();
       await testConnectMethod({ dapp, wallet }, { pairingUri });
 
       expect(offers).toHaveLength(1);

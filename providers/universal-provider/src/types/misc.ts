@@ -193,20 +193,20 @@ export type EmitAccountsChangedOnChainChange = {
 };
 
 /**
- * Message a dApp posts to the host wallet to hand over a pairing URI.
+ * Message a dApp posts to the host to hand over a pairing URI.
  */
-export type WalletHostSessionOffer = {
+export type WalletConnectHostMessage = {
   type: "wc_session_offer";
   uri: string;
 };
 
 /**
- * Bridge a wallet injects into its in-app browser before the page loads.
+ * Bridge a host, such as a wallet's in-app browser, injects before the page loads.
  */
 export interface WalletConnectHost {
-  /** Set to `true` by the wallet only when it opened the app from its Explore section. */
+  /** Set to `true` by the host only when it opened the app, e.g. from a wallet's Explore section. */
   autoConnect?: boolean;
-  postMessage?: (message: WalletHostSessionOffer) => void;
+  postMessage?: (message: WalletConnectHostMessage) => void;
 }
 
 declare global {

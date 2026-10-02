@@ -3,4 +3,4 @@ export * from "./globals.js";
 export * from "./caip25.js";
 export * from "./storage.js";
 export * from "./eip5792.js";
-export * from "./walletHost.js";
+export * from "./walletConnectHost.js";

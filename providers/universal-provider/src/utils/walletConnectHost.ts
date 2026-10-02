@@ -1,7 +1,7 @@
 import { WalletConnectHost } from "../types/index.js";
 
 /**
- * Returns the wallet bridge when the app was launched by a wallet, otherwise `undefined`.
+ * Returns the bridge when a host launched the app and asked for a session offer, otherwise `undefined`.
  * Synchronous and SSR-safe.
  */
 export function getWalletConnectHost(): Required<WalletConnectHost> | undefined {
@@ -11,6 +11,6 @@ export function getWalletConnectHost(): Required<WalletConnectHost> | undefined 
   return host as Required<WalletConnectHost>;
 }
 
-export function isWalletLaunch(): boolean {
+export function isHostLaunch(): boolean {
   return getWalletConnectHost() !== undefined;
 }

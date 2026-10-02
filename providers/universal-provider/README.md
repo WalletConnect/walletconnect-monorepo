@@ -78,9 +78,9 @@ provider.on("session_delete", ({ id, topic }) => {
 });
 ```
 
-## Wallet-originated launch
+## Host-originated launch
 
-A wallet that opens your app in its in-app browser (for example from its Explore section) can inject a bridge before the page loads:
+A host that opens your app, such as a wallet's in-app browser launching it from its Explore section, can inject a bridge before the page loads:
 
 ```typescript
 window.walletConnectHost = {
@@ -89,13 +89,13 @@ window.walletConnectHost = {
 };
 ```
 
-When `autoConnect` is `true` and `postMessage` is a function, `connect()` sends the pairing URI to the wallet as `{ type: "wc_session_offer", uri }` and **does not emit `display_uri`**, so no QR code or modal opens. The wallet pairs with the URI, and `connect()` resolves once it approves the session.
+When `autoConnect` is `true` and `postMessage` is a function, `connect()` sends the pairing URI to the host as `{ type: "wc_session_offer", uri }` and **does not emit `display_uri`**, so no QR code or modal opens. The host hands the URI to its wallet, and `connect()` resolves once the wallet approves the session.
 
-Universal Provider never connects on its own. Check for a wallet launch and call `connect()` yourself, for example on page load:
+Universal Provider never connects on its own. Check for a host launch and call `connect()` yourself, for example on page load:
 
 ```typescript
-// synchronous and SSR-safe; also available as `provider.isWalletLaunch`
-if (UniversalProvider.isWalletLaunch() && !provider.session) {
+// synchronous and SSR-safe; also available as `provider.isHostLaunch`
+if (UniversalProvider.isHostLaunch() && !provider.session) {
   await provider.connect({ optionalNamespaces });
 }
 ```
@@ -103,7 +103,7 @@ if (UniversalProvider.isWalletLaunch() && !provider.session) {
 - Each `connect()` call creates a new pairing URI and sends exactly one offer.
 - If `init()` restores a session, nothing is sent and `connect()` isn't needed.
 - If `postMessage` throws, `connect()` rejects. It doesn't fall back to `display_uri`.
-- Only call `connect()` automatically on page load. After the user disconnects, connect again only when they ask to, or the wallet will receive a new offer and may approve it straight away.
+- Only call `connect()` automatically on page load. After the user disconnects, connect again only when they ask to, or the host will receive a new offer and may approve it straight away.
 
 ## Provider Methods
 
