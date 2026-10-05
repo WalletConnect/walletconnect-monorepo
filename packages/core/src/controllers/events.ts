@@ -43,8 +43,9 @@ export class EventClient extends IEventClient {
     );
   }
 
-  public init: IEventClient["init"] = async () => {
+  public init: IEventClient["init"] = async (params) => {
     if (isTestRun()) return;
+    const sdk = params?.sdk;
     try {
       const initEvent = {
         eventId: uuidv4(),
@@ -60,6 +61,7 @@ export class EventClient extends IEventClient {
               this.core.relayer.version,
               RELAYER_SDK_VERSION,
             ),
+            ...(sdk?.name && sdk.version ? { sdk_name: sdk.name, sdk_version: sdk.version } : {}),
           },
         },
       };
