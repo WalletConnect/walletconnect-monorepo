@@ -244,11 +244,11 @@ describe("Events Client", () => {
     core.eventClient.sendEvent = async (payload: any) => {
       properties = payload[0].props.properties;
     };
-    await core.crypto.init();
+    await core.start();
     await core.eventClient.init({ sdk: { name: "walletkit", version: "1.6.0" } });
     expect(properties.sdk_name).to.eql("walletkit");
     expect(properties.sdk_version).to.eql("1.6.0");
-    expect(properties.user_agent).to.be.a("string");
+    expect(properties.user_agent).to.match(/^wc-2\/js-/);
     process.env.IS_VITEST = true as any;
   });
 
@@ -260,8 +260,13 @@ describe("Events Client", () => {
     core.eventClient.sendEvent = async (payload: any) => {
       properties = payload[0].props.properties;
     };
-    await core.crypto.init();
+    await core.start();
     await core.eventClient.init();
+    expect(properties).not.to.have.property("sdk_name");
+    expect(properties).not.to.have.property("sdk_version");
+
+    // empty values are treated as not set
+    await core.eventClient.init({ sdk: { name: "", version: "" } });
     expect(properties).not.to.have.property("sdk_name");
     expect(properties).not.to.have.property("sdk_version");
     process.env.IS_VITEST = true as any;
