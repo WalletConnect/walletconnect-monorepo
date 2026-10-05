@@ -235,4 +235,35 @@ describe("Events Client", () => {
     }
     process.env.IS_VITEST = true as any;
   });
+
+  it("should include sdk in init event when set", async () => {
+    process.env.IS_VITEST = false as any;
+    const core = new Core({ ...TEST_CORE_OPTIONS, telemetryEnabled: false });
+    let properties: any;
+    // @ts-expect-error - accessing private properties
+    core.eventClient.sendEvent = async (payload: any) => {
+      properties = payload[0].props.properties;
+    };
+    await core.crypto.init();
+    await core.eventClient.init({ sdk: { name: "walletkit", version: "1.6.0" } });
+    expect(properties.sdk_name).to.eql("walletkit");
+    expect(properties.sdk_version).to.eql("1.6.0");
+    expect(properties.user_agent).to.be.a("string");
+    process.env.IS_VITEST = true as any;
+  });
+
+  it("should not include sdk in init event when not set", async () => {
+    process.env.IS_VITEST = false as any;
+    const core = new Core({ ...TEST_CORE_OPTIONS, telemetryEnabled: false });
+    let properties: any;
+    // @ts-expect-error - accessing private properties
+    core.eventClient.sendEvent = async (payload: any) => {
+      properties = payload[0].props.properties;
+    };
+    await core.crypto.init();
+    await core.eventClient.init();
+    expect(properties).not.to.have.property("sdk_name");
+    expect(properties).not.to.have.property("sdk_version");
+    process.env.IS_VITEST = true as any;
+  });
 });
