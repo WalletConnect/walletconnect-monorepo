@@ -1,5 +1,11 @@
 # @walletconnect/types
 
+## 2.26.0
+
+### Minor Changes
+
+- [#7364](https://github.com/WalletConnect/walletconnect-monorepo/pull/7364) [`22c6e93`](https://github.com/WalletConnect/walletconnect-monorepo/commit/22c6e93660889e7ea8f252fb2533969a61351062) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - `eventClient.init()` now accepts an optional `{ sdk: { name, version } }` so SDKs built on top of core (e.g. WalletKit) can report their own version. When provided, it's sent as `sdk_name`/`sdk_version` properties on the events `INIT` event, alongside the existing core `user_agent`.
+
 ## 2.25.0
 
 ### Patch Changes
