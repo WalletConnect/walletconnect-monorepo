@@ -2,6 +2,7 @@ import { generateChildLogger, Logger } from "@walletconnect/logger";
 import { ICore, IEventClient, EventClientTypes } from "@walletconnect/types";
 import { formatUA, isTestRun, uuidv4, getAppMetadata } from "@walletconnect/utils";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
+import { getLocation } from "@walletconnect/window-getters";
 import { fromMiliseconds } from "@walletconnect/time";
 import {
   CORE_STORAGE_PREFIX,
@@ -133,10 +134,11 @@ export class EventClient extends IEventClient {
   }) => {
     if (!this.telemetryEnabled || isTestRun()) return;
     try {
+      const domain = this.getAppHostname();
       const funnelEvent = {
         eventId: uuidv4(),
         timestamp: Date.now(),
-        domain: this.getAppDomain(),
+        domain,
         props: {
           event,
           properties: {
@@ -149,6 +151,7 @@ export class EventClient extends IEventClient {
       const response = await this.sendEvent(
         [funnelEvent] as unknown as EventClientTypes.Event[],
         sdkType,
+        domain,
       );
       if (!response.ok) this.logger.warn(`Failed to send ${event}: status ${response.status}`);
     } catch (error) {
@@ -245,9 +248,13 @@ export class EventClient extends IEventClient {
     }
   };
 
-  private sendEvent = async (events: EventClientTypes.Event[], sdkType = "events_sdk") => {
+  private sendEvent = async (
+    events: EventClientTypes.Event[],
+    sdkType = "events_sdk",
+    domain = this.getAppDomain(),
+  ) => {
     // if domain isn't available, set `sp` as `desktop` so data would be extracted on api side
-    const platform = this.getAppDomain() ? "" : "&sp=desktop";
+    const platform = domain ? "" : "&sp=desktop";
     const response = await fetch(
       `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=${sdkType}&sv=js-${RELAYER_SDK_VERSION}${platform}`,
       {
@@ -260,5 +267,16 @@ export class EventClient extends IEventClient {
 
   private getAppDomain = () => {
     return getAppMetadata().url;
+  };
+
+  // the bare hostname, as AppKit sends it, so Pulse derives the same `uid` for both
+  private getAppHostname = () => {
+    const hostname = getLocation()?.hostname;
+    if (hostname) return hostname;
+    try {
+      return new URL(this.getAppDomain()).hostname || undefined;
+    } catch {
+      return undefined;
+    }
   };
 }

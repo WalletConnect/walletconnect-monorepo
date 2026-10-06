@@ -291,6 +291,56 @@ describe("Events Client", () => {
       expect(requests[0].url.searchParams.get("st")).toBe("events_sdk");
     });
 
+    describe("domain", () => {
+      // stubs `window.location` and the app metadata url
+      function stubApp(core: InstanceType<typeof Core>, { hostname = "", url = "" }) {
+        vi.stubGlobal("window", hostname ? { location: { hostname } } : undefined);
+        // @ts-expect-error - private property
+        core.eventClient.getAppDomain = () => url;
+      }
+      const sendConnectSuccess = (core: InstanceType<typeof Core>) =>
+        core.eventClient.sendFunnelEvent({
+          sdkType: "universal-provider",
+          event: "CONNECT_SUCCESS",
+          properties,
+        });
+
+      // AppKit sends `window.location.hostname`; Pulse hashes the domain into `uid`
+      it.each([
+        [
+          "window.location.hostname",
+          { hostname: "app.example.com", url: "https://other.example" },
+          "app.example.com",
+        ],
+        [
+          "the metadata url's hostname",
+          { url: "https://dapp.example.org/swap?x=1" },
+          "dapp.example.org",
+        ],
+      ])("sends %s, without a scheme", async (_, app, expected) => {
+        const { core, requests } = await startCore();
+        stubApp(core, app);
+        await sendConnectSuccess(core);
+        expect(requests[0].body[0].domain).toBe(expected);
+        expect(requests[0].url.searchParams.has("sp")).toBe(false);
+      });
+
+      it("sends no domain and sp=desktop when neither is available", async () => {
+        const { core, requests } = await startCore();
+        stubApp(core, {});
+        await sendConnectSuccess(core);
+        expect(requests[0].body[0].domain).toBeUndefined();
+        expect(requests[0].url.searchParams.get("sp")).toBe("desktop");
+      });
+
+      it("keeps the full url for core's own events", async () => {
+        const { core, requests } = await startCore();
+        stubApp(core, { hostname: "app.example.com", url: "https://app.example.com" });
+        await core.eventClient.init();
+        expect(requests[0].body[0].domain).toBe("https://app.example.com");
+      });
+    });
+
     it("sends nothing when telemetry is disabled", async () => {
       const { core, requests } = await startCore(false);
       await core.eventClient.sendFunnelEvent({
