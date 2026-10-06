@@ -23,6 +23,18 @@ export declare namespace EventClientTypes {
   }
 
   export type Trace = string[];
+
+  // app-side funnel events, sent only by Universal Provider
+  export type FunnelEvent = "CONNECT_INITIATED" | "CONNECT_SUCCESS" | "SIGN_SUCCESS";
+
+  export interface FunnelEventProperties {
+    connectionOrigin: "wallet" | "dapp";
+    // wallet-originated sessions only
+    walletId?: string;
+    // SIGN_SUCCESS only
+    chainId?: string;
+    method?: string;
+  }
 }
 
 export abstract class IEventClient {
@@ -51,4 +63,14 @@ export abstract class IEventClient {
   }): EventClientTypes.Event | undefined;
 
   public abstract deleteEvent(params: { eventId: string }): void;
+
+  /**
+   * Sends one funnel event in its own request, tagged with the caller's `sdkType` (`st`).
+   * Adds `projectId` and `clientId` to the properties. Never throws.
+   */
+  public abstract sendFunnelEvent(params: {
+    sdkType: string;
+    event: EventClientTypes.FunnelEvent;
+    properties: EventClientTypes.FunnelEventProperties;
+  }): Promise<void>;
 }

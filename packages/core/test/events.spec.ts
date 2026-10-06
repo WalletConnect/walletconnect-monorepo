@@ -1,8 +1,10 @@
-import { expect, describe, it } from "vitest";
+import { expect, describe, it, vi, afterEach } from "vitest";
 import Core, {
+  EVENTS_CLIENT_API_URL,
   EVENTS_STORAGE_CLEANUP_INTERVAL,
   EVENT_CLIENT_CONTEXT,
   EVENT_CLIENT_PAIRING_ERRORS,
+  RELAYER_SDK_VERSION,
 } from "../src";
 import { TEST_CORE_OPTIONS } from "./shared";
 import { toMiliseconds } from "@walletconnect/time";
@@ -234,5 +236,91 @@ describe("Events Client", () => {
       throw new Error("init not called");
     }
     process.env.IS_VITEST = true as any;
+  });
+
+  describe("funnel events", () => {
+    const properties = { connectionOrigin: "wallet", walletId: "wallet-guide-id" } as const;
+
+    // lets events through `isTestRun()` and captures every Pulse request
+    async function startCore(telemetryEnabled = true) {
+      const core = new Core({ ...TEST_CORE_OPTIONS, telemetryEnabled });
+      await core.start();
+      const requests: { url: URL; body: any }[] = [];
+      vi.stubEnv("IS_VITEST", "false");
+      vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+        requests.push({ url: new URL(String(input)), body: JSON.parse(String(init?.body)) });
+        return new Response(null, { status: 202 });
+      });
+      return { core, requests };
+    }
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    });
+
+    it("sends a funnel event in its own request with the caller's sdk type", async () => {
+      const { core, requests } = await startCore();
+      await core.eventClient.sendFunnelEvent({
+        sdkType: "universal-provider",
+        event: "CONNECT_SUCCESS",
+        properties,
+      });
+      expect(requests).toHaveLength(1);
+      const [{ url, body }] = requests;
+      expect(`${url.origin}${url.pathname}`).toBe(EVENTS_CLIENT_API_URL);
+      expect(url.searchParams.get("projectId")).toBe(String(core.projectId));
+      expect(url.searchParams.get("st")).toBe("universal-provider");
+      expect(url.searchParams.get("sv")).toBe(`js-${RELAYER_SDK_VERSION}`);
+      expect(body).toHaveLength(1);
+      expect(body[0]).toMatchObject({ eventId: expect.any(String), timestamp: expect.any(Number) });
+      expect(body[0].props).toEqual({
+        event: "CONNECT_SUCCESS",
+        properties: {
+          ...properties,
+          projectId: core.projectId,
+          clientId: await core.crypto.getClientId(),
+        },
+      });
+    });
+
+    it("keeps core's own events on events_sdk", async () => {
+      const { core, requests } = await startCore();
+      await core.eventClient.init();
+      expect(requests).toHaveLength(1);
+      expect(requests[0].url.searchParams.get("st")).toBe("events_sdk");
+    });
+
+    it("never sends a funnel event as events_sdk", async () => {
+      const { core, requests } = await startCore();
+      await core.eventClient.sendFunnelEvent({
+        sdkType: "events_sdk",
+        event: "CONNECT_SUCCESS",
+        properties,
+      });
+      expect(requests).toHaveLength(0);
+    });
+
+    it("sends nothing when telemetry is disabled", async () => {
+      const { core, requests } = await startCore(false);
+      await core.eventClient.sendFunnelEvent({
+        sdkType: "universal-provider",
+        event: "CONNECT_SUCCESS",
+        properties,
+      });
+      expect(requests).toHaveLength(0);
+    });
+
+    it("never throws when the request fails", async () => {
+      const { core } = await startCore();
+      vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")));
+      await expect(
+        core.eventClient.sendFunnelEvent({
+          sdkType: "universal-provider",
+          event: "SIGN_SUCCESS",
+          properties: { ...properties, chainId: "eip155:1", method: "personal_sign" },
+        }),
+      ).resolves.toBeUndefined();
+    });
   });
 });

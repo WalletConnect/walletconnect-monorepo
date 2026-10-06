@@ -6,6 +6,7 @@ import { fromMiliseconds } from "@walletconnect/time";
 import {
   CORE_STORAGE_PREFIX,
   EVENTS_CLIENT_API_URL,
+  EVENTS_SDK_TYPE,
   EVENTS_STORAGE_CLEANUP_INTERVAL,
   EVENTS_STORAGE_CONTEXT,
   EVENTS_STORAGE_VERSION,
@@ -125,6 +126,42 @@ export class EventClient extends IEventClient {
     this.shouldPersist = true;
   };
 
+  // fire-and-forget: funnel events aren't persisted, since core's queue is always sent as `events_sdk`
+  public sendFunnelEvent: IEventClient["sendFunnelEvent"] = async ({
+    sdkType,
+    event,
+    properties,
+  }) => {
+    if (!this.telemetryEnabled || isTestRun()) return;
+    // `events_sdk` is reserved for wallets
+    if (sdkType === EVENTS_SDK_TYPE) {
+      this.logger.warn(`Funnel events can't be sent as ${EVENTS_SDK_TYPE}`);
+      return;
+    }
+    try {
+      const funnelEvent = {
+        eventId: uuidv4(),
+        timestamp: Date.now(),
+        domain: this.getAppDomain(),
+        props: {
+          event,
+          properties: {
+            ...properties,
+            projectId: this.core.projectId,
+            clientId: await this.core.crypto.getClientId(),
+          },
+        },
+      };
+      const response = await this.sendEvent(
+        [funnelEvent] as unknown as EventClientTypes.Event[],
+        sdkType,
+      );
+      if (!response.ok) this.logger.warn(`Failed to send ${event}: status ${response.status}`);
+    } catch (error) {
+      this.logger.warn(error, `Failed to send ${event}`);
+    }
+  };
+
   private setEventListeners = () => {
     this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
       if (this.shouldPersist) await this.persist();
@@ -214,11 +251,11 @@ export class EventClient extends IEventClient {
     }
   };
 
-  private sendEvent = async (events: EventClientTypes.Event[]) => {
+  private sendEvent = async (events: EventClientTypes.Event[], sdkType = EVENTS_SDK_TYPE) => {
     // if domain isn't available, set `sp` as `desktop` so data would be extracted on api side
     const platform = this.getAppDomain() ? "" : "&sp=desktop";
     const response = await fetch(
-      `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}${platform}`,
+      `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=${sdkType}&sv=js-${RELAYER_SDK_VERSION}${platform}`,
       {
         method: "POST",
         body: JSON.stringify(events),

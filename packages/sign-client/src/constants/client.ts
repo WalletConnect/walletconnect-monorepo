@@ -22,6 +22,7 @@ export const SIGN_CLIENT_EVENTS: Record<SignClientTypes.Event, SignClientTypes.E
   session_expire: "session_expire",
   session_request: "session_request",
   session_request_sent: "session_request_sent",
+  session_request_success: "session_request_success",
   session_event: "session_event",
   proposal_expire: "proposal_expire",
   session_authenticate: "session_authenticate",
