@@ -1,5 +1,5 @@
 import { SignClient } from "@walletconnect/sign-client";
-import { SessionTypes } from "@walletconnect/types";
+import { EventClientTypes, SessionTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
 import { createLogger, getSdkError, isValidArray, parseNamespaceKey } from "@walletconnect/utils";
 import { Logger } from "@walletconnect/logger";
@@ -12,6 +12,7 @@ import {
   getWalletConnectHost,
   isHostLaunch,
   isSameWalletFee,
+  isSigningMethod,
   mergeRequiredOptionalNamespaces,
   parseCaip10Account,
   populateNamespacesChains,
@@ -48,6 +49,7 @@ import {
   PROVIDER_EVENTS,
   GENERIC_SUBPROVIDER_NAME,
   CONTEXT,
+  METERING_SDK_TYPE,
 } from "./constants/index.js";
 import EventEmitter from "events";
 import { formatJsonRpcResult } from "@walletconnect/jsonrpc-utils";
@@ -232,6 +234,7 @@ export class UniversalProvider implements IUniversalProvider {
       const host = getWalletConnectHost();
       if (host) {
         this.sendPairingUriToHost(host, uri);
+        this.sendFunnelEvent("CONNECT_INITIATED", { connectionOrigin: "wallet" });
       } else {
         this.events.emit("display_uri", uri);
       }
@@ -463,6 +466,13 @@ export class UniversalProvider implements IUniversalProvider {
       this.events.emit("session_update", { topic, params });
     });
 
+    this.client.on("session_request_success", ({ topic, request, chainId }) => {
+      if (topic !== this.session?.topic) return;
+      const origin = this.getConnectionOrigin();
+      if (origin.connectionOrigin !== "wallet" || !isSigningMethod(chainId, request.method)) return;
+      this.sendFunnelEvent("SIGN_SUCCESS", { ...origin, chainId, method: request.method });
+    });
+
     this.client.on("session_delete", async (payload) => {
       if (payload.topic !== this.session?.topic) return;
       await this.cleanup();
@@ -618,19 +628,50 @@ export class UniversalProvider implements IUniversalProvider {
   private onConnect() {
     this.createProviders();
     this.events.emit("connect", { session: this.session });
+    this.sendFunnelEvent("CONNECT_SUCCESS", this.getConnectionOrigin());
     this.loadWalletFee();
+  }
+
+  /**
+   * The wallet's `wallet_guide_id` when the session is wallet-originated: a host launch and a non-empty ID.
+   * Gates both the wallet fee and `connectionOrigin: "wallet"`.
+   */
+  private getWalletGuideId(): string | undefined {
+    // the wallet's value; `this.sessionProperties` is what the app requested
+    const walletGuideId = this.session?.sessionProperties?.wallet_guide_id;
+    if (!this.isHostLaunch || typeof walletGuideId !== "string" || !walletGuideId) return undefined;
+    return walletGuideId;
+  }
+
+  private getConnectionOrigin(): EventClientTypes.FunnelEventProperties {
+    const walletGuideId = this.getWalletGuideId();
+    return walletGuideId
+      ? { connectionOrigin: "wallet", walletGuideId }
+      : { connectionOrigin: "dapp" };
+  }
+
+  // omit `await`: metering never delays or breaks the provider
+  private sendFunnelEvent(
+    event: EventClientTypes.FunnelEvent,
+    properties: EventClientTypes.FunnelEventProperties,
+  ) {
+    const eventClient = this.client.core.eventClient;
+    // a `client` or `core` passed in may predate funnel events
+    if (typeof eventClient?.sendFunnelEvent !== "function") return;
+    eventClient
+      .sendFunnelEvent({ sdkType: METERING_SDK_TYPE, event, properties })
+      .catch((error) => this.logger.warn(error, `Failed to send ${event}`));
   }
 
   private loadWalletFee() {
     const session = this.session;
-    // the wallet's value; `this.sessionProperties` is what the app requested
-    const walletId = session?.sessionProperties?.wallet_guide_id;
-    if (!session || !this.isHostLaunch || typeof walletId !== "string" || !walletId) return;
+    const walletGuideId = this.getWalletGuideId();
+    if (!session || !walletGuideId) return;
 
     const request: Promise<void> = fetchWalletFeeConfig({
       apiUrl: this.providerOpts.walletFeeApiUrl,
       projectId: this.client.core.projectId,
-      walletId,
+      walletGuideId,
       logger: this.logger,
     }).then((config) => {
       // ignore the result if the session was cleaned up or a newer request started
