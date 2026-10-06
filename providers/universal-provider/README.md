@@ -130,14 +130,14 @@ provider.on("wallet_fee_changed", (fee: WalletFee | undefined) => {
 
 Universal Provider sends three funnel events to WalletConnect's analytics API (Pulse), tagged `st=universal-provider`:
 
-| Event               | When                                                                                          | Properties                                          |
-| ------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `CONNECT_INITIATED` | On a host launch, when `connect()` sends the pairing URI to the host                          | `connectionOrigin: "wallet"`                        |
-| `CONNECT_SUCCESS`   | When `connect()` or `authenticate()` creates a new session. Restoring a session sends nothing | `connectionOrigin`, and `walletId` if `"wallet"`    |
-| `SIGN_SUCCESS`      | When the wallet approves a signing request on a wallet-originated session                     | `connectionOrigin`, `walletId`, `chainId`, `method` |
+| Event               | When                                                                                          | Properties                                               |
+| ------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `CONNECT_INITIATED` | On a host launch, when `connect()` sends the pairing URI to the host                          | `connectionOrigin: "wallet"`                             |
+| `CONNECT_SUCCESS`   | When `connect()` or `authenticate()` creates a new session. Restoring a session sends nothing | `connectionOrigin`, and `walletGuideId` if `"wallet"`    |
+| `SIGN_SUCCESS`      | When the wallet approves a signing request on a wallet-originated session                     | `connectionOrigin`, `walletGuideId`, `chainId`, `method` |
 
 - Every event also carries `projectId`, `clientId` (the core client ID) and a timestamp.
-- A session is wallet-originated (`connectionOrigin: "wallet"`, `walletId` = its `wallet_guide_id`) on a host launch where the wallet approves the session with a `wallet_guide_id`, the same rule as the wallet fee. Otherwise it's `"dapp"`.
+- A session is wallet-originated (`connectionOrigin: "wallet"`, `walletGuideId` = its `wallet_guide_id`) on a host launch where the wallet approves the session with a `wallet_guide_id`, the same rule as the wallet fee. Otherwise it's `"dapp"`.
 - `SIGN_SUCCESS` counts `eth_sendTransaction`, `eth_signTransaction`, `eth_sign`, `personal_sign`, `eth_signTypedData*`, `wallet_sendCalls` and the equivalent Solana, Cosmos, Polkadot, Bitcoin, Tron and Sui methods. It covers requests sent with `provider.request()` and with `provider.client.request()`. Rejected requests and other methods send nothing.
 - No request params, amounts or values are sent.
 - To opt out, pass `telemetryEnabled: false` to `init()`. If you pass your own `client` or `core`, its `telemetryEnabled` setting applies.

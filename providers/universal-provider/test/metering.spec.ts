@@ -16,7 +16,7 @@ import {
   TEST_PROVIDER_OPTS,
 } from "./shared/index.js";
 
-const WALLET_ID = "wallet-guide-id";
+const WALLET_GUIDE_ID = "wallet-guide-id";
 const realFetch = globalThis.fetch;
 
 // fake host bridge that hands the pairing URI to the test wallet
@@ -48,7 +48,7 @@ function stubFetch() {
 
 async function connect({
   hostLaunch = true,
-  walletId = WALLET_ID as string | null,
+  walletGuideId = WALLET_GUIDE_ID as string | null,
   database = `./test/tmp/dappDB-metering-${Date.now()}.db`,
   telemetryEnabled = true,
   beforeConnect = () => undefined as void,
@@ -64,7 +64,7 @@ async function connect({
   const wallet = await UniversalProvider.init({ ...TEST_PROVIDER_OPTS, name: "wallet" });
   const sendFunnelEvent = vi.spyOn(dapp.client.core.eventClient, "sendFunnelEvent");
   beforeConnect();
-  const sessionProperties = walletId === null ? undefined : { wallet_guide_id: walletId };
+  const sessionProperties = walletGuideId === null ? undefined : { wallet_guide_id: walletGuideId };
   await testConnectMethod({ dapp, wallet }, { pairingUri, sessionProperties });
   // the wallet approves every request, unless told to reject
   const respond = { reject: false };
@@ -113,14 +113,17 @@ describe("UniversalProvider metering", () => {
       const { dapp, wallet, sendFunnelEvent } = await connect();
       expect(sendFunnelEvent.mock.calls.map(([params]) => params)).toEqual([
         funnelEvent("CONNECT_INITIATED", { connectionOrigin: "wallet" }),
-        funnelEvent("CONNECT_SUCCESS", { connectionOrigin: "wallet", walletId: WALLET_ID }),
+        funnelEvent("CONNECT_SUCCESS", {
+          connectionOrigin: "wallet",
+          walletGuideId: WALLET_GUIDE_ID,
+        }),
       ]);
       await deleteProviders({ A: dapp, B: wallet });
     });
 
     it.each([
       ["a normal connection", { hostLaunch: false }, 1],
-      ["a host launch without a wallet_guide_id", { walletId: null }, 2],
+      ["a host launch without a wallet_guide_id", { walletGuideId: null }, 2],
     ])("sends CONNECT_SUCCESS as 'dapp' on %s", async (_, opts, calls) => {
       const { dapp, wallet, sendFunnelEvent } = await connect(opts);
       expect(sendFunnelEvent).toHaveBeenCalledTimes(calls);
@@ -176,7 +179,7 @@ describe("UniversalProvider metering", () => {
       const signed = (method: string) =>
         funnelEvent("SIGN_SUCCESS", {
           connectionOrigin: "wallet",
-          walletId: WALLET_ID,
+          walletGuideId: WALLET_GUIDE_ID,
           chainId: TEST_ETHEREUM_CHAIN,
           method,
         });

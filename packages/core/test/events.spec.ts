@@ -239,7 +239,7 @@ describe("Events Client", () => {
   });
 
   describe("funnel events", () => {
-    const properties = { connectionOrigin: "wallet", walletId: "wallet-guide-id" } as const;
+    const properties = { connectionOrigin: "wallet", walletGuideId: "wallet-guide-id" } as const;
 
     // lets events through `isTestRun()` and captures every Pulse request
     async function startCore(telemetryEnabled = true) {

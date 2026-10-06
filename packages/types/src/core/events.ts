@@ -30,7 +30,7 @@ export declare namespace EventClientTypes {
   export interface FunnelEventProperties {
     connectionOrigin: "wallet" | "dapp";
     // wallet-originated sessions only
-    walletId?: string;
+    walletGuideId?: string;
     // SIGN_SUCCESS only
     chainId?: string;
     method?: string;

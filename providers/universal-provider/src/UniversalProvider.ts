@@ -644,8 +644,10 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   private getConnectionOrigin(): EventClientTypes.FunnelEventProperties {
-    const walletId = this.getHostWalletId();
-    return walletId ? { connectionOrigin: "wallet", walletId } : { connectionOrigin: "dapp" };
+    const walletGuideId = this.getHostWalletId();
+    return walletGuideId
+      ? { connectionOrigin: "wallet", walletGuideId }
+      : { connectionOrigin: "dapp" };
   }
 
   // omit `await`: metering never delays or breaks the provider
