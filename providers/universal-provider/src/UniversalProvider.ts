@@ -636,15 +636,15 @@ export class UniversalProvider implements IUniversalProvider {
    * The wallet's `wallet_guide_id` when the session is wallet-originated: a host launch and a non-empty ID.
    * Gates both the wallet fee and `connectionOrigin: "wallet"`.
    */
-  private getHostWalletId(): string | undefined {
+  private getWalletGuideId(): string | undefined {
     // the wallet's value; `this.sessionProperties` is what the app requested
-    const walletId = this.session?.sessionProperties?.wallet_guide_id;
-    if (!this.isHostLaunch || typeof walletId !== "string" || !walletId) return undefined;
-    return walletId;
+    const walletGuideId = this.session?.sessionProperties?.wallet_guide_id;
+    if (!this.isHostLaunch || typeof walletGuideId !== "string" || !walletGuideId) return undefined;
+    return walletGuideId;
   }
 
   private getConnectionOrigin(): EventClientTypes.FunnelEventProperties {
-    const walletGuideId = this.getHostWalletId();
+    const walletGuideId = this.getWalletGuideId();
     return walletGuideId
       ? { connectionOrigin: "wallet", walletGuideId }
       : { connectionOrigin: "dapp" };
@@ -665,13 +665,13 @@ export class UniversalProvider implements IUniversalProvider {
 
   private loadWalletFee() {
     const session = this.session;
-    const walletId = this.getHostWalletId();
-    if (!session || !walletId) return;
+    const walletGuideId = this.getWalletGuideId();
+    if (!session || !walletGuideId) return;
 
     const request: Promise<void> = fetchWalletFeeConfig({
       apiUrl: this.providerOpts.walletFeeApiUrl,
       projectId: this.client.core.projectId,
-      walletId,
+      walletGuideId,
       logger: this.logger,
     }).then((config) => {
       // ignore the result if the session was cleaned up or a newer request started
