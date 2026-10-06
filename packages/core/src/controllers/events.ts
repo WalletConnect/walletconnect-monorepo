@@ -6,7 +6,6 @@ import { fromMiliseconds } from "@walletconnect/time";
 import {
   CORE_STORAGE_PREFIX,
   EVENTS_CLIENT_API_URL,
-  EVENTS_SDK_TYPE,
   EVENTS_STORAGE_CLEANUP_INTERVAL,
   EVENTS_STORAGE_CONTEXT,
   EVENTS_STORAGE_VERSION,
@@ -133,11 +132,6 @@ export class EventClient extends IEventClient {
     properties,
   }) => {
     if (!this.telemetryEnabled || isTestRun()) return;
-    // `events_sdk` is reserved for wallets
-    if (sdkType === EVENTS_SDK_TYPE) {
-      this.logger.warn(`Funnel events can't be sent as ${EVENTS_SDK_TYPE}`);
-      return;
-    }
     try {
       const funnelEvent = {
         eventId: uuidv4(),
@@ -251,7 +245,7 @@ export class EventClient extends IEventClient {
     }
   };
 
-  private sendEvent = async (events: EventClientTypes.Event[], sdkType = EVENTS_SDK_TYPE) => {
+  private sendEvent = async (events: EventClientTypes.Event[], sdkType = "events_sdk") => {
     // if domain isn't available, set `sp` as `desktop` so data would be extracted on api side
     const platform = this.getAppDomain() ? "" : "&sp=desktop";
     const response = await fetch(

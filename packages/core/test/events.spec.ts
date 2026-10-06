@@ -291,16 +291,6 @@ describe("Events Client", () => {
       expect(requests[0].url.searchParams.get("st")).toBe("events_sdk");
     });
 
-    it("never sends a funnel event as events_sdk", async () => {
-      const { core, requests } = await startCore();
-      await core.eventClient.sendFunnelEvent({
-        sdkType: "events_sdk",
-        event: "CONNECT_SUCCESS",
-        properties,
-      });
-      expect(requests).toHaveLength(0);
-    });
-
     it("sends nothing when telemetry is disabled", async () => {
       const { core, requests } = await startCore(false);
       await core.eventClient.sendFunnelEvent({
