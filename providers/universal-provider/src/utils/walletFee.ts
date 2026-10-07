@@ -30,6 +30,8 @@ export async function fetchWalletFeeConfig({
   try {
     const response = await fetch(`${apiUrl}/wallet-fee/v1/config?${params}`, {
       signal: controller.signal,
+      // the API's CDN serves cached responses with a long max-age, so skip the browser cache
+      cache: "no-store",
     });
     if (response.status === 204) {
       logger.info("No wallet fee config for this app");
