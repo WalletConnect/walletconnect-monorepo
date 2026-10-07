@@ -94,6 +94,17 @@ describe("UniversalProvider wallet fee", () => {
       });
     });
 
+    it("bypasses the browser cache", async () => {
+      const inits: (RequestInit | undefined)[] = [];
+      stubFetch((init) => {
+        inits.push(init);
+        return json(CONFIG);
+      });
+      await fetchConfig();
+      expect(inits).toHaveLength(1);
+      expect(inits[0]?.cache).toBe("no-store");
+    });
+
     it("returns undefined on 204 without warning", async () => {
       stubFetch(() => new Response(null, { status: 204 }));
       expect(await fetchConfig()).toBeUndefined();
