@@ -61,7 +61,7 @@
     "vite": "7.3.6",
     "axios": "1.19.0",
     "@isaacs/brace-expansion": "5.0.1",
-    "@react-native-async-storage/async-storage": "3.0.2"
+    "@react-native-async-storage/async-storage": "3.1.1"
   },
   "devDependencies": {
     "@changesets/changelog-github": "0.5.2",
