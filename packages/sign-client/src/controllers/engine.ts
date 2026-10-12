@@ -1568,6 +1568,19 @@ export class Engine extends IEngine {
 
   private deleteSession: EnginePrivate["deleteSession"] = async (params) => {
     const { topic, expirerHasDeleted = false, emitEvent = true, id = 0 } = params;
+    // Deleting a session is conceptually idempotent. The session can already be
+    // gone by the time we get here when the peer disconnected first (we removed
+    // it while handling their wc_sessionDelete), when it expired, or when a
+    // concurrent disconnect/expiry won a race. Returning early turns a redundant
+    // delete into a safe no-op -- `session.get()` below would otherwise throw
+    // "No matching key. session: <topic>", which is logged as an error and
+    // rejects the caller (e.g. a parallel Promise.all of disconnects).
+    // Note: if two calls still race past this check, the remaining work is
+    // already idempotent (session.delete is a no-op without the key, the crypto
+    // cleanup is guarded by keychain.has), so the double-run is harmless.
+    if (!this.client.session.keys.includes(topic)) {
+      return;
+    }
     const { self } = this.client.session.get(topic);
     // Await the unsubscribe first to avoid deleting the symKey too early below.
     await this.client.core.relayer.unsubscribe(topic);
