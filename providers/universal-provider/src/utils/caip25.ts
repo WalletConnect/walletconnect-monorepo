@@ -1,5 +1,5 @@
 import { SessionTypes } from "@walletconnect/types";
-import { isValidObject } from "@walletconnect/utils";
+import { isValidObject, parseAccountId } from "@walletconnect/utils";
 
 import { isValidJSONObject } from "./misc.js";
 
@@ -44,7 +44,7 @@ export const extractCapabilitiesFromSession = (
   address: string,
   chainIds: string[],
 ) => {
-  const { sessionProperties = {}, scopedProperties = {} } = session;
+  const { sessionProperties = {}, scopedProperties = {}, namespaces = {} } = session;
   const result: Record<string, any> = {};
 
   if (!isValidObject(scopedProperties) && !isValidObject(sessionProperties)) {
@@ -54,25 +54,31 @@ export const extractCapabilitiesFromSession = (
   // get all capabilities from sessionProperties as they apply to all chains/addresses
   const globalCapabilities = getCapabilitiesFromObject(sessionProperties);
 
-  for (const chain of chainIds) {
+  const namespaceChainIds = new Set<string>();
+  for (const account of namespaces[EIP155_PREFIX]?.accounts ?? []) {
+    const params = parseAccountId(account);
+    if (params.address === address) {
+      namespaceChainIds.add(decimalToHex(params.reference));
+    }
+  }
+
+  // fallback to namespace chainIds if no chainIds are provided
+  const targetChainIds = chainIds.length > 0 ? chainIds : Array.from(namespaceChainIds);
+
+  for (const chain of targetChainIds) {
     const chainId = hexToDecimal(chain);
     if (!chainId) {
       continue;
     }
 
-    result[decimalToHex(chainId)] = globalCapabilities;
-
     const chainSpecific = scopedProperties?.[`${EIP155_PREFIX}:${chainId}`];
+    const addressSpecific = chainSpecific?.[`${EIP155_PREFIX}:${chainId}:${address}`];
 
-    if (chainSpecific) {
-      const addressSpecific = chainSpecific?.[`${EIP155_PREFIX}:${chainId}:${address}`];
-
-      // use the address specific capabilities if they exist, otherwise use the chain specific capabilities
-      result[decimalToHex(chainId)] = {
-        ...result[decimalToHex(chainId)],
-        ...getCapabilitiesFromObject(addressSpecific || chainSpecific),
-      };
-    }
+    result[decimalToHex(chainId)] = {
+      ...globalCapabilities,
+      ...(chainSpecific ? getCapabilitiesFromObject(chainSpecific) : {}),
+      ...(addressSpecific ? getCapabilitiesFromObject(addressSpecific) : {}),
+    };
   }
 
   // remove any chains that have no capabilities
