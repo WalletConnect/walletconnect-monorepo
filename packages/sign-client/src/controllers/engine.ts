@@ -726,6 +726,7 @@ export class Engine extends IEngine {
       },
     );
     const protocolMethod = "wc_sessionRequest";
+    const requestEvent = { topic, request, chainId, id: clientRpcId };
     const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
     if (appLink) {
       await this.sendRequest({
@@ -745,13 +746,9 @@ export class Engine extends IEngine {
         appLink,
       }).catch((error) => reject(error));
 
-      this.client.events.emit("session_request_sent", {
-        topic,
-        request,
-        chainId,
-        id: clientRpcId,
-      });
+      this.client.events.emit("session_request_sent", requestEvent);
       const result = await done();
+      this.client.events.emit("session_request_success", requestEvent);
       return result;
     }
 
@@ -775,12 +772,7 @@ export class Engine extends IEngine {
           throwOnFailedPublish: true,
           tvf: this.getTVFParams(clientRpcId, protocolRequestParams),
         }).catch((error) => reject(error));
-        this.client.events.emit("session_request_sent", {
-          topic,
-          request,
-          chainId,
-          id: clientRpcId,
-        });
+        this.client.events.emit("session_request_sent", requestEvent);
         resolve();
       }),
       new Promise<void>(async (resolve) => {
@@ -795,7 +787,10 @@ export class Engine extends IEngine {
         resolve();
       }),
       done(),
-    ]).then((result) => result[2]); // order is important here, we want to return the result of the `done` promise
+    ]).then((result) => {
+      this.client.events.emit("session_request_success", requestEvent);
+      return result[2]; // order is important here, we want to return the result of the `done` promise
+    });
   };
 
   public respond: IEngine["respond"] = async (params) => {

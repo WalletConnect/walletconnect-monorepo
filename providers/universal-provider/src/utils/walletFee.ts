@@ -10,17 +10,18 @@ import { WalletFee, WalletFeeConfig } from "../types/index.js";
 export async function fetchWalletFeeConfig({
   apiUrl = WALLET_FEE_API_URL,
   projectId,
-  walletId,
+  walletGuideId,
   logger,
 }: {
   apiUrl?: string;
   projectId?: string;
-  walletId: string;
+  walletGuideId: string;
   logger: Logger;
 }): Promise<WalletFeeConfig | undefined> {
   const params = new URLSearchParams({
     projectId: projectId ?? "",
-    walletId,
+    // the endpoint's query param is `walletId`
+    walletId: walletGuideId,
     st: "universal-provider",
     sv: `js-${RELAYER_SDK_VERSION}`,
   });
