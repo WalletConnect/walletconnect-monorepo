@@ -35,6 +35,19 @@ export declare namespace EventClientTypes {
     chainId?: string;
     method?: string;
   }
+
+  /**
+   * Higher-level SDK built on top of core (e.g. WalletKit),
+   * reported in the INIT event alongside the core version.
+   */
+  export interface Sdk {
+    name: string;
+    version: string;
+  }
+
+  export interface InitParams {
+    sdk?: Sdk;
+  }
 }
 
 export abstract class IEventClient {
@@ -46,7 +59,7 @@ export abstract class IEventClient {
     public telemetryEnabled: boolean,
   ) {}
 
-  public abstract init(): Promise<void>;
+  public abstract init(params?: EventClientTypes.InitParams): Promise<void>;
 
   public abstract createEvent(params: {
     event?: "ERROR";
