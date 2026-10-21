@@ -13,6 +13,7 @@ import {
   Namespace,
   UniversalProvider,
   UniversalProviderOpts,
+  WalletFee,
 } from "@walletconnect/universal-provider";
 import { AuthTypes, SessionTypes, SignClientTypes } from "@walletconnect/types";
 import { JsonRpcResult } from "@walletconnect/jsonrpc-types";
@@ -257,6 +258,15 @@ export class EthereumProvider implements IEthereumProvider {
     return provider;
   }
 
+  /**
+   * Whether a host, such as a wallet's in-app browser, opened this app and injected `window.walletConnectHost`.
+   * On a host launch, `connect()` and `enable()` hand the pairing URI to the host and don't open the QR modal.
+   * Synchronous and SSR-safe, so it can be checked before `init()` resolves.
+   */
+  static isHostLaunch(): boolean {
+    return UniversalProvider.isHostLaunch();
+  }
+
   public async request<T = unknown>(args: RequestArguments, expiry?: number): Promise<T> {
     return await this.signer.request(args, this.formatChainId(this.chainId), expiry);
   }
@@ -292,10 +302,12 @@ export class EthereumProvider implements IEthereumProvider {
 
     this.loadConnectOpts(opts);
     const { required, optional } = buildNamespaces(this.rpc);
+    // on a host launch the signer hands the URI to the host, so there's nothing to show
+    const showModal = this.rpc.showQrModal && !this.isHostLaunch;
     try {
       const session = await new Promise<SessionTypes.Struct | undefined>(
         async (resolve, reject) => {
-          if (this.rpc.showQrModal) {
+          if (showModal) {
             this.modal?.open();
 
             this.modal?.subscribeState((state: { open: boolean }) => {
@@ -329,7 +341,7 @@ export class EthereumProvider implements IEthereumProvider {
               resolve(session);
             })
             .catch((error: Error) => {
-              this.modal?.showErrorMessage("Unable to connect");
+              if (showModal) this.modal?.showErrorMessage("Unable to connect");
               reject(new Error(error.message));
             });
         },
@@ -362,6 +374,7 @@ export class EthereumProvider implements IEthereumProvider {
       chains: params?.chains,
     });
 
+    // not supported on a host launch yet: it still emits `display_uri` and opens the QR modal
     try {
       const result = await new Promise<AuthTypes.AuthenticateResponseResult>(
         async (resolve, reject) => {
@@ -447,6 +460,18 @@ export class EthereumProvider implements IEthereumProvider {
     return this.signer.session;
   }
 
+  get isHostLaunch(): boolean {
+    return EthereumProvider.isHostLaunch();
+  }
+
+  /**
+   * The wallet's fee config for the active chain (`chainId`), or `undefined` if there's none.
+   * Loaded only on a host launch whose session has a `wallet_guide_id`. Never throws.
+   */
+  public async getWalletFee(): Promise<WalletFee | undefined> {
+    return await this.signer.getWalletFee();
+  }
+
   // ---------- Protected --------------------------------------------- //
 
   protected registerEventListeners() {
@@ -499,6 +524,10 @@ export class EthereumProvider implements IEthereumProvider {
     this.signer.on("display_uri", (uri: string) => {
       this.events.emit("display_uri", uri);
     });
+
+    this.signer.on("wallet_fee_changed", (fee: WalletFee | undefined) => {
+      this.events.emit("wallet_fee_changed", fee);
+    });
   }
 
   protected switchEthereumChain(chainId: number): void {
@@ -527,7 +556,15 @@ export class EthereumProvider implements IEthereumProvider {
       this.chainId = chainIds[0];
       this.events.emit("chainChanged", toHexChainId(this.chainId));
       this.persist();
+      this.syncSignerChain();
     }
+  }
+
+  // keeps the signer's default chain, which `getWalletFee()` follows, on `chainId`
+  protected syncSignerChain() {
+    const provider = this.signer.rpcProviders?.[this.namespace];
+    if (!provider || provider.getDefaultChain() === String(this.chainId)) return;
+    this.signer.setDefaultChain(this.formatChainId(this.chainId));
   }
 
   protected setChainId(chain: string) {
@@ -601,6 +638,7 @@ export class EthereumProvider implements IEthereumProvider {
       storageOptions: opts.storageOptions,
       customStoragePrefix: opts.customStoragePrefix,
       telemetryEnabled: opts.telemetryEnabled,
+      walletFeeApiUrl: opts.walletFeeApiUrl,
       logger: opts.logger,
       client: opts.client,
       core: opts.core,
