@@ -24,6 +24,8 @@ export interface TestConnectParams {
   qrCodeScanLatencyMs?: number;
   sessionProperties?: SessionTypes.Struct["sessionProperties"];
   scopedProperties?: SessionTypes.Struct["scopedProperties"];
+  // resolves with the pairing URI when it isn't delivered through `display_uri`
+  pairingUri?: Promise<string>;
 }
 
 export async function testConnectMethod(
@@ -90,7 +92,7 @@ export async function testConnectMethod(
     resolveSessionProposal,
     new Promise<void>(async (resolve, reject) => {
       try {
-        dapp.on("display_uri", async (uri: string) => {
+        const onUri = async (uri: string) => {
           const uriParams = parseUri(uri);
 
           pairingA = dappClient.client?.pairing.get(uriParams.topic);
@@ -108,7 +110,12 @@ export async function testConnectMethod(
           } else {
             reject(new Error("missing uri"));
           }
-        });
+        };
+        if (params?.pairingUri) {
+          params.pairingUri.then(onUri).catch(reject);
+        } else {
+          dapp.on("display_uri", onUri);
+        }
       } catch (error) {
         reject(error);
       }
