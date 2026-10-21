@@ -105,6 +105,27 @@ if (UniversalProvider.isHostLaunch() && !provider.session) {
 - If `postMessage` throws, `connect()` rejects. It doesn't fall back to `display_uri`.
 - Only call `connect()` automatically on page load. After the user disconnects, connect again only when they ask to, or the host will receive a new offer and may approve it straight away.
 
+## Wallet fee config
+
+On a host launch, a wallet can share a fee config for your app. When the wallet approves the session with a `wallet_guide_id` session property, Universal Provider loads the config from the WalletConnect API after connecting, after restoring a session in `init()`, and on `session_update`. Without a host launch, or without a `wallet_guide_id`, no request is made.
+
+`getWalletFee()` returns the part that applies to the active chain. Call it just before building a transaction:
+
+```typescript
+const fee = await provider.getWalletFee();
+// { chainId: "eip155:11155111", feeBps: 50, recipient: "0x...", referralCode: "..." } | undefined
+
+provider.on("wallet_fee_changed", (fee: WalletFee | undefined) => {
+  // the active chain changed, the config loaded, or the session ended
+});
+```
+
+- `recipient` is the wallet's address on the active chain, and `feeBps` is already capped by the API. Applying the fee to a transaction is up to your app.
+- It resolves `undefined` when there's no config, or when the active chain has neither a recipient nor a referral code. It waits for a request in flight and never throws: failures and timeouts (3 seconds) resolve `undefined` and log a warning.
+- The config is fetched once per session. Switching chains recomputes the fee without another request.
+- `wallet_fee_changed` is emitted whenever the value `getWalletFee()` returns changes, including `undefined` on disconnect.
+- To target another API, for example staging, pass `walletFeeApiUrl` to `init()`, without a trailing slash. It defaults to `https://api.walletconnect.com`.
+
 ## Provider Methods
 
 ```typescript

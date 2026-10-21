@@ -11,6 +11,7 @@ import {
   NamespaceConfig,
   ConnectParams,
   IEthereumProvider,
+  WalletFee,
 } from "./misc.js";
 
 export interface IProvider {
@@ -44,4 +45,5 @@ export interface IUniversalProvider extends IEthereumProvider {
   cleanupPendingPairings: () => Promise<void>;
   abortPairingAttempt(): void;
   setDefaultChain: (chainId: string, rpcUrl?: string | undefined) => void;
+  getWalletFee: () => Promise<WalletFee | undefined>;
 }
