@@ -128,7 +128,7 @@ provider.on("wallet_fee_changed", (fee: WalletFee | undefined) => {
 - Each recipient is parsed from a CAIP-10 account into a CAIP-2 `chainId` and an `address`; malformed entries are dropped. If none matches your chain, the wallet has no fee recipient there. `feeBps` is already capped by the API. Applying the fee to a transaction is up to your app.
 - It resolves `undefined` when there's no config, or when the config has neither recipients nor a referral code. It waits for a request in flight and never throws: failures and timeouts (3 seconds) resolve `undefined` and log a warning.
 - The config is fetched once per session, and again on `session_update`. Switching chains doesn't change it or fetch it again.
-- `wallet_fee_changed` is emitted whenever the value `getWalletFee()` returns changes, including `undefined` on disconnect.
+- `wallet_fee_changed` is emitted whenever the value `getWalletFee()` returns changes, including `undefined` on disconnect. The same recipients in a different order don't count as a change.
 - To target another API, for example staging, pass `walletFeeApiUrl` to `init()`, without a trailing slash. It defaults to `https://api.walletconnect.com`.
 
 ## Provider Methods

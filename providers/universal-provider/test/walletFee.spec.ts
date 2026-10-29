@@ -2,7 +2,7 @@ import { expect, describe, it, afterEach, vi } from "vitest";
 import { RELAYER_SDK_VERSION } from "@walletconnect/core";
 
 import UniversalProvider, { WalletFee } from "../src/index.js";
-import { fetchWalletFeeConfig } from "../src/utils/index.js";
+import { fetchWalletFeeConfig, isSameWalletFee } from "../src/utils/index.js";
 import {
   deleteProviders,
   disconnectSocket,
@@ -182,6 +182,32 @@ describe("UniversalProvider wallet fee", () => {
       await vi.advanceTimersByTimeAsync(3000);
       await expect(result).resolves.toBeUndefined();
       expect(logger.warn).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe("isSameWalletFee", () => {
+    it("ignores the order of the recipients", () => {
+      const reordered = { ...WALLET_FEE, recipients: [...WALLET_FEE.recipients].reverse() };
+      expect(isSameWalletFee(WALLET_FEE, reordered)).toBe(true);
+    });
+
+    it.each([
+      ["undefined", undefined],
+      ["a different feeBps", { ...WALLET_FEE, feeBps: 100 }],
+      ["a different referralCode", { ...WALLET_FEE, referralCode: "other" }],
+      ["a missing recipient", { ...WALLET_FEE, recipients: WALLET_FEE.recipients.slice(1) }],
+      [
+        "a different address",
+        {
+          ...WALLET_FEE,
+          recipients: [
+            { chainId: TEST_ETHEREUM_CHAIN, address: "0xdef" },
+            ...WALLET_FEE.recipients.slice(1),
+          ],
+        },
+      ],
+    ])("detects %s", (_, other) => {
+      expect(isSameWalletFee(WALLET_FEE, other)).toBe(false);
     });
   });
 

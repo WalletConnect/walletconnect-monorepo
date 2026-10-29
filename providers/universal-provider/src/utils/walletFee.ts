@@ -82,16 +82,19 @@ function parseRecipient(account: unknown): WalletFee["recipients"][number] | und
   return { chainId: `${namespace}:${reference}`, address };
 }
 
+// recipients may come back in any order, so they're compared as sorted keys
 export function isSameWalletFee(a?: WalletFee, b?: WalletFee): boolean {
   if (!a || !b) return a === b;
+  const keysA = getRecipientKeys(a);
+  const keysB = getRecipientKeys(b);
   return (
     a.feeBps === b.feeBps &&
     a.referralCode === b.referralCode &&
-    a.recipients.length === b.recipients.length &&
-    a.recipients.every(
-      (recipient, i) =>
-        recipient.chainId === b.recipients[i].chainId &&
-        recipient.address === b.recipients[i].address,
-    )
+    keysA.length === keysB.length &&
+    keysA.every((key, i) => key === keysB[i])
   );
+}
+
+function getRecipientKeys(fee: WalletFee): string[] {
+  return fee.recipients.map(({ chainId, address }) => `${chainId}:${address}`).sort();
 }
