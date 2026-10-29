@@ -87,11 +87,13 @@ async function hostLaunchConnect(opts: Partial<EthereumProviderOptions> = {}, ch
   const wallet = await initWallet(chains);
   const displayUri = vi.fn();
   provider.on("display_uri", displayUri);
+  const fees: (WalletFee | undefined)[] = [];
+  provider.on("wallet_fee_changed", (fee) => fees.push(fee));
   const enabled = provider.enable();
   await vi.waitFor(() => expect(offers).toHaveLength(1), WAIT);
   await wallet.pair({ uri: offers[0].uri });
   const accounts = await enabled;
-  return { provider, wallet, offers, accounts, displayUri };
+  return { provider, wallet, offers, accounts, displayUri, fees };
 }
 
 async function close(provider: EthereumProvider, wallet?: InstanceType<typeof SignClient>) {
@@ -134,37 +136,36 @@ describe("EthereumProvider host launch", () => {
     await close(provider);
   });
 
-  it("passes the wallet fee through and follows chain switches", async () => {
+  it("passes the wallet fee config through, unchanged by chain switches", async () => {
     const requests = stubFeeApi();
-    const { provider, wallet } = await hostLaunchConnect();
-    const fees: (WalletFee | undefined)[] = [];
-    provider.on("wallet_fee_changed", (fee) => fees.push(fee));
+    const { provider, wallet, fees } = await hostLaunchConnect();
+    const fee = {
+      feeBps: 50,
+      referralCode: "ref-123",
+      recipients: [
+        { chainId: "eip155:1", address: ACCOUNTS.b.address },
+        { chainId: "eip155:10", address: ACCOUNTS.c.address },
+      ],
+    };
 
     expect(provider.signer.providerOpts.walletFeeApiUrl).toBe(FEE_API_URL);
     expect(requests[0].origin).toBe(FEE_API_URL);
-    expect(provider.chainId).toBe(1);
-    expect(await provider.getWalletFee()).toEqual({
-      chainId: "eip155:1",
-      feeBps: 50,
-      recipient: ACCOUNTS.b.address,
-      referralCode: "ref-123",
-    });
+    expect(await provider.getWalletFee()).toEqual(fee);
+    expect(fees).toEqual([fee]);
 
     await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0xa" }] });
     expect(provider.chainId).toBe(10);
-    const fee = await provider.getWalletFee();
-    expect(fee).toEqual({ ...fee, chainId: "eip155:10", recipient: ACCOUNTS.c.address });
-    expect(fees).toEqual([fee]);
+    expect(await provider.getWalletFee()).toEqual(fee);
+    expect(fees).toHaveLength(1);
     expect(requests).toHaveLength(1);
     await close(provider, wallet);
   });
 
-  it("keeps the fee on the provider's chain when the wallet lists another chain first", async () => {
+  it("keeps the signer on the provider's chain when the wallet lists another chain first", async () => {
     stubFeeApi();
     const { provider, wallet } = await hostLaunchConnect({ chains: [10], optionalChains: [1] });
 
     expect(provider.chainId).toBe(10);
-    expect((await provider.getWalletFee())?.chainId).toBe("eip155:10");
     expect(await provider.request({ method: "eth_chainId" })).toBe(10);
     await close(provider, wallet);
   });

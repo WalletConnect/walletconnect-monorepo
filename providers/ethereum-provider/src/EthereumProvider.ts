@@ -465,7 +465,8 @@ export class EthereumProvider implements IEthereumProvider {
   }
 
   /**
-   * The wallet's fee config for the active chain (`chainId`), or `undefined` if there's none.
+   * The wallet's fee config for the session, with a recipient per chain, or `undefined` if there's none.
+   * Pick the recipient for `chainId`, or the chain you transact on.
    * Loaded only on a host launch whose session has a `wallet_guide_id`. Never throws.
    */
   public async getWalletFee(): Promise<WalletFee | undefined> {
@@ -560,7 +561,8 @@ export class EthereumProvider implements IEthereumProvider {
     }
   }
 
-  // keeps the signer's default chain, which `getWalletFee()` follows, on `chainId`
+  // keeps the signer's default chain on `chainId`: the signer answers `eth_chainId` and
+  // `eth_accounts` from it, and sends read calls to its RPC
   protected syncSignerChain() {
     const provider = this.signer.rpcProviders?.[this.namespace];
     if (!provider || provider.getDefaultChain() === String(this.chainId)) return;
