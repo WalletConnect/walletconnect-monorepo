@@ -2,7 +2,7 @@ import { expect, describe, it, afterEach, vi } from "vitest";
 import { RELAYER_SDK_VERSION } from "@walletconnect/core";
 
 import UniversalProvider, { WalletFee } from "../src/index.js";
-import { fetchWalletFeeConfig, selectWalletFee } from "../src/utils/index.js";
+import { fetchWalletFeeConfig } from "../src/utils/index.js";
 import {
   deleteProviders,
   disconnectSocket,
@@ -10,7 +10,6 @@ import {
   TEST_ETHEREUM_ACCOUNT,
   TEST_ETHEREUM_ADDRESS,
   TEST_ETHEREUM_CHAIN,
-  TEST_GOERLI_CHAIN,
   TEST_NAMESPACES,
   TEST_OPTIMISM_ACCOUNT,
   TEST_OPTIMISM_CHAIN,
@@ -18,10 +17,28 @@ import {
 } from "./shared/index.js";
 
 const WALLET_ID = "wallet-guide-id";
+const SOLANA_CHAIN = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+const SOLANA_ADDRESS = "7S3P4HxJpyyigGzodYwHtCxZyUQe9JiBMHyRWXArAaKv";
 const CONFIG = {
   feeBps: 50,
-  recipients: [TEST_ETHEREUM_ACCOUNT, TEST_OPTIMISM_ACCOUNT],
+  recipients: [
+    TEST_ETHEREUM_ACCOUNT,
+    TEST_OPTIMISM_ACCOUNT,
+    `${SOLANA_CHAIN}:${SOLANA_ADDRESS}`,
+    // malformed: no address
+    "eip155:5",
+  ],
   referralCode: "ref-123",
+};
+// what `getWalletFee()` resolves for CONFIG
+const WALLET_FEE: WalletFee = {
+  feeBps: 50,
+  referralCode: "ref-123",
+  recipients: [
+    { chainId: TEST_ETHEREUM_CHAIN, address: TEST_ETHEREUM_ADDRESS },
+    { chainId: TEST_OPTIMISM_CHAIN, address: TEST_ETHEREUM_ADDRESS },
+    { chainId: SOLANA_CHAIN, address: SOLANA_ADDRESS },
+  ],
 };
 const realFetch = globalThis.fetch;
 
@@ -69,6 +86,14 @@ async function connect({
   return { dapp, wallet, events, database };
 }
 
+// the wallet updates the session, which makes the dapp fetch the config again
+async function updateSession(dapp: UniversalProvider, wallet: UniversalProvider) {
+  const updated = new Promise((resolve) => dapp.once("session_update", resolve));
+  await wallet.client.update({ topic: dapp.session!.topic, namespaces: TEST_NAMESPACES });
+  await updated;
+  await dapp.getWalletFee();
+}
+
 describe("UniversalProvider wallet fee", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -82,9 +107,9 @@ describe("UniversalProvider wallet fee", () => {
 
     afterEach(() => vi.clearAllMocks());
 
-    it("returns the config and sends the query params", async () => {
+    it("returns the parsed config and sends the query params", async () => {
       const requests = stubFetch(() => json(CONFIG));
-      expect(await fetchConfig()).toEqual(CONFIG);
+      expect(await fetchConfig()).toEqual(WALLET_FEE);
       expect(requests[0].origin).toBe("https://api.walletconnect.com");
       expect(Object.fromEntries(requests[0].searchParams)).toEqual({
         projectId: "pid",
@@ -105,8 +130,25 @@ describe("UniversalProvider wallet fee", () => {
       expect(inits[0]?.cache).toBe("no-store");
     });
 
-    it("returns undefined on 204 without warning", async () => {
-      stubFetch(() => new Response(null, { status: 204 }));
+    it("drops malformed recipients", async () => {
+      const recipients = ["eip155:1", "eip155:1:", ":1:0xabc", "eip155:1:0xabc:0xdef", 42, null];
+      stubFetch(() => json({ recipients: [...recipients, TEST_ETHEREUM_ACCOUNT] }));
+      expect(await fetchConfig()).toEqual({
+        recipients: [{ chainId: TEST_ETHEREUM_CHAIN, address: TEST_ETHEREUM_ADDRESS }],
+      });
+    });
+
+    it("returns a referral code without recipients", async () => {
+      stubFetch(() => json({ recipients: [], referralCode: "ref-123" }));
+      expect(await fetchConfig()).toEqual({ recipients: [], referralCode: "ref-123" });
+    });
+
+    it.each([
+      ["a 204", () => new Response(null, { status: 204 })],
+      ["no recipients and no referral code", () => json({ feeBps: 50, recipients: [] })],
+      ["only malformed recipients", () => json({ feeBps: 50, recipients: ["eip155:5"] })],
+    ])("returns undefined without warning on %s", async (_, handler) => {
+      stubFetch(handler);
       expect(await fetchConfig()).toBeUndefined();
       expect(logger.warn).not.toHaveBeenCalled();
     });
@@ -143,51 +185,41 @@ describe("UniversalProvider wallet fee", () => {
     });
   });
 
-  describe("selectWalletFee", () => {
-    it("returns undefined for a chain with no recipient and no referral code", () => {
-      const config = { ...CONFIG, referralCode: undefined };
-      expect(selectWalletFee(config, TEST_GOERLI_CHAIN)).toBeUndefined();
-    });
-  });
-
   describe("session", () => {
-    it("exposes the active chain's fee, follows chain switches and clears on disconnect", async () => {
-      const requests = stubFetch(() => json(CONFIG));
+    it("exposes the whole config, ignores chain switches and clears on disconnect", async () => {
+      let config = CONFIG;
+      const requests = stubFetch(() => json(config));
       const { dapp, wallet, events } = await connect();
-      const expected = (chainId: string, recipient?: string) => ({
-        chainId,
-        feeBps: CONFIG.feeBps,
-        recipient,
-        referralCode: CONFIG.referralCode,
-      });
 
-      expect(await dapp.getWalletFee()).toEqual(
-        expected(TEST_ETHEREUM_CHAIN, TEST_ETHEREUM_ADDRESS),
-      );
+      expect(await dapp.getWalletFee()).toEqual(WALLET_FEE);
       expect(requests).toHaveLength(1);
       expect(requests[0].origin).toBe("https://staging.example.com");
       expect(requests[0].pathname).toBe("/wallet-fee/v1/config");
       expect(requests[0].searchParams.get("projectId")).toBe(TEST_PROVIDER_OPTS.projectId);
       expect(requests[0].searchParams.get("walletId")).toBe(WALLET_ID);
 
+      // a chain switch neither fetches nor emits
+      const chainChanged = vi.fn();
+      dapp.on("chainChanged", chainChanged);
       dapp.setDefaultChain(TEST_OPTIMISM_CHAIN);
-      expect(await dapp.getWalletFee()).toEqual(
-        expected(TEST_OPTIMISM_CHAIN, TEST_ETHEREUM_ADDRESS),
-      );
-      // no recipient on this chain, but the referral code still applies
-      dapp.setDefaultChain(TEST_GOERLI_CHAIN);
-      expect(await dapp.getWalletFee()).toEqual(expected(TEST_GOERLI_CHAIN));
-      // chain changes reuse the cached config
+      expect(chainChanged).toHaveBeenCalledOnce();
+      expect(await dapp.getWalletFee()).toEqual(WALLET_FEE);
       expect(requests).toHaveLength(1);
+      expect(events).toEqual([WALLET_FEE]);
+
+      // a session update fetches again, but only emits if the config changed
+      await updateSession(dapp, wallet);
+      expect(requests).toHaveLength(2);
+      expect(events).toEqual([WALLET_FEE]);
+      config = { ...CONFIG, recipients: [TEST_ETHEREUM_ACCOUNT] };
+      const updated = { ...WALLET_FEE, recipients: [WALLET_FEE.recipients[0]] };
+      await updateSession(dapp, wallet);
+      expect(requests).toHaveLength(3);
+      expect(await dapp.getWalletFee()).toEqual(updated);
 
       await dapp.disconnect();
       expect(await dapp.getWalletFee()).toBeUndefined();
-      expect(events).toEqual([
-        expected(TEST_ETHEREUM_CHAIN, TEST_ETHEREUM_ADDRESS),
-        expected(TEST_OPTIMISM_CHAIN, TEST_ETHEREUM_ADDRESS),
-        expected(TEST_GOERLI_CHAIN),
-        undefined,
-      ]);
+      expect(events).toEqual([WALLET_FEE, updated, undefined]);
       await deleteProviders({ A: dapp, B: wallet });
     });
 
@@ -195,12 +227,7 @@ describe("UniversalProvider wallet fee", () => {
       const requests = stubFetch(() => json(CONFIG));
       const { dapp, wallet, database } = await connect();
       await dapp.getWalletFee();
-      // a session update fetches it again too
-      const updated = new Promise((resolve) => dapp.once("session_update", resolve));
-      await wallet.client.update({ topic: dapp.session!.topic, namespaces: TEST_NAMESPACES });
-      await updated;
-      await dapp.getWalletFee();
-      expect(requests).toHaveLength(2);
+      expect(requests).toHaveLength(1);
       await deleteProviders({ A: dapp, B: wallet });
 
       stubHostBridge();
@@ -209,8 +236,8 @@ describe("UniversalProvider wallet fee", () => {
         name: "dapp",
         storageOptions: { database },
       });
-      expect((await restored.getWalletFee())?.recipient).toBe(TEST_ETHEREUM_ADDRESS);
-      expect(requests).toHaveLength(3);
+      expect(await restored.getWalletFee()).toEqual(WALLET_FEE);
+      expect(requests).toHaveLength(2);
       await disconnectSocket(restored.client.core);
     });
 

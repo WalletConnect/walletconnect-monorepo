@@ -218,24 +218,16 @@ declare global {
 }
 
 /**
- * The wallet's fee config for the active chain, as returned by `getWalletFee()`.
+ * The wallet's fee config for the session, as returned by `getWalletFee()`.
  */
 export type WalletFee = {
-  /** CAIP-2 ID of the active chain, e.g. `eip155:11155111` */
-  chainId: string;
   /** Fee in basis points, already capped by the API */
   feeBps?: number;
-  /** Fee recipient address on the active chain */
-  recipient?: string;
   referralCode?: string;
-};
-
-/**
- * Response of `GET /wallet-fee/v1/config`.
- */
-export type WalletFeeConfig = {
-  feeBps?: number;
-  /** CAIP-10 accounts, one per chain */
-  recipients: string[];
-  referralCode?: string;
+  /** Fee recipients, one per chain. Pick the one for the chain you transact on */
+  recipients: {
+    /** CAIP-2 chain ID, e.g. `eip155:11155111` */
+    chainId: string;
+    address: string;
+  }[];
 };

@@ -15,7 +15,6 @@ import {
   mergeRequiredOptionalNamespaces,
   parseCaip10Account,
   populateNamespacesChains,
-  selectWalletFee,
   setGlobal,
 } from "./utils/index.js";
 import Eip155Provider from "./providers/eip155.js";
@@ -38,7 +37,6 @@ import {
   WalletConnectHost,
   WalletConnectHostMessage,
   WalletFee,
-  WalletFeeConfig,
 } from "./types/index.js";
 
 import {
@@ -67,8 +65,8 @@ export class UniversalProvider implements IUniversalProvider {
 
   private disableProviderPing = false;
   private connectParams?: ConnectParams;
-  // raw wallet fee config, cached per session topic
-  private walletFeeConfig?: { topic: string; config?: WalletFeeConfig };
+  // wallet fee config, cached per session topic
+  private walletFeeConfig?: { topic: string; config?: WalletFee };
   private walletFeeRequest?: Promise<void>;
   private walletFee?: WalletFee;
 
@@ -268,7 +266,7 @@ export class UniversalProvider implements IUniversalProvider {
   }
 
   /**
-   * The wallet's fee config for the active chain, or `undefined` if there's none.
+   * The wallet's fee config for the session, with a recipient per chain, or `undefined` if there's none.
    * Loaded only on a host launch whose session has a `wallet_guide_id`. Waits for an in-flight request.
    */
   public async getWalletFee(): Promise<WalletFee | undefined> {
@@ -565,7 +563,6 @@ export class UniversalProvider implements IUniversalProvider {
         currentCaipChainId,
         previousCaipChainId,
       });
-      this.updateWalletFee();
     }
 
     await this.persist("namespaces", this.namespaces);
@@ -641,26 +638,13 @@ export class UniversalProvider implements IUniversalProvider {
     this.walletFeeRequest = request;
   }
 
-  // recomputes the fee for the active chain from the cached config, and emits it if it changed
+  // exposes the cached config for the current session, and emits it if it changed
   private updateWalletFee() {
     const cached = this.walletFeeConfig;
-    const chainId = this.getActiveChain();
-    const fee =
-      cached?.config && chainId && cached.topic === this.session?.topic
-        ? selectWalletFee(cached.config, chainId)
-        : undefined;
+    const fee = cached?.topic === this.session?.topic ? cached?.config : undefined;
     if (isSameWalletFee(fee, this.walletFee)) return;
     this.walletFee = fee;
     this.events.emit("wallet_fee_changed", fee);
-  }
-
-  private getActiveChain(): string | undefined {
-    try {
-      const [namespace, chainId] = this.validateChain();
-      return namespace && chainId ? `${namespace}:${chainId}` : undefined;
-    } catch {
-      return undefined;
-    }
   }
 
   private async cleanup() {
