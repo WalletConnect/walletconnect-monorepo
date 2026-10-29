@@ -3562,6 +3562,9 @@ export class Engine extends IEngine {
 
       const method = request.method;
       const methodConfig = TVF_METHODS[method as keyof typeof TVF_METHODS];
+      // TVF data travels outside the encrypted payload, so a result of a method that is not a
+      // transaction (a message signature, an address) must never be reported as a tx hash
+      if (!methodConfig) return [];
 
       if (method === "sui_signTransaction") {
         return [getSuiDigest(result.transactionBytes)];
