@@ -1,5 +1,5 @@
 import { base58 } from "@scure/base";
-import { blake2b } from "blakejs";
+import { blake2b } from "@noble/hashes/blake2";
 import { toString } from "uint8arrays";
 
 export function ss58AddressToPublicKey(address: string): Uint8Array {
@@ -49,7 +49,7 @@ export function addSignatureToExtrinsic({
 
 export function deriveExtrinsicHash(signedExtrinsicHex: string): string {
   const bytes = hexToBytes(signedExtrinsicHex);
-  const hash = blake2b(bytes, undefined, 32);
+  const hash = blake2b(bytes, { dkLen: 32 });
   return "0x" + toString(hash, "base16");
 }
 
