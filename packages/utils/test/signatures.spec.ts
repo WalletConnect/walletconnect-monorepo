@@ -2,6 +2,7 @@ import { AuthTypes } from "@walletconnect/types";
 import { describe, expect, it, vi } from "vitest";
 import {
   buildSignedExtrinsicHash,
+  deriveExtrinsicHash,
   extractSolanaTransactionId,
   getAlgorandTransactionId,
   getNearTransactionIdFromSignedTransaction,
@@ -639,6 +640,20 @@ Issued At: 2022-10-10T23:03:35.700Z`;
       });
 
       expect(hash).toBe("0x48016b3c80b7b61d32d1db6f52038de70d7d30ef948da047442cc9c952b92e84");
+    });
+
+    it("should derive a blake2b-256 extrinsic hash", () => {
+      // vectors computed with blakejs, which this hash previously used
+      expect(deriveExtrinsicHash("0x00")).toBe(
+        "0x03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314",
+      );
+      // 300 bytes spans multiple 128-byte blake2b blocks
+      const multiBlock = Array.from({ length: 300 }, (_, i) =>
+        (i & 0xff).toString(16).padStart(2, "0"),
+      ).join("");
+      expect(deriveExtrinsicHash(multiBlock)).toBe(
+        "0x3a486e3fe3ee414853000269ac020030aeef748cb05cd62ba85939ec298ef25c",
+      );
     });
 
     it("should derive sign direct hash", () => {
