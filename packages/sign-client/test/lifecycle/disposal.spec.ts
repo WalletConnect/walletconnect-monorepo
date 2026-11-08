@@ -49,6 +49,66 @@ beforeEach(() => {
 });
 
 describe("SignClient terminal disposal with shared Core", () => {
+  it("awaits failed initialization cleanup while preserving the external Core", async () => {
+    const { core, client } = await fixture();
+    await client.dispose();
+    const failure = new Error("initialization failed");
+    const held = deferred<void>();
+    const initialize = vi
+      .spyOn(SignClient.prototype as any, "initialize")
+      .mockRejectedValueOnce(failure);
+    const originalDispose = SignClient.prototype.dispose;
+    const dispose = vi
+      .spyOn(SignClient.prototype, "dispose")
+      .mockImplementationOnce(async function () {
+        await held.promise;
+        await originalDispose.call(this);
+      });
+    try {
+      let finished = false;
+      const opening = SignClient.init({ core, logger: "silent" });
+      const rejected = expect(opening)
+        .rejects.toBe(failure)
+        .then(() => {
+          finished = true;
+        });
+      await tick();
+      expect(dispose).toHaveBeenCalledOnce();
+      expect(finished).toBe(false);
+      held.resolve();
+      await rejected;
+      expect(core.signal.aborted).toBe(false);
+      await expect(core.start()).resolves.toBeUndefined();
+    } finally {
+      initialize.mockRestore();
+      dispose.mockRestore();
+      await core.dispose();
+    }
+  });
+
+  it("reports a cleanup failure together with the initialization cause", async () => {
+    const { core, client } = await fixture();
+    await client.dispose();
+    const failure = new Error("initialization failed");
+    const cleanupError = new Error("native cleanup failed");
+    const initialize = vi
+      .spyOn(SignClient.prototype as any, "initialize")
+      .mockRejectedValueOnce(failure);
+    const dispose = vi.spyOn(SignClient.prototype, "dispose").mockRejectedValueOnce(cleanupError);
+    try {
+      await expect(SignClient.init({ core, logger: "silent" })).rejects.toMatchObject({
+        message: "SignClient initialization cleanup failed",
+        cause: failure,
+        cleanupError,
+      });
+      expect(core.signal.aborted).toBe(false);
+    } finally {
+      initialize.mockRestore();
+      dispose.mockRestore();
+      await core.dispose();
+    }
+  });
+
   it("detaches this client's listeners and leaves its external Core usable", async () => {
     const { client, core } = await fixture();
     const pulseBefore = core.heartbeat.events.listenerCount("heartbeat_pulse");

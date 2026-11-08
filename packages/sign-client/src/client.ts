@@ -37,9 +37,20 @@ export class SignClient extends ISignClient {
 
   static async init(opts?: SignClientTypes.Options) {
     const client = new SignClient(opts);
-    await client.initialize();
-
-    return client;
+    try {
+      await client.initialize();
+      return client;
+    } catch (error) {
+      try {
+        await client.dispose();
+      } catch (cleanupError) {
+        throw Object.assign(new Error("SignClient initialization cleanup failed"), {
+          cause: error,
+          cleanupError,
+        });
+      }
+      throw error;
+    }
   }
 
   constructor(opts?: SignClientTypes.Options) {
