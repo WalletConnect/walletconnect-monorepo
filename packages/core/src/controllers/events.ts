@@ -18,6 +18,7 @@ export class EventClient extends IEventClient {
   private readonly storageVersion = EVENTS_STORAGE_VERSION;
   private events = new Map<string, EventClientTypes.Event>();
   private shouldPersist = false;
+  private readonly startup: Promise<void>;
   constructor(
     public core: ICore,
     public logger: Logger,
@@ -27,14 +28,26 @@ export class EventClient extends IEventClient {
     this.logger = generateChildLogger(logger, this.context);
     this.telemetryEnabled = telemetryEnabled;
     if (telemetryEnabled) {
-      this.restore().then(async () => {
-        await this.submit();
-        this.setEventListeners();
-      });
+      this.startup = this.restore()
+        .then(async () => {
+          await this.submit();
+          this.core.assertActive();
+          this.setEventListeners();
+        })
+        .catch((error) => {
+          if (!this.core.signal.aborted) this.logger.warn(error);
+        });
     } else {
       // overwrite any persisted events with an empty array
-      this.persist();
+      this.startup = this.persist().catch((error) => {
+        if (!this.core.signal.aborted) this.logger.warn(error);
+      });
     }
+  }
+
+  public async dispose(): Promise<void> {
+    await this.startup;
+    this.events.clear();
   }
 
   get storageKey() {
@@ -44,6 +57,7 @@ export class EventClient extends IEventClient {
   }
 
   public init: IEventClient["init"] = async (params) => {
+    this.core.assertActive();
     if (isTestRun()) return;
     const sdk = params?.sdk;
     try {
@@ -72,6 +86,7 @@ export class EventClient extends IEventClient {
   };
 
   public createEvent: IEventClient["createEvent"] = (params) => {
+    this.core.assertActive();
     const {
       event = "ERROR",
       type = "",
@@ -105,6 +120,7 @@ export class EventClient extends IEventClient {
   };
 
   public getEvent: IEventClient["getEvent"] = (params) => {
+    this.core.assertActive();
     const { eventId, topic } = params;
     if (eventId) {
       return this.events.get(eventId);
@@ -122,6 +138,7 @@ export class EventClient extends IEventClient {
   };
 
   public deleteEvent: IEventClient["deleteEvent"] = (params) => {
+    this.core.assertActive();
     const { eventId } = params;
     this.events.delete(eventId);
     this.shouldPersist = true;
@@ -129,6 +146,7 @@ export class EventClient extends IEventClient {
 
   private setEventListeners = () => {
     this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
+      if (this.core.signal.aborted) return;
       if (this.shouldPersist) await this.persist();
       // cleanup events older than EVENTS_STORAGE_CLEANUP_INTERVAL
       this.events.forEach((event) => {
@@ -151,6 +169,7 @@ export class EventClient extends IEventClient {
   };
 
   private addTrace = (eventId: string, trace: string) => {
+    this.core.assertActive();
     const event = this.events.get(eventId);
     if (!event) return;
     event.props.properties.trace.push(trace);
@@ -159,6 +178,7 @@ export class EventClient extends IEventClient {
   };
 
   private setError = (eventId: string, errorType: string) => {
+    this.core.assertActive();
     const event = this.events.get(eventId);
     if (!event) return;
     event.props.type = errorType;
@@ -168,14 +188,18 @@ export class EventClient extends IEventClient {
   };
 
   private persist = async () => {
-    await this.core.storage.setItem(this.storageKey, Array.from(this.events.values()));
+    await this.core.run(() =>
+      this.core.storage.setItem(this.storageKey, Array.from(this.events.values())),
+    );
     this.shouldPersist = false;
   };
 
   private restore = async () => {
     try {
       const events =
-        (await this.core.storage.getItem<EventClientTypes.Event[]>(this.storageKey)) || [];
+        (await this.core.run(() =>
+          this.core.storage.getItem<EventClientTypes.Event[]>(this.storageKey),
+        )) || [];
       if (!events.length) return;
       events.forEach((event) => {
         this.events.set(event.eventId, {
@@ -205,6 +229,7 @@ export class EventClient extends IEventClient {
 
     try {
       const response = await this.sendEvent(eventsToSend);
+      this.core.assertActive();
       if (response.ok) {
         for (const event of eventsToSend) {
           this.events.delete(event.eventId);
@@ -219,12 +244,15 @@ export class EventClient extends IEventClient {
   private sendEvent = async (events: EventClientTypes.Event[]) => {
     // if domain isn't available, set `sp` as `desktop` so data would be extracted on api side
     const platform = this.getAppDomain() ? "" : "&sp=desktop";
-    const response = await fetch(
-      `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}${platform}`,
-      {
-        method: "POST",
-        body: JSON.stringify(events),
-      },
+    const response = await this.core.run(() =>
+      fetch(
+        `${EVENTS_CLIENT_API_URL}?projectId=${this.core.projectId}&st=events_sdk&sv=js-${RELAYER_SDK_VERSION}${platform}`,
+        {
+          method: "POST",
+          signal: this.core.signal,
+          body: JSON.stringify(events),
+        },
+      ),
     );
     return response;
   };

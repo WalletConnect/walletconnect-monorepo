@@ -22,6 +22,7 @@ export abstract class IStore<Key, Value> {
   ) {}
 
   public abstract init(): Promise<void>;
+  public abstract dispose(): Promise<void>;
 
   public abstract set(key: Key, value: Value): Promise<void>;
 

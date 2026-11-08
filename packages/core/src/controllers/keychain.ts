@@ -25,6 +25,7 @@ export class KeyChain implements IKeyChain {
   }
 
   public init: IKeyChain["init"] = async () => {
+    this.core.assertActive();
     if (!this.initialized) {
       const keychain = await this.getKeyChain();
       if (typeof keychain !== "undefined") {
@@ -72,11 +73,15 @@ export class KeyChain implements IKeyChain {
   // ---------- Private ----------------------------------------------- //
 
   private async setKeyChain(keychain: Map<string, string>) {
-    await this.core.storage.setItem<Record<string, string>>(this.storageKey, mapToObj(keychain));
+    await this.core.run(() =>
+      this.core.storage.setItem<Record<string, string>>(this.storageKey, mapToObj(keychain)),
+    );
   }
 
   private async getKeyChain() {
-    const keychain = await this.core.storage.getItem<Record<string, string>>(this.storageKey);
+    const keychain = await this.core.run(() =>
+      this.core.storage.getItem<Record<string, string>>(this.storageKey),
+    );
     return typeof keychain !== "undefined" ? objToMap(keychain) : undefined;
   }
 
@@ -85,6 +90,7 @@ export class KeyChain implements IKeyChain {
   }
 
   private isInitialized() {
+    this.core.assertActive();
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);

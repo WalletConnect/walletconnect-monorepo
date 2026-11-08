@@ -452,6 +452,7 @@ export abstract class IEngine {
   constructor(public client: ISignClient) {}
 
   public abstract init(): Promise<void>;
+  public abstract dispose(): Promise<void>;
 
   public abstract connect(
     params: EngineTypes.ConnectParams,
