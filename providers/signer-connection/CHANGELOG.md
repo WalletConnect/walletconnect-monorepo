@@ -1,5 +1,16 @@
 # @walletconnect/signer-connection
 
+## 2.26.1
+
+### Patch Changes
+
+- [#7395](https://github.com/WalletConnect/walletconnect-monorepo/pull/7395) [`ade4b95`](https://github.com/WalletConnect/walletconnect-monorepo/commit/ade4b95a26963572b3fd88b2eb9e0c7c21d721cf) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - Ship consumer ProGuard/R8 rules for JNA and the yttrium uniffi bindings so minified Android release builds (default in Expo SDK 58) no longer fail with `Missing class java.awt.Component`.
+
+- Updated dependencies [[`ade4b95`](https://github.com/WalletConnect/walletconnect-monorepo/commit/ade4b95a26963572b3fd88b2eb9e0c7c21d721cf)]:
+  - @walletconnect/types@2.26.1
+  - @walletconnect/utils@2.26.1
+  - @walletconnect/sign-client@2.26.1
+
 ## 2.26.0
 
 ### Patch Changes
