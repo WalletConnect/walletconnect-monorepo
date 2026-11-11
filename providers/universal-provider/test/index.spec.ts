@@ -303,6 +303,68 @@ describe("UniversalProvider", function () {
 
         await deleteProviders({ A: dapp, B: wallet });
       });
+      it("should not emit an empty accountsChanged when the default chain changes to a chain without accounts in the session", async () => {
+        const dapp = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "dapp",
+        });
+        const wallet = await UniversalProvider.init({
+          ...TEST_PROVIDER_OPTS,
+          name: "wallet",
+        });
+
+        /*
+         * The session is approved with a single chain and a single account
+         */
+        await testConnectMethod(
+          {
+            dapp,
+            wallet,
+          },
+          {
+            requiredNamespaces: {},
+            optionalNamespaces: {},
+            namespaces: {
+              eip155: {
+                accounts: [`eip155:${CHAIN_ID}:${walletAddress}`],
+                chains: [`eip155:${CHAIN_ID}`],
+                methods: [...methods, "wallet_switchEthereumChain"],
+                events,
+              },
+            },
+          },
+        );
+
+        const emittedAccountsChanged: string[][] = [];
+        dapp.on("accountsChanged", (accountsChanged: string[]) => {
+          emittedAccountsChanged.push(accountsChanged);
+        });
+
+        /*
+         * Switch to a chain that is not part of the approved session namespace:
+         * the request is forwarded to the wallet, which updates the session with
+         * the new chain and responds to the request while the session does not
+         * list accounts for the new chain
+         */
+        await dapp.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x1" }],
+        });
+
+        await throttle(1_000);
+
+        /*
+         * An empty `accountsChanged` must never be emitted on a chain change:
+         * EIP-1193 consumers (e.g. wagmi connectors, AppKit) treat an empty
+         * account list as a disconnection and may delete the session
+         */
+        const emptyEmissions = emittedAccountsChanged.filter(
+          (accountsChanged) => accountsChanged.length === 0,
+        );
+        expect(emptyEmissions).to.eql([]);
+
+        await deleteProviders({ A: dapp, B: wallet });
+      });
       it("should automatically assign namespaces to optionalNamespaces", async () => {
         const dapp = await UniversalProvider.init({
           ...TEST_PROVIDER_OPTS,

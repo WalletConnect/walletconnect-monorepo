@@ -529,7 +529,15 @@ export class UniversalProvider implements IUniversalProvider {
       const newChainIdAccounts = accounts
         .filter((account) => account.includes(`${currentCaipChainId}:`))
         .map(parseCaip10Account);
-      if (!isValidArray(newChainIdAccounts)) return;
+      // Never emit an empty `accountsChanged`: EIP-1193 consumers (e.g. wagmi's
+      // `walletConnect` connector, Reown AppKit) treat an empty account list as
+      // a disconnection, which can tear down the session. An empty list can
+      // arise when the default chain changes to a chain the session does not
+      // (yet) list accounts for - e.g. the wallet approved a
+      // `wallet_switchEthereumChain` to a chain outside the approved namespace
+      // but its `session_update` (which adds the chain's accounts) has not
+      // arrived yet. Keep emitting the current accounts until then.
+      if (newChainIdAccounts.length === 0) return;
       this.events.emit("accountsChanged", newChainIdAccounts);
     } catch (error) {
       this.logger.warn(error, "Failed to emit accountsChanged on chain change");
