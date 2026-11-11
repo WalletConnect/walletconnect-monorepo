@@ -8,8 +8,12 @@
 -keep class com.sun.jna.** { *; }
 -keepclassmembers class * extends com.sun.jna.** { public *; }
 
-# uniffi-generated Kotlin bindings, called from native code through JNA.
--keep class uniffi.** { *; }
+# yttrium-wcpay's uniffi-generated Kotlin bindings, called from native code
+# through JNA. Scoped to yttrium's packages (not uniffi.**) so other uniffi
+# libraries in the app can still be shrunk. If yttrium moves its bindings to
+# a different package, update these rules to match.
+-keep class uniffi.yttrium_wcpay.** { *; }
+-keep class uniffi.uniffi_yttrium_wcpay.** { *; }
 
 # This module's own classes, which drive the bindings above.
 -keep class com.walletconnect.reactnativemodule.** { *; }
