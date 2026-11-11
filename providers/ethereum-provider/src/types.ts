@@ -1,4 +1,5 @@
 import { SignClientTypes } from "@walletconnect/types";
+import type { WalletFee } from "@walletconnect/universal-provider";
 import { EthereumProvider } from "./EthereumProvider.js";
 
 export interface ProviderRpcError extends Error {
@@ -39,7 +40,8 @@ export declare namespace IProviderEvents {
     | "session_delete"
     | "session_event"
     | "session_update"
-    | "display_uri";
+    | "display_uri"
+    | "wallet_fee_changed";
 
   interface EventArguments {
     connect: ProviderInfo;
@@ -51,6 +53,7 @@ export declare namespace IProviderEvents {
     session_event: SignClientTypes.EventArguments["session_event"];
     session_update: SignClientTypes.EventArguments["session_delete"];
     display_uri: string;
+    wallet_fee_changed: WalletFee | undefined;
   }
 }
 export interface IEthereumProviderEvents {
