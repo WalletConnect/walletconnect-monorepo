@@ -26,6 +26,8 @@ export interface UniversalProviderOpts extends SignClientTypes.Options {
   name?: string;
   disableProviderPing?: boolean;
   session?: SessionTypes.Struct;
+  /** Base URL of the wallet fee API, without a trailing slash. Defaults to `https://api.walletconnect.com` */
+  walletFeeApiUrl?: string;
 }
 
 export type Metadata = SignClientTypes.Metadata;
@@ -214,3 +216,18 @@ declare global {
     walletConnectHost?: WalletConnectHost;
   }
 }
+
+/**
+ * The wallet's fee config for the session, as returned by `getWalletFee()`.
+ */
+export type WalletFee = {
+  /** Fee in basis points, already capped by the API */
+  feeBps?: number;
+  referralCode?: string;
+  /** Fee recipients, one per chain. Pick the one for the chain you transact on */
+  recipients: {
+    /** CAIP-2 chain ID, e.g. `eip155:11155111` */
+    chainId: string;
+    address: string;
+  }[];
+};

@@ -4,3 +4,4 @@ export * from "./caip25.js";
 export * from "./storage.js";
 export * from "./eip5792.js";
 export * from "./walletConnectHost.js";
+export * from "./walletFee.js";
