@@ -16,7 +16,7 @@ import {
   TEST_PROVIDER_OPTS,
 } from "./shared/index.js";
 
-const WALLET_ID = "wallet-guide-id";
+const WALLET_GUIDE_ID = "wallet-guide-id";
 const SOLANA_CHAIN = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 const SOLANA_ADDRESS = "7S3P4HxJpyyigGzodYwHtCxZyUQe9JiBMHyRWXArAaKv";
 const CONFIG = {
@@ -68,7 +68,7 @@ function stubHostBridge() {
 
 async function connect({
   hostLaunch = true,
-  walletId = WALLET_ID as string | null,
+  walletGuideId = WALLET_GUIDE_ID as string | null,
   database = `./test/tmp/dappDB-wallet-fee-${Date.now()}.db`,
 } = {}) {
   const pairingUri = hostLaunch ? stubHostBridge() : undefined;
@@ -81,7 +81,7 @@ async function connect({
   const wallet = await UniversalProvider.init({ ...TEST_PROVIDER_OPTS, name: "wallet" });
   const events: (WalletFee | undefined)[] = [];
   dapp.on("wallet_fee_changed", (fee: WalletFee | undefined) => events.push(fee));
-  const sessionProperties = walletId === null ? undefined : { wallet_guide_id: walletId };
+  const sessionProperties = walletGuideId === null ? undefined : { wallet_guide_id: walletGuideId };
   await testConnectMethod({ dapp, wallet }, { pairingUri, sessionProperties });
   return { dapp, wallet, events, database };
 }
@@ -103,7 +103,11 @@ describe("UniversalProvider wallet fee", () => {
   describe("fetchWalletFeeConfig", () => {
     const logger = { info: vi.fn(), warn: vi.fn() };
     const fetchConfig = () =>
-      fetchWalletFeeConfig({ projectId: "pid", walletId: WALLET_ID, logger: logger as any });
+      fetchWalletFeeConfig({
+        projectId: "pid",
+        walletGuideId: WALLET_GUIDE_ID,
+        logger: logger as any,
+      });
 
     afterEach(() => vi.clearAllMocks());
 
@@ -113,7 +117,7 @@ describe("UniversalProvider wallet fee", () => {
       expect(requests[0].origin).toBe("https://api.walletconnect.com");
       expect(Object.fromEntries(requests[0].searchParams)).toEqual({
         projectId: "pid",
-        walletId: WALLET_ID,
+        walletId: WALLET_GUIDE_ID,
         st: "universal-provider",
         sv: `js-${RELAYER_SDK_VERSION}`,
       });
@@ -222,7 +226,7 @@ describe("UniversalProvider wallet fee", () => {
       expect(requests[0].origin).toBe("https://staging.example.com");
       expect(requests[0].pathname).toBe("/wallet-fee/v1/config");
       expect(requests[0].searchParams.get("projectId")).toBe(TEST_PROVIDER_OPTS.projectId);
-      expect(requests[0].searchParams.get("walletId")).toBe(WALLET_ID);
+      expect(requests[0].searchParams.get("walletId")).toBe(WALLET_GUIDE_ID);
 
       // a chain switch neither fetches nor emits
       const chainChanged = vi.fn();
@@ -269,8 +273,8 @@ describe("UniversalProvider wallet fee", () => {
 
     it.each([
       ["without a host launch", { hostLaunch: false }],
-      ["without a wallet_guide_id", { walletId: null }],
-      ["with an empty wallet_guide_id", { walletId: "" }],
+      ["without a wallet_guide_id", { walletGuideId: null }],
+      ["with an empty wallet_guide_id", { walletGuideId: "" }],
     ])("makes no request %s", async (_, opts) => {
       const requests = stubFetch(() => json(CONFIG));
       const { dapp, wallet, events } = await connect(opts);

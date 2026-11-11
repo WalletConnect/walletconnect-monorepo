@@ -19,6 +19,7 @@ export declare namespace SignClientTypes {
     | "session_expire"
     | "session_request"
     | "session_request_sent"
+    | "session_request_success"
     | "session_event"
     | "session_authenticate"
     | "proposal_expire"
@@ -51,6 +52,8 @@ export declare namespace SignClientTypes {
       chainId: string;
       id: number;
     };
+    // the wallet approved a request sent with `request()`; local only
+    session_request_success: EventArguments["session_request_sent"];
     session_event: BaseEventArgs<{
       event: { name: string; data: any };
       chainId: string;

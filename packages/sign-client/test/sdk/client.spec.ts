@@ -45,7 +45,7 @@ import {
   EVENT_CLIENT_SESSION_ERRORS,
   RELAYER_EVENTS,
 } from "@walletconnect/core";
-import { EngineTypes, RelayerTypes } from "@walletconnect/types";
+import { EngineTypes, RelayerTypes, SignClientTypes } from "@walletconnect/types";
 import { FIVE_MINUTES } from "@walletconnect/time";
 
 describe.sequential("Sign Client Integration", () => {
@@ -3378,6 +3378,42 @@ describe.sequential("Sign Client Integration", () => {
           resolve();
         }),
       ]);
+      await deleteClients(clients);
+    });
+
+    it("should emit session_request_success only when a request is approved", async () => {
+      const clients = await initTwoClients();
+      // the wallet case: core and sign-client never send funnel events on their own
+      const funnelSpies = [clients.A, clients.B].map((client) =>
+        vi.spyOn(client.core.eventClient, "sendFunnelEvent"),
+      );
+      const {
+        sessionA: { topic },
+      } = await testConnectMethod(clients);
+      const succeeded: SignClientTypes.EventArguments["session_request_success"][] = [];
+      clients.A.on("session_request_success", (event) => succeeded.push(event));
+      let reject = false;
+      clients.B.on("session_request", async ({ id }) => {
+        const response = reject
+          ? formatJsonRpcError(id, getSdkError("USER_REJECTED").message)
+          : formatJsonRpcResult(id, "0xsigned");
+        await clients.B.respond({ topic, response });
+      });
+
+      const result = await clients.A.request({ ...TEST_REQUEST_PARAMS, topic });
+      expect(result).toBe("0xsigned");
+      expect(succeeded).toHaveLength(1);
+      expect(succeeded[0]).toMatchObject({
+        topic,
+        chainId: TEST_REQUEST_PARAMS.chainId,
+        request: TEST_REQUEST_PARAMS.request,
+        id: expect.any(Number),
+      });
+
+      reject = true;
+      await expect(clients.A.request({ ...TEST_REQUEST_PARAMS, topic })).rejects.toBeDefined();
+      expect(succeeded).toHaveLength(1);
+      funnelSpies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
       await deleteClients(clients);
     });
 
