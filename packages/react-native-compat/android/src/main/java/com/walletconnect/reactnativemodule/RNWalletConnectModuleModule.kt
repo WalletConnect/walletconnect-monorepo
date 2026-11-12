@@ -2,7 +2,10 @@ package com.walletconnect.reactnativemodule
 
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReadableArray
+import com.facebook.react.bridge.ReadableType
 import android.content.pm.PackageManager
 
 class RNWalletConnectModuleModule internal constructor(context: ReactApplicationContext) :
@@ -36,6 +39,22 @@ class RNWalletConnectModuleModule internal constructor(context: ReactApplication
     } catch (e: Exception) {
         promise.resolve(false)
     }
+  }
+
+  @ReactMethod
+  override fun getInstalledApps(identifiers: ReadableArray, promise: Promise) {
+    val installed = Arguments.createArray()
+    try {
+      for (i in 0 until identifiers.size()) {
+        if (identifiers.getType(i) != ReadableType.String) continue
+        val packageName = identifiers.getString(i)
+        if (packageName.isNullOrBlank()) continue
+        if (isPackageInstalled(packageName)) installed.pushString(packageName)
+      }
+    } catch (e: Exception) {
+      // Never reject: return whatever was found before the failure.
+    }
+    promise.resolve(installed)
   }
 
   private fun isPackageInstalled(packageName: String): Boolean {
