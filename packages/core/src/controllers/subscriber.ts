@@ -18,7 +18,6 @@ import {
   getRelayProtocolName,
   createExpiringPromise,
   hashMessage,
-  sleep,
 } from "@walletconnect/utils";
 import {
   CORE_STORAGE_PREFIX,
@@ -45,6 +44,9 @@ export class Subscriber extends ISubscriber {
   private subscribeTimeout = toMiliseconds(ONE_MINUTE);
   private initialSubscribeTimeout = toMiliseconds(ONE_SECOND * 15);
   private clientId: string;
+  private readonly timers = new Set<ReturnType<typeof setTimeout>>();
+  private readonly requestOwners = new WeakMap<SubscriberTypes.Params, AbortSignal>();
+  private readonly pendingPersistence = new Set<Promise<void>>();
   private batchSubscribeTopicsLimit = 500;
 
   constructor(
@@ -58,13 +60,26 @@ export class Subscriber extends ISubscriber {
   }
 
   public init: ISubscriber["init"] = async () => {
+    this.relayer.core.assertActive();
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
       this.registerEventListeners();
       await this.restore();
+      this.relayer.core.assertActive();
     }
     this.initialized = true;
   };
+
+  public async dispose(): Promise<void> {
+    for (const timer of this.timers) clearTimeout(timer);
+    this.timers.clear();
+    this.events.removeAllListeners();
+    await Promise.allSettled(this.pendingPersistence);
+    this.pending.clear();
+    this.cached = [];
+    this.subscriptions.clear();
+    this.topicMap.clear();
+  }
 
   get context() {
     return getLoggerContext(this.logger);
@@ -101,36 +116,53 @@ export class Subscriber extends ISubscriber {
     );
   }
 
-  public subscribe: ISubscriber["subscribe"] = async (topic, opts) => {
+  public subscribe: ISubscriber["subscribe"] = async (
+    topic,
+    opts,
+    signal = this.relayer.core.signal,
+  ) => {
     this.isInitialized();
+    this.relayer.assertOwner(signal);
     this.logger.debug(`Subscribing Topic`);
     this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
+    const relay = getRelayProtocolName(opts);
+    const params = { topic, relay, transportType: opts?.transportType };
     try {
-      const relay = getRelayProtocolName(opts);
-      const params = { topic, relay, transportType: opts?.transportType };
       if (!opts?.internal?.skipSubscribe) {
         this.pending.set(topic, params);
+        this.requestOwners.set(params, signal);
       }
-      const id = await this.rpcSubscribe(topic, relay, opts);
+      const id = await this.rpcSubscribe(topic, relay, opts, signal);
+      this.relayer.assertOwner(signal);
       if (typeof id === "string") {
         this.onSubscribe(id, params);
+        await Promise.all(this.pendingPersistence);
+        this.relayer.assertOwner(signal);
         this.logger.debug(`Successfully Subscribed Topic`);
         this.logger.trace({ type: "method", method: "subscribe", params: { topic, opts } });
       }
       return id;
     } catch (e) {
+      if (signal.aborted && this.pending.get(topic) === params) {
+        this.pending.delete(topic);
+      }
       this.logger.debug(`Failed to Subscribe Topic`);
       this.logger.error(e as any);
       throw e;
     }
   };
 
-  public unsubscribe: ISubscriber["unsubscribe"] = async (topic, opts) => {
+  public unsubscribe: ISubscriber["unsubscribe"] = async (
+    topic,
+    opts,
+    signal = this.relayer.core.signal,
+  ) => {
     this.isInitialized();
+    this.relayer.assertOwner(signal);
     if (typeof opts?.id !== "undefined") {
-      await this.unsubscribeById(topic, opts.id, opts);
+      await this.unsubscribeById(topic, opts.id, opts, signal);
     } else {
-      await this.unsubscribeByTopic(topic, opts);
+      await this.unsubscribeByTopic(topic, opts, signal);
     }
   };
 
@@ -173,6 +205,7 @@ export class Subscriber extends ISubscriber {
   };
 
   public start: ISubscriber["start"] = async () => {
+    this.relayer.core.assertActive();
     await this.onConnect();
   };
 
@@ -208,21 +241,34 @@ export class Subscriber extends ISubscriber {
     this.topicMap.clear();
   }
 
-  private async unsubscribeByTopic(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
+  private async unsubscribeByTopic(
+    topic: string,
+    opts?: RelayerTypes.UnsubscribeOptions,
+    signal = this.relayer.core.signal,
+  ) {
     const ids = this.topicMap.get(topic);
-    await Promise.all(ids.map(async (id) => await this.unsubscribeById(topic, id, opts)));
+    await Promise.all(ids.map(async (id) => await this.unsubscribeById(topic, id, opts, signal)));
   }
 
-  private async unsubscribeById(topic: string, id: string, opts?: RelayerTypes.UnsubscribeOptions) {
+  private async unsubscribeById(
+    topic: string,
+    id: string,
+    opts?: RelayerTypes.UnsubscribeOptions,
+    signal = this.relayer.core.signal,
+  ) {
     this.logger.debug(`Unsubscribing Topic`);
     this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
     try {
+      this.relayer.assertOwner(signal);
       // optimistically remove the subscription from the local state
       const reason = getSdkError("USER_DISCONNECTED", `${this.name}, ${topic}`);
-      await this.onUnsubscribe(topic, id, reason);
+      await this.onUnsubscribe(topic, id, reason, signal);
+      this.relayer.assertOwner(signal);
       const relay = getRelayProtocolName(opts);
-      await this.restartToComplete({ topic, id, relay });
-      await this.rpcUnsubscribe(topic, id, relay);
+      await this.restartToComplete({ topic, id, relay }, signal);
+      this.relayer.assertOwner(signal);
+      await this.rpcUnsubscribe(topic, id, relay, signal);
+      this.relayer.assertOwner(signal);
       this.logger.debug(`Successfully Unsubscribed Topic`);
       this.logger.trace({ type: "method", method: "unsubscribe", params: { topic, id, opts } });
     } catch (e) {
@@ -236,81 +282,107 @@ export class Subscriber extends ISubscriber {
     topic: string,
     relay: RelayerTypes.ProtocolOptions,
     opts?: RelayerTypes.SubscribeOptions,
+    signal = this.relayer.core.signal,
   ) {
     const subId = await this.getSubscriptionId(topic);
-    if (opts?.internal?.skipSubscribe) {
-      return subId;
-    }
-    if (!opts || opts?.transportType === TRANSPORT_TYPES.relay) {
-      await this.restartToComplete({ topic, id: topic, relay });
-    }
-    const api = getRelayProtocolApi(relay.protocol);
-    const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
-      method: api.subscribe,
-      params: {
-        topic,
-      },
-    };
-    this.logger.debug(`Outgoing Relay Payload`);
-    this.logger.trace({ type: "payload", direction: "outgoing", request });
-    const shouldThrow = opts?.internal?.throwOnFailedPublish;
-    try {
-      // in link mode, allow the app to update its network state (i.e. active airplane mode) with small delay before attempting to subscribe
-      if (opts?.transportType === TRANSPORT_TYPES.link_mode) {
-        setTimeout(() => {
-          if (this.relayer.connected || this.relayer.connecting) {
-            this.relayer.request(request).catch((e) => this.logger.warn(e));
-          }
-        }, toMiliseconds(ONE_SECOND));
+    this.relayer.assertOwner(signal);
+    const owner = signal;
+    return this.relayer.withOwner(async (signal) => {
+      if (opts?.internal?.skipSubscribe) {
         return subId;
       }
-      const subscribePromise = new Promise(async (resolve) => {
-        const onSubscribe = (subscription: SubscriberEvents.Created) => {
-          if (subscription.topic === topic) {
-            this.events.removeListener(SUBSCRIBER_EVENTS.created, onSubscribe);
-            resolve(subscription.id);
-          }
-        };
-        this.events.on(SUBSCRIBER_EVENTS.created, onSubscribe);
-        try {
-          const result = await createExpiringPromise(
-            new Promise((resolve, reject) => {
-              this.relayer
-                .request(request)
-                .catch((e) => {
-                  this.logger.warn(e, e?.message);
-                  reject(e);
-                })
-                .then(resolve);
-            }),
-            this.initialSubscribeTimeout,
-            `Subscribing to ${topic} failed, please try again`,
-          );
-          this.events.removeListener(SUBSCRIBER_EVENTS.created, onSubscribe);
-          resolve(result);
-        } catch (err) {}
-      });
-
-      const subscribe = createExpiringPromise(
-        subscribePromise,
-        this.subscribeTimeout,
-        `Subscribing to ${topic} failed, please try again`,
-      );
-
-      const result = await subscribe;
-      if (!result && shouldThrow) {
-        throw new Error(`Subscribing to ${topic} failed, please try again`);
+      if (!opts || opts?.transportType === TRANSPORT_TYPES.relay) {
+        await this.restartToComplete({ topic, id: topic, relay }, signal);
+        this.relayer.assertOwner(signal);
       }
-      // return null to indicate that the subscription failed
-      return result ? subId : null;
-    } catch (err) {
-      this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
-      this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
-      if (shouldThrow) {
-        throw err;
+      const api = getRelayProtocolApi(relay.protocol);
+      const request: RequestArguments<RelayJsonRpc.SubscribeParams> = {
+        method: api.subscribe,
+        params: {
+          topic,
+        },
+      };
+      this.logger.debug(`Outgoing Relay Payload`);
+      this.logger.trace({ type: "payload", direction: "outgoing", request });
+      const shouldThrow = opts?.internal?.throwOnFailedPublish;
+      let onSubscribe: ((subscription: SubscriberEvents.Created) => void) | undefined;
+      try {
+        // in link mode, allow the app to update its network state (i.e. active airplane mode) with small delay before attempting to subscribe
+        if (opts?.transportType === TRANSPORT_TYPES.link_mode) {
+          const cancel = () => {
+            clearTimeout(timer);
+            this.timers.delete(timer);
+            owner.removeEventListener("abort", cancel);
+            this.relayer.core.signal.removeEventListener("abort", cancel);
+          };
+          const timer = setTimeout(() => {
+            cancel();
+            if (this.relayer.core.signal.aborted || owner.aborted) return;
+            if (this.relayer.connected || this.relayer.connecting) {
+              this.relayer.request(request, owner).catch((e) => this.logger.warn(e));
+            }
+          }, toMiliseconds(ONE_SECOND));
+          this.timers.add(timer);
+          owner.addEventListener("abort", cancel, { once: true });
+          this.relayer.core.signal.addEventListener("abort", cancel, { once: true });
+          if (owner.aborted || this.relayer.core.signal.aborted) cancel();
+          return subId;
+        }
+        const subscribePromise = new Promise(async (resolve) => {
+          const listener = (subscription: SubscriberEvents.Created) => {
+            if (subscription.topic === topic) {
+              this.events.removeListener(SUBSCRIBER_EVENTS.created, listener);
+              resolve(subscription.id);
+            }
+          };
+          onSubscribe = listener;
+          this.events.on(SUBSCRIBER_EVENTS.created, listener);
+          try {
+            const result = await createExpiringPromise(
+              new Promise((resolve, reject) => {
+                this.relayer
+                  .request(request, signal)
+                  .catch((e) => {
+                    this.logger.warn(e, e?.message);
+                    reject(e);
+                  })
+                  .then(resolve);
+              }),
+              this.initialSubscribeTimeout,
+              `Subscribing to ${topic} failed, please try again`,
+              signal,
+            );
+            this.events.removeListener(SUBSCRIBER_EVENTS.created, listener);
+            resolve(result);
+          } catch (err) {}
+        });
+
+        const subscribe = createExpiringPromise(
+          subscribePromise,
+          this.subscribeTimeout,
+          `Subscribing to ${topic} failed, please try again`,
+          signal,
+        );
+
+        const result = await subscribe;
+        this.relayer.assertOwner(signal);
+        if (!result && shouldThrow) {
+          throw new Error(`Subscribing to ${topic} failed, please try again`);
+        }
+        // return null to indicate that the subscription failed
+        return result ? subId : null;
+      } catch (err) {
+        this.relayer.assertOwner(signal);
+        this.logger.debug(`Outgoing Relay Subscribe Payload stalled`);
+        this.relayer.events.emit(RELAYER_EVENTS.connection_stalled);
+        if (shouldThrow) {
+          throw err;
+        }
+      } finally {
+        if (onSubscribe) this.events.off(SUBSCRIBER_EVENTS.created, onSubscribe);
       }
-    }
-    return null;
+      return null;
+    }, signal);
   }
 
   private async rpcBatchSubscribe(subscriptions: SubscriberTypes.Params[]): Promise<boolean> {
@@ -338,6 +410,7 @@ export class Subscriber extends ISubscriber {
         }),
         this.subscribeTimeout,
         "rpcBatchSubscribe failed, please try again",
+        this.relayer.core.signal,
       );
       return true;
     } catch (err) {
@@ -372,6 +445,7 @@ export class Subscriber extends ISubscriber {
         }),
         this.subscribeTimeout,
         "rpcBatchFetchMessages failed, please try again",
+        this.relayer.core.signal,
       );
       result = (await fetchMessagesPromise) as {
         messages: RelayerTypes.MessageEvent[];
@@ -382,7 +456,12 @@ export class Subscriber extends ISubscriber {
     return result;
   }
 
-  private rpcUnsubscribe(topic: string, id: string, relay: RelayerTypes.ProtocolOptions) {
+  private rpcUnsubscribe(
+    topic: string,
+    id: string,
+    relay: RelayerTypes.ProtocolOptions,
+    signal = this.relayer.core.signal,
+  ) {
     const api = getRelayProtocolApi(relay.protocol);
     const request: RequestArguments<RelayJsonRpc.UnsubscribeParams> = {
       method: api.unsubscribe,
@@ -393,7 +472,7 @@ export class Subscriber extends ISubscriber {
     };
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "payload", direction: "outgoing", request });
-    return this.relayer.request(request);
+    return this.relayer.request(request, signal);
   }
 
   private onSubscribe(id: string, params: SubscriberTypes.Params) {
@@ -401,37 +480,55 @@ export class Subscriber extends ISubscriber {
     this.pending.delete(params.topic);
   }
 
-  private onBatchSubscribe(subscriptions: SubscriberTypes.Active[]) {
+  private onBatchSubscribe(
+    subscriptions: SubscriberTypes.Active[],
+    owners: (AbortSignal | undefined)[] = [],
+  ) {
     if (!subscriptions.length) return;
-    subscriptions.forEach((subscription) => {
+    subscriptions.forEach((subscription, index) => {
+      if (owners[index]?.aborted) {
+        const pending = this.pending.get(subscription.topic);
+        if (pending && this.requestOwners.get(pending) === owners[index])
+          this.pending.delete(subscription.topic);
+        return;
+      }
       this.setSubscription(subscription.id, { ...subscription });
       this.pending.delete(subscription.topic);
     });
   }
 
-  private async onUnsubscribe(topic: string, id: string, reason: ErrorResponse) {
+  private async onUnsubscribe(
+    topic: string,
+    id: string,
+    reason: ErrorResponse,
+    signal = this.relayer.core.signal,
+  ) {
+    this.relayer.assertOwner(signal);
     this.events.removeAllListeners(id);
     if (this.hasSubscription(id, topic)) {
       this.deleteSubscription(id, reason);
     }
+    await Promise.all(this.pendingPersistence);
+    this.relayer.assertOwner(signal);
     await this.relayer.messages.del(topic);
+    this.relayer.assertOwner(signal);
   }
 
   private async setRelayerSubscriptions(subscriptions: SubscriberTypes.Active[]) {
-    await this.relayer.core.storage.setItem<SubscriberTypes.Active[]>(
-      this.storageKey,
-      subscriptions,
+    await this.relayer.core.run(() =>
+      this.relayer.core.storage.setItem<SubscriberTypes.Active[]>(this.storageKey, subscriptions),
     );
   }
 
   private async getRelayerSubscriptions() {
-    const subscriptions = await this.relayer.core.storage.getItem<SubscriberTypes.Active[]>(
-      this.storageKey,
+    const subscriptions = await this.relayer.core.run(() =>
+      this.relayer.core.storage.getItem<SubscriberTypes.Active[]>(this.storageKey),
     );
     return subscriptions;
   }
 
   private setSubscription(id: string, subscription: SubscriberTypes.Active) {
+    this.relayer.core.assertActive();
     this.logger.debug(`Setting subscription`);
     this.logger.trace({ type: "method", method: "setSubscription", id, subscription });
     this.addSubscription(id, subscription);
@@ -468,12 +565,20 @@ export class Subscriber extends ISubscriber {
 
   private restart = async () => {
     await this.restore();
+    this.relayer.core.assertActive();
     await this.onRestart();
   };
 
   private async persist() {
-    await this.setRelayerSubscriptions(this.values);
-    this.events.emit(SUBSCRIBER_EVENTS.sync);
+    const pending = this.setRelayerSubscriptions(this.values);
+    this.pendingPersistence.add(pending);
+    try {
+      await pending;
+      this.relayer.core.assertActive();
+      this.events.emit(SUBSCRIBER_EVENTS.sync);
+    } finally {
+      this.pendingPersistence.delete(pending);
+    }
   }
 
   private async onRestart() {
@@ -515,13 +620,15 @@ export class Subscriber extends ISubscriber {
   private async batchSubscribe(subscriptions: SubscriberTypes.Params[]) {
     if (!subscriptions.length) return;
 
+    const owners = subscriptions.map((subscription) => this.requestOwners.get(subscription));
     const success = await this.rpcBatchSubscribe(subscriptions);
+    this.relayer.core.assertActive();
     if (!success) {
       this.logger.warn(
         `Batch subscribe failed for ${subscriptions.length} topics, adding to pending for retry`,
       );
-      subscriptions.forEach((s) => {
-        this.pending.set(s.topic, s);
+      subscriptions.forEach((s, index) => {
+        if (!owners[index]?.aborted) this.pending.set(s.topic, s);
       });
       return;
     }
@@ -531,6 +638,7 @@ export class Subscriber extends ISubscriber {
           return { ...s, id: await this.getSubscriptionId(s.topic) };
         }),
       ),
+      owners,
     );
   }
 
@@ -540,7 +648,25 @@ export class Subscriber extends ISubscriber {
     this.logger.trace(`Fetching batch messages for ${subscriptions.length} subscriptions`);
     const response = await this.rpcBatchFetchMessages(subscriptions);
     if (response && response.messages) {
-      await sleep(toMiliseconds(ONE_SECOND));
+      await new Promise<void>((resolve, reject) => {
+        const cleanup = () => {
+          clearTimeout(timer);
+          this.timers.delete(timer);
+          this.relayer.core.signal.removeEventListener("abort", abort);
+        };
+        const abort = () => {
+          cleanup();
+          reject(new Error("WalletConnect Core is disposed"));
+        };
+        const timer = setTimeout(() => {
+          cleanup();
+          resolve();
+        }, toMiliseconds(ONE_SECOND));
+        this.timers.add(timer);
+        this.relayer.core.signal.addEventListener("abort", abort, { once: true });
+        if (this.relayer.core.signal.aborted) abort();
+      });
+      this.relayer.core.assertActive();
       await this.relayer.handleBatchMessageEvents(response.messages);
     }
   }
@@ -560,6 +686,10 @@ export class Subscriber extends ISubscriber {
     }
     const pendingSubscriptions: SubscriberTypes.Params[] = [];
     this.pending.forEach((params) => {
+      if (this.requestOwners.get(params)?.aborted) {
+        this.pending.delete(params.topic);
+        return;
+      }
       pendingSubscriptions.push(params);
     });
 
@@ -568,33 +698,56 @@ export class Subscriber extends ISubscriber {
 
   private registerEventListeners = () => {
     this.relayer.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
-      await this.checkPending();
+      if (this.relayer.core.signal.aborted) return;
+      await this.checkPending().catch((error) => {
+        if (!this.relayer.core.signal.aborted) this.logger.warn(error);
+      });
     });
-    this.events.on(SUBSCRIBER_EVENTS.created, async (createdEvent: SubscriberEvents.Created) => {
+    this.events.on(SUBSCRIBER_EVENTS.created, (createdEvent: SubscriberEvents.Created) => {
       const eventName = SUBSCRIBER_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: createdEvent });
-      await this.persist();
+      this.persist().catch((error) => {
+        if (!this.relayer.core.signal.aborted) this.logger.warn(error);
+      });
     });
-    this.events.on(SUBSCRIBER_EVENTS.deleted, async (deletedEvent: SubscriberEvents.Deleted) => {
+    this.events.on(SUBSCRIBER_EVENTS.deleted, (deletedEvent: SubscriberEvents.Deleted) => {
       const eventName = SUBSCRIBER_EVENTS.deleted;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
-      await this.persist();
+      this.persist().catch((error) => {
+        if (!this.relayer.core.signal.aborted) this.logger.warn(error);
+      });
     });
   };
 
   private isInitialized() {
+    this.relayer.core.assertActive();
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
     }
   }
 
-  private async restartToComplete(subscription: SubscriberTypes.Active) {
+  private async restartToComplete(
+    subscription: SubscriberTypes.Active,
+    signal = this.relayer.core.signal,
+  ) {
+    this.relayer.assertOwner(signal);
     if (!this.relayer.connected && !this.relayer.connecting) {
       this.cached.push(subscription);
-      await this.relayer.transportOpen();
+      this.requestOwners.set(subscription, signal);
+      const cancel = () => {
+        this.cached = this.cached.filter((item) => item !== subscription);
+      };
+      signal.addEventListener("abort", cancel, { once: true });
+      try {
+        await this.relayer.withOwner(() => this.relayer.transportOpen(), signal);
+        this.relayer.assertOwner(signal);
+      } finally {
+        signal.removeEventListener("abort", cancel);
+        if (signal.aborted) cancel();
+      }
     }
   }
 

@@ -308,62 +308,84 @@ export function capitalize(str: string) {
 export function createDelayedPromise<T>(
   expiry: number = FIVE_MINUTES,
   expireErrorMessage?: string,
+  signal?: AbortSignal,
 ) {
   const timeout = toMiliseconds(expiry || FIVE_MINUTES);
   let cacheResolve: undefined | ((value: T | PromiseLike<T>) => void);
-  let cacheReject: undefined | ((value?: ErrorResponse) => void);
-  let cacheTimeout: undefined | NodeJS.Timeout;
-  let result: Promise<Awaited<T>> | Promise<T> | undefined;
-
-  const done = () =>
-    new Promise<T>((promiseResolve, promiseReject) => {
-      if (result) {
-        return promiseResolve(result);
+  let cacheReject: undefined | ((value?: ErrorResponse | Error) => void);
+  let cacheTimeout: undefined | ReturnType<typeof setTimeout>;
+  let pending: Promise<T> | undefined;
+  const cleanup = () => {
+    if (cacheTimeout) clearTimeout(cacheTimeout);
+    cacheTimeout = undefined;
+    signal?.removeEventListener("abort", abort);
+  };
+  const abort = () => {
+    cleanup();
+    cacheReject?.(signal?.reason || new Error("Operation aborted"));
+  };
+  const done = () => {
+    if (pending) return pending;
+    pending = new Promise<T>((resolve, reject) => {
+      cacheResolve = resolve;
+      cacheReject = reject;
+      if (signal?.aborted) {
+        abort();
+        return;
       }
       cacheTimeout = setTimeout(() => {
+        cleanup();
         const expiredError = getInternalError("EXPIRED");
-        const err = new Error(expireErrorMessage || expiredError.message) as SDKError;
-        err.code = expiredError.code;
-        promiseReject(err);
+        const error = new Error(expireErrorMessage || expiredError.message) as SDKError;
+        error.code = expiredError.code;
+        reject(error);
       }, timeout);
-      cacheResolve = promiseResolve;
-      cacheReject = promiseReject;
+      signal?.addEventListener("abort", abort, { once: true });
     });
+    return pending;
+  };
   const resolve = (value?: T) => {
-    if (cacheTimeout && cacheResolve) {
-      clearTimeout(cacheTimeout);
-      cacheResolve(value as T);
-      result = Promise.resolve(value) as Promise<Awaited<T>>;
-    }
+    cleanup();
+    cacheResolve?.(value as T);
   };
   const reject = (value?: ErrorResponse) => {
-    if (cacheTimeout && cacheReject) {
-      clearTimeout(cacheTimeout);
-      cacheReject(value);
-    }
+    cleanup();
+    cacheReject?.(value);
   };
-
-  return {
-    resolve,
-    reject,
-    done,
-  };
+  return { resolve, reject, done };
 }
 
 export function createExpiringPromise<T>(
   promise: Promise<T>,
   expiry: number,
   expireErrorMessage?: string,
-) {
-  return new Promise(async (resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error(expireErrorMessage)), expiry);
-    try {
-      const result = await promise;
-      resolve(result);
-    } catch (error) {
-      reject(error);
-    }
-    clearTimeout(timeout);
+  signal?: AbortSignal,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      clearTimeout(timeout);
+      signal?.removeEventListener("abort", abort);
+    };
+    const abort = () => {
+      cleanup();
+      reject(signal?.reason || new Error("Operation aborted"));
+    };
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error(expireErrorMessage));
+    }, expiry);
+    signal?.addEventListener("abort", abort, { once: true });
+    promise.then(
+      (value) => {
+        cleanup();
+        resolve(value);
+      },
+      (error) => {
+        cleanup();
+        reject(error);
+      },
+    );
+    if (signal?.aborted) abort();
   });
 }
 

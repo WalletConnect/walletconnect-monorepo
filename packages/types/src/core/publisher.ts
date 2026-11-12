@@ -15,6 +15,7 @@ export abstract class IPublisher extends IEvents {
   public abstract name: string;
 
   public abstract readonly context: string;
+  public abstract dispose(): Promise<void>;
 
   constructor(
     public relayer: IRelayer,
@@ -27,10 +28,14 @@ export abstract class IPublisher extends IEvents {
     topic: string,
     message: string,
     opts?: RelayerTypes.PublishOptions,
+    signal?: AbortSignal,
   ): Promise<void>;
 
-  public abstract publishCustom(params: {
-    payload: any;
-    opts?: RelayerTypes.PublishOptions;
-  }): Promise<void>;
+  public abstract publishCustom(
+    params: {
+      payload: any;
+      opts?: RelayerTypes.PublishOptions;
+    },
+    signal?: AbortSignal,
+  ): Promise<void>;
 }

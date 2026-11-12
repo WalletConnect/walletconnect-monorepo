@@ -15,6 +15,7 @@ export declare namespace Verify {
 
 export abstract class IVerify {
   public abstract readonly context: string;
+  public abstract dispose(): Promise<void>;
 
   constructor(
     public core: ICore,

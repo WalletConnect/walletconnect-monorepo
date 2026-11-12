@@ -41,35 +41,46 @@ export function getNodeOnlineStatus() {
   return true;
 }
 
-export function subscribeToNetworkChange(callbackHandler: (connected: boolean) => void) {
+export function subscribeToNetworkChange(
+  callbackHandler: (connected: boolean) => void,
+): () => void {
   const env = getEnvironment();
   switch (env) {
     case ENV_MAP.browser:
-      subscribeToBrowserNetworkChange(callbackHandler);
-      break;
+      return subscribeToBrowserNetworkChange(callbackHandler);
     case ENV_MAP.reactNative:
-      subscribeToReactNativeNetworkChange(callbackHandler);
-      break;
-    case ENV_MAP.node:
-      // wip: need to implement
-      break;
+      return subscribeToReactNativeNetworkChange(callbackHandler);
     default:
-      break;
+      return () => undefined;
   }
 }
 
-export function subscribeToBrowserNetworkChange(callbackHandler: (connected: boolean) => void) {
+export function subscribeToBrowserNetworkChange(
+  callbackHandler: (connected: boolean) => void,
+): () => void {
   if (!isReactNative() && isBrowser()) {
-    window.addEventListener("online", () => callbackHandler(true));
-    window.addEventListener("offline", () => callbackHandler(false));
+    const online = () => callbackHandler(true);
+    const offline = () => callbackHandler(false);
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
   }
+  return () => undefined;
 }
 
 // global.NetInfo is set in react-native-compat
-export function subscribeToReactNativeNetworkChange(callbackHandler: (connected: boolean) => void) {
+export function subscribeToReactNativeNetworkChange(
+  callbackHandler: (connected: boolean) => void,
+): () => void {
   if (isReactNative() && typeof global !== "undefined" && (global as any)?.NetInfo) {
-    (global as any)?.NetInfo.addEventListener((state: any) => callbackHandler(state?.isConnected));
+    return (global as any).NetInfo.addEventListener((state: any) =>
+      callbackHandler(state?.isConnected),
+    );
   }
+  return () => undefined;
 }
 
 export function isAppVisible(): boolean {

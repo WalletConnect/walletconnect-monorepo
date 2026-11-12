@@ -27,7 +27,6 @@ import {
   ISubscriber,
   RelayerOptions,
   RelayerTypes,
-  SubscriberTypes,
 } from "@walletconnect/types";
 import {
   createExpiringPromise,
@@ -55,7 +54,6 @@ import {
   RELAYER_PROVIDER_EVENTS,
   RELAYER_SUBSCRIBER_SUFFIX,
   RELAYER_DEFAULT_RELAY_URL,
-  SUBSCRIBER_EVENTS,
   RELAYER_RECONNECT_TIMEOUT,
   TRANSPORT_TYPES,
   MESSAGE_DIRECTION,
@@ -79,6 +77,12 @@ export class Relayer extends IRelayer {
   public transportExplicitlyClosed = false;
 
   private initialized = false;
+  private disposal: Promise<void> | undefined;
+  private disposed = false;
+  private unsubscribeNetwork: (() => void) | undefined;
+  private listenersReady: Promise<void> | undefined;
+  private retryTimeout: ReturnType<typeof setTimeout> | undefined;
+  private retryReject: ((error: Error) => void) | undefined;
   private connectionAttemptInProgress = false;
 
   private relayUrl: string;
@@ -87,6 +91,8 @@ export class Relayer extends IRelayer {
   private bundleId: string | undefined;
   private hasExperiencedNetworkDisruption = false;
   private pingTimeout: NodeJS.Timeout | undefined;
+  private pingSocket: { off(event: string, listener: () => void): unknown } | undefined;
+  private readonly onPing = () => this.resetPingTimeout();
   /**
    * the relay pings the client 30 seconds after the last message was received
    * meaning if we don't receive a message in 30 seconds, the connection can be considered dead
@@ -128,11 +134,43 @@ export class Relayer extends IRelayer {
 
   public async init() {
     this.logger.trace(`Initialized`);
-    this.registerEventListeners();
+    this.assertActive();
+    this.listenersReady = this.registerEventListeners();
+    await this.listenersReady;
     await Promise.all([this.messages.init(), this.subscriber.init()]);
+    this.assertActive();
     this.initialized = true;
     // don't block init with transportOpen
     this.transportOpen().catch((e) => this.logger.warn(e, (e as Error)?.message));
+  }
+
+  public dispose(): Promise<void> {
+    if (this.disposal) return this.disposal;
+    this.disposed = true;
+    this.transportExplicitlyClosed = true;
+    this.unsubscribeNetwork?.();
+    this.unsubscribeNetwork = undefined;
+    clearTimeout(this.pingTimeout);
+    clearTimeout(this.reconnectTimeout);
+    clearTimeout(this.stalledRestartTimeout);
+    clearTimeout(this.retryTimeout);
+    this.retryReject?.(new Error("WalletConnect Core is disposed"));
+    this.retryReject = undefined;
+    if (this.provider.connection) this.unregisterProviderListeners();
+    const provider = this.provider as IJsonRpcProvider & { dispose(): Promise<void> };
+    const pending = provider.connection
+      ? Promise.resolve().then(() => provider.dispose())
+      : Promise.resolve();
+    this.disposal = (async () => {
+      const settled = await Promise.allSettled([this.listenersReady, this.connectPromise, pending]);
+      this.unsubscribeNetwork?.();
+      this.unsubscribeNetwork = undefined;
+      this.events.removeAllListeners();
+      await this.subscriber.dispose();
+      await this.publisher.dispose();
+      if (settled[2].status === "rejected") throw settled[2].reason;
+    })();
+    return this.disposal;
   }
 
   get context() {
@@ -151,9 +189,66 @@ export class Relayer extends IRelayer {
     );
   }
 
-  public async publish(topic: string, message: string, opts?: RelayerTypes.PublishOptions) {
+  public assertOwner(signal = this.core.signal) {
+    this.assertActive();
+    if (signal.aborted) throw signal.reason || new Error("WalletConnect request owner is disposed");
+  }
+
+  public withOwner<T>(
+    operation: (signal: AbortSignal) => Promise<T>,
+    signal = this.core.signal,
+  ): Promise<T> {
+    this.assertOwner(signal);
+    const lifetime = new AbortController();
+    return new Promise<T>((resolve, reject) => {
+      const signals = signal === this.core.signal ? [signal] : [signal, this.core.signal];
+      const cleanup = () => signals.forEach((owner) => owner.removeEventListener("abort", abort));
+      const abort = () => {
+        cleanup();
+        try {
+          this.assertOwner(signal);
+        } catch (error) {
+          lifetime.abort(error);
+          reject(error);
+        }
+      };
+      signals.forEach((owner) => owner.addEventListener("abort", abort, { once: true }));
+      Promise.resolve()
+        .then(() => {
+          this.assertOwner(signal);
+          return operation(lifetime.signal);
+        })
+        .then(
+          (value) => {
+            cleanup();
+            lifetime.abort();
+            try {
+              this.assertOwner(signal);
+              resolve(value);
+            } catch (error) {
+              reject(error);
+            }
+          },
+          (error) => {
+            cleanup();
+            lifetime.abort();
+            reject(error);
+          },
+        );
+      if (signals.some((owner) => owner.aborted)) abort();
+    });
+  }
+
+  public async publish(
+    topic: string,
+    message: string,
+    opts?: RelayerTypes.PublishOptions,
+    signal = this.core.signal,
+  ) {
     this.isInitialized();
-    await this.publisher.publish(topic, message, opts);
+    this.assertOwner(signal);
+    await this.publisher.publish(topic, message, opts, signal);
+    this.assertOwner(signal);
     await this.recordMessageEvent(
       {
         topic,
@@ -164,62 +259,54 @@ export class Relayer extends IRelayer {
       },
       MESSAGE_DIRECTION.outbound,
     );
+    this.assertOwner(signal);
   }
 
-  public async publishCustom(params: { payload: any; opts?: RelayerTypes.PublishOptions }) {
+  public async publishCustom(
+    params: { payload: any; opts?: RelayerTypes.PublishOptions },
+    signal = this.core.signal,
+  ) {
     this.isInitialized();
-    await this.publisher.publishCustom(params);
+    this.assertOwner(signal);
+    await this.publisher.publishCustom(params, signal);
+    this.assertOwner(signal);
   }
 
-  public async subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions) {
+  public async subscribe(
+    topic: string,
+    opts?: RelayerTypes.SubscribeOptions,
+    signal = this.core.signal,
+  ) {
     this.isInitialized();
+    this.assertOwner(signal);
     if (!opts?.transportType || opts?.transportType === "relay") {
-      await this.toEstablishConnection();
+      await this.withOwner(() => this.toEstablishConnection(), signal);
     }
     const shouldThrowOnFailure = opts?.internal?.throwOnFailedPublish ?? true;
 
-    let id = this.subscriber.topicMap.get(topic)?.[0] || "";
-    let resolvePromise: () => void;
-    const onSubCreated = (subscription: SubscriberTypes.Active) => {
-      if (subscription.topic === topic) {
-        this.subscriber.off(SUBSCRIBER_EVENTS.created, onSubCreated);
-        resolvePromise();
-      }
-    };
-
-    await Promise.all([
-      new Promise<void>((resolve) => {
-        resolvePromise = resolve;
-        this.subscriber.on(SUBSCRIBER_EVENTS.created, onSubCreated);
-      }),
-      new Promise<void>((resolve, reject) => {
-        this.subscriber
-          .subscribe(topic, {
-            internal: {
-              throwOnFailedPublish: shouldThrowOnFailure,
-            },
-            ...opts,
-          })
-          .then((result) => {
-            id = result || id;
-            resolve();
-          })
-          .catch((error) => {
-            if (shouldThrowOnFailure) {
-              reject(error);
-            } else {
-              resolve();
-            }
-          });
-      }),
-    ]);
-    return id;
+    const previous = this.subscriber.topicMap.get(topic)?.[0] || "";
+    const id = await this.subscriber.subscribe(
+      topic,
+      {
+        ...opts,
+        internal: { ...opts?.internal, throwOnFailedPublish: shouldThrowOnFailure },
+      },
+      signal,
+    );
+    this.assertOwner(signal);
+    return id || previous;
   }
 
-  public request = async (request: RequestArguments<RelayJsonRpc.SubscribeParams>) => {
+  public request = async (
+    request: RequestArguments<RelayJsonRpc.SubscribeParams>,
+    signal = this.core.signal,
+  ) => {
+    this.assertOwner(signal);
     this.logger.debug(`Publishing Request Payload`);
     const id = request.id || (getBigIntRpcId().toString() as any);
-    await this.toEstablishConnection();
+    await this.withOwner(() => this.toEstablishConnection(), signal);
+    this.assertOwner(signal);
+    const tag = `${id}:${(request.params as any)?.tag || ""}`;
     try {
       this.logger.trace(
         {
@@ -229,20 +316,30 @@ export class Relayer extends IRelayer {
         },
         "relayer.request - publishing...",
       );
-      const tag = `${id}:${(request.params as any)?.tag || ""}`;
       this.requestsInFlight.push(tag);
-      const result = await this.provider.request(request);
-      this.requestsInFlight = this.requestsInFlight.filter((i) => i !== tag);
+      const result = await this.withOwner(
+        () => this.provider.request(request, undefined, signal),
+        signal,
+      );
+      this.assertOwner(signal);
       return result;
     } catch (e) {
       this.logger.debug(`Failed to Publish Request: ${id}`);
       throw e;
+    } finally {
+      this.requestsInFlight = this.requestsInFlight.filter((i) => i !== tag);
     }
   };
 
-  public async unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions) {
+  public async unsubscribe(
+    topic: string,
+    opts?: RelayerTypes.UnsubscribeOptions,
+    signal = this.core.signal,
+  ) {
     this.isInitialized();
-    await this.subscriber.unsubscribe(topic, opts);
+    this.assertOwner(signal);
+    await this.subscriber.unsubscribe(topic, opts, signal);
+    this.assertOwner(signal);
   }
 
   public on(event: string, listener: any) {
@@ -263,9 +360,12 @@ export class Relayer extends IRelayer {
 
   public async transportDisconnect() {
     if (this.provider.disconnect && (this.hasExperiencedNetworkDisruption || this.connected)) {
-      await createExpiringPromise(this.provider.disconnect(), 2000, "provider.disconnect()").catch(
-        () => this.onProviderDisconnect(),
-      );
+      await createExpiringPromise(
+        this.provider.disconnect(),
+        2000,
+        "provider.disconnect()",
+        this.core.signal,
+      ).catch(() => this.onProviderDisconnect());
     } else {
       this.onProviderDisconnect();
     }
@@ -280,6 +380,7 @@ export class Relayer extends IRelayer {
   }
 
   async transportOpen(relayUrl?: string) {
+    this.assertActive();
     if (!this.subscriber.hasAnyTopics) {
       this.logger.info(
         "Starting WS connection skipped because the client has no topics to work with.",
@@ -303,6 +404,7 @@ export class Relayer extends IRelayer {
   }
 
   public async restartTransport(relayUrl?: string) {
+    this.assertActive();
     this.logger.debug({}, "Restarting transport...");
     if (this.connectionAttemptInProgress) return;
     this.relayUrl = relayUrl || this.relayUrl;
@@ -323,8 +425,10 @@ export class Relayer extends IRelayer {
     this.reconnectInProgress = false;
   }
 
-  public async confirmOnlineStateOrThrow() {
-    if (await isOnline()) return;
+  public async confirmOnlineStateOrThrow(signal = this.core.signal) {
+    const online = await this.withOwner(() => isOnline(), signal);
+    this.assertOwner(signal);
+    if (online) return;
     throw new Error("No internet connection detected. Please restart your network and try again.");
   }
 
@@ -370,6 +474,7 @@ export class Relayer extends IRelayer {
       await this.transportDisconnect();
     }
 
+    this.assertActive();
     this.transportExplicitlyClosed = false;
     let attempt = 1;
     try {
@@ -381,6 +486,7 @@ export class Relayer extends IRelayer {
           }
           this.logger.debug({}, `Connecting to ${this.relayUrl}, attempt: ${attempt}...`);
           await this.createProvider();
+          this.assertActive();
 
           // Step A: establish WebSocket connection
           await new Promise<void>((resolve, reject) => {
@@ -392,6 +498,7 @@ export class Relayer extends IRelayer {
               this.provider.connect(),
               this.connectTimeout,
               `Socket stalled when trying to connect to ${this.relayUrl}`,
+              this.core.signal,
             )
               .then(() => resolve())
               .catch(reject)
@@ -401,6 +508,7 @@ export class Relayer extends IRelayer {
               });
           });
 
+          this.assertActive();
           // Step B: re-subscribe (only reached if Step A resolved)
           await new Promise<void>((resolve, reject) => {
             const onDisconnect = () => {
@@ -416,8 +524,10 @@ export class Relayer extends IRelayer {
               });
           });
 
+          this.assertActive();
           this.hasExperiencedNetworkDisruption = false;
         } catch (e) {
+          this.assertActive();
           await this.subscriber.stop();
           const error = e as Error;
           this.logger.warn({}, error.message);
@@ -432,11 +542,19 @@ export class Relayer extends IRelayer {
           break;
         }
 
-        await new Promise((resolve) => setTimeout(resolve, toMiliseconds(attempt * 1)));
+        await new Promise<void>((resolve, reject) => {
+          this.assertActive();
+          this.retryReject = reject;
+          this.retryTimeout = setTimeout(resolve, toMiliseconds(attempt));
+        });
+        this.retryReject = undefined;
+        this.assertActive();
         attempt++;
       }
     } finally {
       this.connectionAttemptInProgress = false;
+      clearTimeout(this.retryTimeout);
+      this.retryReject = undefined;
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = undefined;
       this.reconnectInProgress = false;
@@ -451,20 +569,24 @@ export class Relayer extends IRelayer {
    * In the browser, ping/pong events are not exposed, so the above behaviour is handled by `subscribeToNetworkChange` and `isOnline` functions.
    */
   private startPingTimeout() {
-    if (!isNode()) return;
-    try {
-      //@ts-expect-error - Types are divergent between the node and browser WS API
-      this.provider?.connection?.socket?.on("ping", () => {
-        this.resetPingTimeout();
-      });
-      this.resetPingTimeout();
-    } catch (e) {
-      this.logger.warn(e, (e as Error)?.message);
-    }
+    if (!isNode() || this.core.signal.aborted) return;
+    this.pingSocket?.off("ping", this.onPing);
+    // Node sockets expose ping events; browsers do not.
+    const socket = (
+      this.provider.connection as unknown as {
+        socket?: {
+          on(event: string, listener: () => void): unknown;
+          off(event: string, listener: () => void): unknown;
+        };
+      }
+    ).socket;
+    socket?.on("ping", this.onPing);
+    this.pingSocket = socket;
+    this.resetPingTimeout();
   }
 
   private resetPingTimeout = () => {
-    if (!isNode()) return;
+    if (this.core.signal.aborted || !isNode()) return;
     clearTimeout(this.pingTimeout);
     this.pingTimeout = setTimeout(() => {
       try {
@@ -480,19 +602,12 @@ export class Relayer extends IRelayer {
   private async createProvider() {
     if (this.provider.connection) {
       this.unregisterProviderListeners();
-      if (this.connected) {
-        try {
-          await createExpiringPromise(
-            this.provider.disconnect(),
-            1000,
-            "Closing previous provider",
-          );
-        } catch {
-          // best-effort cleanup of old socket
-        }
-      }
+      const previous = this.provider as IJsonRpcProvider & { dispose(): Promise<void> };
+      await previous.dispose();
+      this.assertActive();
     }
     const auth = await this.core.crypto.signJWT(this.relayUrl);
+    this.assertActive();
 
     this.provider = new JsonRpcProvider(
       new WsConnection(
@@ -578,17 +693,20 @@ export class Relayer extends IRelayer {
   }
 
   private async acknowledgePayload(payload: JsonRpcPayload) {
+    this.assertActive();
     const response = formatJsonRpcResult(payload.id, true);
     await this.provider.connection.send(response);
   }
 
   // ---------- Events Handlers ----------------------------------------------- //
   private onPayloadHandler = (payload: JsonRpcPayload) => {
-    this.onProviderPayload(payload);
+    if (this.core.signal.aborted) return;
+    this.onProviderPayload(payload).catch((error) => this.logger.warn(error));
     this.resetPingTimeout();
   };
 
   private onConnectHandler = () => {
+    if (this.core.signal.aborted) return;
     this.logger.warn({}, "Relayer connected 🛜");
     this.startPingTimeout();
     this.stalledRestartBackoff = 0;
@@ -596,12 +714,14 @@ export class Relayer extends IRelayer {
   };
 
   private onDisconnectHandler = () => {
+    if (this.core.signal.aborted) return;
     this.logger.warn({}, `Relayer disconnected 🛑`);
     this.requestsInFlight = [];
     this.onProviderDisconnect();
   };
 
   private onProviderErrorHandler = (error: Error) => {
+    if (this.core.signal.aborted) return;
     this.logger.fatal(`Fatal socket error: ${error.message}`);
     this.events.emit(RELAYER_EVENTS.error, error);
     this.logger.fatal("Fatal socket error received, closing transport");
@@ -620,6 +740,8 @@ export class Relayer extends IRelayer {
   };
 
   private unregisterProviderListeners() {
+    this.pingSocket?.off("ping", this.onPing);
+    this.pingSocket = undefined;
     this.provider.off(RELAYER_PROVIDER_EVENTS.payload, this.onPayloadHandler);
     this.provider.off(RELAYER_PROVIDER_EVENTS.connect, this.onConnectHandler);
     this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, this.onDisconnectHandler);
@@ -628,8 +750,10 @@ export class Relayer extends IRelayer {
   }
 
   private async registerEventListeners() {
-    let lastConnectedState = await isOnline();
-    subscribeToNetworkChange(async (connected: boolean) => {
+    let lastConnectedState = await this.core.run(() => isOnline());
+    this.assertActive();
+    const onNetworkChange = async (connected: boolean) => {
+      this.assertActive();
       // sometimes the network change event is triggered multiple times so avoid reacting to the samFe value
       if (lastConnectedState === connected) return;
 
@@ -638,16 +762,23 @@ export class Relayer extends IRelayer {
         // when the device network is restarted, the socket might stay in false `connected` state
         this.hasExperiencedNetworkDisruption = true;
         await this.transportDisconnect();
+        this.assertActive();
         this.transportExplicitlyClosed = false;
       } else {
         await this.transportOpen().catch((error) =>
           this.logger.error(error, (error as Error)?.message),
         );
       }
+    };
+
+    this.unsubscribeNetwork = subscribeToNetworkChange((connected: boolean) => {
+      onNetworkChange(connected).catch((error) => {
+        if (!this.core.signal.aborted) this.logger.warn(error);
+      });
     });
 
     this.core.heartbeat.on(HEARTBEAT_EVENTS.pulse, async () => {
-      if (this.transportExplicitlyClosed) return;
+      if (this.core.signal.aborted || this.transportExplicitlyClosed) return;
       if (!this.connected && isAppVisible()) {
         try {
           await this.confirmOnlineStateOrThrow();
@@ -659,7 +790,7 @@ export class Relayer extends IRelayer {
     });
 
     this.events.on(RELAYER_EVENTS.connection_stalled, () => {
-      if (this.transportExplicitlyClosed) return;
+      if (this.core.signal.aborted || this.transportExplicitlyClosed) return;
       if (this.stalledRestartInProgress) return;
       this.stalledRestartInProgress = true;
 
@@ -677,7 +808,7 @@ export class Relayer extends IRelayer {
       );
       this.stalledRestartTimeout = setTimeout(async () => {
         try {
-          if (this.transportExplicitlyClosed) return;
+          if (this.core.signal.aborted || this.transportExplicitlyClosed) return;
           await this.restartTransport();
         } catch (error) {
           this.logger.error(error, (error as Error)?.message);
@@ -689,6 +820,7 @@ export class Relayer extends IRelayer {
   }
 
   private async onProviderDisconnect() {
+    if (this.core.signal.aborted) return;
     clearTimeout(this.pingTimeout);
     this.events.emit(RELAYER_EVENTS.disconnect);
     if (this.reconnectInProgress) return;
@@ -700,7 +832,11 @@ export class Relayer extends IRelayer {
       this.logger.warn(e, "subscriber.stop() failed during disconnect");
     }
 
-    if (!this.subscriber.hasAnyTopics || this.transportExplicitlyClosed) {
+    if (
+      this.core.signal.aborted ||
+      !this.subscriber.hasAnyTopics ||
+      this.transportExplicitlyClosed
+    ) {
       this.reconnectInProgress = false;
       return;
     }
@@ -714,7 +850,13 @@ export class Relayer extends IRelayer {
     }, toMiliseconds(RELAYER_RECONNECT_TIMEOUT));
   }
 
+  private assertActive() {
+    this.core.assertActive();
+    if (this.disposed) throw new Error("WalletConnect relayer is disposed");
+  }
+
   private isInitialized() {
+    this.assertActive();
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);

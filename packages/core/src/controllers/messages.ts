@@ -32,6 +32,7 @@ export class MessageTracker extends IMessageTracker {
   }
 
   public init: IMessageTracker["init"] = async () => {
+    this.core.assertActive();
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
       try {
@@ -49,6 +50,7 @@ export class MessageTracker extends IMessageTracker {
         this.logger.debug(`Failed to Restore records for ${this.name}`);
         this.logger.error(e as any);
       } finally {
+        this.core.assertActive();
         this.initialized = true;
       }
     }
@@ -152,24 +154,25 @@ export class MessageTracker extends IMessageTracker {
   // ---------- Private ----------------------------------------------- //
 
   private async setRelayerMessages(messages: Map<string, MessageRecord>): Promise<void> {
-    await this.core.storage.setItem<Record<string, MessageRecord>>(
-      this.storageKey,
-      mapToObj(messages),
+    await this.core.run(() =>
+      this.core.storage.setItem<Record<string, MessageRecord>>(this.storageKey, mapToObj(messages)),
     );
   }
 
   private async setRelayerMessagesWithoutClientAck(
     messages: Map<string, MessageRecord>,
   ): Promise<void> {
-    await this.core.storage.setItem<Record<string, MessageRecord>>(
-      this.storageKeyWithoutClientAck,
-      mapToObj(messages),
+    await this.core.run(() =>
+      this.core.storage.setItem<Record<string, MessageRecord>>(
+        this.storageKeyWithoutClientAck,
+        mapToObj(messages),
+      ),
     );
   }
 
   private async getRelayerMessages(): Promise<Map<string, MessageRecord> | undefined> {
-    const messages = await this.core.storage.getItem<Record<string, MessageRecord>>(
-      this.storageKey,
+    const messages = await this.core.run(() =>
+      this.core.storage.getItem<Record<string, MessageRecord>>(this.storageKey),
     );
     return typeof messages !== "undefined" ? objToMap(messages) : undefined;
   }
@@ -177,8 +180,8 @@ export class MessageTracker extends IMessageTracker {
   private async getRelayerMessagesWithoutClientAck(): Promise<
     Map<string, MessageRecord> | undefined
   > {
-    const messages = await this.core.storage.getItem<Record<string, MessageRecord>>(
-      this.storageKeyWithoutClientAck,
+    const messages = await this.core.run(() =>
+      this.core.storage.getItem<Record<string, MessageRecord>>(this.storageKeyWithoutClientAck),
     );
     return typeof messages !== "undefined" ? objToMap(messages) : undefined;
   }
@@ -189,6 +192,7 @@ export class MessageTracker extends IMessageTracker {
   }
 
   private isInitialized() {
+    this.core.assertActive();
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);

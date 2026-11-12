@@ -62,6 +62,7 @@ export class Pairing implements IPairing {
   public pairings: IStore<string, PairingTypes.Struct>;
 
   private initialized = false;
+  private readonly timers = new Set<ReturnType<typeof setTimeout>>();
   private storagePrefix = CORE_STORAGE_PREFIX;
   private ignoredPayloadTypes = [TYPE_1];
   private registeredMethods: string[] = [];
@@ -76,15 +77,25 @@ export class Pairing implements IPairing {
   }
 
   public init: IPairing["init"] = async () => {
+    this.core.assertActive();
     if (!this.initialized) {
       await this.pairings.init();
+      this.core.assertActive();
       await this.cleanup();
+      this.core.assertActive();
       this.registerRelayerEvents();
       this.registerExpirerEvents();
       this.initialized = true;
       this.logger.trace(`Initialized`);
     }
   };
+
+  public async dispose(): Promise<void> {
+    for (const timer of this.timers) clearTimeout(timer);
+    this.timers.clear();
+    this.events.removeAllListeners();
+    await this.pairings.dispose();
+  }
 
   get context() {
     return getLoggerContext(this.logger);
@@ -95,10 +106,12 @@ export class Pairing implements IPairing {
     this.registeredMethods = [...new Set([...this.registeredMethods, ...methods])];
   };
 
-  public create: IPairing["create"] = async (params) => {
+  public create: IPairing["create"] = async (params, ownerSignal) => {
+    this.assertOwner(ownerSignal);
     this.isInitialized();
     const symKey = generateRandomBytes32();
     const topic = await this.core.crypto.setSymKey(symKey);
+    this.assertOwner(ownerSignal);
     const expiry = calcExpiry(FIVE_MINUTES);
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
     const pairing = { topic, expiry, relay, active: false, methods: params?.methods };
@@ -112,17 +125,26 @@ export class Pairing implements IPairing {
       methods: params?.methods,
     });
     this.events.emit(PAIRING_EVENTS.create, pairing);
-    this.core.expirer.set(topic, expiry);
+    this.assertOwner(ownerSignal);
+    await this.core.expirer.set(topic, expiry);
+    this.assertOwner(ownerSignal);
     await this.pairings.set(topic, pairing);
-    await this.core.relayer.subscribe(topic, {
-      transportType: params?.transportType,
-      internal: params?.internal,
-    });
+    this.assertOwner(ownerSignal);
+    await this.core.relayer.subscribe(
+      topic,
+      {
+        transportType: params?.transportType,
+        internal: params?.internal,
+      },
+      ownerSignal,
+    );
+    this.assertOwner(ownerSignal);
 
     return { topic, uri };
   };
 
-  public pair: IPairing["pair"] = async (params) => {
+  public pair: IPairing["pair"] = async (params, ownerSignal) => {
+    this.assertOwner(ownerSignal);
     this.isInitialized();
 
     const event = this.core.eventClient.createEvent({
@@ -156,34 +178,43 @@ export class Pairing implements IPairing {
 
     const expiry = expiryTimestamp || calcExpiry(FIVE_MINUTES);
     const pairing = { topic, relay, expiry, active: false, methods };
-    this.core.expirer.set(topic, expiry);
+    await this.core.expirer.set(topic, expiry);
+    this.assertOwner(ownerSignal);
     await this.pairings.set(topic, pairing);
+    this.assertOwner(ownerSignal);
 
     event.addTrace(EVENT_CLIENT_PAIRING_TRACES.store_new_pairing);
 
     if (params.activatePairing) {
-      await this.activate({ topic });
+      await this.activate({ topic }, ownerSignal);
+      this.assertOwner(ownerSignal);
     }
 
     this.events.emit(PAIRING_EVENTS.create, pairing);
+    this.assertOwner(ownerSignal);
 
     event.addTrace(EVENT_CLIENT_PAIRING_TRACES.emit_inactive_pairing);
 
     // avoid overwriting keychain pairing already exists
     if (!this.core.crypto.keychain.has(topic)) {
       await this.core.crypto.setSymKey(symKey, topic);
+      this.assertOwner(ownerSignal);
     }
     event.addTrace(EVENT_CLIENT_PAIRING_TRACES.subscribing_pairing_topic);
 
     try {
-      await this.core.relayer.confirmOnlineStateOrThrow();
+      await this.core.relayer.confirmOnlineStateOrThrow(ownerSignal);
+      this.assertOwner(ownerSignal);
     } catch (error) {
+      this.assertOwner(ownerSignal);
       event.setError(EVENT_CLIENT_PAIRING_ERRORS.no_internet_connection);
     }
 
     try {
-      await this.core.relayer.subscribe(topic, { relay });
+      await this.core.relayer.subscribe(topic, { relay }, ownerSignal);
+      this.assertOwner(ownerSignal);
     } catch (error) {
+      this.assertOwner(ownerSignal);
       event.setError(EVENT_CLIENT_PAIRING_ERRORS.subscribe_pairing_topic_failure);
       throw error;
     }
@@ -193,40 +224,59 @@ export class Pairing implements IPairing {
     return pairing;
   };
 
-  public activate: IPairing["activate"] = async ({ topic }) => {
+  public activate: IPairing["activate"] = async ({ topic }, ownerSignal) => {
+    this.assertOwner(ownerSignal);
     this.isInitialized();
     const expiry = calcExpiry(FIVE_MINUTES);
-    this.core.expirer.set(topic, expiry);
+    await this.core.expirer.set(topic, expiry);
+    this.assertOwner(ownerSignal);
     await this.pairings.update(topic, { active: true, expiry });
+    this.assertOwner(ownerSignal);
   };
 
   /**
    * @deprecated Ping will be removed in the next major release.
    */
-  public ping: IPairing["ping"] = async (params) => {
+  public ping: IPairing["ping"] = async (params, ownerSignal) => {
+    this.assertOwner(ownerSignal);
     this.isInitialized();
     await this.isValidPing(params);
+    this.assertOwner(ownerSignal);
     this.logger.warn("ping() is deprecated and will be removed in the next major release.");
     const { topic } = params;
     if (this.pairings.keys.includes(topic)) {
-      const id = await this.sendRequest(topic, "wc_pairingPing", {});
-      const { done, resolve, reject } = createDelayedPromise<void>();
-      this.events.once(engineEvent("pairing_ping", id), ({ error }) => {
-        if (error) reject(error);
-        else resolve();
-      });
-      await done();
+      const id = await this.sendRequest(topic, "wc_pairingPing", {}, ownerSignal);
+      this.assertOwner(ownerSignal);
+      await this.core.relayer.withOwner(async (signal) => {
+        const { done, resolve, reject } = createDelayedPromise<void>(undefined, undefined, signal);
+        const eventName = engineEvent("pairing_ping", id);
+        const listener = ({ error }: { error?: any }) => {
+          if (error) reject(error);
+          else resolve();
+        };
+        this.events.once(eventName, listener);
+        try {
+          await done();
+          this.assertOwner(ownerSignal);
+        } finally {
+          this.events.off(eventName, listener);
+        }
+      }, ownerSignal);
     }
   };
 
-  public updateExpiry: IPairing["updateExpiry"] = async ({ topic, expiry }) => {
+  public updateExpiry: IPairing["updateExpiry"] = async ({ topic, expiry }, ownerSignal) => {
+    this.assertOwner(ownerSignal);
     this.isInitialized();
     await this.pairings.update(topic, { expiry });
+    this.assertOwner(ownerSignal);
   };
 
-  public updateMetadata: IPairing["updateMetadata"] = async ({ topic, metadata }) => {
+  public updateMetadata: IPairing["updateMetadata"] = async ({ topic, metadata }, ownerSignal) => {
+    this.assertOwner(ownerSignal);
     this.isInitialized();
     await this.pairings.update(topic, { peerMetadata: metadata });
+    this.assertOwner(ownerSignal);
   };
 
   public getPairings: IPairing["getPairings"] = () => {
@@ -234,13 +284,22 @@ export class Pairing implements IPairing {
     return this.pairings.values;
   };
 
-  public disconnect: IPairing["disconnect"] = async (params) => {
+  public disconnect: IPairing["disconnect"] = async (params, ownerSignal) => {
+    this.assertOwner(ownerSignal);
     this.isInitialized();
     await this.isValidDisconnect(params);
+    this.assertOwner(ownerSignal);
     const { topic } = params;
     if (this.pairings.keys.includes(topic)) {
-      await this.sendRequest(topic, "wc_pairingDelete", getSdkError("USER_DISCONNECTED"));
-      await this.deletePairing(topic);
+      await this.sendRequest(
+        topic,
+        "wc_pairingDelete",
+        getSdkError("USER_DISCONNECTED"),
+        ownerSignal,
+      );
+      this.assertOwner(ownerSignal);
+      await this.deletePairing(topic, undefined, ownerSignal);
+      this.assertOwner(ownerSignal);
     }
   };
 
@@ -261,12 +320,20 @@ export class Pairing implements IPairing {
 
   // ---------- Private Helpers ----------------------------------------------- //
 
-  private sendRequest: IPairingPrivate["sendRequest"] = async (topic, method, params) => {
+  private sendRequest: IPairingPrivate["sendRequest"] = async (
+    topic,
+    method,
+    params,
+    ownerSignal,
+  ) => {
+    this.assertOwner(ownerSignal);
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.core.crypto.encode(topic, payload);
+    this.assertOwner(ownerSignal);
     const opts = PAIRING_RPC_OPTS[method].req;
-    this.core.history.set(topic, payload);
-    this.core.relayer.publish(topic, message, opts);
+    await this.core.history.set(topic, payload);
+    this.assertOwner(ownerSignal);
+    await this.core.relayer.publish(topic, message, opts, ownerSignal);
     return payload.id;
   };
 
@@ -294,17 +361,30 @@ export class Pairing implements IPairing {
     await this.core.history.resolve(payload);
   };
 
-  private deletePairing: IPairingPrivate["deletePairing"] = async (topic, expirerHasDeleted) => {
+  private deletePairing: IPairingPrivate["deletePairing"] = async (
+    topic,
+    expirerHasDeleted,
+    ownerSignal,
+  ) => {
+    this.assertOwner(ownerSignal);
     // Await the unsubscribe first to avoid deleting the symKey too early below.
-    await this.core.relayer.unsubscribe(topic);
+    await this.core.relayer.unsubscribe(topic, undefined, ownerSignal);
+    this.assertOwner(ownerSignal);
     await Promise.all([
       this.pairings.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.core.crypto.deleteSymKey(topic),
       expirerHasDeleted ? Promise.resolve() : this.core.expirer.del(topic),
     ]);
+    this.assertOwner(ownerSignal);
   };
 
+  private assertOwner(ownerSignal?: AbortSignal) {
+    this.core.assertActive();
+    if (ownerSignal?.aborted) throw new Error("WalletConnect operation owner is disposed");
+  }
+
   private isInitialized() {
+    this.core.assertActive();
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
@@ -345,12 +425,12 @@ export class Pairing implements IPairing {
         const payload = await this.core.crypto.decode(topic, message);
 
         if (isJsonRpcRequest(payload)) {
-          this.core.history.set(topic, payload);
+          await this.core.history.set(topic, payload);
           await this.onRelayEventRequest({ topic, payload });
         } else if (isJsonRpcResponse(payload)) {
           await this.core.history.resolve(payload);
           await this.onRelayEventResponse({ topic, payload });
-          this.core.history.delete(topic, payload.id);
+          await this.core.history.delete(topic, payload.id);
         }
         await this.core.relayer.messages.ack(topic, message);
       } catch (error) {
@@ -405,13 +485,16 @@ export class Pairing implements IPairing {
     const { id } = payload;
     // put at the end of the stack to avoid a race condition
     // where pairing_ping listener is not yet initialized
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      this.timers.delete(timer);
+      if (this.core.signal.aborted) return;
       if (isJsonRpcResult(payload)) {
         this.events.emit(engineEvent("pairing_ping", id), {});
       } else if (isJsonRpcError(payload)) {
         this.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
       }
     }, 500);
+    this.timers.add(timer);
   };
 
   private onPairingDeleteRequest: IPairingPrivate["onPairingDeleteRequest"] = async (
