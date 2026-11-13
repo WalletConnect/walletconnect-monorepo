@@ -14,16 +14,20 @@ const DIST = resolve(__dirname, "../dist");
 const CJS_ENTRY = resolve(DIST, "index.cjs");
 const ESM_ENTRY = resolve(DIST, "index.js");
 const BLS_MODULE = /bls12-381|\/ox\/_(cjs|esm)\/core\/Bls(Point)?\.js/;
+// Prefix for the line carrying the module list, so other stdout output (warnings) can't break parsing.
+const MARKER = "LOADED_MODULES:";
 
 function runNode(args: string[]): string[] {
-  const output = execFileSync(process.execPath, args, { encoding: "utf8" });
-  return JSON.parse(output.trim().split("\n").pop()!);
+  const output = execFileSync(process.execPath, args, { encoding: "utf8", timeout: 30_000 });
+  const line = output.split("\n").find((l) => l.startsWith(MARKER));
+  if (!line) throw new Error(`no ${MARKER} line in child output:\n${output}`);
+  return JSON.parse(line.slice(MARKER.length));
 }
 
 function loadedModulesCjs(): string[] {
   const script = `
     require(${JSON.stringify(CJS_ENTRY)});
-    console.log(JSON.stringify(Object.keys(require.cache)));
+    console.log(${JSON.stringify(MARKER)} + JSON.stringify(Object.keys(require.cache)));
   `;
   return runNode(["-e", script]);
 }
@@ -43,15 +47,21 @@ function loadedModulesEsm(): string[] {
     import { register } from "node:module";
     const urls = [];
     const { port1, port2 } = new MessageChannel();
-    port1.on("message", (url) => urls.push(url));
-    port1.unref();
+    // Messages on one port arrive in order, so once the sentinel's URL arrives, every URL
+    // resolved during the real import has arrived too.
+    const sentinel = "data:text/javascript,export default 'startup-imports-sentinel'";
+    const drained = new Promise((resolve) => {
+      port1.on("message", (url) => (url === sentinel ? resolve() : urls.push(url)));
+    });
     register("data:text/javascript," + encodeURIComponent(${JSON.stringify(hooks)}), {
       data: { port: port2 },
       transferList: [port2],
     });
     await import(${JSON.stringify(pathToFileURL(ESM_ENTRY).href)});
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    console.log(JSON.stringify(urls));
+    await import(sentinel);
+    await drained;
+    port1.close();
+    console.log(${JSON.stringify(MARKER)} + JSON.stringify(urls));
   `;
   return runNode(["--input-type=module", "-e", script]);
 }
