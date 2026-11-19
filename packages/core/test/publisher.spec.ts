@@ -2,7 +2,7 @@ import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import Sinon from "sinon";
 import { ICore } from "@walletconnect/types";
 import { generateRandomBytes32, hashMessage } from "@walletconnect/utils";
-import { Publisher } from "../src/controllers/publisher";
+import { Publisher, PublishFailedError } from "../src/controllers/publisher";
 import { HEARTBEAT_EVENTS } from "@walletconnect/heartbeat";
 
 import { Core, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../src";
@@ -245,9 +245,43 @@ describe("Publisher", () => {
           ttl: PUBLISHER_DEFAULT_TTL,
           tag: 0,
           attestation: undefined,
+          plaintext: undefined,
         },
         id,
       });
+    });
+    it("rejects a publish that failed for good without queueing it", async () => {
+      const request = Sinon.stub().rejects({ code: 403, message: "blocked", data: "over limit" });
+      publisher.relayer.request = request;
+      const error = await publisher.publish(topic, "test message", { id: getId() }).catch((e) => e);
+      expect(error).to.be.instanceOf(PublishFailedError);
+      expect(error.code).to.equal(403);
+      expect(error.reason).to.equal("over limit");
+      expect(request.callCount).to.equal(1);
+      expect(publisher.queue.size).to.equal(0);
+    });
+    it("retries a failed publish on every pulse until it succeeds", async () => {
+      const id = getId();
+      const error = { code: 500, message: "internal" };
+      const request = Sinon.stub().callsFake(() => {
+        if (request.callCount > 3) return Promise.resolve(true);
+        // the relayer reports every response, failed ones included
+        publisher.relayer.events.emit(RELAYER_EVENTS.message_ack, { id, jsonrpc: "2.0", error });
+        return Promise.reject(error);
+      });
+      publisher.relayer.request = request;
+      const published = publisher.publish(topic, "test message", {
+        id,
+        internal: { throwOnFailedPublish: true },
+      });
+      for (let pulse = 0; pulse < 3; pulse++) {
+        await throttle(50);
+        expect(publisher.queue.size).to.equal(1);
+        core.heartbeat.events.emit(HEARTBEAT_EVENTS.pulse);
+      }
+      await published;
+      expect(request.callCount).to.equal(4);
+      expect(publisher.queue.size).to.equal(0);
     });
     it("allows overriding of defaults via `opts` param", async () => {
       const message = "test message";
@@ -263,6 +297,7 @@ describe("Publisher", () => {
           ttl: opts.ttl,
           tag: opts.tag,
           attestation: undefined,
+          plaintext: undefined,
         },
         id: opts.id,
       });

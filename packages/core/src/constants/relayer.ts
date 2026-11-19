@@ -48,3 +48,27 @@ export const MESSAGE_DIRECTION = {
   inbound: "inbound",
   outbound: "outbound",
 } as const;
+
+export const RELAYER_HTTP_ROUTES = {
+  events: "/v3/events",
+  sessionProposals: "/sessionProposals",
+  sessionApprovals: "/sessionApprovals",
+  messages: "/topics/{topic}/messages",
+};
+
+export const RELAYER_HTTP_EVENT_MESSAGE = "message_v2.received";
+
+export const RELAYER_HTTP_FIRST_LINE_TIMEOUT = 10_000;
+
+export const RELAYER_HTTP_STALE_TIMEOUT = 6_000;
+
+export const RELAYER_HTTP_REQUEST_TIMEOUT = 30_000;
+
+export const RELAYER_HTTP_MAX_CONCURRENT_SENDS = 4;
+
+export const RELAYER_HTTP_NOT_MEMBER_ERROR = "not_member";
+
+export const RELAYER_HTTP_NOT_MEMBER_RETRIES = 5;
+
+// relay errors that end a publish for good
+export const RELAYER_FINAL_ERRORS = ["blocked"];

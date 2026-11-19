@@ -92,6 +92,19 @@ export class Subscriber extends ISubscriber {
     return this.topicMap.topics;
   }
 
+  /**
+   * every topic the subscriber holds: subscribed, pending or cached for a restart
+   */
+  get knownTopics() {
+    return Array.from(
+      new Set([
+        ...this.topicMap.topics,
+        ...this.pending.keys(),
+        ...this.cached.map((s) => s.topic),
+      ]),
+    );
+  }
+
   get hasAnyTopics() {
     return (
       this.topicMap.topics.length > 0 ||

@@ -10,15 +10,8 @@ import {
   JsonRpcRequest,
   RequestArguments,
 } from "@walletconnect/jsonrpc-utils";
-import WsConnection from "@walletconnect/jsonrpc-ws-connection";
 import { RelayJsonRpc } from "@walletconnect/relay-api";
-import {
-  FIVE_MINUTES,
-  ONE_SECOND,
-  FIVE_SECONDS,
-  THIRTY_SECONDS,
-  toMiliseconds,
-} from "@walletconnect/time";
+import { FIVE_MINUTES, ONE_SECOND, THIRTY_SECONDS, toMiliseconds } from "@walletconnect/time";
 import {
   ICore,
   IMessageTracker,
@@ -31,14 +24,13 @@ import {
 } from "@walletconnect/types";
 import {
   createExpiringPromise,
-  formatRelayRpcUrl,
+  formatUA,
   isOnline,
   subscribeToNetworkChange,
   getAppId,
   isAndroid,
   isIos,
   getInternalError,
-  isNode,
   calcExpiry,
   isAppVisible,
   createLogger,
@@ -60,6 +52,7 @@ import {
   TRANSPORT_TYPES,
   MESSAGE_DIRECTION,
 } from "../constants/index.js";
+import { HttpConnection, isRefusedError, toHttpUrl } from "./http-connection.js";
 import { MessageTracker } from "./messages.js";
 import { Publisher } from "./publisher.js";
 import { Subscriber } from "./subscriber.js";
@@ -86,12 +79,6 @@ export class Relayer extends IRelayer {
   private packageName: string | undefined;
   private bundleId: string | undefined;
   private hasExperiencedNetworkDisruption = false;
-  private pingTimeout: NodeJS.Timeout | undefined;
-  /**
-   * the relay pings the client 30 seconds after the last message was received
-   * meaning if we don't receive a message in 30 seconds, the connection can be considered dead
-   */
-  private heartBeatTimeout = toMiliseconds(THIRTY_SECONDS + FIVE_SECONDS);
   private reconnectTimeout: NodeJS.Timeout | undefined;
   private connectPromise: Promise<void> | undefined;
   private reconnectInProgress = false;
@@ -114,7 +101,7 @@ export class Relayer extends IRelayer {
     this.publisher = new Publisher(this, this.logger);
 
     this.projectId = opts.projectId;
-    this.relayUrl = opts.relayUrl || RELAYER_DEFAULT_RELAY_URL;
+    this.relayUrl = toHttpUrl(opts.relayUrl || RELAYER_DEFAULT_RELAY_URL);
 
     if (isAndroid()) {
       this.packageName = getAppId();
@@ -140,15 +127,11 @@ export class Relayer extends IRelayer {
   }
 
   get connected() {
-    // @ts-expect-error
-    return this.provider?.connection?.socket?.readyState === 1;
+    return this.provider?.connection?.connected === true;
   }
 
   get connecting() {
-    return (
-      // @ts-expect-error
-      this.provider?.connection?.socket?.readyState === 0 || this.connectPromise !== undefined
-    );
+    return this.provider?.connection?.connecting === true || this.connectPromise !== undefined;
   }
 
   public async publish(topic: string, message: string, opts?: RelayerTypes.PublishOptions) {
@@ -282,7 +265,7 @@ export class Relayer extends IRelayer {
   async transportOpen(relayUrl?: string) {
     if (!this.subscriber.hasAnyTopics) {
       this.logger.info(
-        "Starting WS connection skipped because the client has no topics to work with.",
+        "Starting relay connection skipped because the client has no topics to work with.",
       );
       return;
     }
@@ -298,14 +281,14 @@ export class Relayer extends IRelayer {
       await this.connectPromise;
     }
     if (!this.connected) {
-      throw new Error(`Couldn't establish socket connection to the relay server: ${this.relayUrl}`);
+      throw new Error(`Couldn't establish connection to the relay server: ${this.relayUrl}`);
     }
   }
 
   public async restartTransport(relayUrl?: string) {
     this.logger.debug({}, "Restarting transport...");
     if (this.connectionAttemptInProgress) return;
-    this.relayUrl = relayUrl || this.relayUrl;
+    this.relayUrl = relayUrl ? toHttpUrl(relayUrl) : this.relayUrl;
     await this.confirmOnlineStateOrThrow();
     await this.resetTransport();
     await this.transportOpen();
@@ -365,8 +348,8 @@ export class Relayer extends IRelayer {
 
   private async connect(relayUrl?: string) {
     await this.confirmOnlineStateOrThrow();
-    if (relayUrl && relayUrl !== this.relayUrl) {
-      this.relayUrl = relayUrl;
+    if (relayUrl && toHttpUrl(relayUrl) !== this.relayUrl) {
+      this.relayUrl = toHttpUrl(relayUrl);
       await this.transportDisconnect();
     }
 
@@ -382,7 +365,7 @@ export class Relayer extends IRelayer {
           this.logger.debug({}, `Connecting to ${this.relayUrl}, attempt: ${attempt}...`);
           await this.createProvider();
 
-          // Step A: establish WebSocket connection
+          // Step A: open the poll
           await new Promise<void>((resolve, reject) => {
             const onDisconnect = () => {
               reject(new Error(`Connection interrupted while trying to connect`));
@@ -391,7 +374,7 @@ export class Relayer extends IRelayer {
             createExpiringPromise(
               this.provider.connect(),
               this.connectTimeout,
-              `Socket stalled when trying to connect to ${this.relayUrl}`,
+              `Connection stalled when trying to connect to ${this.relayUrl}`,
             )
               .then(() => resolve())
               .catch(reject)
@@ -422,6 +405,10 @@ export class Relayer extends IRelayer {
           const error = e as Error;
           this.logger.warn({}, error.message);
           this.hasExperiencedNetworkDisruption = true;
+          if (isRefusedError(error)) {
+            this.onProviderErrorHandler(error);
+            break;
+          }
         }
 
         if (this.connected) {
@@ -443,40 +430,6 @@ export class Relayer extends IRelayer {
     }
   }
 
-  /*
-   * In Node, we must detect when the connection is stalled and terminate it.
-   * The logic is, if we don't receive ping from the relay within a certain time, we terminate the connection.
-   * The timer is refreshed on every message received from the relay.
-   *
-   * In the browser, ping/pong events are not exposed, so the above behaviour is handled by `subscribeToNetworkChange` and `isOnline` functions.
-   */
-  private startPingTimeout() {
-    if (!isNode()) return;
-    try {
-      //@ts-expect-error - Types are divergent between the node and browser WS API
-      this.provider?.connection?.socket?.on("ping", () => {
-        this.resetPingTimeout();
-      });
-      this.resetPingTimeout();
-    } catch (e) {
-      this.logger.warn(e, (e as Error)?.message);
-    }
-  }
-
-  private resetPingTimeout = () => {
-    if (!isNode()) return;
-    clearTimeout(this.pingTimeout);
-    this.pingTimeout = setTimeout(() => {
-      try {
-        this.logger.debug({}, "pingTimeout: Connection stalled, terminating...");
-        //@ts-expect-error
-        this.provider?.connection?.socket?.terminate?.();
-      } catch (e) {
-        this.logger.warn(e, (e as Error)?.message);
-      }
-    }, this.heartBeatTimeout);
-  };
-
   private async createProvider() {
     if (this.provider.connection) {
       this.unregisterProviderListeners();
@@ -488,26 +441,23 @@ export class Relayer extends IRelayer {
             "Closing previous provider",
           );
         } catch {
-          // best-effort cleanup of old socket
+          // best-effort cleanup of the old connection
         }
       }
     }
-    const auth = await this.core.crypto.signJWT(this.relayUrl);
-
+    const relayUrl = this.relayUrl;
     this.provider = new JsonRpcProvider(
-      new WsConnection(
-        formatRelayRpcUrl({
-          sdkVersion: RELAYER_SDK_VERSION,
-          protocol: this.protocol,
-          version: this.version,
-          relayUrl: this.relayUrl,
+      new HttpConnection({
+        url: relayUrl,
+        query: {
           projectId: this.projectId,
-          auth,
-          useOnCloseEvent: true,
+          ua: formatUA(this.protocol, this.version, RELAYER_SDK_VERSION),
           bundleId: this.bundleId,
           packageName: this.packageName,
-        }),
-      ),
+        },
+        auth: () => this.core.crypto.signJWT(relayUrl.split("?")[0]),
+        topics: () => this.subscriber.knownTopics,
+      }),
     );
     this.registerProviderListeners();
   }
@@ -585,12 +535,10 @@ export class Relayer extends IRelayer {
   // ---------- Events Handlers ----------------------------------------------- //
   private onPayloadHandler = (payload: JsonRpcPayload) => {
     this.onProviderPayload(payload);
-    this.resetPingTimeout();
   };
 
   private onConnectHandler = () => {
     this.logger.warn({}, "Relayer connected 🛜");
-    this.startPingTimeout();
     this.stalledRestartBackoff = 0;
     this.events.emit(RELAYER_EVENTS.connect);
   };
@@ -602,9 +550,9 @@ export class Relayer extends IRelayer {
   };
 
   private onProviderErrorHandler = (error: Error) => {
-    this.logger.fatal(`Fatal socket error: ${error.message}`);
+    this.logger.fatal(`Fatal connection error: ${error.message}`);
     this.events.emit(RELAYER_EVENTS.error, error);
-    this.logger.fatal("Fatal socket error received, closing transport");
+    this.logger.fatal("Fatal connection error received, closing transport");
     this.transportExplicitlyClosed = true;
     clearTimeout(this.reconnectTimeout);
     this.reconnectTimeout = undefined;
@@ -624,7 +572,6 @@ export class Relayer extends IRelayer {
     this.provider.off(RELAYER_PROVIDER_EVENTS.connect, this.onConnectHandler);
     this.provider.off(RELAYER_PROVIDER_EVENTS.disconnect, this.onDisconnectHandler);
     this.provider.off(RELAYER_PROVIDER_EVENTS.error, this.onProviderErrorHandler);
-    clearTimeout(this.pingTimeout);
   }
 
   private async registerEventListeners() {
@@ -635,7 +582,7 @@ export class Relayer extends IRelayer {
 
       lastConnectedState = connected;
       if (!connected) {
-        // when the device network is restarted, the socket might stay in false `connected` state
+        // when the device network is restarted, the connection might stay in false `connected` state
         this.hasExperiencedNetworkDisruption = true;
         await this.transportDisconnect();
         this.transportExplicitlyClosed = false;
@@ -689,7 +636,6 @@ export class Relayer extends IRelayer {
   }
 
   private async onProviderDisconnect() {
-    clearTimeout(this.pingTimeout);
     this.events.emit(RELAYER_EVENTS.disconnect);
     if (this.reconnectInProgress) return;
 

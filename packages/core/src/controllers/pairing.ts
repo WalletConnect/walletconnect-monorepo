@@ -1,4 +1,5 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
+import { safeJsonStringify } from "@walletconnect/safe-json";
 import {
   ICore,
   PairingTypes,
@@ -264,9 +265,9 @@ export class Pairing implements IPairing {
   private sendRequest: IPairingPrivate["sendRequest"] = async (topic, method, params) => {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.core.crypto.encode(topic, payload);
-    const opts = PAIRING_RPC_OPTS[method].req;
+    const opts = { ...PAIRING_RPC_OPTS[method].req, plaintext: safeJsonStringify(payload) };
     this.core.history.set(topic, payload);
-    this.core.relayer.publish(topic, message, opts);
+    this.core.relayer.publish(topic, message, opts).catch((error) => this.logger.error(error));
     return payload.id;
   };
 
@@ -275,7 +276,7 @@ export class Pairing implements IPairing {
     const message = await this.core.crypto.encode(topic, payload);
     const record = await this.core.history.get(topic, id);
     const method = record.request.method as PairingJsonRpcTypes.WcMethod;
-    const opts = PAIRING_RPC_OPTS[method].res;
+    const opts = { ...PAIRING_RPC_OPTS[method].res, plaintext: safeJsonStringify(payload) };
     await this.core.relayer.publish(topic, message, opts);
     await this.core.history.resolve(payload);
   };
@@ -290,7 +291,10 @@ export class Pairing implements IPairing {
       ? PAIRING_RPC_OPTS[method].res
       : PAIRING_RPC_OPTS.unregistered_method.res;
 
-    await this.core.relayer.publish(topic, message, opts);
+    await this.core.relayer.publish(topic, message, {
+      ...opts,
+      plaintext: safeJsonStringify(payload),
+    });
     await this.core.history.resolve(payload);
   };
 
