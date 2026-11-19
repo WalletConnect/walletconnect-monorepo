@@ -26,6 +26,7 @@ import {
   ErrorResponse,
   getBigIntRpcId,
 } from "@walletconnect/jsonrpc-utils";
+import { safeJsonStringify } from "@walletconnect/safe-json";
 import { FIVE_MINUTES, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import {
   EnginePrivate,
@@ -1722,6 +1723,7 @@ export class Engine extends IEngine {
     };
 
     opts.attestation = attestation;
+    opts.plaintext = safeJsonStringify(payload);
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
     this.client.core.history.set(topic, payload);
@@ -1774,6 +1776,7 @@ export class Engine extends IEngine {
       payload: {
         pairingTopic: proposal.pairingTopic,
         sessionProposal: proposeSessionMessage,
+        sessionProposalPlaintext: safeJsonStringify(proposeSessionPayload),
       },
       opts: {
         ...publishOpts,
@@ -1817,7 +1820,9 @@ export class Engine extends IEngine {
         sessionTopic,
         pairingTopic: proposal.pairingTopic,
         sessionProposalResponse: pairingResponseMessage,
+        sessionProposalResponsePlaintext: safeJsonStringify(pairingPayload),
         sessionSettlementRequest: sessionSettlementRequestMessage,
+        sessionSettlementRequestPlaintext: safeJsonStringify(sessionSettlePayload),
       },
       opts: {
         ...publishOpts,
@@ -1866,7 +1871,10 @@ export class Engine extends IEngine {
       await (global as any).Linking.openURL(redirectURL, this.client.name);
     } else {
       const method = record.request.method as JsonRpcTypes.WcMethod;
-      const opts = ENGINE_RPC_OPTS[method].res;
+      const opts: RelayerTypes.PublishOptions = {
+        ...ENGINE_RPC_OPTS[method].res,
+        plaintext: safeJsonStringify(payload),
+      };
 
       opts.tvf = {
         ...tvf,
@@ -1920,7 +1928,9 @@ export class Engine extends IEngine {
       const method = record.request.method as JsonRpcTypes.WcMethod;
       const opts = rpcOpts || ENGINE_RPC_OPTS[method].res;
       // await is intentionally omitted to speed up performance
-      this.client.core.relayer.publish(topic, message, opts);
+      this.client.core.relayer
+        .publish(topic, message, { ...opts, plaintext: safeJsonStringify(payload) })
+        .catch((error) => this.client.logger.error(error));
     }
 
     await this.client.core.history.resolve(payload);
@@ -3529,9 +3539,9 @@ export class Engine extends IEngine {
     try {
       const txHashes = this.extractTxHashesFromResult(params.request, result);
       tvf.txHashes = txHashes;
-      tvf.contractAddresses = this.isValidContractData(params.request.params)
-        ? [params.request.params?.[0]?.to]
-        : [];
+      const to = params.request.params?.[0]?.to;
+      tvf.contractAddresses =
+        this.isValidContractData(params.request.params) && typeof to === "string" ? [to] : [];
     } catch (e) {
       this.client.logger.warn(e, "Error getting TVF params");
     }

@@ -24,6 +24,7 @@ export declare namespace RelayerTypes {
     tvf?: ITVF;
     attestation?: string;
     publishMethod?: string;
+    plaintext?: string;
   }
 
   export type TransportType = "relay" | "link_mode";

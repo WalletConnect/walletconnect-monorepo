@@ -1,6 +1,7 @@
 export * from "./crypto.js";
 export * from "./messages.js";
 export * from "./relayer.js";
+export * from "./publisher.js";
 export * from "./store.js";
 export * from "./subscriber.js";
 export * from "./keychain.js";

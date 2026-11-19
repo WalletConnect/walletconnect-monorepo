@@ -50,6 +50,7 @@
     "@walletconnect/core": "2.26.0",
     "@walletconnect/jsonrpc-utils": "1.0.8",
     "@walletconnect/logger": "3.0.2",
+    "@walletconnect/safe-json": "1.0.2",
     "@walletconnect/time": "1.0.2",
     "@walletconnect/types": "2.26.0",
     "@walletconnect/utils": "2.26.0",

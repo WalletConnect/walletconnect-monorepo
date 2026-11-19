@@ -1440,19 +1440,19 @@ describe.concurrent("Authenticated Sessions", () => {
           const receiverPublicKey = payload.params.requester.publicKey;
           const senderPublicKey = await wallet.core.crypto.generateKeyPair();
           const responseTopic = hashKey(receiverPublicKey);
-          const message = await wallet.core.crypto.encode(
-            responseTopic,
-            formatJsonRpcResult(payload.id, {
-              cacaos: [auth],
-              responder: { publicKey: senderPublicKey, metadata: wallet.metadata },
-            }),
-            { type: TYPE_1, receiverPublicKey, senderPublicKey },
-          );
-          await wallet.core.relayer.publish(
-            responseTopic,
-            message,
-            ENGINE_RPC_OPTS.wc_sessionAuthenticate.res,
-          );
+          const forgedResponse = formatJsonRpcResult(payload.id, {
+            cacaos: [auth],
+            responder: { publicKey: senderPublicKey, metadata: wallet.metadata },
+          });
+          const message = await wallet.core.crypto.encode(responseTopic, forgedResponse, {
+            type: TYPE_1,
+            receiverPublicKey,
+            senderPublicKey,
+          });
+          await wallet.core.relayer.publish(responseTopic, message, {
+            ...ENGINE_RPC_OPTS.wc_sessionAuthenticate.res,
+            plaintext: JSON.stringify(forgedResponse),
+          });
           resolve();
         });
       });
@@ -1516,19 +1516,19 @@ describe.concurrent("Authenticated Sessions", () => {
           const receiverPublicKey = payload.params.requester.publicKey;
           const senderPublicKey = await wallet.core.crypto.generateKeyPair();
           const responseTopic = hashKey(receiverPublicKey);
-          const message = await wallet.core.crypto.encode(
-            responseTopic,
-            formatJsonRpcResult(payload.id, {
-              cacaos: [auth],
-              responder: { publicKey: senderPublicKey, metadata: wallet.metadata },
-            }),
-            { type: TYPE_1, receiverPublicKey, senderPublicKey },
-          );
-          await wallet.core.relayer.publish(
-            responseTopic,
-            message,
-            ENGINE_RPC_OPTS.wc_sessionAuthenticate.res,
-          );
+          const forgedResponse = formatJsonRpcResult(payload.id, {
+            cacaos: [auth],
+            responder: { publicKey: senderPublicKey, metadata: wallet.metadata },
+          });
+          const message = await wallet.core.crypto.encode(responseTopic, forgedResponse, {
+            type: TYPE_1,
+            receiverPublicKey,
+            senderPublicKey,
+          });
+          await wallet.core.relayer.publish(responseTopic, message, {
+            ...ENGINE_RPC_OPTS.wc_sessionAuthenticate.res,
+            plaintext: JSON.stringify(forgedResponse),
+          });
           resolve();
         });
       });

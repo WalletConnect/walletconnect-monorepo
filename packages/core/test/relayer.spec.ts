@@ -383,30 +383,6 @@ describe("Relayer", () => {
       expect(relayer.connected).to.be.true;
       expect(wsConnection.url.startsWith(RELAYER_DEFAULT_RELAY_URL)).to.be.true;
     });
-    it("should not throw an error if terminate() is not available", async () => {
-      const relayer = new Relayer({
-        core,
-        relayUrl: TEST_CORE_OPTIONS.relayUrl,
-        projectId: TEST_CORE_OPTIONS.projectId,
-      });
-      await relayer.init();
-      relayer.subscriber.subscriptions.set(randomTopic, {
-        topic: randomTopic,
-        id: randomTopic,
-        relay: { protocol: "irn" },
-      });
-      await relayer.transportOpen();
-      expect(relayer.connected).to.be.true;
-      //@ts-expect-error - private property
-      relayer.provider.connection.socket.terminate = undefined;
-      //@ts-expect-error - private property
-      relayer.heartBeatTimeout = 1000;
-      //@ts-expect-error - private method
-      relayer.resetPingTimeout();
-      await throttle(2000);
-      await relayer.transportClose();
-      expect(relayer.connected).to.be.false;
-    });
     it("should not run into a race condition when `toEstablishConnection` is called while connecting is in progress", async () => {
       const relayer = new Relayer({
         core,

@@ -10,10 +10,30 @@ import {
   isUndefined,
   createExpiringPromise,
 } from "@walletconnect/utils";
-import { getBigIntRpcId } from "@walletconnect/jsonrpc-utils";
+import { getBigIntRpcId, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, ONE_MINUTE, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 
-import { PUBLISHER_CONTEXT, PUBLISHER_DEFAULT_TTL, RELAYER_EVENTS } from "../constants/index.js";
+import {
+  PUBLISHER_CONTEXT,
+  PUBLISHER_DEFAULT_TTL,
+  RELAYER_FINAL_ERRORS,
+  RELAYER_EVENTS,
+} from "../constants/index.js";
+
+export class PublishFailedError extends Error {
+  constructor(
+    public code: number,
+    public reason: string,
+  ) {
+    super(`Publish failed and can't be retried: ${reason}`);
+  }
+}
+
+type OnFailedFinal = (error: PublishFailedError) => void;
+
+function isFinalError(error: any): error is { code: number; message: string; data?: string } {
+  return RELAYER_FINAL_ERRORS.includes(error?.message);
+}
 
 type IPublishType = {
   attestation?: string;
@@ -30,6 +50,7 @@ export class Publisher extends IPublisher {
   private publishTimeout = toMiliseconds(ONE_MINUTE);
   private initialPublishTimeout = toMiliseconds(ONE_SECOND * 15);
   private needsTransportRestart = false;
+  private failedFinal = new Map<string, OnFailedFinal>();
 
   constructor(
     public relayer: IRelayer,
@@ -56,7 +77,7 @@ export class Publisher extends IPublisher {
 
     const api = getRelayProtocolApi(getRelayProtocolName().protocol);
 
-    const request: RequestArguments<RelayJsonRpc.PublishParams> = {
+    const request: RequestArguments<RelayJsonRpc.PublishParams & { plaintext?: string }> = {
       id,
       method: opts?.publishMethod || api.publish,
       params: {
@@ -66,6 +87,7 @@ export class Publisher extends IPublisher {
         prompt,
         tag,
         attestation: opts?.attestation,
+        plaintext: opts?.plaintext,
         ...opts?.tvf,
       },
     };
@@ -80,7 +102,7 @@ export class Publisher extends IPublisher {
        * if the publish fails, add the payload to the queue and it will be retried on every pulse
        * until it is successfully published or <publishTimeout> seconds have passed
        */
-      const publishPromise = new Promise<void>(async (resolve) => {
+      const publishPromise = new Promise<void>(async (resolve, reject) => {
         const onPublish = ({ id }: { id: string }) => {
           if (request.id?.toString() === id.toString()) {
             this.removeRequestFromQueue(id);
@@ -89,6 +111,10 @@ export class Publisher extends IPublisher {
           }
         };
         this.relayer.events.on(RELAYER_EVENTS.publish, onPublish);
+        this.failedFinal.set(id.toString(), (error) => {
+          this.relayer.events.removeListener(RELAYER_EVENTS.publish, onPublish);
+          reject(error);
+        });
         const initialPublish = createExpiringPromise(
           new Promise((resolve, reject) => {
             this.rpcPublish(request, opts)
@@ -105,6 +131,7 @@ export class Publisher extends IPublisher {
           await initialPublish;
           this.events.removeListener(RELAYER_EVENTS.publish, onPublish);
         } catch (e) {
+          if (isFinalError(e)) return this.onFailedFinal(id, e);
           this.queue.set(id, { request, opts, attempt: 1 });
           this.logger.warn(e, (e as Error)?.message);
         }
@@ -119,11 +146,12 @@ export class Publisher extends IPublisher {
     } catch (e) {
       this.logger.debug(`Failed to Publish Payload`);
       this.logger.error(e as any);
-      if (opts?.internal?.throwOnFailedPublish) {
+      if (opts?.internal?.throwOnFailedPublish || e instanceof PublishFailedError) {
         throw e;
       }
     } finally {
       this.queue.delete(id);
+      this.failedFinal.delete(id.toString());
     }
   };
 
@@ -159,7 +187,7 @@ export class Publisher extends IPublisher {
        * if the publish fails, add the payload to the queue and it will be retried on every pulse
        * until it is successfully published or <publishTimeout> seconds have passed
        */
-      const publishPromise = new Promise<void>(async (resolve) => {
+      const publishPromise = new Promise<void>(async (resolve, reject) => {
         const onPublish = ({ id }: { id: string }) => {
           if (request.id?.toString() === id.toString()) {
             this.removeRequestFromQueue(id);
@@ -168,6 +196,10 @@ export class Publisher extends IPublisher {
           }
         };
         this.relayer.events.on(RELAYER_EVENTS.publish, onPublish);
+        this.failedFinal.set(id.toString(), (error) => {
+          this.relayer.events.removeListener(RELAYER_EVENTS.publish, onPublish);
+          reject(error);
+        });
         const initialPublish = createExpiringPromise(
           new Promise((resolve, reject) => {
             this.rpcPublish(request, opts)
@@ -184,6 +216,7 @@ export class Publisher extends IPublisher {
           await initialPublish;
           this.events.removeListener(RELAYER_EVENTS.publish, onPublish);
         } catch (e) {
+          if (isFinalError(e)) return this.onFailedFinal(id, e);
           this.queue.set(id, { request, opts, attempt: 1 });
           this.logger.warn(e, (e as Error)?.message);
         }
@@ -198,11 +231,12 @@ export class Publisher extends IPublisher {
     } catch (e) {
       this.logger.debug(`Failed to Publish Payload`);
       this.logger.error(e as any);
-      if (opts?.internal?.throwOnFailedPublish) {
+      if (opts?.internal?.throwOnFailedPublish || e instanceof PublishFailedError) {
         throw e;
       }
     } finally {
       this.queue.delete(id);
+      this.failedFinal.delete(id.toString());
     }
   };
 
@@ -246,9 +280,22 @@ export class Publisher extends IPublisher {
         {},
         `Publisher: queue->publishing: ${params.request.id}, tag: ${params.request.params?.tag}, attempt: ${attempt}`,
       );
-      await this.rpcPublish(params.request, params.opts);
-      this.logger.warn({}, `Publisher: queue->published: ${params.request.id}`);
+      try {
+        await this.rpcPublish(params.request, params.opts);
+        this.logger.warn({}, `Publisher: queue->published: ${params.request.id}`);
+      } catch (e) {
+        if (isFinalError(e)) return this.onFailedFinal(id, e);
+        this.logger.warn(e, `Publisher: queue->failed: ${params.request.id}`);
+      }
     });
+  }
+
+  // the publish failed and can't be retried
+  private onFailedFinal(id: string, error: { code: number; message: string; data?: string }) {
+    this.queue.delete(id);
+    this.failedFinal.get(id.toString())?.(
+      new PublishFailedError(error.code, error.data || error.message),
+    );
   }
 
   private registerEventListeners() {
@@ -263,6 +310,8 @@ export class Publisher extends IPublisher {
       this.checkQueue();
     });
     this.relayer.on(RELAYER_EVENTS.message_ack, (event: JsonRpcPayload) => {
+      // a failed publish stays queued, and is retried on every pulse until it times out
+      if (isJsonRpcError(event)) return;
       this.removeRequestFromQueue(event.id.toString());
     });
   }
