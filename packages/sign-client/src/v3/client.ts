@@ -1,6 +1,5 @@
-import { EventEmitter } from "events";
 import decompress from "brotli/decompress";
-import { IKeyValueStorage, KeyValueStorage } from "@walletconnect/keyvaluestorage";
+import type { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 import type {
   EngineTypes,
   PairingTypes,
@@ -13,13 +12,14 @@ import type {
 import { SIGN_V3_WASM } from "./wasm/wasm-data.js";
 import { WasmSignClient, initSync } from "./wasm/sign_v3.js";
 
-/** The dev Relay that speaks Sign v3, until production does. */
-export const SIGN_V3_DEFAULT_RELAY = "https://pool-1.dev-relay.walletconnect.com";
-const DEFAULT_STORAGE_PREFIX = "wc@3:";
+const STORAGE_PREFIX = "wc@3:";
 
-export interface SignClientV3Options extends SignClientTypes.Options {
-  /** The Relay URL the JWT is for, when `relayUrl` points at a proxy. */
-  jwtAudience?: string;
+export interface V3ClientOptions {
+  projectId?: string;
+  relayUrl?: string;
+  metadata: SignClientTypes.Metadata;
+  storage: IKeyValueStorage;
+  customStoragePrefix?: string;
 }
 
 // The SDK's own shapes, as its JSON interface returns them.
@@ -36,6 +36,7 @@ interface V3Proposal {
     requiredNamespaces?: ProposalTypes.RequiredNamespaces;
     optionalNamespaces?: ProposalTypes.OptionalNamespaces;
     sessionProperties?: ProposalTypes.SessionProperties;
+    scopedProperties?: ProposalTypes.ScopedProperties;
   };
   metadata: SignClientTypes.Metadata;
   expiresAt: number;
@@ -72,9 +73,14 @@ function loadWasm() {
   wasmLoaded = true;
 }
 
+type Emit = <E extends SignClientTypes.Event>(
+  name: E,
+  args: SignClientTypes.EventArguments[E],
+) => void;
+
 /**
- * Sign v2's SignClient API over the Sign v3 SDK, compiled from Rust to WASM. Apps keep calling
- * v2's methods and events while the protocol underneath is v3.
+ * Sign v2's SignClient API over the Sign v3 SDK, compiled from Rust to WASM: v2's methods and
+ * events, with the v3 protocol underneath. `SignClient` uses it for v3 connections.
  *
  * v3 has no counterpart for some v2 fields, so they are filled in:
  * - the pairing topic is the connection id, which is also the session topic;
@@ -82,13 +88,7 @@ function loadWasm() {
  * - `verifyContext` is UNKNOWN;
  * - a session doesn't keep the proposal's required and optional namespaces.
  */
-export class SignClient {
-  public readonly protocol = "wc";
-  public readonly version = 3;
-  public readonly name: string;
-  public readonly metadata: SignClientTypes.Metadata;
-  public readonly events = new EventEmitter();
-
+export class V3Client {
   private wasm!: WasmSignClient;
   private readonly sessions = new Map<string, SessionTypes.Struct>();
   private readonly proposals = new Map<number, string>(); // v2 proposal id → v3 connection id
@@ -96,49 +96,20 @@ export class SignClient {
 
   /** v2's `client.session` store, read-only. */
   public readonly session = sessionStore(this.sessions);
-  /** v2's `client.core`, for the client id. */
-  public readonly core = { crypto: { getClientId: () => Promise.resolve(this.wasm.clientId()) } };
 
-  static async init(opts: SignClientV3Options) {
-    const client = new SignClient(opts);
+  /** `dispatch` receives the events, named and shaped as v2's. */
+  static async init(opts: V3ClientOptions, dispatch: Emit) {
+    const client = new V3Client(opts, dispatch);
     await client.initialize();
     return client;
   }
 
-  private constructor(private readonly opts: SignClientV3Options) {
-    if (!opts?.projectId) throw new Error("projectId is required");
-    if (!opts.metadata) throw new Error("metadata is required");
-    this.name = opts.name || "client";
-    this.metadata = opts.metadata;
-  }
-
-  // ---------- Events ----------------------------------------------- //
-
-  public on = <E extends SignClientTypes.Event>(
-    name: E,
-    listener: (args: SignClientTypes.EventArguments[E]) => void,
-  ) => this.events.on(name, listener);
-
-  public once = <E extends SignClientTypes.Event>(
-    name: E,
-    listener: (args: SignClientTypes.EventArguments[E]) => void,
-  ) => this.events.once(name, listener);
-
-  public off = <E extends SignClientTypes.Event>(
-    name: E,
-    listener: (args: SignClientTypes.EventArguments[E]) => void,
-  ) => this.events.off(name, listener);
-
-  public removeListener = <E extends SignClientTypes.Event>(
-    name: E,
-    listener: (args: SignClientTypes.EventArguments[E]) => void,
-  ) => this.events.removeListener(name, listener);
-
-  private dispatch<E extends SignClientTypes.Event>(
-    name: E,
-    args: SignClientTypes.EventArguments[E],
+  private constructor(
+    private readonly opts: V3ClientOptions,
+    private readonly dispatch: Emit,
   ) {
-    this.events.emit(name, args);
+    if (!opts.projectId) throw new Error("projectId is required");
+    if (!opts.relayUrl) throw new Error("relayUrl is required");
   }
 
   // ---------- dApp ------------------------------------------------- //
@@ -151,6 +122,7 @@ export class SignClient {
         requiredNamespaces: params.requiredNamespaces ?? {},
         optionalNamespaces: params.optionalNamespaces,
         sessionProperties: params.sessionProperties,
+        scopedProperties: params.scopedProperties,
       },
     });
     const approval = new Promise<SessionTypes.Struct>((resolve, reject) =>
@@ -161,6 +133,8 @@ export class SignClient {
   };
 
   // ---------- Wallet ----------------------------------------------- //
+
+  public hasProposal = (id: number) => this.proposals.has(id);
 
   /** Resolves with the pairing; the proposal arrives as `session_proposal`, as in v2. */
   public pair = async (params: { uri: string }): Promise<PairingTypes.Struct> => {
@@ -260,17 +234,16 @@ export class SignClient {
 
   private async initialize() {
     loadWasm();
-    const relay = (this.opts.relayUrl ?? SIGN_V3_DEFAULT_RELAY)
+    const relay = (this.opts.relayUrl as string)
       .replace(/^wss:/, "https:")
       .replace(/^ws:/, "http:");
     const config = {
       hosts: [relay],
-      audience: this.opts.jwtAudience,
       projectId: this.opts.projectId,
-      metadata: this.metadata,
-      storagePrefix: this.opts.customStoragePrefix ?? DEFAULT_STORAGE_PREFIX,
+      metadata: this.opts.metadata,
+      storagePrefix: STORAGE_PREFIX + (this.opts.customStoragePrefix ?? ""),
     };
-    const kv: IKeyValueStorage = this.opts.storage ?? new KeyValueStorage(this.opts.storageOptions);
+    const kv = this.opts.storage;
     // v2's KeyValueStorage parses the values it returns and turns "/" and "\" in keys into ":".
     // Keys are escaped and values wrapped, so both come back exactly as the SDK wrote them.
     const storage = {
@@ -321,7 +294,7 @@ export class SignClient {
       namespaces,
       requiredNamespaces: {},
       optionalNamespaces: {},
-      self: { publicKey: "", metadata: this.metadata },
+      self: { publicKey: "", metadata: this.opts.metadata },
       peer: { publicKey: "", metadata: s.peerMetadata },
     };
     this.sessions.set(session.topic, session);
@@ -352,6 +325,7 @@ export class SignClient {
           requiredNamespaces: p.params.requiredNamespaces ?? {},
           optionalNamespaces: p.params.optionalNamespaces ?? {},
           sessionProperties: p.params.sessionProperties,
+          scopedProperties: p.params.scopedProperties,
           pairingTopic: p.id,
         };
         this.dispatch("session_proposal", {

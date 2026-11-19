@@ -16,11 +16,6 @@
       "types": "./dist/types/index.d.ts",
       "module": "./dist/index.js",
       "default": "./dist/index.cjs"
-    },
-    "./v3": {
-      "types": "./dist/types/v3/index.d.ts",
-      "module": "./dist/v3/index.js",
-      "default": "./dist/v3/index.cjs"
     }
   },
   "files": [

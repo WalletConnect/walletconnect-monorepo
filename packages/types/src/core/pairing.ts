@@ -78,6 +78,7 @@ export abstract class IPairing {
   // for proposer to create inactive pairing
   public abstract create(params?: {
     methods?: string[];
+    symKey?: string;
     transportType?: RelayerTypes.SubscribeOptions["transportType"];
     internal?: RelayerTypes.SubscribeOptions["internal"];
   }): Promise<{ topic: string; uri: string }>;

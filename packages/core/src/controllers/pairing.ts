@@ -98,7 +98,7 @@ export class Pairing implements IPairing {
 
   public create: IPairing["create"] = async (params) => {
     this.isInitialized();
-    const symKey = generateRandomBytes32();
+    const symKey = params?.symKey ?? generateRandomBytes32();
     const topic = await this.core.crypto.setSymKey(symKey);
     const expiry = calcExpiry(FIVE_MINUTES);
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };

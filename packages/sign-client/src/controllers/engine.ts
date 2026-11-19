@@ -252,6 +252,7 @@ export class Engine extends IEngine {
       relays,
       authentication,
       walletPay,
+      symKey,
     } = connectParams;
 
     const expiryFromAuthentication = authentication?.[0]?.ttl;
@@ -277,6 +278,7 @@ export class Engine extends IEngine {
     if (!topic || !active) {
       const { topic: newTopic, uri: newUri } = await this.client.core.pairing.create({
         internal: { skipSubscribe: true },
+        symKey,
       });
       topic = newTopic;
       uri = newUri;

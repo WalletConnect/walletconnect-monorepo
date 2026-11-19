@@ -2,7 +2,13 @@ import { expect, describe, it, beforeEach, afterEach } from "vitest";
 import { ICore } from "@walletconnect/types";
 import { Core, CORE_PROTOCOL, CORE_VERSION, PAIRING_EVENTS, SUBSCRIBER_EVENTS } from "../src";
 import { TEST_CORE_OPTIONS, disconnectSocket, waitForEvent } from "./shared";
-import { calcExpiry, generateRandomBytes32, parseUri, toBase64 } from "@walletconnect/utils";
+import {
+  calcExpiry,
+  generateRandomBytes32,
+  hashKey,
+  parseUri,
+  toBase64,
+} from "@walletconnect/utils";
 import { FIVE_MINUTES } from "@walletconnect/time";
 
 const createCoreClients: () => Promise<{ coreA: ICore; coreB: ICore }> = async () => {
@@ -40,6 +46,12 @@ describe("Pairing", () => {
       const { topic, uri } = await coreA.pairing.create();
       expect(topic.length).toBe(64);
       expect(uri.startsWith(`${CORE_PROTOCOL}:${topic}@${CORE_VERSION}`)).toBe(true);
+    });
+    it("uses the provided symKey", async () => {
+      const symKey = generateRandomBytes32();
+      const { topic, uri } = await coreA.pairing.create({ symKey });
+      expect(topic).toBe(hashKey(symKey));
+      expect(parseUri(uri).symKey).toBe(symKey);
     });
   });
 

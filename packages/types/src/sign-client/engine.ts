@@ -90,6 +90,10 @@ export declare namespace EngineTypes {
     sessionProperties?: ProposalTypes.SessionProperties;
     scopedProperties?: ProposalTypes.ScopedProperties;
     pairingTopic?: string;
+    /**
+     * @internal The symKey for the new pairing, when the URI's key was already made elsewhere.
+     */
+    symKey?: string;
     relays?: RelayerTypes.ProtocolOptions[];
     /**
      * @experimental - This feature could change in the next releases. Use with caution.
