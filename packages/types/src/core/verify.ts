@@ -3,6 +3,7 @@ import { IKeyValueStorage } from "@walletconnect/keyvaluestorage";
 import { ICore } from "./core.js";
 
 export declare namespace Verify {
+  /** The legacy (Verify v2/v3) attestation's result. Internal: wallets get `AppVerification`. */
   export interface Context {
     verified: {
       origin: string;
@@ -10,28 +11,31 @@ export declare namespace Verify {
       verifyUrl: string;
       isScam?: boolean;
     };
-    /** Sign v3 only: Verify v4, from the app's signature and the Relay's `appMetadata`. */
-    v4?: V4Context;
   }
 
   /**
-   * Verify v4 tiers. `default`: unsigned. `domain_validated`: signed with a key the domain
-   * published. `business_name`: and the Relay knows the business's name. `verified`: and the
-   * business is verified. `invalid`: signed, but not for this request.
+   * Who the app is, as the Relay vouches for it (Verify v4). Every field comes from the Relay,
+   * once the SDK checked that the app's signature is for this message: never from the app's own
+   * metadata. Show what's present. An unsigned request, or one on Sign v2, has no domain, name or
+   * icon; on Sign v2, `isScam` comes from a legacy attestation.
    */
-  export type V4State = "default" | "domain_validated" | "business_name" | "verified" | "invalid";
-
-  /** What the Relay vouches for about the app. Never taken from the app's own metadata. */
-  export interface V4Context {
-    state: V4State;
-    origin?: string;
+  export interface AppVerification {
+    /** The domain the Relay verified the app's signature for, e.g. "app.uniswap.org". */
+    domain?: string;
+    /** Only when WalletConnect reviewed the app. */
     name?: string;
+    /** Only when WalletConnect reviewed the app; hosted by WalletConnect. */
     icon?: string;
-    isScam?: boolean;
+    isVerified: boolean;
+    isScam: boolean;
+    /** A domain this app looks like. */
     isSimilarTo?: string;
   }
 
-  /** What the dApp's App Signature callback signs: one outgoing Sign v3 message. */
+  /**
+   * What the dApp's App Signature callback signs: one outgoing message. On Sign v3, the proposal
+   * and every message; on Sign v2, session proposals, session requests and authenticate requests.
+   */
   export interface AppSignatureParams {
     /** The plaintext JSON-RPC request (or response) object. */
     request: Record<string, unknown>;
@@ -40,7 +44,7 @@ export declare namespace Verify {
      * SHA-256 over its UTF-8 bytes. Hash this string; re-serializing `request` may differ.
      */
     requestJson: string;
-    /** The JWT's `cth` for a sealed message, else null. */
+    /** The JWT's `cth` for a sealed Sign v3 message, else null. Always null on Sign v2. */
     ciphertextHash: string | null;
   }
 

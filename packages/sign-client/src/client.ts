@@ -21,7 +21,7 @@ import {
   SIGN_CLIENT_VERSION,
 } from "./constants/index.js";
 import { AuthStore, Engine, PendingRequest, Proposal, Session } from "./controllers/index.js";
-import { SignV3Error, V3Client } from "./v3/client.js";
+import { V3Client } from "./v3/client.js";
 
 const uriParam = (uri: string, name: string) =>
   new URLSearchParams(uri.slice(uri.indexOf("?"))).get(name);
@@ -50,7 +50,7 @@ export class SignClient extends ISignClient {
   public pendingRequest: ISignClient["pendingRequest"];
   public auth: ISignClient["auth"];
   public signConfig?: ISignClient["signConfig"];
-  private readonly appSignature?: SignClientTypes.Options["appSignature"];
+  public readonly appSignature?: SignClientTypes.Options["appSignature"];
 
   private v3?: V3Client;
   // v3 offers that lost to v2: a session that still arrives on one is closed
@@ -376,8 +376,8 @@ export class SignClient extends ISignClient {
     try {
       offer = await v3.connect(params);
     } catch (error: any) {
-      // The app refused to sign: falling back to v2 would send the proposal unsigned.
-      if (error instanceof SignV3Error && error.code === "app_signature_failed") throw error;
+      // The app refused to sign: falling back to v2 would send the proposal without it.
+      if (error?.code === "app_signature_failed") throw error;
       this.logger.warn(error, "v3 connect failed, offering v2 only");
       return await this.engine.connect(params);
     }
@@ -388,6 +388,10 @@ export class SignClient extends ISignClient {
     try {
       fallback = await this.engine.connect({ ...params, symKey });
     } catch (error: any) {
+      if (error?.code === "app_signature_failed") {
+        this.cancelledV3.add(connectionId);
+        throw error;
+      }
       this.logger.warn(error, "v2 connect failed, offering v3 only");
       return offer;
     }

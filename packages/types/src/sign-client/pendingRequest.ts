@@ -6,7 +6,7 @@ export declare namespace PendingRequestTypes {
     topic: string;
     id: number;
     params: SignClientTypes.EventArguments["session_request"]["params"];
-    verifyContext: Verify.Context;
+    verification: Verify.AppVerification;
   }
 }
 export type IPendingRequest = IStore<number, PendingRequestTypes.Struct>;

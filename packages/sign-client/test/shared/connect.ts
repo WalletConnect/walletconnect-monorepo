@@ -18,6 +18,7 @@ import {
 } from "./values.js";
 import { Clients } from "./init.js";
 import { RELAYER_EVENTS } from "../../../core/src/index.js";
+import { withoutIdentity } from "../../src/verification.js";
 
 export interface TestConnectParams {
   requiredNamespaces?: ProposalTypes.RequiredNamespaces;
@@ -205,15 +206,20 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   // testing expiry is not reliable as on slow networks we take longer to settle
   // expect(Math.abs(sessionA.expiry - sessionB.expiry)).to.be.lessThanOrEqual(5);
   // participants
-  expect(sessionA.self).to.eql(sessionB.peer);
+  // the wallet never keeps the dApp's self-asserted identity
+  expect(sessionB.peer).to.eql({
+    publicKey: sessionA.self.publicKey,
+    metadata: withoutIdentity(sessionA.self.metadata),
+  });
   expect(sessionA.peer).to.eql(sessionB.self);
   // controller
   expect(sessionA.controller).to.eql(sessionB.controller);
   expect(sessionA.controller).to.eql(sessionA.peer.publicKey);
   expect(sessionB.controller).to.eql(sessionB.self.publicKey);
   // metadata
-  expect(sessionA.self.metadata).to.eql(sessionB.peer.metadata);
+  expect(withoutIdentity(sessionA.self.metadata)).to.eql(sessionB.peer.metadata);
   expect(sessionB.self.metadata).to.eql(sessionA.peer.metadata);
+  expect(sessionB.verification).to.eql({ isVerified: false, isScam: false });
 
   if (!pairingA) throw new Error("expect pairing A to be defined");
   if (!pairingB) throw new Error("expect pairing B to be defined");

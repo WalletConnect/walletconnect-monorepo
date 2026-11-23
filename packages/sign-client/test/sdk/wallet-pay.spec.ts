@@ -55,9 +55,8 @@ describe("Authenticated Sessions", () => {
       new Promise<void>((resolve, reject) => {
         wallet.once("session_proposal", async (payload) => {
           console.log("session_proposal", JSON.stringify(payload, null, 2));
-          const verifyContext = payload.verifyContext;
-          expect(verifyContext).to.exist;
-          expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+          const verification = payload.verification;
+          expect(verification).to.deep.eq({ isVerified: false, isScam: false });
 
           if (!payload.params.requests?.walletPay) {
             reject(new Error("walletPay is required"));

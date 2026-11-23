@@ -87,6 +87,7 @@ export class Publisher extends IPublisher {
         prompt,
         tag,
         attestation: opts?.attestation,
+        ...(opts?.appSignature && { appSignature: opts.appSignature }),
         plaintext: opts?.plaintext,
         ...opts?.tvf,
       },
@@ -160,7 +161,7 @@ export class Publisher extends IPublisher {
     this.logger.trace({ type: "method", method: "publishCustom", params });
 
     const { payload, opts = {} } = params;
-    const { attestation, tvf, publishMethod, prompt, tag, ttl = FIVE_MINUTES } = opts;
+    const { attestation, appSignature, tvf, publishMethod, prompt, tag, ttl = FIVE_MINUTES } = opts;
 
     const id = opts.id || (getBigIntRpcId().toString() as any);
     const api = getRelayProtocolApi(getRelayProtocolName().protocol);
@@ -174,6 +175,7 @@ export class Publisher extends IPublisher {
         prompt,
         tag,
         attestation,
+        ...(appSignature && { appSignature }),
         ...tvf,
       },
     };

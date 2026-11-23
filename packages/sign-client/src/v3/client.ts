@@ -11,7 +11,7 @@ import type {
 
 import { SIGN_V3_WASM } from "./wasm/wasm-data.js";
 import { WasmSignClient, initSync } from "./wasm/sign_v3.js";
-import { toVerifyContext } from "./verify.js";
+import { unverified, withoutIdentity } from "../verification.js";
 
 const STORAGE_PREFIX = "wc@3:";
 
@@ -32,8 +32,14 @@ export interface V3ClientOptions {
 // The SDK's own shapes, as its JSON interface returns them.
 interface V3Session {
   topic: string;
+  role: "dapp" | "wallet";
   namespaces: SessionTypes.Namespaces;
-  peerMetadata: SignClientTypes.Metadata;
+  /** dApp side: the wallet's metadata. */
+  walletMetadata?: SignClientTypes.Metadata;
+  /** Wallet side: the dApp's, without its self-asserted identity. */
+  dappMetadata?: SignClientTypes.PeerMetadata;
+  /** Wallet side: the proposal's App Verification. */
+  verification?: Verify.AppVerification;
   expiry: number;
 }
 interface V3Proposal {
@@ -45,9 +51,9 @@ interface V3Proposal {
     sessionProperties?: ProposalTypes.SessionProperties;
     scopedProperties?: ProposalTypes.ScopedProperties;
   };
-  metadata: SignClientTypes.Metadata;
+  metadata: SignClientTypes.PeerMetadata;
   expiresAt: number;
-  verifyContext?: Verify.V4Context;
+  verification: Verify.AppVerification;
 }
 type V3Event = { type: string } & Record<string, any>;
 type Waiter = { resolve: (s: SessionTypes.Struct) => void; reject: (e: unknown) => void };
@@ -89,8 +95,9 @@ type Emit = <E extends SignClientTypes.Event>(
  * v3 has no counterpart for some v2 fields, so they are filled in:
  * - the pairing topic is the connection id, which is also the session topic;
  * - public keys are empty;
- * - `verifyContext` comes from Verify v4 (the app's signature, checked by the Relay, and the
- *   Relay's `appMetadata`), never from the peer's own metadata. See `toVerifyContext`.
+ * - `verification` comes from Verify v4: the app's signature, checked by the Relay and the SDK,
+ *   and the Relay's `appMetadata`. Wallets never see the dApp's own name, url or icons: a wallet
+ *   session's `peer.metadata` has them empty.
  * - a session doesn't keep the proposal's required and optional namespaces.
  */
 export class V3Client {
@@ -149,7 +156,7 @@ export class V3Client {
       expiry: p.expiresAt,
       relay: { protocol: "irn" },
       active: false,
-      peerMetadata: p.metadata,
+      peerMetadata: withoutIdentity(p.metadata),
     };
   };
 
@@ -302,7 +309,14 @@ export class V3Client {
       requiredNamespaces: {},
       optionalNamespaces: {},
       self: { publicKey: "", metadata: this.opts.metadata },
-      peer: { publicKey: "", metadata: s.peerMetadata },
+      peer: {
+        publicKey: "",
+        metadata:
+          s.role === "wallet"
+            ? withoutIdentity(s.dappMetadata)
+            : (s.walletMetadata as SignClientTypes.Metadata),
+      },
+      ...(s.role === "wallet" && { verification: s.verification ?? unverified() }),
     };
     this.sessions.set(session.topic, session);
     return session;
@@ -324,7 +338,7 @@ export class V3Client {
       case "session_proposal": {
         const p = e.proposal as V3Proposal;
         this.proposals.set(p.proposalId, p.id);
-        const params: ProposalTypes.Struct = {
+        const params: ProposalTypes.WalletStruct = {
           id: p.proposalId,
           expiryTimestamp: p.expiresAt,
           relays: [{ protocol: "irn" }],
@@ -338,7 +352,7 @@ export class V3Client {
         this.dispatch("session_proposal", {
           id: p.proposalId,
           params,
-          verifyContext: toVerifyContext(p.verifyContext),
+          verification: p.verification ?? unverified(),
         });
         break;
       }
@@ -374,7 +388,7 @@ export class V3Client {
           id: e.id,
           topic: e.topic,
           params: { request: e.request, chainId: e.chainId },
-          verifyContext: toVerifyContext(e.verifyContext),
+          verification: e.verification ?? unverified(),
         });
         break;
       case "session_event":
@@ -402,6 +416,13 @@ export class V3Client {
       }
       case "session_ping":
         this.dispatch("session_ping", { id: e.id, topic: e.topic });
+        break;
+      case "app_signature_mismatch":
+        this.dispatch("app_signature_mismatch", {
+          topic: e.topic,
+          ...(e.id != null && { id: e.id }),
+          ...(e.method != null && { method: e.method }),
+        });
         break;
       case "session_delete":
         this.sessions.delete(e.topic);

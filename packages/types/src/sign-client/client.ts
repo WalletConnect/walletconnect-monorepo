@@ -23,7 +23,14 @@ export declare namespace SignClientTypes {
     | "session_authenticate"
     | "proposal_expire"
     | "session_request_expire"
-    | "session_connect";
+    | "session_connect"
+    | "app_signature_mismatch";
+
+  /**
+   * What a wallet sees of a dApp's metadata: no self-asserted identity (`name`, `url`, `icons`).
+   * Who the app is comes from `Verify.AppVerification` only.
+   */
+  type PeerMetadata = Pick<Metadata, "description" | "redirect" | "verifyUrl">;
 
   interface BaseEventArgs<T = unknown> {
     id: number;
@@ -32,15 +39,15 @@ export declare namespace SignClientTypes {
   }
   interface EventArguments {
     session_proposal: {
-      verifyContext: Verify.Context;
-    } & Omit<BaseEventArgs<ProposalTypes.Struct>, "topic">;
+      verification: Verify.AppVerification;
+    } & Omit<BaseEventArgs<ProposalTypes.WalletStruct>, "topic">;
     session_update: BaseEventArgs<{ namespaces: SessionTypes.Namespaces }>;
     session_extend: Omit<BaseEventArgs, "params">;
     session_ping: Omit<BaseEventArgs, "params">;
     session_delete: Omit<BaseEventArgs, "params">;
     session_expire: { topic: string };
     session_request: {
-      verifyContext: Verify.Context;
+      verification: Verify.AppVerification;
     } & BaseEventArgs<{
       request: { method: string; params: any; expiryTimestamp?: number };
       chainId: string;
@@ -56,12 +63,17 @@ export declare namespace SignClientTypes {
       chainId: string;
     }>;
     session_authenticate: {
-      verifyContext: Verify.Context;
+      verification: Verify.AppVerification;
       transportType?: RelayerTypes.TransportType;
     } & BaseEventArgs<AuthTypes.AuthRequestEventArgs>;
     proposal_expire: { id: number };
     session_request_expire: { id: number };
     session_connect: { session: SessionTypes.Struct };
+    /**
+     * Sign v3, wallet: a proposal or message whose App Signature is for another one. It was
+     * dropped and never shown; a request was answered with an error.
+     */
+    app_signature_mismatch: { topic: string; id?: number; method?: string };
   }
 
   type Metadata = CoreTypes.Metadata;
@@ -140,6 +152,7 @@ export abstract class ISignClient {
   public abstract session: ISession;
   public abstract proposal: IProposal;
   public abstract pendingRequest: IPendingRequest;
+  public abstract readonly appSignature?: Verify.AppSignatureOptions;
   public abstract auth: IAuth;
   public abstract signConfig?: SignClientTypes.SignConfig;
 

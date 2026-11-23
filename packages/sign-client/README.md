@@ -22,12 +22,22 @@ This library provides a Sign Client for WalletConnect v2.0 Protocol for both Dap
 - **Where a v3 session differs from a v2 one:**
   - The pairing topic is the connection id, which is also the session topic.
   - Public keys are empty.
-  - `verifyContext` comes from Verify v4, below.
   - A session doesn't keep the proposal's required and optional namespaces.
-- **Verify v4 App Signatures (experimental).**
-  - **dApp:** pass `appSignature: { callback }` to `SignClient.init`. The client calls `callback({ request, requestJson, ciphertextHash })` before it creates a v3 connection and before every v3 message, and sends the `appSignature` JWT it returns. If the callback throws, the call fails with `SignV3Error` code `app_signature_failed` and nothing is sent unsigned: `connect()` doesn't fall back to a v2-only offer. v2 messages are never signed.
-  - **The JWT:** ES256 from the app's backend, with `iss` the app's host, `sub`, `cth` for sealed messages, and `exp`. `sub` is base64url (no padding) SHA-256 of `requestJson`'s UTF-8 bytes, the plaintext exactly as sent. Hash `requestJson`, not a re-serialized `request`. `cth` is `ciphertextHash`, passed through.
-  - **Wallet:** `session_proposal` and `session_request` carry `verifyContext.v4`, `{ state, origin?, name?, icon?, isScam?, isSimilarTo? }`, where `state` is `default`, `domain_validated`, `business_name`, `verified` or `invalid`. `verifyContext.verified.validation` is `VALID` for the three signed tiers, `UNKNOWN` for `default` and `INVALID` for `invalid`. `verified.origin` is only ever the Relay's `appMetadata.origin`, never the app's own `metadata.url`, so it is empty for an unsigned request.
+- **Verify v4 (experimental).**
+  - **What wallets see:** `verification`, a `Verify.AppVerification` `{ domain?, name?, icon?, isVerified, isScam, isSimilarTo? }`, on `session_proposal`, `session_request`, `session_authenticate` and a wallet's session. Show whatever is present.
+    - **Sign v3:** every field comes from the Relay's `appMetadata`, once the SDK checked that the app's signature is for that message.
+    - **Sign v2, or unsigned:** `{ isVerified: false, isScam }`, with `isScam` from the legacy attestation.
+  - **No self-asserted identity:** wallets never see the dApp's own `name`, `url` or `icons`.
+    - A proposal's `proposer.metadata` is `{ description, redirect?, verifyUrl? }`.
+    - A wallet's stored proposals, sessions and pairings keep those fields empty.
+  - **A mismatch drops the message (Sign v3):** a message whose App Signature is for another message never reaches the wallet.
+    - A request is answered with the JSON-RPC error `{ code: -32600, message: "app_signature_mismatch" }`, and `app_signature_mismatch` fires with `{ topic, id?, method? }`.
+    - A mismatched proposal makes `pair()` reject with `app_signature_mismatch`.
+  - **dApps sign:** pass `appSignature: { callback }` to `SignClient.init`. The callback gets `{ request, requestJson, ciphertextHash }` and returns `{ appSignature }`, an ES256 JWT from the app's backend: `iss` the app's host, `sub`, `cth` for sealed Sign v3 messages, and `exp`.
+    - **`sub`** is base64url (no padding) SHA-256 of `requestJson`'s UTF-8 bytes, the plaintext exactly as sent. Hash `requestJson`, not a re-serialized `request`.
+    - **Sign v3:** the client calls it before creating a connection and before every message.
+    - **Sign v2:** it calls it for session proposals (including the fallback offer), session requests and authenticate requests. The JWT goes out as the `appSignature` param of `irn_publish` / `wc_proposeSession` (or the HTTP body's `appSignature`), and the old Verify attestation isn't fetched. `requestJson` is `safeJsonStringify(payload)`, which `crypto.encode` encrypts, and which a legacy wallet's `hashMessage(JSON.stringify(decoded))` recomputes unless the payload holds BigInts.
+    - **If it throws:** the call fails with `app_signature_failed`, and nothing is sent unsigned; `connect()` doesn't fall back to the other protocol.
 - **v2 only.** `authenticate` and its approve and reject calls, `find`, `getPendingSessionRequests`, `proposal` and `pendingRequest` cover v2 alone. `core.pairing.pair()` doesn't route: it treats every URI as v2.
 - **Relay.** Both protocols use the client's `relayUrl`, which has to speak v3 and v2 over HTTP. Today that is the dev Relay, `https://pool-1.dev-relay.walletconnect.com`.
 - **Platforms.** Browsers and Node 20+. React Native is not supported.

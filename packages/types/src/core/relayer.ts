@@ -23,6 +23,8 @@ export declare namespace RelayerTypes {
     };
     tvf?: ITVF;
     attestation?: string;
+    /** Verify v4: the dApp's App Signature JWT, sent as the `appSignature` param. */
+    appSignature?: string;
     publishMethod?: string;
     plaintext?: string;
   }

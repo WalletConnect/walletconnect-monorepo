@@ -1,5 +1,6 @@
 import { RelayerTypes } from "../core/relayer.js";
 import { IStore } from "../core/store.js";
+import { Verify } from "../core/verify.js";
 import { SignClientTypes } from "./client.js";
 import { ProposalTypes } from "./proposal.js";
 import { AuthTypes } from "./auth.js";
@@ -47,6 +48,12 @@ export declare namespace SessionTypes {
       metadata: SignClientTypes.Metadata;
     };
     authentication?: AuthTypes.Cacao[];
+    /**
+     * Wallet side: who the dApp is, from the proposal's App Verification. On the wallet side,
+     * `peer.metadata` keeps only `description`, `redirect` and `verifyUrl`: its `name`, `url` and
+     * `icons` are empty.
+     */
+    verification?: Verify.AppVerification;
     walletPayResult?: EngineTypes.WalletPayResult[];
     transportType?: RelayerTypes.TransportType;
   }
