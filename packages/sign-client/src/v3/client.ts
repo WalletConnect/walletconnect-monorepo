@@ -11,6 +11,7 @@ import type {
 
 import { SIGN_V3_WASM } from "./wasm/wasm-data.js";
 import { WasmSignClient, initSync } from "./wasm/sign_v3.js";
+import { toVerifyContext } from "./verify.js";
 
 const STORAGE_PREFIX = "wc@3:";
 
@@ -20,6 +21,12 @@ export interface V3ClientOptions {
   metadata: SignClientTypes.Metadata;
   storage: IKeyValueStorage;
   customStoragePrefix?: string;
+  /**
+   * Verify v4, dApp: signs the proposal and every message. The SDK calls it before creating the
+   * connection and before every send, and sends the JWT as `appSignature`. If it throws, the
+   * call fails; nothing is sent unsigned. Without it, nothing is signed.
+   */
+  appSignature?: Verify.AppSignatureOptions;
 }
 
 // The SDK's own shapes, as its JSON interface returns them.
@@ -40,6 +47,7 @@ interface V3Proposal {
   };
   metadata: SignClientTypes.Metadata;
   expiresAt: number;
+  verifyContext?: Verify.V4Context;
 }
 type V3Event = { type: string } & Record<string, any>;
 type Waiter = { resolve: (s: SessionTypes.Struct) => void; reject: (e: unknown) => void };
@@ -57,10 +65,6 @@ export class SignV3Error extends Error {
 // v2's SDK errors that apps match on, as @walletconnect/utils getSdkError returns them.
 const USER_REJECTED = { code: 5000, message: "User rejected." };
 const EXPIRED = 6;
-
-const unverified = (origin = ""): Verify.Context => ({
-  verified: { origin, validation: "UNKNOWN", verifyUrl: "" },
-});
 
 let wasmLoaded = false;
 
@@ -85,7 +89,8 @@ type Emit = <E extends SignClientTypes.Event>(
  * v3 has no counterpart for some v2 fields, so they are filled in:
  * - the pairing topic is the connection id, which is also the session topic;
  * - public keys are empty;
- * - `verifyContext` is UNKNOWN;
+ * - `verifyContext` comes from Verify v4 (the app's signature, checked by the Relay, and the
+ *   Relay's `appMetadata`), never from the peer's own metadata. See `toVerifyContext`.
  * - a session doesn't keep the proposal's required and optional namespaces.
  */
 export class V3Client {
@@ -256,6 +261,8 @@ export class V3Client {
     this.wasm = await WasmSignClient.create(JSON.stringify(config), storage, (json: string) =>
       this.onV3Event(JSON.parse(json)),
     );
+    const appSignature = this.opts.appSignature;
+    if (appSignature) this.wasm.setAppSigner(appSigner(appSignature));
     await this.refreshSessions();
     this.wasm.start();
     if (typeof document !== "undefined" && typeof addEventListener === "function") {
@@ -331,7 +338,7 @@ export class V3Client {
         this.dispatch("session_proposal", {
           id: p.proposalId,
           params,
-          verifyContext: unverified(p.metadata.url),
+          verifyContext: toVerifyContext(p.verifyContext),
         });
         break;
       }
@@ -367,7 +374,7 @@ export class V3Client {
           id: e.id,
           topic: e.topic,
           params: { request: e.request, chainId: e.chainId },
-          verifyContext: unverified(this.sessions.get(e.topic)?.peer.metadata.url),
+          verifyContext: toVerifyContext(e.verifyContext),
         });
         break;
       case "session_event":
@@ -403,6 +410,25 @@ export class V3Client {
         break;
     }
   }
+}
+
+/** The WASM side calls it with `{ request, ciphertextHash }` as JSON, `request` being JSON text. */
+function appSigner(opts: Verify.AppSignatureOptions) {
+  return async (input: string): Promise<string> => {
+    const { request, ciphertextHash } = JSON.parse(input) as {
+      request: string;
+      ciphertextHash?: string | null;
+    };
+    const res = await opts.callback({
+      request: JSON.parse(request),
+      requestJson: request,
+      ciphertextHash: ciphertextHash ?? null,
+    });
+    if (typeof res?.appSignature !== "string" || !res.appSignature) {
+      throw new Error("appSignature.callback returned no appSignature");
+    }
+    return res.appSignature;
+  };
 }
 
 const escapeKey = (k: string) => k.replace(/%/g, "%25").replace(/\//g, "%2F").replace(/\\/g, "%5C");

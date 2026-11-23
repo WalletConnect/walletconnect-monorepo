@@ -87,6 +87,8 @@ export declare namespace SignClientTypes {
     core?: ICore;
     metadata?: Metadata;
     signConfig?: SignConfig;
+    /** Sign v3 dApps: sign the proposal and every message for Verify v4. */
+    appSignature?: Verify.AppSignatureOptions;
   }
 }
 

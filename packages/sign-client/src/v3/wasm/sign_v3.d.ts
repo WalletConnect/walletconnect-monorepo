@@ -51,6 +51,10 @@ export class WasmSignClient {
    */
   static create(config_json: string, storage: any, on_event: Function): Promise<WasmSignClient>;
   foreground(): void;
+  /**
+   * Verify v4, dApp: `signer(requestJson) => Promise<jwt>`, or `null`.
+   */
+  setAppSigner(signer?: Function | null): void;
   start(): void;
   stop(): void;
 }
@@ -64,6 +68,7 @@ export interface InitOutput {
   readonly wasmsignclient_clientId: (a: number, b: number) => void;
   readonly wasmsignclient_create: (a: number, b: number, c: number, d: number) => number;
   readonly wasmsignclient_foreground: (a: number) => void;
+  readonly wasmsignclient_setAppSigner: (a: number, b: number) => void;
   readonly wasmsignclient_start: (a: number) => void;
   readonly wasmsignclient_stop: (a: number) => void;
   readonly __wbg_intounderlyingbytesource_free: (a: number, b: number) => void;
@@ -79,11 +84,11 @@ export interface InitOutput {
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsource_cancel: (a: number) => void;
   readonly intounderlyingsource_pull: (a: number, b: number) => number;
-  readonly __wasm_bindgen_func_elem_2090: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_2589: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_2814: (a: number, b: number, c: number, d: number) => void;
-  readonly __wasm_bindgen_func_elem_2816: (a: number, b: number, c: number, d: number) => void;
-  readonly __wasm_bindgen_func_elem_2132: (a: number, b: number, c: number) => void;
+  readonly __wasm_bindgen_func_elem_2136: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_2640: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_2878: (a: number, b: number, c: number, d: number) => void;
+  readonly __wasm_bindgen_func_elem_2880: (a: number, b: number, c: number, d: number) => void;
+  readonly __wasm_bindgen_func_elem_2178: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export: (a: number, b: number) => number;
   readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export3: (a: number) => void;
