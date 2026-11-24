@@ -60,14 +60,14 @@ export function appVerification(
   };
 }
 
-/** A dApp's metadata as a wallet keeps it: its self-asserted name, url and icons emptied. */
+/** An app's metadata as a wallet keeps it: its self-asserted name, url and icons emptied. */
 export function withoutIdentity(
   metadata: SignClientTypes.PeerMetadata | undefined,
 ): SignClientTypes.Metadata {
   return { ...peerMetadata(metadata), name: "", url: "", icons: [] };
 }
 
-/** A dApp's metadata as a wallet sees it: description, redirect and verifyUrl only. */
+/** An app's metadata as a wallet sees it: description, redirect and verifyUrl only. */
 export function peerMetadata(
   metadata: SignClientTypes.PeerMetadata | undefined,
 ): SignClientTypes.PeerMetadata {
@@ -88,7 +88,7 @@ export function walletProposal(p: ProposalTypes.Struct): ProposalTypes.WalletStr
   };
 }
 
-/** The dApp refused to sign, so the message isn't sent. */
+/** The app refused to sign, so the message isn't sent. */
 export class AppSignatureError extends Error {
   public readonly code = "app_signature_failed";
   constructor(cause: unknown) {
@@ -142,7 +142,7 @@ export function appSignatureRefusal(error: unknown): AppSignatureRefusedError | 
 }
 
 /**
- * Sign v2: the dApp's App Signature for one outgoing request. `sub` covers `requestJson`, the
+ * Sign v2: the app's App Signature for one outgoing request. `sub` covers `requestJson`, the
  * plaintext that gets encrypted: `safeJsonStringify(payload)`, which `crypto.encode` also uses.
  * The app's backend sees this plaintext, so it signs only what it has checked. For a payload
  * without BigInts that's `JSON.stringify(payload)`, and a wallet, which hashes `JSON.stringify`

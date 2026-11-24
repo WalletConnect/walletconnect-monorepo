@@ -8,14 +8,14 @@ import { V3Client } from "../../src/v3/client.js";
 // app's domain and its published key; not part of `npm run test`, and skipped without a key. With
 // rs-relay's scripts/verify-v4-local stack:
 //   TEST_V3_RELAY_URL=http://127.0.0.1:8080 TEST_PROJECT_ID=c0ffee254729296a45a3885639ac7e10 \
-//   TEST_APP_SIGNATURE_DOMAIN=dapp.localhost \
+//   TEST_APP_SIGNATURE_DOMAIN=app.localhost \
 //   TEST_APP_SIGNATURE_JWK="$(jq -c .app.privateJwk <stack>/.state/keys.json)" \
 //   TEST_APP_SIGNATURE_REQUIRED_ORIGIN=http://required.localhost:3000 \
 //   npx vitest run test/v3/app-signature-live.spec.ts
 const relayUrl = process.env.TEST_V3_RELAY_URL ?? "https://pool-1.dev-relay.walletconnect.com";
 const projectId = process.env.TEST_PROJECT_ID ?? "sign-client-v3-test";
 const jwk = process.env.TEST_APP_SIGNATURE_JWK;
-const domain = process.env.TEST_APP_SIGNATURE_DOMAIN ?? "dapp.localhost";
+const domain = process.env.TEST_APP_SIGNATURE_DOMAIN ?? "app.localhost";
 // An Origin whose domain requires signatures (the stack's required.localhost).
 const requiredOrigin = process.env.TEST_APP_SIGNATURE_REQUIRED_ORIGIN;
 const ACCOUNT = "eip155:1:0x1111111111111111111111111111111111111111";
@@ -83,23 +83,23 @@ function backend(privateJwk: string) {
 }
 
 describe.skipIf(!jwk)("Verify v4 App Signatures, live", () => {
-  let app: ReturnType<typeof backend>;
-  let dapp: SignClient;
+  let signer: ReturnType<typeof backend>;
+  let app: SignClient;
   let wallet: SignClient;
   let topic: string;
 
   beforeAll(async () => {
-    app = backend(jwk!);
-    dapp = await SignClient.init(opts("live-dapp", { callback: app.callback }));
+    signer = backend(jwk!);
+    app = await SignClient.init(opts("live-app", { callback: signer.callback }));
     wallet = await SignClient.init(opts("live-wallet"));
   });
 
   afterAll(() => {
-    for (const c of [dapp, wallet]) c?.events.removeAllListeners();
+    for (const c of [app, wallet]) c?.events.removeAllListeners();
   });
 
   it("the wallet sees the signing domain on the proposal and a request", async () => {
-    const { uri, approval } = await dapp.connect({ optionalNamespaces: namespaces });
+    const { uri, approval } = await app.connect({ optionalNamespaces: namespaces });
     const proposed = next(wallet, "session_proposal");
     await wallet.pair({ uri: uri! });
     const proposal = await proposed;
@@ -115,7 +115,7 @@ describe.skipIf(!jwk)("Verify v4 App Signatures, live", () => {
       expect(verification?.domain).toBe(domain);
       void wallet.respond({ topic, response: { id, jsonrpc: "2.0", result: "0xsigned" } });
     });
-    const result = await dapp.request({
+    const result = await app.request({
       topic,
       chainId: "eip155:1",
       request: { method: "personal_sign", params: ["0x68656c6c6f", ACCOUNT] },
@@ -127,16 +127,16 @@ describe.skipIf(!jwk)("Verify v4 App Signatures, live", () => {
     // The v3 Relay checks `sub` itself on unsealed Sign v3 messages, so a mismatch can only get
     // past it on Sign v2, where it sees the plaintext the client reports.
     vi.spyOn(V3Client, "init").mockResolvedValueOnce(undefined as never);
-    const v2Dapp = await SignClient.init(opts("live-v2-dapp", { callback: app.callback }));
-    const publish = v2Dapp.core.relayer.publish.bind(v2Dapp.core.relayer);
-    vi.spyOn(v2Dapp.core.relayer, "publish").mockImplementation((topic, message, o) =>
+    const v2App = await SignClient.init(opts("live-v2-app", { callback: signer.callback }));
+    const publish = v2App.core.relayer.publish.bind(v2App.core.relayer);
+    vi.spyOn(v2App.core.relayer, "publish").mockImplementation((topic, message, o) =>
       publish(
         topic,
         message,
-        o?.appSignature && app.state.fake ? { ...o, plaintext: app.state.fake } : o,
+        o?.appSignature && signer.state.fake ? { ...o, plaintext: signer.state.fake } : o,
       ),
     );
-    const { uri, approval } = await v2Dapp.connect({ optionalNamespaces: namespaces });
+    const { uri, approval } = await v2App.connect({ optionalNamespaces: namespaces });
     const proposed = next(wallet, "session_proposal");
     await wallet.pair({ uri: uri! });
     const proposal = await proposed;
@@ -147,12 +147,12 @@ describe.skipIf(!jwk)("Verify v4 App Signatures, live", () => {
     const v2Topic = (await approval()).topic;
     await acknowledged();
 
-    app.state.tamper = true;
+    signer.state.tamper = true;
     const delivered: unknown[] = [];
     const onRequest = (r: unknown) => delivered.push(r);
     wallet.on("session_request", onRequest);
     const mismatch = next(wallet, "app_signature_mismatch");
-    const e = await v2Dapp
+    const e = await v2App
       .request({
         topic: v2Topic,
         chainId: "eip155:1",
@@ -163,16 +163,16 @@ describe.skipIf(!jwk)("Verify v4 App Signatures, live", () => {
         (e) => e,
       );
     wallet.off("session_request", onRequest);
-    app.state.tamper = false;
-    app.state.fake = undefined;
-    v2Dapp.events.removeAllListeners();
+    signer.state.tamper = false;
+    signer.state.fake = undefined;
+    v2App.events.removeAllListeners();
     expect((await mismatch).topic).toBe(v2Topic);
     expect(delivered).toEqual([]);
     expect(String(e?.message ?? e)).toContain("app_signature_mismatch");
   });
 
   it.skipIf(!requiredOrigin)(
-    "an unsigned dApp on a domain requiring signatures: connect() rejects at once, no retries",
+    "an unsigned app on a domain requiring signatures: connect() rejects at once, no retries",
     async () => {
       // Node sends no Origin; a browser on that domain would.
       const realFetch = globalThis.fetch;
@@ -187,7 +187,7 @@ describe.skipIf(!jwk)("Verify v4 App Signatures, live", () => {
         return realFetch(input, { ...init, headers });
       };
       try {
-        const unsigned = await SignClient.init(opts("live-unsigned-dapp"));
+        const unsigned = await SignClient.init(opts("live-unsigned-app"));
         const started = Date.now();
         const e = await unsigned.connect({ optionalNamespaces: namespaces }).catch((e) => e);
         expect(e).toBeInstanceOf(AppSignatureRefusedError);

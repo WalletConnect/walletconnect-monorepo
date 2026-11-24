@@ -2224,7 +2224,7 @@ export class Engine extends IEngine {
         verifyUrl: params.proposer.metadata?.verifyUrl,
         appMetadata,
       });
-      // The dApp's self-asserted identity is never kept or shown.
+      // The app's self-asserted identity is never kept or shown.
       const proposal: ProposalTypes.Struct = {
         id,
         pairingTopic: topic,
@@ -2702,7 +2702,7 @@ export class Engine extends IEngine {
         transportType,
         appMetadata,
       });
-      // The dApp's self-asserted identity is never kept or shown.
+      // The app's self-asserted identity is never kept or shown.
       const requester = {
         ...payload.params.requester,
         metadata: withoutIdentity(payload.params.requester.metadata),

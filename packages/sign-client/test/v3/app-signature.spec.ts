@@ -48,7 +48,7 @@ function backend() {
   const callback = async (p: Verify.AppSignatureParams) => {
     seen.push(p);
     return {
-      appSignature: jwt({ iss: "dapp.example", sub: b64u(p.requestJson), exp: 9e9 }),
+      appSignature: jwt({ iss: "app.example", sub: b64u(p.requestJson), exp: 9e9 }),
     };
   };
   return { seen, callback };
@@ -64,34 +64,34 @@ function relaySends(client: SignClient) {
 }
 
 describe("Verify v4 App Signatures on the Sign v2 path", () => {
-  const app = backend();
-  let dapp: SignClient;
+  const signer = backend();
+  let app: SignClient;
   let v2Wallet: SignClient;
 
   beforeAll(async () => {
-    dapp = await SignClient.init(opts("sig-dapp", { callback: app.callback }));
+    app = await SignClient.init(opts("sig-app", { callback: signer.callback }));
     v2Wallet = await initV2Only(opts("sig-v2-wallet"));
   });
 
   afterAll(() => {
-    for (const c of [dapp, v2Wallet]) c?.events.removeAllListeners();
+    for (const c of [app, v2Wallet]) c?.events.removeAllListeners();
   });
 
   it("signs the v2 proposal and request, sends appSignature, and the legacy hash matches", async () => {
-    const sent = relaySends(dapp);
-    const published = vi.spyOn(dapp.core.relayer, "publish");
-    const register = vi.spyOn(dapp.core.verify, "register");
+    const sent = relaySends(app);
+    const published = vi.spyOn(app.core.relayer, "publish");
+    const register = vi.spyOn(app.core.verify, "register");
     const resolve = vi.spyOn(v2Wallet.core.verify, "resolve");
 
-    const { uri, approval } = await dapp.connect({ optionalNamespaces: namespaces });
+    const { uri, approval } = await app.connect({ optionalNamespaces: namespaces });
     // the v3 proposal and the v2 fallback offer are both signed
-    expect(app.seen.map((p) => p.request.method)).toEqual([
+    expect(signer.seen.map((p) => p.request.method)).toEqual([
       "wc_sessionCreate",
       "wc_sessionPropose",
     ]);
-    const propose = app.seen[1];
+    const propose = signer.seen[1];
     // the callback gets the plaintext only, never a hash of what is published
-    expect(Object.keys(app.seen[0]).sort()).toEqual(["request", "requestJson"]);
+    expect(Object.keys(signer.seen[0]).sort()).toEqual(["request", "requestJson"]);
     expect(JSON.parse(propose.requestJson)).toEqual(propose.request);
     expect(legacyRecomputes(propose.requestJson)).toBe(true);
 
@@ -107,7 +107,7 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
     await v2Wallet.pair({ uri: uri! });
     const { id, params, verification } = await proposed;
     expect(verification).toEqual({ isVerified: false, isScam: false });
-    expect(params.proposer.metadata).toEqual({ description: "sig-dapp" });
+    expect(params.proposer.metadata).toEqual({ description: "sig-app" });
     // the legacy wallet hashes JSON.stringify of what it decrypted: the same digest, as hex
     const legacyHash = resolve.mock.calls[0][0].hash;
     expect(legacyHash).toBe(
@@ -123,13 +123,13 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
       v2Wallet.respond({ topic, response: { id, jsonrpc: "2.0", result: "0xv2" } }),
     );
     const requested = vi.spyOn(v2Wallet.core.verify, "resolve");
-    const result = await dapp.request({
+    const result = await app.request({
       topic: session.topic,
       chainId: "eip155:1",
       request: { method: "personal_sign", params: ["0x68656c6c6f", ACCOUNT] },
     });
     expect(result).toBe("0xv2");
-    const signed = app.seen[2];
+    const signed = signer.seen[2];
     expect(signed.request.method).toBe("wc_sessionRequest");
     const publish = sent("irn_publish").find((r) => r.params.appSignature);
     expect(publish?.params.plaintext).toBe(signed.requestJson);
@@ -138,39 +138,39 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
     expect(requested.mock.calls.at(-1)![0].hash).toBe(
       Buffer.from(subOf(publish!.params.appSignature), "base64url").toString("hex"),
     );
-    // the dApp's v2 responses and other messages aren't signed
-    expect(app.seen).toHaveLength(3);
+    // the app's v2 responses and other messages aren't signed
+    expect(signer.seen).toHaveLength(3);
     // a retry after the JWT expired signs the same request again
     const opts = published.mock.calls.find(([, , o]) => o?.appSignature)![2]!;
     expect(opts.refreshAppSignature).toBeTypeOf("function");
     const renewed = await opts.refreshAppSignature!();
-    expect(app.seen).toHaveLength(4);
-    expect(app.seen[3].requestJson).toBe(signed.requestJson);
+    expect(signer.seen).toHaveLength(4);
+    expect(signer.seen[3].requestJson).toBe(signed.requestJson);
     expect(subOf(renewed)).toBe(subOf(publish!.params.appSignature));
     // with an app signature, the old Verify attestation is never fetched
     expect(register).not.toHaveBeenCalled();
 
-    await dapp.disconnect({ topic: session.topic, reason: { code: 6000, message: "bye" } });
+    await app.disconnect({ topic: session.topic, reason: { code: 6000, message: "bye" } });
   });
 
   it("fails a v2 connect, and sends nothing, when the callback throws", async () => {
-    const v2Dapp = await initV2Only(
-      opts("sig-v2-dapp", {
+    const v2App = await initV2Only(
+      opts("sig-v2-app", {
         callback: async () => {
           throw new Error("denylisted");
         },
       }),
     );
-    const sent = relaySends(v2Dapp);
-    const e = await v2Dapp.connect({ optionalNamespaces: namespaces }).catch((e) => e);
+    const sent = relaySends(v2App);
+    const e = await v2App.connect({ optionalNamespaces: namespaces }).catch((e) => e);
     expect(e.code).toBe("app_signature_failed");
     expect(sent("wc_proposeSession")).toEqual([]);
-    v2Dapp.events.removeAllListeners();
+    v2App.events.removeAllListeners();
   });
 
-  it("fails a v3 dApp's connect, with no v2 fallback, when the callback throws", async () => {
+  it("fails a v3 app's connect, with no v2 fallback, when the callback throws", async () => {
     const failing = await SignClient.init(
-      opts("sig-failing-dapp", {
+      opts("sig-failing-app", {
         callback: async () => {
           throw new Error("denylisted");
         },

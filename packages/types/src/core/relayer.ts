@@ -23,7 +23,7 @@ export declare namespace RelayerTypes {
     };
     tvf?: ITVF;
     attestation?: string;
-    /** Verify v4: the dApp's App Signature JWT, sent as the `appSignature` param. */
+    /** Verify v4: the app's App Signature JWT, sent as the `appSignature` param. */
     appSignature?: string;
     /**
      * Verify v4: signs the message again. A (re)publish whose `appSignature` has expired calls it

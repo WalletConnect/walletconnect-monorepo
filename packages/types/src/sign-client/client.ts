@@ -27,7 +27,7 @@ export declare namespace SignClientTypes {
     | "app_signature_mismatch";
 
   /**
-   * What a wallet sees of a dApp's metadata: no self-asserted identity (`name`, `url`, `icons`).
+   * What a wallet sees of an app's metadata: no self-asserted identity (`name`, `url`, `icons`).
    * Who the app is comes from `Verify.AppVerification` only.
    */
   type PeerMetadata = Pick<Metadata, "description" | "redirect" | "verifyUrl">;
@@ -99,7 +99,7 @@ export declare namespace SignClientTypes {
     core?: ICore;
     metadata?: Metadata;
     signConfig?: SignConfig;
-    /** Sign v3 dApps: sign the proposal and every message for Verify v4. */
+    /** Sign v3 apps: sign the proposal and every message for Verify v4. */
     appSignature?: Verify.AppSignatureOptions;
   }
 }

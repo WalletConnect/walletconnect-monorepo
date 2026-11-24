@@ -59,7 +59,7 @@ describe("SignClient over both protocols: v3 to v3", () => {
     const proposed = next(wallet, "session_proposal");
     const pairing = await wallet.pair({ uri: uri! });
     const { id, params, verification } = await proposed;
-    // wallets never see the dApp's own name, url or icons
+    // wallets never see the app's own name, url or icons
     expect(params.proposer.metadata).toEqual({ description: "dapp" });
     expect(params.optionalNamespaces.eip155.methods).toEqual(["personal_sign"]);
     expect(params.scopedProperties).toEqual({
@@ -308,7 +308,7 @@ describe("SignClient over both protocols: the v2 fallback", () => {
     });
     const session = await approval();
     await acknowledged();
-    // a v2 session hides the dApp's own identity too
+    // a v2 session hides the app's own identity too
     expect(wallet.session.get(session.topic).peer.metadata.name).toBe("");
     expect(wallet.session.get(session.topic).verification).toEqual({
       isVerified: false,

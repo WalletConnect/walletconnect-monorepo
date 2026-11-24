@@ -89,11 +89,11 @@ export function decodeAppSignatureClaims(jwt: string): { sub: string; exp?: numb
   }
 }
 
-/** How long before its `exp` the dApp treats its own App Signature as expired. */
+/** How long before its `exp` the app treats its own App Signature as expired. */
 export const APP_SIGNATURE_EXPIRY_MARGIN_S = 10;
 
 /**
- * dApp side, before a retry: is this App Signature expired, or about to be? Only the sender looks
+ * App side, before a retry: is this App Signature expired, or about to be? Only the sender looks
  * at `exp`; wallets never do, since a request's expiry is its own.
  */
 export function isAppSignatureExpired(jwt: string, nowS = Date.now() / 1000): boolean {

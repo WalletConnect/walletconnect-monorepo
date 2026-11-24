@@ -28,10 +28,10 @@ const jwt = (claims: object) =>
   ["{}", JSON.stringify(claims), "sig"].map((p) => Buffer.from(p).toString("base64url")).join(".");
 const metadata = {
   name: "Self-asserted",
-  description: "A dApp",
+  description: "An app",
   url: "https://self-asserted.example",
   icons: ["https://self-asserted.example/i.png"],
-  redirect: { native: "dapp://" },
+  redirect: { native: "app://" },
 };
 
 describe("Verify v4 on Sign v2: what the app signs", () => {
@@ -138,18 +138,18 @@ describe("Verify v4 on Sign v2: what a wallet derives from appMetadata", () => {
   });
 });
 
-describe("Verify v4: what a wallet sees of a dApp", () => {
-  it("never the dApp's own name, url or icons", () => {
+describe("Verify v4: what a wallet sees of an app", () => {
+  it("never the app's own name, url or icons", () => {
     expect(peerMetadata(metadata)).toEqual({
-      description: "A dApp",
-      redirect: { native: "dapp://" },
+      description: "An app",
+      redirect: { native: "app://" },
     });
     expect(withoutIdentity(metadata)).toEqual({
       name: "",
-      description: "A dApp",
+      description: "An app",
       url: "",
       icons: [],
-      redirect: { native: "dapp://" },
+      redirect: { native: "app://" },
     });
     const proposal = walletProposal({
       id: 1,
@@ -165,7 +165,7 @@ describe("Verify v4: what a wallet sees of a dApp", () => {
     });
     expect(proposal.proposer).toEqual({
       publicKey: "pk",
-      metadata: { description: "A dApp", redirect: { native: "dapp://" } },
+      metadata: { description: "An app", redirect: { native: "app://" } },
     });
     expect(JSON.stringify(proposal)).not.toContain("self-asserted");
     expect(proposal).not.toHaveProperty("attestation");

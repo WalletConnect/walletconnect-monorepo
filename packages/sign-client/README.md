@@ -28,13 +28,13 @@ This library provides a Sign Client for WalletConnect v2.0 Protocol for both Dap
     - **Sign v3:** every field comes from the Relay's `appMetadata`, once the SDK checked that the app's signature is for that message.
     - **Sign v2, or unsigned:** `{ isVerified: false, isScam }`, with `isScam` from the legacy attestation. If the Relay adds `appMetadata` to a Sign v2 delivery, the Sign v3 rules apply to it.
     - The app's JWT comes in `appMetadata.appSignature`. It isn't exposed in `verification`.
-  - **No self-asserted identity:** wallets never see the dApp's own `name`, `url` or `icons`.
+  - **No self-asserted identity:** wallets never see the app's own `name`, `url` or `icons`.
     - A proposal's `proposer.metadata` is `{ description, redirect?, verifyUrl? }`.
     - A wallet's stored proposals, sessions and pairings keep those fields empty. `SessionTypes.PeerMetadata` marks them `@deprecated`: wallets must use `verification`.
   - **A mismatch drops the message (Sign v3, and Sign v2 with `appMetadata`):** a message whose App Signature is for another message never reaches the wallet.
     - A request is answered with the JSON-RPC error `{ code: -32600, message: "app_signature_mismatch" }`, and `app_signature_mismatch` fires with `{ topic, id?, method? }`.
     - A mismatched proposal makes `pair()` reject with `app_signature_mismatch`.
-  - **dApps sign:** pass `appSignature: { callback }` to `SignClient.init`. The callback gets `{ request, requestJson }` and returns `{ appSignature }`, an ES256 JWT from the app's backend: `iss` the app's host, `sub` and `exp`. No claim covers the encrypted bytes, which the backend can't check; wallets ignore a `cth` if an older backend still signs one.
+  - **Apps sign:** pass `appSignature: { callback }` to `SignClient.init`. The callback gets `{ request, requestJson }` and returns `{ appSignature }`, an ES256 JWT from the app's backend: `iss` the app's host, `sub` and `exp`. No claim covers the encrypted bytes, which the backend can't check; wallets ignore a `cth` if an older backend still signs one.
     - **`sub`** is base64url (no padding) SHA-256 of `requestJson`'s UTF-8 bytes, the plaintext exactly as sent. Hash `requestJson`, not a re-serialized `request`.
     - **Sign v3:** the client calls it before creating a connection and before every message.
     - **Sign v2:** it calls it for session proposals (including the fallback offer), session requests and authenticate requests. `sub` covers the plaintext, never the envelope, so the backend signs only what it has seen. The Relay mints no legacy attestation: old wallets get `attestation: ""` and show `UNKNOWN`. The JWT goes out as the `appSignature` param of `irn_publish` / `wc_proposeSession` (or the HTTP body's `appSignature`), and the old Verify attestation isn't fetched. `requestJson` is `safeJsonStringify(payload)`, which `crypto.encode` encrypts, and which a wallet's `JSON.stringify(decoded)` recomputes unless the payload holds BigInts.

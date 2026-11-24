@@ -52,7 +52,7 @@ export class WasmSignClient {
   static create(config_json: string, storage: any, on_event: Function): Promise<WasmSignClient>;
   foreground(): void;
   /**
-   * Verify v4, dApp: `signer(requestJson) => Promise<jwt>`, or `null`.
+   * Verify v4, app: `signer(requestJson) => Promise<jwt>`, or `null`.
    */
   setAppSigner(signer?: Function | null): void;
   start(): void;

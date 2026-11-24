@@ -22,7 +22,7 @@ export interface V3ClientOptions {
   storage: IKeyValueStorage;
   customStoragePrefix?: string;
   /**
-   * Verify v4, dApp: signs the proposal and every message. The SDK calls it before creating the
+   * Verify v4, app: signs the proposal and every message. The SDK calls it before creating the
    * connection and before every send, and sends the JWT as `appSignature`. If it throws, the
    * call fails; nothing is sent unsigned. Without it, nothing is signed.
    */
@@ -34,9 +34,9 @@ interface V3Session {
   topic: string;
   role: "dapp" | "wallet";
   namespaces: SessionTypes.Namespaces;
-  /** dApp side: the wallet's metadata. */
+  /** App side: the wallet's metadata. */
   walletMetadata?: SignClientTypes.Metadata;
-  /** Wallet side: the dApp's, without its self-asserted identity. */
+  /** Wallet side: the app's, without its self-asserted identity. */
   dappMetadata?: SignClientTypes.PeerMetadata;
   /** Wallet side: the proposal's App Verification. */
   verification?: Verify.AppVerification;
@@ -96,7 +96,7 @@ type Emit = <E extends SignClientTypes.Event>(
  * - the pairing topic is the connection id, which is also the session topic;
  * - public keys are empty;
  * - `verification` comes from Verify v4: the app's signature, checked by the Relay and the SDK,
- *   and the Relay's `appMetadata`. Wallets never see the dApp's own name, url or icons: a wallet
+ *   and the Relay's `appMetadata`. Wallets never see the app's own name, url or icons: a wallet
  *   session's `peer.metadata` has them empty.
  * - a session doesn't keep the proposal's required and optional namespaces.
  */

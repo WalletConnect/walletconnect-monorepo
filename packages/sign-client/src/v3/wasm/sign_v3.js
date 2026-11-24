@@ -188,7 +188,7 @@ export class WasmSignClient {
     wasm.wasmsignclient_foreground(this.__wbg_ptr);
   }
   /**
-   * Verify v4, dApp: `signer(requestJson) => Promise<jwt>`, or `null`.
+   * Verify v4, app: `signer(requestJson) => Promise<jwt>`, or `null`.
    * @param {Function | null} [signer]
    */
   setAppSigner(signer) {

@@ -983,7 +983,7 @@ describe.concurrent("Authenticated Sessions", () => {
     ]);
 
     // Ensure that pairing metadata has been set correctly on both peers: the wallet never keeps
-    // the dApp's self-asserted identity.
+    // the app's self-asserted identity.
     expect(wallet.pairing.get(walletSession.pairingTopic).peerMetadata).to.deep.eq(
       withoutIdentity(TEST_SIGN_CLIENT_OPTIONS.metadata),
     );

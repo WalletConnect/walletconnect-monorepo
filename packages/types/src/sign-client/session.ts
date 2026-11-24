@@ -9,23 +9,23 @@ export declare namespace SessionTypes {
   type Expiry = number;
 
   /**
-   * A session peer's metadata. This type is shared by both sides: on the wallet side the dApp's
+   * A session peer's metadata. This type is shared by both sides: on the wallet side the app's
    * self-asserted identity (`name`, `url`, `icons`) is never kept, and those fields are empty.
    * A follow-up will split the wallet's session type.
    */
   interface PeerMetadata extends SignClientTypes.Metadata {
     /**
      * @deprecated For wallets: always empty. Wallets must use the session's `verification`, never
-     * the dApp's own name. dApps still get the wallet's name here.
+     * the app's own name. Apps still get the wallet's name here.
      */
     name: string;
     /**
-     * @deprecated For wallets: always empty. Wallets must use `verification.domain`. dApps still
+     * @deprecated For wallets: always empty. Wallets must use `verification.domain`. Apps still
      * get the wallet's URL here.
      */
     url: string;
     /**
-     * @deprecated For wallets: always empty. Wallets must use `verification.icon`. dApps still get
+     * @deprecated For wallets: always empty. Wallets must use `verification.icon`. Apps still get
      * the wallet's icons here.
      */
     icons: string[];
@@ -69,7 +69,7 @@ export declare namespace SessionTypes {
     peer: {
       publicKey: string;
       /**
-       * dApp side: the wallet's metadata. Wallet side: the dApp's `description`, `redirect` and
+       * App side: the wallet's metadata. Wallet side: the app's `description`, `redirect` and
        * `verifyUrl` only; its `name`, `url` and `icons` are empty. Wallets must use
        * `verification`.
        */
@@ -77,7 +77,7 @@ export declare namespace SessionTypes {
     };
     authentication?: AuthTypes.Cacao[];
     /**
-     * Wallet side: who the dApp is, from the proposal's App Verification. On the wallet side,
+     * Wallet side: who the app is, from the proposal's App Verification. On the wallet side,
      * `peer.metadata` keeps only `description`, `redirect` and `verifyUrl`: its `name`, `url` and
      * `icons` are empty.
      */

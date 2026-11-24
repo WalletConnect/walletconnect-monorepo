@@ -49,7 +49,7 @@ export declare namespace ProposalTypes {
 }
 
 export declare namespace ProposalTypes {
-  /** A proposal as a wallet sees it: without the dApp's self-asserted identity. */
+  /** A proposal as a wallet sees it: without the app's self-asserted identity. */
   export type WalletStruct = Omit<Struct, "proposer" | "attestation" | "encryptedId"> & {
     proposer: { publicKey: string; metadata: SignClientTypes.PeerMetadata };
   };

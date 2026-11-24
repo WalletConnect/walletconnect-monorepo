@@ -206,7 +206,7 @@ export async function testConnectMethod(clients: Clients, params?: TestConnectPa
   // testing expiry is not reliable as on slow networks we take longer to settle
   // expect(Math.abs(sessionA.expiry - sessionB.expiry)).to.be.lessThanOrEqual(5);
   // participants
-  // the wallet never keeps the dApp's self-asserted identity
+  // the wallet never keeps the app's self-asserted identity
   expect(sessionB.peer).to.eql({
     publicKey: sessionA.self.publicKey,
     metadata: withoutIdentity(sessionA.self.metadata),

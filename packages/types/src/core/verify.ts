@@ -33,7 +33,7 @@ export declare namespace Verify {
   }
 
   /**
-   * What the dApp's App Signature callback signs: one outgoing message. On Sign v3, the proposal
+   * What the app's App Signature callback signs: one outgoing message. On Sign v3, the proposal
    * and every message; on Sign v2, session proposals, session requests and authenticate requests.
    */
   export interface AppSignatureParams {

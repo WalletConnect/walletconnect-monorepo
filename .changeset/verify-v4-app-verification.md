@@ -4,7 +4,7 @@
 "@walletconnect/core": minor
 ---
 
-**Breaking: Verify v4.** Wallets get one `verification` object instead of the historical `verifyContext`, and no longer see a dApp's self-asserted identity.
+**Breaking: Verify v4.** Wallets get one `verification` object instead of the historical `verifyContext`, and no longer see an app's self-asserted identity.
 
 - **`verifyContext` is replaced by `verification: Verify.AppVerification`** on `session_proposal`, `session_request`, `session_authenticate`, pending session requests and pending authenticate requests:
   - `{ domain?, name?, icon?, isVerified, isScam, isSimilarTo? }`. There is no `validation` (`VALID` / `INVALID` / `UNKNOWN`) and no state: show whatever is present.
@@ -14,12 +14,12 @@
 - **A mismatched App Signature is not shown at all (Sign v3, and Sign v2 with `appMetadata`).**
   - A message whose signature is for another message is dropped. A request is answered with the JSON-RPC error `{ code: -32600, message: "app_signature_mismatch" }`. The new `app_signature_mismatch` event fires with `{ topic, id?, method? }`.
   - A mismatched proposal makes `pair()` reject with `app_signature_mismatch`.
-- **Wallets no longer see a dApp's `name`, `url` or `icons`.**
+- **Wallets no longer see an app's `name`, `url` or `icons`.**
   - `session_proposal`'s `params` is a `ProposalTypes.WalletStruct`, whose `proposer.metadata` is `SignClientTypes.PeerMetadata`: `{ description, redirect?, verifyUrl? }`.
   - A wallet's stored proposals, sessions (`peer.metadata`), authenticate requests and pairings keep those fields empty. `SessionTypes.PeerMetadata` marks them `@deprecated` for wallets, pending a split of the session type.
   - A wallet's session carries `verification`.
-  - The dApp still sends its metadata, and dApps still see the wallet's.
-- **dApps can sign their messages:** `SignClient.init({ appSignature: { callback } })`.
+  - The app still sends its metadata, and apps still see the wallet's.
+- **apps can sign their messages:** `SignClient.init({ appSignature: { callback } })`.
   - The callback gets `{ request, requestJson }` and returns `{ appSignature }`. The JWT's claims are `iss`, `sub` (over `requestJson`) and `exp`; nothing covers the encrypted bytes, and a wallet ignores any `cth`.
   - **Sign v3:** it signs the proposal and every message.
   - **Sign v2:** it signs session proposals (including the fallback offer), session requests and authenticate requests. `sub` covers the plaintext, as on Sign v3. The Relay mints no legacy attestation: wallets on older SDKs get `attestation: ""` and show `UNKNOWN`. The JWT is sent as the `appSignature` param of `irn_publish` / `wc_proposeSession`, or the `appSignature` field over HTTP. With a callback, the old Verify attestation (verify-server iframe and `attestation` param) is no longer fetched.
