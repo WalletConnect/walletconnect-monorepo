@@ -1726,10 +1726,9 @@ export class Engine extends IEngine {
     if (METHODS_TO_VERIFY.includes(method)) {
       const options = this.client.appSignature;
       if (options) {
-        // Verify v4: the app signs instead, and the Relay supplies the legacy attestation.
+        // Verify v4: the app signs instead. The Relay sends legacy wallets `attestation: ""`.
         if (!isLinkMode) {
-          refreshAppSignature = () =>
-            signV2Request(options, payload, message, this.client.logger);
+          refreshAppSignature = () => signV2Request(options, payload, message, this.client.logger);
           appSignature = await refreshAppSignature();
         }
       } else {
@@ -1800,7 +1799,7 @@ export class Engine extends IEngine {
     let refreshAppSignature: (() => Promise<string>) | undefined;
     const options = this.client.appSignature;
     if (options) {
-      // Verify v4: the app signs instead, and the Relay supplies the legacy attestation.
+      // Verify v4: the app signs instead. The Relay sends legacy wallets `attestation: ""`.
       refreshAppSignature = () =>
         signV2Request(options, proposeSessionPayload, proposeSessionMessage, this.client.logger);
       appSignature = await refreshAppSignature();

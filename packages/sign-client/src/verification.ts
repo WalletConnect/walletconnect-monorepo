@@ -104,12 +104,14 @@ export class AppSignatureError extends Error {
 /**
  * Sign v2: the dApp's App Signature for one outgoing request. `sub` covers `requestJson`, the
  * plaintext that gets encrypted: `safeJsonStringify(payload)`, which `crypto.encode` also uses.
- * For a payload without BigInts that's `JSON.stringify(payload)`, and a legacy wallet, which
- * hashes `JSON.stringify` of what it decodes, recomputes the same bytes.
+ * The app's backend sees this plaintext, so it signs only what it has checked. For a payload
+ * without BigInts that's `JSON.stringify(payload)`, and a wallet, which hashes `JSON.stringify`
+ * of what it decrypts, recomputes the same bytes.
  *
  * `message` is the encrypted envelope as published (base64). `cth` is the hash of its bytes, so
- * the Relay can tie the JWT to this envelope: it can't check `sub` on the WebSocket path, and
- * mints a legacy attestation only when `cth` matches.
+ * the Relay can tie the JWT to this envelope: it can't check `sub` on the WebSocket path. The
+ * backend can't check `cth`, so nothing trusts it alone: the wallet checks `sub`, and the Relay
+ * never mints a legacy attestation (old wallets get `attestation: ""`).
  */
 export async function signV2Request(
   options: Verify.AppSignatureOptions,
@@ -120,7 +122,7 @@ export async function signV2Request(
   const requestJson = safeJsonStringify(payload);
   if (!legacyRecomputes(requestJson)) {
     logger?.warn(
-      "App Signature: this payload doesn't survive a JSON round trip, so a legacy wallet hashes other bytes",
+      "App Signature: this payload doesn't survive a JSON round trip, so a wallet hashes other bytes than sub covers",
     );
   }
   let appSignature: unknown;
@@ -139,7 +141,7 @@ export async function signV2Request(
   return appSignature;
 }
 
-/** Does a legacy wallet's `hashMessage(JSON.stringify(decoded))` hash exactly these bytes? */
+/** Does a wallet's `JSON.stringify(decoded)` give back exactly these bytes, which `sub` covers? */
 export function legacyRecomputes(plaintext: string): boolean {
   try {
     return JSON.stringify(safeJsonParse(plaintext)) === plaintext;
