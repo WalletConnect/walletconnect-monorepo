@@ -3356,9 +3356,11 @@ export class Engine extends IEngine {
 
     try {
       if (transportType === TRANSPORT_TYPES.link_mode) {
-        const applink = this.getAppLinkIfEnabled(metadata, transportType);
-        context.verified.validation =
-          applink && new URL(applink).origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
+        // Link mode requests are not attested by the Verify server, so there is
+        // no server-side signal to validate the origin against. The verify
+        // context therefore stays unknown with an empty origin.
+        context.verified.validation = "UNKNOWN";
+        context.verified.origin = "";
         return context;
       }
       const result = await this.client.core.verify.resolve({

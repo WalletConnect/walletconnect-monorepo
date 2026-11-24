@@ -77,6 +77,10 @@ describe("Sign Client Link Mode", () => {
         Promise.race<void>([
           new Promise((resolve) => {
             wallet.on("session_authenticate", async (payload) => {
+              const verifyContext = payload.verifyContext;
+              expect(verifyContext).to.exist;
+              expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+              expect(verifyContext.verified.origin).to.eq("");
               const authPayload = populateAuthPayload({
                 authPayload: payload.params.authPayload,
                 chains: requestedChains,
