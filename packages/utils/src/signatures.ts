@@ -1,5 +1,8 @@
 import { keccak_256 } from "@noble/hashes/sha3";
-import { Secp256k1, Signature } from "ox";
+// Import ox through subpaths: its root index eagerly loads `core/Bls`, which pulls in
+// @noble/curves/bls12-381 and its costly module-init precomputation (slow startup on Hermes).
+import * as Secp256k1 from "ox/Secp256k1";
+import * as Signature from "ox/Signature";
 import { sha256, sha512_256 } from "@noble/hashes/sha2";
 import { blake2b } from "@noble/hashes/blake2";
 import { encode as msgpackEncode, decode as msgpackDecode } from "@msgpack/msgpack";

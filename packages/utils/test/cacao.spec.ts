@@ -17,7 +17,11 @@ import {
   validateSignedCacao,
   isCacaoBoundToRequest,
 } from "../src";
-import { Address, Hex, PersonalMessage, Secp256k1, Signature } from "ox";
+import * as Address from "ox/Address";
+import * as Hex from "ox/Hex";
+import * as PersonalMessage from "ox/PersonalMessage";
+import * as Secp256k1 from "ox/Secp256k1";
+import * as Signature from "ox/Signature";
 
 describe("URI", () => {
   describe("merge recaps", () => {
