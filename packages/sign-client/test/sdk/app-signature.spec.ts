@@ -24,14 +24,6 @@ import {
 } from "../../src/verification.js";
 
 const b64u = (s: string) => createHash("sha256").update(s, "utf8").digest("base64url");
-const envelopeHash = (message: string) =>
-  createHash("sha256").update(Buffer.from(message, "base64")).digest("base64url");
-// a type 0 envelope as published: base64 of type ‖ iv ‖ sealed
-const ENVELOPE = Buffer.concat([
-  Buffer.from([0]),
-  Buffer.alloc(12, 7),
-  Buffer.from("sealed"),
-]).toString("base64");
 const jwt = (claims: object) =>
   ["{}", JSON.stringify(claims), "sig"].map((p) => Buffer.from(p).toString("base64url")).join(".");
 const metadata = {
@@ -49,26 +41,21 @@ describe("Verify v4 on Sign v2: what the app signs", () => {
     1759313100123000,
   );
 
-  it("hands the callback the exact plaintext, and cth over the published envelope", async () => {
+  it("hands the callback the exact plaintext, and nothing about the envelope", async () => {
     let seen: any;
     await signV2Request(
       {
         callback: async (p) => {
           seen = p;
-          return { appSignature: jwt({ sub: b64u(p.requestJson), cth: p.ciphertextHash }) };
+          return { appSignature: jwt({ sub: b64u(p.requestJson) }) };
         },
       },
       payload,
-      ENVELOPE,
     );
     // crypto.encode encrypts safeJsonStringify(payload)
     expect(seen.requestJson).toBe(safeJsonStringify(payload));
     expect(seen.request).toBe(payload);
-    // cth: SHA-256 of the envelope bytes, the base64-decoded `message`, not of its base64 text
-    expect(seen.ciphertextHash).toBe(envelopeHash(ENVELOPE));
-    expect(Buffer.from(seen.ciphertextHash, "base64url").toString("hex")).not.toBe(
-      hashMessage(ENVELOPE),
-    );
+    expect(Object.keys(seen).sort()).toEqual(["request", "requestJson"]);
     // a legacy wallet hashes JSON.stringify of what it decodes: the same digest as sub, hex
     const decoded = safeJsonParse(seen.requestJson);
     expect(hashMessage(JSON.stringify(decoded))).toBe(
@@ -84,14 +71,12 @@ describe("Verify v4 on Sign v2: what the app signs", () => {
         },
       },
       payload,
-      ENVELOPE,
     ).catch((e) => e);
     expect(thrown).toBeInstanceOf(AppSignatureError);
     expect(thrown.code).toBe("app_signature_failed");
     const empty = await signV2Request(
       { callback: async () => ({ appSignature: "" }) },
       payload,
-      ENVELOPE,
     ).catch((e) => e);
     expect(empty.code).toBe("app_signature_failed");
   });
@@ -114,10 +99,10 @@ describe("Verify v4 on Sign v2: what a wallet derives from appMetadata", () => {
     ...md,
     appSignature: jwt(claims),
   });
-  const bound = { sub: b64u(plaintext), cth: envelopeHash(ENVELOPE) };
+  const bound = { sub: b64u(plaintext) };
 
-  it("takes identity from appMetadata once sub and cth check out", () => {
-    expect(appVerification(signed(bound), plaintext, ENVELOPE)).toEqual({
+  it("takes identity from appMetadata once sub checks out", () => {
+    expect(appVerification(signed(bound), plaintext)).toEqual({
       domain: "app.example.com",
       name: "App",
       icon: "https://i",
@@ -126,14 +111,15 @@ describe("Verify v4 on Sign v2: what a wallet derives from appMetadata", () => {
     });
   });
 
+  it("ignores a cth older backends still sign", () => {
+    expect(appVerification(signed({ ...bound, cth: b64u("anything") }), plaintext)?.domain).toBe(
+      "app.example.com",
+    );
+  });
+
   it("drops a message whose signature is for another one", () => {
-    expect(appVerification(signed({ ...bound, sub: b64u("other") }), plaintext, ENVELOPE)).toBe(
-      undefined,
-    );
-    expect(appVerification(signed({ ...bound, cth: b64u("other") }), plaintext, ENVELOPE)).toBe(
-      undefined,
-    );
-    expect(appVerification({ appSignature: "not a jwt" }, plaintext, ENVELOPE)).toBe(undefined);
+    expect(appVerification(signed({ ...bound, sub: b64u("other") }), plaintext)).toBe(undefined);
+    expect(appVerification({ appSignature: "not a jwt" }, plaintext)).toBe(undefined);
     expect(APP_SIGNATURE_MISMATCH).toEqual({ code: -32600, message: "app_signature_mismatch" });
   });
 
@@ -142,11 +128,10 @@ describe("Verify v4 on Sign v2: what a wallet derives from appMetadata", () => {
       appVerification(
         { origin: "https://evil.example", name: "Bank", isScam: true, isSimilarTo: "bank.example" },
         plaintext,
-        ENVELOPE,
       ),
     ).toEqual({ isVerified: false, isScam: true, isSimilarTo: "bank.example" });
     // the legacy attestation's isScam still counts
-    expect(appVerification(undefined, plaintext, ENVELOPE, true)).toEqual({
+    expect(appVerification(undefined, plaintext, true)).toEqual({
       isVerified: false,
       isScam: true,
     });

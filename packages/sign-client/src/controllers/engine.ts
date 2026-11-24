@@ -1728,7 +1728,7 @@ export class Engine extends IEngine {
       if (options) {
         // Verify v4: the app signs instead. The Relay sends legacy wallets `attestation: ""`.
         if (!isLinkMode) {
-          refreshAppSignature = () => signV2Request(options, payload, message, this.client.logger);
+          refreshAppSignature = () => signV2Request(options, payload, this.client.logger);
           appSignature = await refreshAppSignature();
         }
       } else {
@@ -1800,8 +1800,7 @@ export class Engine extends IEngine {
     const options = this.client.appSignature;
     if (options) {
       // Verify v4: the app signs instead. The Relay sends legacy wallets `attestation: ""`.
-      refreshAppSignature = () =>
-        signV2Request(options, proposeSessionPayload, proposeSessionMessage, this.client.logger);
+      refreshAppSignature = () => signV2Request(options, proposeSessionPayload, this.client.logger);
       appSignature = await refreshAppSignature();
     } else {
       const decryptedId = hashMessage(JSON.stringify(proposeSessionPayload));
@@ -2203,7 +2202,7 @@ export class Engine extends IEngine {
   // ---------- Relay Events Handlers --------------------------------- //
 
   private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = async (args) => {
-    const { topic, payload, attestation, encryptedId, appMetadata, message } = args;
+    const { topic, payload, attestation, encryptedId, appMetadata } = args;
     const { params, id } = payload;
     try {
       const event = this.client.core.eventClient.getEvent({ topic });
@@ -2224,7 +2223,6 @@ export class Engine extends IEngine {
         encryptedId,
         verifyUrl: params.proposer.metadata?.verifyUrl,
         appMetadata,
-        message,
       });
       // The dApp's self-asserted identity is never kept or shown.
       const proposal: ProposalTypes.Struct = {
@@ -2574,7 +2572,7 @@ export class Engine extends IEngine {
   };
 
   private onSessionRequest: EnginePrivate["onSessionRequest"] = async (args) => {
-    const { topic, payload, attestation, encryptedId, transportType, appMetadata, message } = args;
+    const { topic, payload, attestation, encryptedId, transportType, appMetadata } = args;
     const { id, params } = payload;
     try {
       await this.isValidRequest({ topic, ...params });
@@ -2588,7 +2586,6 @@ export class Engine extends IEngine {
         verifyUrl: session.peer.metadata.verifyUrl,
         transportType,
         appMetadata,
-        message,
       });
       const request = {
         id,
@@ -2692,7 +2689,7 @@ export class Engine extends IEngine {
   private onSessionAuthenticateRequest: EnginePrivate["onSessionAuthenticateRequest"] = async (
     args,
   ) => {
-    const { topic, payload, attestation, encryptedId, transportType, appMetadata, message } = args;
+    const { topic, payload, attestation, encryptedId, transportType, appMetadata } = args;
     try {
       const { authPayload, expiryTimestamp } = payload.params;
       const verification = await this.getVerification({
@@ -2704,7 +2701,6 @@ export class Engine extends IEngine {
         verifyUrl: payload.params.requester.metadata?.verifyUrl,
         transportType,
         appMetadata,
-        message,
       });
       // The dApp's self-asserted identity is never kept or shown.
       const requester = {
@@ -3435,7 +3431,6 @@ export class Engine extends IEngine {
     verifyUrl?: string;
     transportType?: RelayerTypes.TransportType;
     appMetadata?: Record<string, unknown>;
-    message?: string;
   }): Promise<Verify.AppVerification> => {
     const { topic, payload, attestationId, plaintext, encryptedId, verifyUrl, transportType } =
       params;
@@ -3452,12 +3447,7 @@ export class Engine extends IEngine {
     } catch (e) {
       this.client.logger.warn(e);
     }
-    const verification = appVerification(
-      params.appMetadata,
-      plaintext,
-      params.message,
-      legacyIsScam,
-    );
+    const verification = appVerification(params.appMetadata, plaintext, legacyIsScam);
     if (verification) return verification;
     this.client.events.emit("app_signature_mismatch", {
       topic,

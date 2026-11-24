@@ -41,18 +41,14 @@ const claimsOf = (token: string) =>
     cth?: string;
   };
 const subOf = (token: string) => claimsOf(token).sub;
-/** cth: SHA-256 of the envelope bytes, the base64-decoded `message` as published. */
-const envelopeHash = (message: string) =>
-  createHash("sha256").update(Buffer.from(message, "base64")).digest("base64url");
 
 /** Stands in for the app's backend: `sub` over `requestJson`, as given. */
 function backend() {
   const seen: Verify.AppSignatureParams[] = [];
   const callback = async (p: Verify.AppSignatureParams) => {
     seen.push(p);
-    const cth = p.ciphertextHash ? { cth: p.ciphertextHash } : {};
     return {
-      appSignature: jwt({ iss: "dapp.example", sub: b64u(p.requestJson), ...cth, exp: 9e9 }),
+      appSignature: jwt({ iss: "dapp.example", sub: b64u(p.requestJson), exp: 9e9 }),
     };
   };
   return { seen, callback };
@@ -94,7 +90,8 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
       "wc_sessionPropose",
     ]);
     const propose = app.seen[1];
-    expect(app.seen[0].ciphertextHash).toBeNull(); // a v3 proposal is never sealed
+    // the callback gets the plaintext only, never a hash of what is published
+    expect(Object.keys(app.seen[0]).sort()).toEqual(["request", "requestJson"]);
     expect(JSON.parse(propose.requestJson)).toEqual(propose.request);
     expect(legacyRecomputes(propose.requestJson)).toBe(true);
 
@@ -103,11 +100,8 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
     // `sub` covers exactly the plaintext that gets encrypted
     expect(offer.params.sessionProposalPlaintext).toBe(propose.requestJson);
     expect(subOf(offer.params.appSignature)).toBe(b64u(propose.requestJson));
-    // `cth` covers exactly the envelope that gets published
-    expect(propose.ciphertextHash).toBe(envelopeHash(offer.params.sessionProposal));
-    expect(claimsOf(offer.params.appSignature).cth).toBe(
-      envelopeHash(offer.params.sessionProposal),
-    );
+    // no claim covers the envelope
+    expect(claimsOf(offer.params.appSignature).cth).toBeUndefined();
 
     const proposed = new Promise<any>((r) => v2Wallet.once("session_proposal", r));
     await v2Wallet.pair({ uri: uri! });
@@ -140,20 +134,18 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
     const publish = sent("irn_publish").find((r) => r.params.appSignature);
     expect(publish?.params.plaintext).toBe(signed.requestJson);
     expect(subOf(publish!.params.appSignature)).toBe(b64u(signed.requestJson));
-    expect(signed.ciphertextHash).toBe(envelopeHash(publish!.params.message));
-    expect(claimsOf(publish!.params.appSignature).cth).toBe(envelopeHash(publish!.params.message));
+    expect(claimsOf(publish!.params.appSignature).cth).toBeUndefined();
     expect(requested.mock.calls.at(-1)![0].hash).toBe(
       Buffer.from(subOf(publish!.params.appSignature), "base64url").toString("hex"),
     );
     // the dApp's v2 responses and other messages aren't signed
     expect(app.seen).toHaveLength(3);
-    // a retry after the JWT expired signs the same request and envelope again
+    // a retry after the JWT expired signs the same request again
     const opts = published.mock.calls.find(([, , o]) => o?.appSignature)![2]!;
     expect(opts.refreshAppSignature).toBeTypeOf("function");
     const renewed = await opts.refreshAppSignature!();
     expect(app.seen).toHaveLength(4);
     expect(app.seen[3].requestJson).toBe(signed.requestJson);
-    expect(app.seen[3].ciphertextHash).toBe(signed.ciphertextHash);
     expect(subOf(renewed)).toBe(subOf(publish!.params.appSignature));
     // with an app signature, the old Verify attestation is never fetched
     expect(register).not.toHaveBeenCalled();

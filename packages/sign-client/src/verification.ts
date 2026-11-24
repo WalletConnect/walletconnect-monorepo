@@ -1,5 +1,5 @@
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
-import { decodeAppSignatureClaims, hashEnvelope, hashPlaintext } from "@walletconnect/utils";
+import { decodeAppSignatureClaims, hashPlaintext } from "@walletconnect/utils";
 import type { ProposalTypes, SignClientTypes, Verify } from "@walletconnect/types";
 
 /** An app the Relay vouches nothing for: unsigned, or on Sign v2. */
@@ -27,14 +27,13 @@ function domainOf(origin: string): string {
 /**
  * Sign v2: the verification of a message the Relay delivered with `appMetadata`, the same rules
  * as Sign v3's. Undefined when its `appMetadata.appSignature` is for another message: `sub` isn't
- * the hash of `plaintext` (what a legacy wallet hashes, `JSON.stringify` of the decoded request),
- * or `cth` isn't the hash of the envelope `message`. Without `appMetadata`, only the legacy
- * attestation's `isScam` counts.
+ * the hash of `plaintext` (what a wallet hashes, `JSON.stringify` of the decoded request). Any other
+ * claim, such as a `cth` older POC backends signed, is ignored. Without `appMetadata`, only the
+ * legacy attestation's `isScam` counts.
  */
 export function appVerification(
   appMetadata: Record<string, unknown> | undefined,
   plaintext: string | undefined,
-  message: string | undefined,
   legacyIsScam = false,
 ): Verify.AppVerification | undefined {
   if (!appMetadata || typeof appMetadata !== "object") return unverified(legacyIsScam);
@@ -47,11 +46,7 @@ export function appVerification(
   // unsigned: no identity, whatever else the Relay sent
   if (!jwt) return screening;
   const claims = decodeAppSignatureClaims(jwt);
-  const bound =
-    !!claims &&
-    plaintext !== undefined &&
-    claims.sub === hashPlaintext(plaintext) &&
-    (claims.cth === undefined || (message !== undefined && claims.cth === hashEnvelope(message)));
+  const bound = !!claims && plaintext !== undefined && claims.sub === hashPlaintext(plaintext);
   if (!bound) return undefined;
   const origin = str(appMetadata.origin);
   const name = str(appMetadata.name);
@@ -151,17 +146,12 @@ export function appSignatureRefusal(error: unknown): AppSignatureRefusedError | 
  * plaintext that gets encrypted: `safeJsonStringify(payload)`, which `crypto.encode` also uses.
  * The app's backend sees this plaintext, so it signs only what it has checked. For a payload
  * without BigInts that's `JSON.stringify(payload)`, and a wallet, which hashes `JSON.stringify`
- * of what it decrypts, recomputes the same bytes.
- *
- * `message` is the encrypted envelope as published (base64). `cth` is the hash of its bytes, so
- * the Relay can tie the JWT to this envelope: it can't check `sub` on the WebSocket path. The
- * backend can't check `cth`, so nothing trusts it alone: the wallet checks `sub`, and the Relay
- * never mints a legacy attestation (old wallets get `attestation: ""`).
+ * of what it decrypts, recomputes the same bytes. No claim covers the encrypted envelope: the
+ * backend couldn't check one, and the wallet's `sub` check binds the signature to the content.
  */
 export async function signV2Request(
   options: Verify.AppSignatureOptions,
   payload: { id: number; method: string },
-  message: string,
   logger?: { warn: (msg: string) => void },
 ): Promise<string> {
   const requestJson = safeJsonStringify(payload);
@@ -175,7 +165,6 @@ export async function signV2Request(
     ({ appSignature } = await options.callback({
       request: payload as unknown as Record<string, unknown>,
       requestJson,
-      ciphertextHash: hashEnvelope(message),
     }));
   } catch (e) {
     throw new AppSignatureError(e);

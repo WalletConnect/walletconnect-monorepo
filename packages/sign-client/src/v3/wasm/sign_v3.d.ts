@@ -84,11 +84,11 @@ export interface InitOutput {
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsource_cancel: (a: number) => void;
   readonly intounderlyingsource_pull: (a: number, b: number) => number;
-  readonly __wasm_bindgen_func_elem_2235: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_2739: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_2977: (a: number, b: number, c: number, d: number) => void;
-  readonly __wasm_bindgen_func_elem_2979: (a: number, b: number, c: number, d: number) => void;
-  readonly __wasm_bindgen_func_elem_2277: (a: number, b: number, c: number) => void;
+  readonly __wasm_bindgen_func_elem_2232: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_2736: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_2974: (a: number, b: number, c: number, d: number) => void;
+  readonly __wasm_bindgen_func_elem_2976: (a: number, b: number, c: number, d: number) => void;
+  readonly __wasm_bindgen_func_elem_2274: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export: (a: number, b: number) => number;
   readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export3: (a: number) => void;

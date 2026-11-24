@@ -55,8 +55,8 @@ function backend(privateJwk: string) {
   const callback = async (p: Verify.AppSignatureParams) => {
     state.signed.push(p);
     // A lying client: `sub` and the plaintext it reports to the Relay are for other bytes than
-    // the envelope holds. The Relay's checks (`sub` against that plaintext, `cth` against the
-    // envelope) both pass, so only the wallet, which decrypts the envelope, can catch it.
+    // the envelope holds. The Relay's check (`sub` against that plaintext) passes, so only the
+    // wallet, which decrypts the envelope, can catch it.
     let subject = p.requestJson;
     if (state.tamper && p.request.method === "wc_sessionRequest") {
       subject = p.requestJson.replace(
@@ -68,7 +68,6 @@ function backend(privateJwk: string) {
     const claims = {
       iss: domain,
       sub: sha(subject),
-      ...(p.ciphertextHash ? { cth: p.ciphertextHash } : {}),
       exp: Math.floor(Date.now() / 1000) + 120,
     };
     const header = { alg: "ES256", typ: "JWT", ...(parsed.kid ? { kid: parsed.kid } : {}) };

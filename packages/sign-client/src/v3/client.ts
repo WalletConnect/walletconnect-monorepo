@@ -433,18 +433,11 @@ export class V3Client {
   }
 }
 
-/** The WASM side calls it with `{ request, ciphertextHash }` as JSON, `request` being JSON text. */
+/** The WASM side calls it with `{ request }` as JSON, `request` being JSON text. */
 function appSigner(opts: Verify.AppSignatureOptions) {
   return async (input: string): Promise<string> => {
-    const { request, ciphertextHash } = JSON.parse(input) as {
-      request: string;
-      ciphertextHash?: string | null;
-    };
-    const res = await opts.callback({
-      request: JSON.parse(request),
-      requestJson: request,
-      ciphertextHash: ciphertextHash ?? null,
-    });
+    const { request } = JSON.parse(input) as { request: string };
+    const res = await opts.callback({ request: JSON.parse(request), requestJson: request });
     if (typeof res?.appSignature !== "string" || !res.appSignature) {
       throw new Error("appSignature.callback returned no appSignature");
     }
