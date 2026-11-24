@@ -58,6 +58,8 @@ export declare namespace RelayerTypes {
     publishedAt: number;
     transportType?: TransportType;
     attestation?: string;
+    /** Verify v4: the Relay's view of the sending app, with its `appSignature`, if any. */
+    appMetadata?: Record<string, unknown>;
   }
 
   export interface RpcUrlParams {

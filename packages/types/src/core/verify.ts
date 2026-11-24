@@ -44,7 +44,11 @@ export declare namespace Verify {
      * SHA-256 over its UTF-8 bytes. Hash this string; re-serializing `request` may differ.
      */
     requestJson: string;
-    /** The JWT's `cth` for a sealed Sign v3 message, else null. Always null on Sign v2. */
+    /**
+     * The JWT's `cth`, base64url (no padding) SHA-256 of the bytes as sent: a sealed Sign v3
+     * message's ciphertext, or a Sign v2 message's envelope (the base64-decoded `message`). Null
+     * for monitored Sign v3 messages and proposals. Sign it as given.
+     */
     ciphertextHash: string | null;
   }
 

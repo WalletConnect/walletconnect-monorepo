@@ -8,6 +8,29 @@ import { EngineTypes } from "./engine.js";
 export declare namespace SessionTypes {
   type Expiry = number;
 
+  /**
+   * A session peer's metadata. This type is shared by both sides: on the wallet side the dApp's
+   * self-asserted identity (`name`, `url`, `icons`) is never kept, and those fields are empty.
+   * A follow-up will split the wallet's session type.
+   */
+  interface PeerMetadata extends SignClientTypes.Metadata {
+    /**
+     * @deprecated For wallets: always empty. Wallets must use the session's `verification`, never
+     * the dApp's own name. dApps still get the wallet's name here.
+     */
+    name: string;
+    /**
+     * @deprecated For wallets: always empty. Wallets must use `verification.domain`. dApps still
+     * get the wallet's URL here.
+     */
+    url: string;
+    /**
+     * @deprecated For wallets: always empty. Wallets must use `verification.icon`. dApps still get
+     * the wallet's icons here.
+     */
+    icons: string[];
+  }
+
   interface BaseNamespace {
     chains?: string[];
     accounts: string[];
@@ -45,7 +68,12 @@ export declare namespace SessionTypes {
     };
     peer: {
       publicKey: string;
-      metadata: SignClientTypes.Metadata;
+      /**
+       * dApp side: the wallet's metadata. Wallet side: the dApp's `description`, `redirect` and
+       * `verifyUrl` only; its `name`, `url` and `icons` are empty. Wallets must use
+       * `verification`.
+       */
+      metadata: PeerMetadata;
     };
     authentication?: AuthTypes.Cacao[];
     /**

@@ -35,15 +35,25 @@ const jwt = (claims: object) =>
   [{ alg: "ES256", typ: "JWT" }, claims, "sig"]
     .map((p) => Buffer.from(typeof p === "string" ? p : JSON.stringify(p)).toString("base64url"))
     .join(".");
-const subOf = (token: string) =>
-  JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()).sub as string;
+const claimsOf = (token: string) =>
+  JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()) as {
+    sub: string;
+    cth?: string;
+  };
+const subOf = (token: string) => claimsOf(token).sub;
+/** cth: SHA-256 of the envelope bytes, the base64-decoded `message` as published. */
+const envelopeHash = (message: string) =>
+  createHash("sha256").update(Buffer.from(message, "base64")).digest("base64url");
 
 /** Stands in for the app's backend: `sub` over `requestJson`, as given. */
 function backend() {
   const seen: Verify.AppSignatureParams[] = [];
   const callback = async (p: Verify.AppSignatureParams) => {
     seen.push(p);
-    return { appSignature: jwt({ iss: "dapp.example", sub: b64u(p.requestJson), exp: 9e9 }) };
+    const cth = p.ciphertextHash ? { cth: p.ciphertextHash } : {};
+    return {
+      appSignature: jwt({ iss: "dapp.example", sub: b64u(p.requestJson), ...cth, exp: 9e9 }),
+    };
   };
   return { seen, callback };
 }
@@ -83,7 +93,7 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
       "wc_sessionPropose",
     ]);
     const propose = app.seen[1];
-    expect(propose.ciphertextHash).toBeNull();
+    expect(app.seen[0].ciphertextHash).toBeNull(); // a v3 proposal is never sealed
     expect(JSON.parse(propose.requestJson)).toEqual(propose.request);
     expect(legacyRecomputes(propose.requestJson)).toBe(true);
 
@@ -92,6 +102,11 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
     // `sub` covers exactly the plaintext that gets encrypted
     expect(offer.params.sessionProposalPlaintext).toBe(propose.requestJson);
     expect(subOf(offer.params.appSignature)).toBe(b64u(propose.requestJson));
+    // `cth` covers exactly the envelope that gets published
+    expect(propose.ciphertextHash).toBe(envelopeHash(offer.params.sessionProposal));
+    expect(claimsOf(offer.params.appSignature).cth).toBe(
+      envelopeHash(offer.params.sessionProposal),
+    );
 
     const proposed = new Promise<any>((r) => v2Wallet.once("session_proposal", r));
     await v2Wallet.pair({ uri: uri! });
@@ -124,6 +139,8 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
     const publish = sent("irn_publish").find((r) => r.params.appSignature);
     expect(publish?.params.plaintext).toBe(signed.requestJson);
     expect(subOf(publish!.params.appSignature)).toBe(b64u(signed.requestJson));
+    expect(signed.ciphertextHash).toBe(envelopeHash(publish!.params.message));
+    expect(claimsOf(publish!.params.appSignature).cth).toBe(envelopeHash(publish!.params.message));
     expect(requested.mock.calls.at(-1)![0].hash).toBe(
       Buffer.from(subOf(publish!.params.appSignature), "base64url").toString("hex"),
     );

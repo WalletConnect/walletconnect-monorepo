@@ -476,7 +476,7 @@ export class HttpConnection implements IJsonRpcConnection {
   private onEvents(events: any[]) {
     events.forEach((event) => {
       if (event?.type !== RELAYER_HTTP_EVENT_MESSAGE) return;
-      const { topic, message, publishedAt, tag, attestation } = event;
+      const { topic, message, publishedAt, tag, attestation, appMetadata } = event;
       this.events.emit("payload", {
         id: payloadId(),
         jsonrpc: "2.0",
@@ -484,7 +484,14 @@ export class HttpConnection implements IJsonRpcConnection {
         params: {
           id: topic,
           // the relay reports seconds; the relayer works in milliseconds
-          data: { topic, message, publishedAt: publishedAt * 1000, tag, attestation },
+          data: {
+            topic,
+            message,
+            publishedAt: publishedAt * 1000,
+            tag,
+            attestation,
+            ...(appMetadata && { appMetadata }),
+          },
         },
       });
     });

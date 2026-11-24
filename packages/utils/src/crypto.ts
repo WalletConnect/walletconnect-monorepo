@@ -65,6 +65,37 @@ export function hashMessage(message: string): string {
   return toString(result, BASE16);
 }
 
+/**
+ * Verify v4 `cth` for a Sign v2 envelope: base64url (no padding) SHA-256 of the envelope bytes,
+ * the base64-decoded `message` as published. Not `hashMessage(message)`, which hashes the base64
+ * text and is what legacy SDKs compare to an attestation's `id`.
+ */
+export function hashEnvelope(message: string): string {
+  return toString(sha256(fromString(message, BASE64)), BASE64URL);
+}
+
+/** Verify v4 `sub`: base64url (no padding) SHA-256 of a plaintext's UTF-8 bytes. */
+export function hashPlaintext(plaintext: string): string {
+  return toString(sha256(fromString(plaintext, UTF8)), BASE64URL);
+}
+
+/**
+ * The `sub` and `cth` claims of a Verify v4 App Signature, decoded without checking its signature
+ * (the Relay did). Undefined when it isn't a JWT with a string `sub`.
+ */
+export function decodeAppSignatureClaims(jwt: string): { sub: string; cth?: string } | undefined {
+  const parts = jwt.split(".");
+  if (parts.length !== 3) return undefined;
+  try {
+    const claims = JSON.parse(toString(fromString(parts[1].replace(/=+$/, ""), BASE64URL), UTF8));
+    if (typeof claims?.sub !== "string") return undefined;
+    if (claims.cth != null && typeof claims.cth !== "string") return undefined;
+    return { sub: claims.sub, ...(claims.cth != null && { cth: claims.cth }) };
+  } catch {
+    return undefined;
+  }
+}
+
 export function encodeTypeByte(type: number): Uint8Array {
   return fromString(`${type}`, BASE10);
 }
