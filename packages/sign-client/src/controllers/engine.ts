@@ -1937,7 +1937,11 @@ export class Engine extends IEngine {
 
   private sendError: EnginePrivate["sendError"] = async (params) => {
     const { id, topic, error, encodeOpts, rpcOpts, appLink } = params;
-    const payload = formatJsonRpcError(id, error);
+    // -32600 is a reserved code, which formatJsonRpcError would answer as "Invalid Request".
+    const payload =
+      error === APP_SIGNATURE_MISMATCH
+        ? { id, jsonrpc: "2.0" as const, error: { ...APP_SIGNATURE_MISMATCH } }
+        : formatJsonRpcError(id, error);
     let message;
     const isLinkMode = appLink && typeof (global as any)?.Linking !== "undefined";
     try {
