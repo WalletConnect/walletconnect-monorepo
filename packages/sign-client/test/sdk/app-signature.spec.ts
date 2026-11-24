@@ -1,11 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createHash } from "crypto";
 import { formatJsonRpcRequest } from "@walletconnect/jsonrpc-utils";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { hashMessage } from "@walletconnect/utils";
+import { PublishFailedError } from "@walletconnect/core";
+import { SignClient } from "../../src/index.js";
+
+// The v3 SDK's errors as SignV3Error builds them (the v3 client is mocked out in test/sdk).
+const v3Error = (code: string, message: string) =>
+  Object.assign(new Error(`${code}: ${message}`), { code });
 import {
   APP_SIGNATURE_MISMATCH,
   AppSignatureError,
+  AppSignatureRefusedError,
+  appSignatureRefusal,
   appVerification,
   legacyRecomputes,
   peerMetadata,
@@ -181,5 +189,77 @@ describe("Verify v4: what a wallet sees of a dApp", () => {
   it("an unsigned app is unverified", () => {
     expect(unverified()).toEqual({ isVerified: false, isScam: false });
     expect(unverified(true)).toEqual({ isVerified: false, isScam: true });
+  });
+});
+
+describe("Verify v4: the Relay refusing an App Signature", () => {
+  it("reads the refusal from Sign v2's and Sign v3's errors", () => {
+    const required = appSignatureRefusal(
+      new PublishFailedError(403, "app_signature_required", "app_signature_required"),
+    );
+    expect(required).toBeInstanceOf(AppSignatureRefusedError);
+    expect(required).toMatchObject({
+      code: "app_signature_required",
+      reason: undefined,
+      status: 403,
+    });
+    expect(required?.message).toBe("app_signature_required");
+
+    const invalid = appSignatureRefusal(
+      new PublishFailedError(403, "bad_signature", "invalid_app_signature"),
+    );
+    expect(invalid).toMatchObject({ code: "invalid_app_signature", reason: "bad_signature" });
+    expect(invalid?.message).toBe("invalid_app_signature: bad_signature");
+
+    const v3 = appSignatureRefusal(v3Error("forbidden", "403 app_signature_required"));
+    expect(v3).toMatchObject({ code: "app_signature_required" });
+  });
+
+  it("leaves every other error alone, transient ones included", () => {
+    for (const error of [
+      new PublishFailedError(403, "over limit", "blocked"),
+      v3Error("forbidden", "403 not_member"),
+      v3Error("network", "connection refused"),
+      { code: 500, message: "internal" },
+      new Error("Failed to publish custom payload, please try again."),
+      undefined,
+    ]) {
+      expect(appSignatureRefusal(error)).toBeUndefined();
+    }
+  });
+
+  // connectBoth on a stand-in client: v3 first, then the v2 fallback.
+  const connectBoth = (v3Connect: () => Promise<unknown>, engineConnect = vi.fn()) => {
+    const self = {
+      engine: { connect: engineConnect },
+      logger: { warn: vi.fn(), error: vi.fn() },
+      cancelledV3: new Set<string>(),
+    };
+    const run = (SignClient.prototype as any).connectBoth.call(
+      self,
+      { connect: v3Connect },
+      { optionalNamespaces: {} },
+    );
+    return { run, engineConnect };
+  };
+
+  it("rejects connect() on a v3 refusal, without offering v2", async () => {
+    const { run, engineConnect } = connectBoth(() =>
+      Promise.reject(v3Error("forbidden", "403 app_signature_required")),
+    );
+    const error = await run.catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(AppSignatureRefusedError);
+    expect(error.code).toBe("app_signature_required");
+    expect(engineConnect).not.toHaveBeenCalled();
+  });
+
+  it("still falls back to v2 when v3 fails for another reason", async () => {
+    const offer = { uri: "wc:x@2?symKey=k", approval: vi.fn() };
+    const { run, engineConnect } = connectBoth(
+      () => Promise.reject(v3Error("network", "connection refused")),
+      vi.fn().mockResolvedValue(offer),
+    );
+    expect(await run).toBe(offer);
+    expect(engineConnect).toHaveBeenCalledOnce();
   });
 });

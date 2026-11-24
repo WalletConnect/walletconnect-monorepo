@@ -101,6 +101,51 @@ export class AppSignatureError extends Error {
   }
 }
 
+/** Why the Relay refused a request for its App Signature (Verify v4). */
+export const APP_SIGNATURE_REFUSALS = ["app_signature_required", "invalid_app_signature"] as const;
+export type AppSignatureRefusal = (typeof APP_SIGNATURE_REFUSALS)[number];
+
+/**
+ * The Relay refused the request for its App Signature, with `403`: `app_signature_required` when
+ * the app's domain requires signatures and none was sent, `invalid_app_signature` when the one
+ * sent doesn't check out (`reason` says why, when the Relay said). Sending it again gets the same
+ * answer, so `connect()` rejects with this instead of retrying.
+ */
+export class AppSignatureRefusedError extends Error {
+  public readonly name = "AppSignatureRefusedError";
+  public readonly status = 403;
+  constructor(
+    public readonly code: AppSignatureRefusal,
+    public readonly reason?: string,
+  ) {
+    super(reason ? `${code}: ${reason}` : code);
+  }
+}
+
+const isRefusal = (code: unknown): code is AppSignatureRefusal =>
+  APP_SIGNATURE_REFUSALS.includes(code as AppSignatureRefusal);
+
+/**
+ * `error` as an {@link AppSignatureRefusedError} when it is the Relay refusing an App Signature:
+ * core's `PublishFailedError` (Sign v2 over HTTP, `error` the Relay's code), or the v3 SDK's
+ * `forbidden` error, whose message carries the Relay's code.
+ */
+export function appSignatureRefusal(error: unknown): AppSignatureRefusedError | undefined {
+  if (error instanceof AppSignatureRefusedError) return error;
+  const e = error as { code?: unknown; error?: unknown; reason?: unknown; message?: unknown };
+  if (isRefusal(e?.error)) {
+    const reason = typeof e.reason === "string" && e.reason !== e.error ? e.reason : undefined;
+    return new AppSignatureRefusedError(e.error, reason);
+  }
+  if (e?.code === "forbidden" && typeof e.message === "string") {
+    const code = APP_SIGNATURE_REFUSALS.find((c) =>
+      new RegExp(`\\b${c}\\b`).test(e.message as string),
+    );
+    if (code) return new AppSignatureRefusedError(code);
+  }
+  return undefined;
+}
+
 /**
  * Sign v2: the dApp's App Signature for one outgoing request. `sub` covers `requestJson`, the
  * plaintext that gets encrypted: `safeJsonStringify(payload)`, which `crypto.encode` also uses.

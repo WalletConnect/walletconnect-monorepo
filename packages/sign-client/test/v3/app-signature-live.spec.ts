@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createHash, webcrypto } from "crypto";
 import type { SignClientTypes, Verify } from "@walletconnect/types";
-import { SignClient } from "../../src/index.js";
+import { AppSignatureRefusedError, SignClient } from "../../src/index.js";
 import { V3Client } from "../../src/v3/client.js";
 
 // Verify v4 App Signatures end to end, over Sign v3 and Sign v2, against a Relay that knows the
@@ -10,11 +10,14 @@ import { V3Client } from "../../src/v3/client.js";
 //   TEST_V3_RELAY_URL=http://127.0.0.1:8080 TEST_PROJECT_ID=c0ffee254729296a45a3885639ac7e10 \
 //   TEST_APP_SIGNATURE_DOMAIN=dapp.localhost \
 //   TEST_APP_SIGNATURE_JWK="$(jq -c .app.privateJwk <stack>/.state/keys.json)" \
+//   TEST_APP_SIGNATURE_REQUIRED_ORIGIN=http://required.localhost:3000 \
 //   npx vitest run test/v3/app-signature-live.spec.ts
 const relayUrl = process.env.TEST_V3_RELAY_URL ?? "https://pool-1.dev-relay.walletconnect.com";
 const projectId = process.env.TEST_PROJECT_ID ?? "sign-client-v3-test";
 const jwk = process.env.TEST_APP_SIGNATURE_JWK;
 const domain = process.env.TEST_APP_SIGNATURE_DOMAIN ?? "dapp.localhost";
+// An Origin whose domain requires signatures (the stack's required.localhost).
+const requiredOrigin = process.env.TEST_APP_SIGNATURE_REQUIRED_ORIGIN;
 const ACCOUNT = "eip155:1:0x1111111111111111111111111111111111111111";
 const namespaces = {
   eip155: { chains: ["eip155:1"], methods: ["personal_sign"], events: ["chainChanged"] },
@@ -168,4 +171,35 @@ describe.skipIf(!jwk)("Verify v4 App Signatures, live", () => {
     expect(delivered).toEqual([]);
     expect(String(e?.message ?? e)).toContain("app_signature_mismatch");
   });
+
+  it.skipIf(!requiredOrigin)(
+    "an unsigned dApp on a domain requiring signatures: connect() rejects at once, no retries",
+    async () => {
+      // Node sends no Origin; a browser on that domain would.
+      const realFetch = globalThis.fetch;
+      const relayHost = new URL(relayUrl.replace(/^ws/, "http")).host;
+      const sent: string[] = [];
+      globalThis.fetch = (input: any, init: any = {}) => {
+        const url = String(input?.url ?? input);
+        if (new URL(url).host !== relayHost) return realFetch(input, init);
+        sent.push(new URL(url).pathname);
+        const headers = new Headers(init.headers ?? input?.headers);
+        headers.set("origin", requiredOrigin!);
+        return realFetch(input, { ...init, headers });
+      };
+      try {
+        const unsigned = await SignClient.init(opts("live-unsigned-dapp"));
+        const started = Date.now();
+        const e = await unsigned.connect({ optionalNamespaces: namespaces }).catch((e) => e);
+        expect(e).toBeInstanceOf(AppSignatureRefusedError);
+        expect(e.code).toBe("app_signature_required");
+        expect(Date.now() - started).toBeLessThan(5000);
+        // v3 refused, and no v2 proposal sent, let alone retried
+        expect(sent.filter((p) => p.endsWith("/sessionProposals"))).toEqual([]);
+        unsigned.events.removeAllListeners();
+      } finally {
+        globalThis.fetch = realFetch;
+      }
+    },
+  );
 });

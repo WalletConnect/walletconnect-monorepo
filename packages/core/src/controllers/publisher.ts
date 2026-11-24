@@ -25,6 +25,8 @@ export class PublishFailedError extends Error {
   constructor(
     public code: number,
     public reason: string,
+    /** Why, as a code: the relay's, such as `blocked` or `app_signature_required`, or `app_signature_failed`. */
+    public error?: string,
   ) {
     super(`Publish failed and can't be retried: ${reason}`);
   }
@@ -289,7 +291,10 @@ export class Publisher extends IPublisher {
       if (!opts?.refreshAppSignature) throw new Error("no way to sign again");
       params.appSignature = await opts.refreshAppSignature();
     } catch (e) {
-      throw { code: 0, message: APP_SIGNATURE_FAILED, data: (e as Error)?.message };
+      throw Object.assign(new Error(APP_SIGNATURE_FAILED), {
+        code: 0,
+        data: (e as Error)?.message,
+      });
     }
   }
 
@@ -319,7 +324,7 @@ export class Publisher extends IPublisher {
   private onFailedFinal(id: string, error: { code: number; message: string; data?: string }) {
     this.queue.delete(id);
     this.failedFinal.get(id.toString())?.(
-      new PublishFailedError(error.code, error.data || error.message),
+      new PublishFailedError(error.code, error.data || error.message, error.message),
     );
   }
 

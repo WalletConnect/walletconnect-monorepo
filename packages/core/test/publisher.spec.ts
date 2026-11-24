@@ -257,9 +257,28 @@ describe("Publisher", () => {
       expect(error).to.be.instanceOf(PublishFailedError);
       expect(error.code).to.equal(403);
       expect(error.reason).to.equal("over limit");
+      expect(error.error).to.equal("blocked");
       expect(request.callCount).to.equal(1);
       expect(publisher.queue.size).to.equal(0);
     });
+    for (const [error, reason] of [
+      ["app_signature_required", undefined],
+      ["invalid_app_signature", "bad_signature"],
+    ] as const) {
+      it(`rejects a publish refused with ${error} without retrying it`, async () => {
+        const request = Sinon.stub().rejects({ code: 403, message: error, data: reason });
+        publisher.relayer.request = request;
+        const failed = await publisher
+          .publish(topic, "test message", { id: getId() })
+          .catch((e) => e);
+        expect(failed).to.be.instanceOf(PublishFailedError);
+        expect(failed.code).to.equal(403);
+        expect(failed.error).to.equal(error);
+        expect(failed.reason).to.equal(reason ?? error);
+        expect(request.callCount).to.equal(1);
+        expect(publisher.queue.size).to.equal(0);
+      });
+    }
     it("retries a failed publish on every pulse until it succeeds", async () => {
       const id = getId();
       const error = { code: 500, message: "internal" };

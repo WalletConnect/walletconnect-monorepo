@@ -22,6 +22,7 @@ import {
 } from "./constants/index.js";
 import { AuthStore, Engine, PendingRequest, Proposal, Session } from "./controllers/index.js";
 import { V3Client } from "./v3/client.js";
+import { appSignatureRefusal } from "./verification.js";
 
 const uriParam = (uri: string, name: string) =>
   new URLSearchParams(uri.slice(uri.indexOf("?"))).get(name);
@@ -125,7 +126,9 @@ export class SignClient extends ISignClient {
         return await this.engine.connect(params);
       }
       return await this.connectBoth(this.v3, params);
-    } catch (error: any) {
+    } catch (e: any) {
+      // The Relay refused the App Signature: a typed error, never a hang on retries.
+      const error = appSignatureRefusal(e) ?? e;
       this.logger.error(error.message);
       throw error;
     }
@@ -378,6 +381,10 @@ export class SignClient extends ISignClient {
     } catch (error: any) {
       // The app refused to sign: falling back to v2 would send the proposal without it.
       if (error?.code === "app_signature_failed") throw error;
+      // The Relay refused the App Signature, or its lack of one. Over v2 it gets the same answer:
+      // a domain requiring signatures requires them there too.
+      const refusal = appSignatureRefusal(error);
+      if (refusal) throw refusal;
       this.logger.warn(error, "v3 connect failed, offering v2 only");
       return await this.engine.connect(params);
     }
