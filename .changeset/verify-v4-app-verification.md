@@ -24,4 +24,5 @@
   - **Sign v3:** it signs the proposal and every message.
   - **Sign v2:** it signs session proposals (including the fallback offer), session requests and authenticate requests. The SDK encrypts first and passes `ciphertextHash`, base64url SHA-256 of the envelope bytes as published, so the JWT carries a `cth` the Relay checks before it mints a legacy attestation. The JWT is sent as the `appSignature` param of `irn_publish` / `wc_proposeSession`, or the `appSignature` field over HTTP. With a callback, the old Verify attestation (verify-server iframe and `attestation` param) is no longer fetched.
   - If the callback throws, the call fails with `app_signature_failed`, and nothing is sent unsigned.
-- `RelayerTypes.PublishOptions` gains `appSignature`.
+  - A send retried after its JWT's `exp` (less 10 s) calls the callback again and sends the new JWT; an expired JWT is never resent. Wallets never check `exp`.
+- `RelayerTypes.PublishOptions` gains `appSignature` and `refreshAppSignature`. `@walletconnect/utils` gains `hashEnvelope`, `hashPlaintext`, `decodeAppSignatureClaims` and `isAppSignatureExpired`.

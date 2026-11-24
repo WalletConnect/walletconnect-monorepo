@@ -1722,16 +1722,15 @@ export class Engine extends IEngine {
 
     let attestation: string | undefined;
     let appSignature: string | undefined;
+    let refreshAppSignature: (() => Promise<string>) | undefined;
     if (METHODS_TO_VERIFY.includes(method)) {
-      if (this.client.appSignature) {
+      const options = this.client.appSignature;
+      if (options) {
         // Verify v4: the app signs instead, and the Relay supplies the legacy attestation.
         if (!isLinkMode) {
-          appSignature = await signV2Request(
-            this.client.appSignature,
-            payload,
-            message,
-            this.client.logger,
-          );
+          refreshAppSignature = () =>
+            signV2Request(options, payload, message, this.client.logger);
+          appSignature = await refreshAppSignature();
         }
       } else {
         const decryptedId = hashMessage(JSON.stringify(payload));
@@ -1746,7 +1745,11 @@ export class Engine extends IEngine {
     };
 
     opts.attestation = attestation;
-    if (appSignature) opts.appSignature = appSignature;
+    if (appSignature) {
+      opts.appSignature = appSignature;
+      // a retry after the JWT expired signs again
+      opts.refreshAppSignature = refreshAppSignature;
+    }
     opts.plaintext = safeJsonStringify(payload);
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
@@ -1794,14 +1797,13 @@ export class Engine extends IEngine {
 
     let attestation: string | undefined;
     let appSignature: string | undefined;
-    if (this.client.appSignature) {
+    let refreshAppSignature: (() => Promise<string>) | undefined;
+    const options = this.client.appSignature;
+    if (options) {
       // Verify v4: the app signs instead, and the Relay supplies the legacy attestation.
-      appSignature = await signV2Request(
-        this.client.appSignature,
-        proposeSessionPayload,
-        proposeSessionMessage,
-        this.client.logger,
-      );
+      refreshAppSignature = () =>
+        signV2Request(options, proposeSessionPayload, proposeSessionMessage, this.client.logger);
+      appSignature = await refreshAppSignature();
     } else {
       const decryptedId = hashMessage(JSON.stringify(proposeSessionPayload));
       const attestationId = hashMessage(proposeSessionMessage);
@@ -1818,7 +1820,7 @@ export class Engine extends IEngine {
         ...publishOpts,
         publishMethod: "wc_proposeSession",
         attestation,
-        ...(appSignature && { appSignature }),
+        ...(appSignature && { appSignature, refreshAppSignature }),
       },
     });
   };

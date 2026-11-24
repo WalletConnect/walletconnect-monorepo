@@ -83,6 +83,7 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
 
   it("signs the v2 proposal and request, sends appSignature, and the legacy hash matches", async () => {
     const sent = relaySends(dapp);
+    const published = vi.spyOn(dapp.core.relayer, "publish");
     const register = vi.spyOn(dapp.core.verify, "register");
     const resolve = vi.spyOn(v2Wallet.core.verify, "resolve");
 
@@ -146,6 +147,14 @@ describe("Verify v4 App Signatures on the Sign v2 path", () => {
     );
     // the dApp's v2 responses and other messages aren't signed
     expect(app.seen).toHaveLength(3);
+    // a retry after the JWT expired signs the same request and envelope again
+    const opts = published.mock.calls.find(([, , o]) => o?.appSignature)![2]!;
+    expect(opts.refreshAppSignature).toBeTypeOf("function");
+    const renewed = await opts.refreshAppSignature!();
+    expect(app.seen).toHaveLength(4);
+    expect(app.seen[3].requestJson).toBe(signed.requestJson);
+    expect(app.seen[3].ciphertextHash).toBe(signed.ciphertextHash);
+    expect(subOf(renewed)).toBe(subOf(publish!.params.appSignature));
     // with an app signature, the old Verify attestation is never fetched
     expect(register).not.toHaveBeenCalled();
 

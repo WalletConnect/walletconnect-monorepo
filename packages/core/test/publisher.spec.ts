@@ -283,6 +283,75 @@ describe("Publisher", () => {
       expect(request.callCount).to.equal(4);
       expect(publisher.queue.size).to.equal(0);
     });
+    describe("Verify v4 App Signatures", () => {
+      const jwt = (exp: number) =>
+        ["{}", JSON.stringify({ sub: "s", exp }), "sig"]
+          .map((p) => Buffer.from(p).toString("base64url"))
+          .join(".");
+      const nowS = () => Math.floor(Date.now() / 1000);
+      afterEach(() => Sinon.restore());
+
+      it("signs again when a retried publish's App Signature has expired", async () => {
+        const id = getId();
+        const stale = jwt(nowS() + 15);
+        const renewed = jwt(nowS() + 300);
+        const refreshAppSignature = Sinon.stub().resolves(renewed);
+        const sent: string[] = [];
+        const request = Sinon.stub().callsFake((r) => {
+          sent.push(r.params.appSignature);
+          if (request.callCount > 1) return Promise.resolve(true);
+          const error = { code: 500, message: "internal" };
+          publisher.relayer.events.emit(RELAYER_EVENTS.message_ack, { id, jsonrpc: "2.0", error });
+          return Promise.reject(error);
+        });
+        publisher.relayer.request = request;
+        const published = publisher.publish(topic, "test message", {
+          id,
+          appSignature: stale,
+          refreshAppSignature,
+          internal: { throwOnFailedPublish: true },
+        });
+        await throttle(50);
+        expect(publisher.queue.size).to.equal(1);
+        // 10 s later, the JWT is within the expiry margin when the retry comes
+        const realNow = Date.now();
+        Sinon.stub(Date, "now").returns(realNow + 10_000);
+        core.heartbeat.events.emit(HEARTBEAT_EVENTS.pulse);
+        await published;
+        expect(sent).to.deep.equal([stale, renewed]);
+        expect(refreshAppSignature.callCount).to.equal(1);
+      });
+
+      it("never resends an expired App Signature it can't renew", async () => {
+        const request = Sinon.stub().resolves(true);
+        publisher.relayer.request = request;
+        const error = await publisher
+          .publish(topic, "test message", {
+            id: getId(),
+            appSignature: jwt(nowS() - 1),
+            refreshAppSignature: () => Promise.reject(new Error("denylisted")),
+          })
+          .catch((e) => e);
+        expect(error).to.be.instanceOf(PublishFailedError);
+        expect(error.reason).to.equal("denylisted");
+        expect(request.callCount).to.equal(0);
+        expect(publisher.queue.size).to.equal(0);
+      });
+
+      it("resends a fresh App Signature as is", async () => {
+        const request = Sinon.stub().resolves(true);
+        const refreshAppSignature = Sinon.stub();
+        publisher.relayer.request = request;
+        const fresh = jwt(nowS() + 120);
+        await publisher.publish(topic, "test message", {
+          id: getId(),
+          appSignature: fresh,
+          refreshAppSignature,
+        });
+        expect(request.getCall(0).args[0].params.appSignature).to.equal(fresh);
+        expect(refreshAppSignature.callCount).to.equal(0);
+      });
+    });
     it("allows overriding of defaults via `opts` param", async () => {
       const message = "test message";
       const opts = { ttl: 1, prompt: true, relay: { protocol: "irn" }, tag: 1, id: getId(1) };

@@ -83,17 +83,35 @@ export function hashPlaintext(plaintext: string): string {
  * The `sub` and `cth` claims of a Verify v4 App Signature, decoded without checking its signature
  * (the Relay did). Undefined when it isn't a JWT with a string `sub`.
  */
-export function decodeAppSignatureClaims(jwt: string): { sub: string; cth?: string } | undefined {
+export function decodeAppSignatureClaims(
+  jwt: string,
+): { sub: string; cth?: string; exp?: number } | undefined {
   const parts = jwt.split(".");
   if (parts.length !== 3) return undefined;
   try {
     const claims = JSON.parse(toString(fromString(parts[1].replace(/=+$/, ""), BASE64URL), UTF8));
     if (typeof claims?.sub !== "string") return undefined;
     if (claims.cth != null && typeof claims.cth !== "string") return undefined;
-    return { sub: claims.sub, ...(claims.cth != null && { cth: claims.cth }) };
+    return {
+      sub: claims.sub,
+      ...(claims.cth != null && { cth: claims.cth }),
+      ...(typeof claims.exp === "number" && { exp: claims.exp }),
+    };
   } catch {
     return undefined;
   }
+}
+
+/** How long before its `exp` the dApp treats its own App Signature as expired. */
+export const APP_SIGNATURE_EXPIRY_MARGIN_S = 10;
+
+/**
+ * dApp side, before a retry: is this App Signature expired, or about to be? Only the sender looks
+ * at `exp`; wallets never do, since a request's expiry is its own.
+ */
+export function isAppSignatureExpired(jwt: string, nowS = Date.now() / 1000): boolean {
+  const exp = decodeAppSignatureClaims(jwt)?.exp;
+  return exp !== undefined && exp <= nowS + APP_SIGNATURE_EXPIRY_MARGIN_S;
 }
 
 export function encodeTypeByte(type: number): Uint8Array {
