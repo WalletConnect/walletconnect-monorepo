@@ -68,6 +68,10 @@ if (typeof global?.Application === "undefined") {
         ...module.getConstants(),
         isAppInstalled: module.isAppInstalled,
       };
+      // Batch lookup, only available in the WalletConnect native module (not expo-application).
+      if (typeof module.getInstalledApps === "function") {
+        global.Application.getInstalledApps = module.getInstalledApps;
+      }
     } else {
       global.Application = module;
     }
