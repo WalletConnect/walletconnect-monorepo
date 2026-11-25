@@ -424,6 +424,23 @@ export class V3Client {
           ...(e.method != null && { method: e.method }),
         });
         break;
+      case "app_signature_required":
+        this.dispatch("app_signature_required", {
+          topic: e.topic,
+          ...(e.id != null && { id: e.id }),
+          ...(e.method != null && { method: e.method }),
+          domain: e.domain,
+        });
+        break;
+      case "app_signature_domain_changed":
+        this.dispatch("app_signature_domain_changed", {
+          topic: e.topic,
+          ...(e.id != null && { id: e.id }),
+          ...(e.method != null && { method: e.method }),
+          domain: e.domain,
+          signedBy: e.signedBy,
+        });
+        break;
       case "session_delete":
         this.sessions.delete(e.topic);
         if (e.reason === "expired") this.dispatch("session_expire", { topic: e.topic });
@@ -433,11 +450,14 @@ export class V3Client {
   }
 }
 
-/** The WASM side calls it with `{ request }` as JSON, `request` being JSON text. */
+/**
+ * The WASM side calls it with `{ request, cnx }` as JSON, `request` being JSON text and `cnx` the
+ * connection the JWT's `cnx` claim must name.
+ */
 function appSigner(opts: Verify.AppSignatureOptions) {
   return async (input: string): Promise<string> => {
-    const { request } = JSON.parse(input) as { request: string };
-    const res = await opts.callback({ request: JSON.parse(request), requestJson: request });
+    const { request, cnx } = JSON.parse(input) as { request: string; cnx: string };
+    const res = await opts.callback({ request: JSON.parse(request), requestJson: request, cnx });
     if (typeof res?.appSignature !== "string" || !res.appSignature) {
       throw new Error("appSignature.callback returned no appSignature");
     }

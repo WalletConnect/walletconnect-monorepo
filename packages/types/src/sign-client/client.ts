@@ -24,7 +24,9 @@ export declare namespace SignClientTypes {
     | "proposal_expire"
     | "session_request_expire"
     | "session_connect"
-    | "app_signature_mismatch";
+    | "app_signature_mismatch"
+    | "app_signature_required"
+    | "app_signature_domain_changed";
 
   /**
    * What a wallet sees of an app's metadata: no self-asserted identity (`name`, `url`, `icons`).
@@ -74,6 +76,22 @@ export declare namespace SignClientTypes {
      * dropped and never shown; a request was answered with an error.
      */
     app_signature_mismatch: { topic: string; id?: number; method?: string };
+    /**
+     * Wallet: an unsigned request on a session pinned to `domain`, the first domain that signed on
+     * it. It was dropped and never shown; it was answered with an `app_signature_required` error.
+     */
+    app_signature_required: { topic: string; id?: number; method?: string; domain: string };
+    /**
+     * Wallet: a request signed by `signedBy` on a session pinned to another `domain`. It was
+     * dropped and never shown; it was answered with an `app_signature_domain_changed` error.
+     */
+    app_signature_domain_changed: {
+      topic: string;
+      id?: number;
+      method?: string;
+      domain: string;
+      signedBy: string;
+    };
   }
 
   type Metadata = CoreTypes.Metadata;

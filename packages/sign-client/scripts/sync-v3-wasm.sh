@@ -33,7 +33,11 @@ fi
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-"$bindgen" --target web --out-dir "$tmp" "$yt/target/wasm32-unknown-unknown/release/sign_v3.wasm"
+# Where cargo put it: a configured target-dir (CARGO_TARGET_DIR, or build.target-dir) may be
+# outside the checkout, and shared with other checkouts.
+target=$(cargo metadata --format-version 1 --no-deps --manifest-path "$yt/Cargo.toml" |
+  node -e 'let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => console.log(JSON.parse(s).target_directory))')
+"$bindgen" --target web --out-dir "$tmp" "$target/wasm32-unknown-unknown/release/sign_v3.wasm"
 if command -v wasm-opt >/dev/null; then
   wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext \
     --enable-mutable-globals "$tmp/sign_v3_bg.wasm" -o "$tmp/sign_v3_bg.wasm"

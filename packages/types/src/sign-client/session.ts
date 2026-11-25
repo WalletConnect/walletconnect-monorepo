@@ -82,6 +82,14 @@ export declare namespace SessionTypes {
      * `icons` are empty.
      */
     verification?: Verify.AppVerification;
+    /**
+     * Wallet side, Verify v4: the domain this session is pinned to, the first that signed on it
+     * (the proposal's or authenticate request's App Signature `iss`, else the first accepted signed
+     * `wc_sessionRequest`'s). Once set, a `wc_sessionRequest` that is unsigned or signed by another
+     * domain is dropped, never shown, and answered with an error (`app_signature_required` /
+     * `app_signature_domain_changed`).
+     */
+    appDomain?: string;
     walletPayResult?: EngineTypes.WalletPayResult[];
     transportType?: RelayerTypes.TransportType;
   }

@@ -41,6 +41,11 @@ export declare namespace ProposalTypes {
     encryptedId?: string;
     /** Wallet side: the proposal's App Verification. */
     verification?: Verify.AppVerification;
+    /**
+     * Wallet side: the proposal's App Signature `iss`, when it was signed. The session is pinned to
+     * it from the start: see `SessionTypes.Struct.appDomain`.
+     */
+    appDomain?: string;
     requests?: {
       authentication?: AuthTypes.AuthenticateParams[];
       walletPay?: EngineTypes.WalletPayParams;
@@ -50,7 +55,10 @@ export declare namespace ProposalTypes {
 
 export declare namespace ProposalTypes {
   /** A proposal as a wallet sees it: without the app's self-asserted identity. */
-  export type WalletStruct = Omit<Struct, "proposer" | "attestation" | "encryptedId"> & {
+  export type WalletStruct = Omit<
+    Struct,
+    "proposer" | "attestation" | "encryptedId" | "appDomain"
+  > & {
     proposer: { publicKey: string; metadata: SignClientTypes.PeerMetadata };
   };
 }

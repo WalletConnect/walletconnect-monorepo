@@ -27,8 +27,13 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import {
+  APP_SIGNATURE_DOMAIN_CHANGED,
+  APP_SIGNATURE_ERRORS,
   APP_SIGNATURE_MISMATCH,
+  APP_SIGNATURE_REQUIRED,
   appVerification,
+  checkPinnedDomain,
+  signedDomain,
   signV2Request,
   unverified,
   walletProposal,
@@ -531,6 +536,7 @@ export class Engine extends IEngine {
       controller: selfPublicKey,
       transportType: TRANSPORT_TYPES.relay,
       verification: proposal.verification ?? unverified(),
+      ...(proposal.appDomain && { appDomain: proposal.appDomain }),
       authentication: proposalRequestsResponses?.authentication,
       walletPayResult: proposalRequestsResponses?.walletPay,
     };
@@ -1418,6 +1424,7 @@ export class Engine extends IEngine {
         optionalNamespaces: {},
         relay: { protocol: "irn" },
         pairingTopic: pendingRequest.pairingTopic,
+        ...(pendingRequest.appDomain && { appDomain: pendingRequest.appDomain }),
         namespaces: buildNamespacesFromAuth(
           [...new Set(approvedMethods)],
           [...new Set(approvedAccounts)],
@@ -1937,10 +1944,9 @@ export class Engine extends IEngine {
   private sendError: EnginePrivate["sendError"] = async (params) => {
     const { id, topic, error, encodeOpts, rpcOpts, appLink } = params;
     // -32600 is a reserved code, which formatJsonRpcError would answer as "Invalid Request".
-    const payload =
-      error === APP_SIGNATURE_MISMATCH
-        ? { id, jsonrpc: "2.0" as const, error: { ...APP_SIGNATURE_MISMATCH } }
-        : formatJsonRpcError(id, error);
+    const payload = APP_SIGNATURE_ERRORS.includes(error as { code: number; message: string })
+      ? { id, jsonrpc: "2.0" as const, error: { ...(error as { code: number; message: string }) } }
+      : formatJsonRpcError(id, error);
     let message;
     const isLinkMode = appLink && typeof (global as any)?.Linking !== "undefined";
     try {
@@ -2250,6 +2256,8 @@ export class Engine extends IEngine {
           metadata: withoutIdentity(params.proposer.metadata),
         },
         verification,
+        // Set here even when undefined, so the app's params can't set it.
+        appDomain: signedDomain(appMetadata),
       };
       await this.setProposal(id, proposal);
 
@@ -2602,6 +2610,7 @@ export class Engine extends IEngine {
         transportType,
         appMetadata,
       });
+      await this.checkPinnedDomain({ session, payload, appMetadata, transportType });
       const request = {
         id,
         topic,
@@ -2730,6 +2739,7 @@ export class Engine extends IEngine {
         id: payload.id,
         authPayload,
         verification,
+        appDomain: signedDomain(appMetadata),
         expiryTimestamp,
       };
       await this.setAuthRequest(payload.id, {
@@ -3483,6 +3493,40 @@ export class Engine extends IEngine {
       method: payload.method,
     });
     throw APP_SIGNATURE_MISMATCH;
+  };
+
+  /**
+   * Verify v4, wallet: a session stays signed (see `SessionTypes.Struct.appDomain`). Call once
+   * `getVerification` checked the request's `sub`. Pins the session to the request's domain if it
+   * isn't yet; throws `APP_SIGNATURE_REQUIRED` or `APP_SIGNATURE_DOMAIN_CHANGED`, after emitting
+   * the event of the same name, when the request is unsigned or signed by another domain than the
+   * pinned one. Link mode requests skip the Relay, so never carry a signature: they're let through.
+   */
+  private checkPinnedDomain = async (params: {
+    session: SessionTypes.Struct;
+    payload: JsonRpcRequest;
+    appMetadata?: Record<string, unknown>;
+    transportType?: RelayerTypes.TransportType;
+  }) => {
+    const { session, payload, appMetadata, transportType } = params;
+    if (transportType === TRANSPORT_TYPES.link_mode) return;
+    const { topic } = session;
+    const { pin, refusal } = checkPinnedDomain(session.appDomain, signedDomain(appMetadata));
+    if (pin) {
+      await this.client.session.update(topic, { appDomain: pin });
+      return;
+    }
+    if (!refusal) return;
+    const dropped = { topic, id: payload.id, method: payload.method, domain: refusal.domain };
+    if (refusal.code === "app_signature_required") {
+      this.client.events.emit("app_signature_required", dropped);
+      throw APP_SIGNATURE_REQUIRED;
+    }
+    this.client.events.emit("app_signature_domain_changed", {
+      ...dropped,
+      signedBy: refusal.signedBy,
+    });
+    throw APP_SIGNATURE_DOMAIN_CHANGED;
   };
 
   private validateSessionProps = (properties: SessionTypes.ScopedProperties, type: string) => {

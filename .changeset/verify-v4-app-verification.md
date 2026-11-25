@@ -7,13 +7,14 @@
 **Breaking: Verify v4.** Wallets get one `verification` object instead of the historical `verifyContext`, and no longer see an app's self-asserted identity.
 
 - **`verifyContext` is replaced by `verification: Verify.AppVerification`** on `session_proposal`, `session_request`, `session_authenticate`, pending session requests and pending authenticate requests:
-  - `{ domain?, name?, icon?, isVerified, isScam, isSimilarTo? }`. There is no `validation` (`VALID` / `INVALID` / `UNKNOWN`) and no state: show whatever is present.
+  - `{ domain?, registrableDomain?, name?, icon?, isVerified, isScam, isSimilarTo? }`. `domain` is always ASCII (punycode, never Unicode) and `registrableDomain` its eTLD+1 per the Public Suffix List: show the ASCII form, never truncate the registrable domain, and emphasise it. There is no `validation` (`VALID` / `INVALID` / `UNKNOWN`) and no state: show whatever is present.
   - **Sign v3:** every field comes from the Relay's `appMetadata`, once the SDK checked the app's signature is for that message. An unsigned request gives `{ isVerified: false, isScam }`.
   - **Sign v2:** `{ isVerified: false, isScam }`, with `isScam` from the legacy attestation, which never gives a domain, name or icon. When the Relay delivers `appMetadata` on Sign v2 (`message_v2.received` or `irn_subscription` data), the same rules as Sign v3 apply to it, mismatch included.
   - The app's JWT is read from `appMetadata.appSignature`. It isn't exposed in `verification`.
 - **A mismatched App Signature is not shown at all (Sign v3, and Sign v2 with `appMetadata`).**
   - A message whose signature is for another message is dropped. A request is answered with the JSON-RPC error `{ code: -32600, message: "app_signature_mismatch" }`. The new `app_signature_mismatch` event fires with `{ topic, id?, method? }`.
   - A mismatched proposal makes `pair()` reject with `app_signature_mismatch`.
+- **A session stays signed.** A wallet pins a session to the first domain that signs on it (the proposal's or authenticate request's `iss`, else the first signed request's), stored as the session's `appDomain`. Once pinned, an unsigned request, or one signed by another domain, is dropped, answered with `{ code: -32600, message: "app_signature_required" }` or `"app_signature_domain_changed"`, and the new `app_signature_required` (`{ topic, id?, method?, domain }`) or `app_signature_domain_changed` (`{ ..., signedBy }`) event fires. On Sign v2 this covers `wc_sessionRequest`, link mode aside.
 - **Wallets no longer see an app's `name`, `url` or `icons`.**
   - `session_proposal`'s `params` is a `ProposalTypes.WalletStruct`, whose `proposer.metadata` is `SignClientTypes.PeerMetadata`: `{ description, redirect?, verifyUrl? }`.
   - A wallet's stored proposals, sessions (`peer.metadata`), authenticate requests and pairings keep those fields empty. `SessionTypes.PeerMetadata` marks them `@deprecated` for wallets, pending a split of the session type.
@@ -21,7 +22,7 @@
   - The app still sends its metadata, and apps still see the wallet's.
 - **apps can sign their messages:** `SignClient.init({ appSignature: { callback } })`.
   - The callback gets `{ request, requestJson }` and returns `{ appSignature }`. The JWT's claims are `iss`, `sub` (over `requestJson`) and `exp`; nothing covers the encrypted bytes, and a wallet ignores any `cth`.
-  - **Sign v3:** it signs the proposal and every message.
+  - **Sign v3:** it signs the proposal and every message, and also gets `cnx`, the JWT's required `cnx` claim: the connectionId, or for the proposal the request's `bindingPub`.
   - **Sign v2:** it signs session proposals (including the fallback offer), session requests and authenticate requests. `sub` covers the plaintext, as on Sign v3. The Relay mints no legacy attestation: wallets on older SDKs get `attestation: ""` and show `UNKNOWN`. The JWT is sent as the `appSignature` param of `irn_publish` / `wc_proposeSession`, or the `appSignature` field over HTTP. With a callback, the old Verify attestation (verify-server iframe and `attestation` param) is no longer fetched.
   - If the callback throws, the call fails with `app_signature_failed`, and nothing is sent unsigned.
   - A send retried after its JWT's `exp` (less 10 s) calls the callback again and sends the new JWT; an expired JWT is never resent. Wallets never check `exp`.

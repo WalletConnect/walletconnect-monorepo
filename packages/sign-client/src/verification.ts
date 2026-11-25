@@ -1,5 +1,6 @@
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { decodeAppSignatureClaims, hashPlaintext } from "@walletconnect/utils";
+import { getDomain } from "tldts";
 import type { ProposalTypes, SignClientTypes, Verify } from "@walletconnect/types";
 
 /** An app the Relay vouches nothing for: unsigned, or on Sign v2. */
@@ -11,17 +12,51 @@ export const unverified = (isScam = false): Verify.AppVerification => ({
 /** The JSON-RPC error a wallet answers a request with when its App Signature is for another. */
 export const APP_SIGNATURE_MISMATCH = { code: -32600, message: "app_signature_mismatch" };
 
+/** The JSON-RPC error a wallet answers an unsigned request with, on a session pinned to a domain. */
+export const APP_SIGNATURE_REQUIRED = { code: -32600, message: "app_signature_required" };
+
+/**
+ * The JSON-RPC error a wallet answers a request signed by another domain than the one its session
+ * is pinned to with.
+ */
+export const APP_SIGNATURE_DOMAIN_CHANGED = {
+  code: -32600,
+  message: "app_signature_domain_changed",
+};
+
+/** The errors a wallet answers a request it dropped for its App Signature with, as is. */
+export const APP_SIGNATURE_ERRORS: readonly { code: number; message: string }[] = [
+  APP_SIGNATURE_MISMATCH,
+  APP_SIGNATURE_REQUIRED,
+  APP_SIGNATURE_DOMAIN_CHANGED,
+];
+
 const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
 
-function domainOf(origin: string): string {
-  try {
-    return new URL(origin).host.toLowerCase();
-  } catch {
-    return origin
-      .replace(/^[a-z]+:\/\//i, "")
-      .split("/")[0]
-      .toLowerCase();
+/**
+ * The hostname of an origin (or bare host), lowercase, in its ASCII form: an internationalised
+ * name comes out as punycode (WHATWG URL parsing), never Unicode. No port. Undefined when there is
+ * no hostname.
+ */
+export function asciiDomain(origin: string): string | undefined {
+  for (const candidate of [origin, `https://${origin}`]) {
+    try {
+      const hostname = new URL(candidate).hostname;
+      if (hostname) return hostname.toLowerCase();
+    } catch {
+      // not a URL: try it as a bare host
+    }
   }
+  return undefined;
+}
+
+/**
+ * The registrable domain (eTLD+1) of an ASCII hostname, per the Public Suffix List with its
+ * private section (so "alice.github.io", not "github.io"). Undefined for an IP address or a bare
+ * public suffix.
+ */
+export function registrableDomain(domain: string): string | undefined {
+  return getDomain(domain, { allowPrivateDomains: true }) ?? undefined;
 }
 
 /**
@@ -52,13 +87,51 @@ export function appVerification(
   const origin = str(appMetadata.origin);
   const name = str(appMetadata.name);
   const icon = str(appMetadata.icon);
+  const domain = origin ? asciiDomain(origin) : undefined;
+  const registrable = domain ? registrableDomain(domain) : undefined;
   return {
     ...screening,
-    ...(origin && { domain: domainOf(origin) }),
+    ...(domain && { domain }),
+    ...(registrable && { registrableDomain: registrable }),
     ...(name && { name }),
     ...(icon && { icon }),
     isVerified: appMetadata.isVerified === true,
   };
+}
+
+/**
+ * The domain a received message's App Signature is for: its `iss`. Undefined when unsigned. The
+ * Relay only delivers a signature it accepted, so `iss` is a domain it verified; only use it once
+ * {@link appVerification} checked `sub`.
+ */
+export function signedDomain(appMetadata: Record<string, unknown> | undefined): string | undefined {
+  if (!appMetadata || typeof appMetadata !== "object") return undefined;
+  const jwt = str(appMetadata.appSignature);
+  return jwt ? decodeAppSignatureClaims(jwt)?.iss : undefined;
+}
+
+/** Why a wallet dropped a request on a session pinned to a domain. */
+export type PinnedDomainRefusal =
+  | { code: "app_signature_required"; domain: string }
+  | { code: "app_signature_domain_changed"; domain: string; signedBy: string };
+
+/**
+ * Wallet side: a session stays signed. It is pinned to the first domain that signs on it: the
+ * proposal's (or authenticate request's) `iss` if it was signed, else the `iss` of the first
+ * accepted signed request. Once pinned, a request that is unsigned, or signed for another domain,
+ * is refused. Before, an unsigned request passes, shown as unverified. `signedBy` is the request's
+ * {@link signedDomain}. `pin` is the domain to persist when this request pinned the session.
+ */
+export function checkPinnedDomain(
+  pinned: string | undefined,
+  signedBy: string | undefined,
+): { pin?: string; refusal?: PinnedDomainRefusal } {
+  if (!pinned) return signedBy ? { pin: signedBy } : {};
+  if (!signedBy) return { refusal: { code: "app_signature_required", domain: pinned } };
+  if (signedBy !== pinned) {
+    return { refusal: { code: "app_signature_domain_changed", domain: pinned, signedBy } };
+  }
+  return {};
 }
 
 /** An app's metadata as a wallet keeps it: its self-asserted name, url and icons emptied. */
@@ -82,7 +155,14 @@ export function peerMetadata(
 
 /** A proposal as a wallet sees it. */
 export function walletProposal(p: ProposalTypes.Struct): ProposalTypes.WalletStruct {
-  const { proposer, attestation: _a, encryptedId: _e, verification: _v, ...rest } = p;
+  const {
+    proposer,
+    attestation: _a,
+    encryptedId: _e,
+    verification: _v,
+    appDomain: _d,
+    ...rest
+  } = p;
   return {
     ...rest,
     proposer: { publicKey: proposer.publicKey, metadata: peerMetadata(proposer.metadata) },

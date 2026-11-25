@@ -71,10 +71,12 @@ export function hashPlaintext(plaintext: string): string {
 }
 
 /**
- * The `sub` and `exp` claims of a Verify v4 App Signature, decoded without checking its signature
- * (the Relay did). Undefined when it isn't a JWT with a string `sub`.
+ * The `sub`, `exp` and `iss` claims of a Verify v4 App Signature, decoded without checking its
+ * signature (the Relay did). Undefined when it isn't a JWT with a string `sub`.
  */
-export function decodeAppSignatureClaims(jwt: string): { sub: string; exp?: number } | undefined {
+export function decodeAppSignatureClaims(
+  jwt: string,
+): { sub: string; exp?: number; iss?: string } | undefined {
   const parts = jwt.split(".");
   if (parts.length !== 3) return undefined;
   try {
@@ -83,6 +85,7 @@ export function decodeAppSignatureClaims(jwt: string): { sub: string; exp?: numb
     return {
       sub: claims.sub,
       ...(typeof claims.exp === "number" && { exp: claims.exp }),
+      ...(typeof claims.iss === "string" && claims.iss && { iss: claims.iss }),
     };
   } catch {
     return undefined;

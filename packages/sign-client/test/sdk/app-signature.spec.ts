@@ -11,14 +11,18 @@ import { Engine } from "../../src/controllers/engine.js";
 const v3Error = (code: string, message: string) =>
   Object.assign(new Error(`${code}: ${message}`), { code });
 import {
+  APP_SIGNATURE_DOMAIN_CHANGED,
   APP_SIGNATURE_MISMATCH,
+  APP_SIGNATURE_REQUIRED,
   AppSignatureError,
   AppSignatureRefusedError,
   appSignatureRefusal,
   appVerification,
+  checkPinnedDomain,
   legacyRecomputes,
   peerMetadata,
   signV2Request,
+  signedDomain,
   unverified,
   walletProposal,
   withoutIdentity,
@@ -105,11 +109,40 @@ describe("Verify v4 on Sign v2: what a wallet derives from appMetadata", () => {
   it("takes identity from appMetadata once sub checks out", () => {
     expect(appVerification(signed(bound), plaintext)).toEqual({
       domain: "app.example.com",
+      registrableDomain: "example.com",
       name: "App",
       icon: "https://i",
       isVerified: true,
       isScam: false,
     });
+  });
+
+  it("gives the domain in ASCII, never Unicode, with its registrable domain", () => {
+    const of = (origin: string) => {
+      const v = appVerification(signed(bound, { origin }), plaintext);
+      return { domain: v?.domain, registrableDomain: v?.registrableDomain };
+    };
+    // a Cyrillic look-alike of uniswap.org comes out as punycode
+    expect(of("https://app.unisw\u0430p.org")).toEqual({
+      domain: "app.xn--uniswp-7nf.org",
+      registrableDomain: "xn--uniswp-7nf.org",
+    });
+    expect(of("https://app.xn--uniswp-7nf.org")).toEqual(of("https://app.unisw\u0430p.org"));
+    expect(of("https://Swap.App.Uniswap.ORG:8443")).toEqual({
+      domain: "swap.app.uniswap.org",
+      registrableDomain: "uniswap.org",
+    });
+    // public suffixes, private ones included
+    expect(of("https://shop.example.co.uk").registrableDomain).toBe("example.co.uk");
+    expect(of("https://alice.github.io").registrableDomain).toBe("alice.github.io");
+    // none for an IP address or a bare suffix
+    expect(of("https://192.168.0.1")).toEqual({
+      domain: "192.168.0.1",
+      registrableDomain: undefined,
+    });
+    expect(of("https://co.uk")).toEqual({ domain: "co.uk", registrableDomain: undefined });
+    // a bare host, as an older Relay might send
+    expect(of("app.example.com").domain).toBe("app.example.com");
   });
 
   it("ignores a cth older backends still sign", () => {
@@ -209,6 +242,180 @@ describe("Verify v4 on Sign v2: a wallet hashes the bytes it decrypted", () => {
         method: "wc_sessionRequest",
       });
     }
+  });
+});
+
+describe("Verify v4 on Sign v2: a session stays signed", () => {
+  const topic = "b".repeat(64);
+  let nextId = 1759313100123000;
+  const request = () =>
+    safeJsonStringify(
+      formatJsonRpcRequest(
+        "wc_sessionRequest",
+        { chainId: "eip155:1", request: { method: "personal_sign", params: ["0x68", "0xabc"] } },
+        nextId++,
+      ),
+    );
+  const by = (iss: string, plaintext: string) => ({
+    origin: `https://${iss}`,
+    appSignature: jwt({ iss, sub: b64u(plaintext) }),
+  });
+
+  /** A wallet with one session, `appDomain` its pin; `deliver` hands it one request. */
+  const wallet = (appDomain?: string) => {
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
+    const session: any = { topic, peer: { metadata: {} }, ...(appDomain && { appDomain }) };
+    let plaintext = "";
+    const client: any = {
+      logger,
+      signConfig: { disableRequestQueue: true },
+      auth: { authKeys: { keys: [] } },
+      events: { emit: vi.fn() },
+      session: {
+        get: () => session,
+        update: vi.fn(async (_t: string, u: object) => Object.assign(session, u)),
+      },
+      core: {
+        crypto: {
+          getPayloadType: () => 0,
+          decodePlaintext: vi.fn(async () => plaintext),
+        },
+        history: { set: vi.fn() },
+        relayer: { messages: { ack: vi.fn() } },
+        verify: { resolve: vi.fn().mockResolvedValue(undefined) },
+      },
+    };
+    const engine: any = new Engine(client);
+    engine.isValidRequest = vi.fn();
+    engine.setPendingSessionRequest = vi.fn();
+    engine.emitSessionRequest = vi.fn();
+    engine.sendError = vi.fn();
+    /** Delivers a request signed by `iss`, or unsigned; its id. */
+    const deliver = async (iss?: string) => {
+      plaintext = request();
+      const appMetadata = iss ? by(iss, plaintext) : undefined;
+      await engine.onRelayMessage({ topic, message: "envelope", publishedAt: 0, appMetadata });
+      return JSON.parse(plaintext).id as number;
+    };
+    const shown = () => engine.emitSessionRequest.mock.calls.map((c: any[]) => c[0].id);
+    return { client, engine, session, deliver, shown };
+  };
+
+  it("pins to the first signing domain, and refuses unsigned or other domains after", () => {
+    expect(checkPinnedDomain(undefined, undefined)).toEqual({});
+    expect(checkPinnedDomain(undefined, "app.example")).toEqual({ pin: "app.example" });
+    expect(checkPinnedDomain("app.example", "app.example")).toEqual({});
+    expect(checkPinnedDomain("app.example", undefined)).toEqual({
+      refusal: { code: "app_signature_required", domain: "app.example" },
+    });
+    expect(checkPinnedDomain("app.example", "evil.example")).toEqual({
+      refusal: {
+        code: "app_signature_domain_changed",
+        domain: "app.example",
+        signedBy: "evil.example",
+      },
+    });
+    expect(APP_SIGNATURE_REQUIRED).toEqual({ code: -32600, message: "app_signature_required" });
+    expect(APP_SIGNATURE_DOMAIN_CHANGED).toEqual({
+      code: -32600,
+      message: "app_signature_domain_changed",
+    });
+  });
+
+  it("reads the domain from the signature's iss", () => {
+    expect(signedDomain(by("app.example", "x"))).toBe("app.example");
+    expect(signedDomain({ origin: "https://app.example" })).toBeUndefined();
+    expect(signedDomain({ appSignature: jwt({ sub: "s" }) })).toBeUndefined();
+    expect(signedDomain(undefined)).toBeUndefined();
+  });
+
+  it("on a pinned session, drops an unsigned request or one from another domain", async () => {
+    const { client, engine, deliver, shown } = wallet("app.example");
+    const ok = await deliver("app.example");
+    expect(shown()).toEqual([ok]);
+
+    const unsigned = await deliver();
+    expect(shown()).toEqual([ok]);
+    expect(engine.sendError).toHaveBeenCalledWith(
+      expect.objectContaining({ id: unsigned, topic, error: APP_SIGNATURE_REQUIRED }),
+    );
+    expect(client.events.emit).toHaveBeenCalledWith("app_signature_required", {
+      topic,
+      id: unsigned,
+      method: "wc_sessionRequest",
+      domain: "app.example",
+    });
+
+    const other = await deliver("evil.example");
+    expect(shown()).toEqual([ok]);
+    expect(engine.sendError).toHaveBeenCalledWith(
+      expect.objectContaining({ id: other, topic, error: APP_SIGNATURE_DOMAIN_CHANGED }),
+    );
+    expect(client.events.emit).toHaveBeenCalledWith("app_signature_domain_changed", {
+      topic,
+      id: other,
+      method: "wc_sessionRequest",
+      domain: "app.example",
+      signedBy: "evil.example",
+    });
+    expect(client.session.update).not.toHaveBeenCalled();
+  });
+
+  it("before any signature, shows unsigned requests; the first signed one pins", async () => {
+    const { client, engine, session, deliver, shown } = wallet();
+    const first = await deliver();
+    expect(shown()).toEqual([first]);
+    expect(session.appDomain).toBeUndefined();
+
+    const signed = await deliver("app.example");
+    expect(shown()).toEqual([first, signed]);
+    // persisted with the session
+    expect(client.session.update).toHaveBeenCalledWith(topic, { appDomain: "app.example" });
+    expect(session.appDomain).toBe("app.example");
+
+    await deliver();
+    await deliver("evil.example");
+    expect(shown()).toEqual([first, signed]);
+    expect(engine.sendError.mock.calls.map((c: any[]) => c[0].error)).toEqual([
+      APP_SIGNATURE_REQUIRED,
+      APP_SIGNATURE_DOMAIN_CHANGED,
+    ]);
+  });
+
+  it("answers a dropped request with the error as is", async () => {
+    const encode = vi.fn().mockResolvedValue("encoded");
+    const client: any = {
+      logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+      core: {
+        crypto: { encode },
+        history: { get: vi.fn().mockResolvedValue({ request: { method: "wc_sessionRequest" } }) },
+        relayer: { publish: vi.fn().mockResolvedValue(undefined) },
+      },
+    };
+    const engine: any = new Engine(client);
+    for (const error of [APP_SIGNATURE_REQUIRED, APP_SIGNATURE_DOMAIN_CHANGED]) {
+      await engine.sendError({ id: 1, topic, error }).catch(() => undefined);
+      expect(encode).toHaveBeenLastCalledWith(
+        topic,
+        { id: 1, jsonrpc: "2.0", error },
+        expect.anything(),
+      );
+    }
+  });
+
+  it("the app's proposal params can't set the pin, and wallets never see it", () => {
+    const proposal = walletProposal({
+      id: 1,
+      expiryTimestamp: 2,
+      relays: [{ protocol: "irn" }],
+      proposer: { publicKey: "pk", metadata },
+      requiredNamespaces: {},
+      optionalNamespaces: {},
+      pairingTopic: "t",
+      verification: unverified(),
+      appDomain: "app.example",
+    });
+    expect(proposal).not.toHaveProperty("appDomain");
   });
 });
 

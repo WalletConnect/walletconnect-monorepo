@@ -138,6 +138,8 @@ export declare namespace AuthTypes {
     expiryTimestamp: number;
     authPayload: PayloadParams;
     verification: Verify.AppVerification;
+    /** The request's App Signature `iss`, when it was signed: its session is pinned to it. */
+    appDomain?: string;
     transportType?: RelayerTypes.TransportType;
   }
 
