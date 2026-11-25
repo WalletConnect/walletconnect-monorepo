@@ -69,42 +69,55 @@ export abstract class IPairing {
   ) {}
 
   public abstract init(): Promise<void>;
+  public abstract dispose(): Promise<void>;
 
-  public abstract pair(params: {
-    uri: string;
-    activatePairing?: boolean;
-  }): Promise<PairingTypes.Struct>;
+  public abstract pair(
+    params: {
+      uri: string;
+      activatePairing?: boolean;
+    },
+    ownerSignal?: AbortSignal,
+  ): Promise<PairingTypes.Struct>;
 
   // for proposer to create inactive pairing
-  public abstract create(params?: {
-    methods?: string[];
-    transportType?: RelayerTypes.SubscribeOptions["transportType"];
-    internal?: RelayerTypes.SubscribeOptions["internal"];
-  }): Promise<{ topic: string; uri: string }>;
+  public abstract create(
+    params?: {
+      methods?: string[];
+      transportType?: RelayerTypes.SubscribeOptions["transportType"];
+      internal?: RelayerTypes.SubscribeOptions["internal"];
+    },
+    ownerSignal?: AbortSignal,
+  ): Promise<{ topic: string; uri: string }>;
 
   // for either to activate a previously created pairing
-  public abstract activate(params: { topic: string }): Promise<void>;
+  public abstract activate(params: { topic: string }, ownerSignal?: AbortSignal): Promise<void>;
 
   // for both to subscribe on methods requests
   public abstract register(params: { methods: string[] }): void;
 
   // for either to update the expiry of an existing pairing.
-  public abstract updateExpiry(params: { topic: string; expiry: number }): Promise<void>;
+  public abstract updateExpiry(
+    params: { topic: string; expiry: number },
+    ownerSignal?: AbortSignal,
+  ): Promise<void>;
 
   // for either to update the metadata of an existing pairing.
-  public abstract updateMetadata(params: {
-    topic: string;
-    metadata: CoreTypes.Metadata;
-  }): Promise<void>;
+  public abstract updateMetadata(
+    params: {
+      topic: string;
+      metadata: CoreTypes.Metadata;
+    },
+    ownerSignal?: AbortSignal,
+  ): Promise<void>;
 
   // query pairings
   public abstract getPairings(): PairingTypes.Struct[];
 
   // for either to ping a peer
-  public abstract ping(params: { topic: string }): Promise<void>;
+  public abstract ping(params: { topic: string }, ownerSignal?: AbortSignal): Promise<void>;
 
   // for either peer to disconnect a pairing
-  public abstract disconnect(params: { topic: string }): Promise<void>;
+  public abstract disconnect(params: { topic: string }, ownerSignal?: AbortSignal): Promise<void>;
 
   public abstract formatUriFromPairing(pairing: PairingTypes.Struct): string;
 }
@@ -114,6 +127,7 @@ export interface IPairingPrivate {
     topic: string,
     method: M,
     params: PairingJsonRpcTypes.RequestParams[M],
+    ownerSignal?: AbortSignal,
   ): Promise<number>;
 
   sendResult<M extends PairingJsonRpcTypes.WcMethod>(
@@ -147,5 +161,9 @@ export interface IPairingPrivate {
 
   onUnknownRpcMethodResponse(method: string): void;
 
-  deletePairing(topic: string, expirerHasDeleted?: boolean): Promise<void>;
+  deletePairing(
+    topic: string,
+    expirerHasDeleted?: boolean,
+    ownerSignal?: AbortSignal,
+  ): Promise<void>;
 }

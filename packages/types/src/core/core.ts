@@ -49,6 +49,8 @@ export abstract class ICore extends IEvents {
   public abstract readonly relayUrl?: string;
   public abstract readonly projectId?: string;
   public abstract readonly customStoragePrefix: string;
+  /** Terminal lifetime shared by this Core and its controllers. */
+  public abstract readonly signal: AbortSignal;
 
   public abstract logger: Logger;
   public abstract heartbeat: IHeartBeat;
@@ -68,11 +70,17 @@ export abstract class ICore extends IEvents {
   }
 
   public abstract start(): Promise<void>;
+  /** Terminal shutdown. The owner must first detach clients sharing this Core. */
+  public abstract dispose(): Promise<void>;
+  /** @internal Reject work after terminal shutdown. */
+  public abstract assertActive(): void;
+  /** @internal Track admitted asynchronous controller work through shutdown. */
+  public abstract run<T>(operation: () => Promise<T>): Promise<T>;
   public abstract dispatchEnvelope(params: {
     topic: string;
     message: string;
     sessionExists: boolean;
   }): void;
 
-  public abstract addLinkModeSupportedApp(universalLink: string): void;
+  public abstract addLinkModeSupportedApp(universalLink: string): Promise<void>;
 }

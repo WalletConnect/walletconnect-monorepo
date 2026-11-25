@@ -40,6 +40,7 @@ export declare namespace EventClientTypes {
 
 export abstract class IEventClient {
   public abstract readonly context: string;
+  public abstract dispose(): Promise<void>;
 
   constructor(
     public core: ICore,

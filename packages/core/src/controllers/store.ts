@@ -15,6 +15,8 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
 
   private cached: Data[] = [];
   private initialized = false;
+  private disposed = false;
+  private readonly pending = new Set<Promise<unknown>>();
 
   /**
    * Regenerates the value key to retrieve it from cache
@@ -48,10 +50,12 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
   }
 
   public init: IStore<Key, Data>["init"] = async () => {
+    this.assertActive();
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
 
       await this.restore();
+      this.assertActive();
 
       this.cached.forEach((value) => {
         if (this.getKey && value !== null && !isUndefined(value)) {
@@ -69,6 +73,18 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
       this.initialized = true;
     }
   };
+
+  public async dispose(): Promise<void> {
+    this.disposed = true;
+    await Promise.allSettled(this.pending);
+    this.map.clear();
+    this.cached = [];
+  }
+
+  private assertActive() {
+    this.core.assertActive();
+    if (this.disposed) throw new Error(`WalletConnect ${this.name} store is disposed`);
+  }
 
   get context() {
     return getLoggerContext(this.logger);
@@ -149,11 +165,11 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
   }
 
   private async setDataStore(value: Data[]) {
-    await this.core.storage.setItem<Data[]>(this.storageKey, value);
+    await this.core.run(() => this.core.storage.setItem<Data[]>(this.storageKey, value));
   }
 
   private async getDataStore() {
-    const value = await this.core.storage.getItem<Data[]>(this.storageKey);
+    const value = await this.core.run(() => this.core.storage.getItem<Data[]>(this.storageKey));
     return value;
   }
 
@@ -177,12 +193,21 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
   }
 
   private async persist() {
-    await this.setDataStore(this.values);
+    this.assertActive();
+    const pending = this.setDataStore(this.values);
+    this.pending.add(pending);
+    try {
+      await pending;
+      this.assertActive();
+    } finally {
+      this.pending.delete(pending);
+    }
   }
 
   private async restore() {
     try {
       const persisted = await this.getDataStore();
+      this.assertActive();
       if (typeof persisted === "undefined") return;
       if (!persisted.length) return;
       if (this.map.size) {
@@ -200,6 +225,7 @@ export class Store<Key, Data extends Record<string, any>> extends IStore<Key, Da
   }
 
   private isInitialized() {
+    this.assertActive();
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);

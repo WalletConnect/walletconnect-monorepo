@@ -134,27 +134,48 @@ export abstract class IRelayer extends IEvents {
   }
 
   public abstract init(): Promise<void>;
+  public abstract dispose(): Promise<void>;
+  /** @internal Check both the shared Core and the requesting owner's lifetime. */
+  public abstract assertOwner(signal?: AbortSignal): void;
+  /** @internal Cancel a read/network wait without closing the shared Core transport. */
+  public abstract withOwner<T>(
+    operation: (signal: AbortSignal) => Promise<T>,
+    signal?: AbortSignal,
+  ): Promise<T>;
 
   public abstract publish(
     topic: string,
     message: string,
     opts?: RelayerTypes.PublishOptions,
+    signal?: AbortSignal,
   ): Promise<void>;
 
-  public abstract publishCustom(params: {
-    payload: any;
-    opts?: RelayerTypes.PublishOptions;
-  }): Promise<void>;
+  public abstract publishCustom(
+    params: {
+      payload: any;
+      opts?: RelayerTypes.PublishOptions;
+    },
+    signal?: AbortSignal,
+  ): Promise<void>;
 
-  public abstract request(request: RequestArguments): Promise<JsonRpcPayload>;
+  public abstract request(request: RequestArguments, signal?: AbortSignal): Promise<JsonRpcPayload>;
 
-  public abstract subscribe(topic: string, opts?: RelayerTypes.SubscribeOptions): Promise<string>;
+  public abstract subscribe(
+    topic: string,
+    opts?: RelayerTypes.SubscribeOptions,
+    signal?: AbortSignal,
+  ): Promise<string>;
 
-  public abstract unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void>;
+  public abstract unsubscribe(
+    topic: string,
+    opts?: RelayerTypes.UnsubscribeOptions,
+    signal?: AbortSignal,
+  ): Promise<void>;
+
   public abstract transportClose(): Promise<void>;
   public abstract transportOpen(relayUrl?: string): Promise<void>;
   public abstract restartTransport(relayUrl?: string): Promise<void>;
-  public abstract confirmOnlineStateOrThrow(): Promise<void>;
+  public abstract confirmOnlineStateOrThrow(signal?: AbortSignal): Promise<void>;
   public abstract handleBatchMessageEvents(messages: RelayerTypes.MessageEvent[]): Promise<void>;
   public abstract onLinkMessageEvent(
     messageEvent: RelayerTypes.MessageEvent,

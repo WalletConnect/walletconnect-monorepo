@@ -31,9 +31,11 @@ export class Expirer extends IExpirer {
   }
 
   public init: IExpirer["init"] = async () => {
+    this.core.assertActive();
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
       await this.restore();
+      this.core.assertActive();
       this.cached.forEach((expiration) => this.expirations.set(expiration.target, expiration));
       this.cached = [];
       this.registerEventListeners();
@@ -77,11 +79,12 @@ export class Expirer extends IExpirer {
     const target = this.formatTarget(key);
     const expiration = { target, expiry };
     this.expirations.set(target, expiration);
-    this.checkExpiry(target, expiration);
+    this.checkExpiry(target, expiration, false);
     this.events.emit(EXPIRER_EVENTS.created, {
       target,
       expiration,
     } as ExpirerTypes.Created);
+    return this.persist();
   };
 
   public get: IExpirer["get"] = (key) => {
@@ -102,6 +105,7 @@ export class Expirer extends IExpirer {
         expiration,
       } as ExpirerTypes.Deleted);
     }
+    return this.persist();
   };
 
   public on: IExpirer["on"] = (event, listener) => {
@@ -133,11 +137,15 @@ export class Expirer extends IExpirer {
   }
 
   private async setExpirations(expirations: ExpirerTypes.Expiration[]): Promise<void> {
-    await this.core.storage.setItem<ExpirerTypes.Expiration[]>(this.storageKey, expirations);
+    await this.core.run(() =>
+      this.core.storage.setItem<ExpirerTypes.Expiration[]>(this.storageKey, expirations),
+    );
   }
 
   private async getExpirations(): Promise<ExpirerTypes.Expiration[] | undefined> {
-    const expirations = await this.core.storage.getItem<ExpirerTypes.Expiration[]>(this.storageKey);
+    const expirations = await this.core.run(() =>
+      this.core.storage.getItem<ExpirerTypes.Expiration[]>(this.storageKey),
+    );
     return expirations;
   }
 
@@ -175,18 +183,23 @@ export class Expirer extends IExpirer {
     return expiration;
   }
 
-  private checkExpiry(target: string, expiration: ExpirerTypes.Expiration): void {
+  private checkExpiry(target: string, expiration: ExpirerTypes.Expiration, persist = true): void {
     const { expiry } = expiration;
     const msToTimeout = toMiliseconds(expiry) - Date.now();
-    if (msToTimeout <= 0) this.expire(target, expiration);
+    if (msToTimeout <= 0) this.expire(target, expiration, persist);
   }
 
-  private expire(target: string, expiration: ExpirerTypes.Expiration): void {
+  private expire(target: string, expiration: ExpirerTypes.Expiration, persist: boolean): void {
     this.expirations.delete(target);
     this.events.emit(EXPIRER_EVENTS.expired, {
       target,
       expiration,
     } as ExpirerTypes.Expired);
+    if (persist) {
+      this.persist().catch((error) => {
+        if (!this.core.signal.aborted) this.logger.warn(error);
+      });
+    }
   }
 
   private checkExpirations(): void {
@@ -201,23 +214,21 @@ export class Expirer extends IExpirer {
       const eventName = EXPIRER_EVENTS.created;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: createdEvent });
-      this.persist();
     });
     this.events.on(EXPIRER_EVENTS.expired, (expiredEvent: ExpirerTypes.Expired) => {
       const eventName = EXPIRER_EVENTS.expired;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: expiredEvent });
-      this.persist();
     });
     this.events.on(EXPIRER_EVENTS.deleted, (deletedEvent: ExpirerTypes.Deleted) => {
       const eventName = EXPIRER_EVENTS.deleted;
       this.logger.info(`Emitting ${eventName}`);
       this.logger.debug({ type: "event", event: eventName, data: deletedEvent });
-      this.persist();
     });
   }
 
   private isInitialized() {
+    this.core.assertActive();
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);

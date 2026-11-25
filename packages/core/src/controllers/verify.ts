@@ -28,13 +28,15 @@ type JwkPayload = {
 };
 export class Verify extends IVerify {
   public name = VERIFY_CONTEXT;
-  private abortController: AbortController;
+  private readonly requests = new Set<AbortController>();
+  private readonly initialization: Promise<void>;
+  private disposed = false;
   private isDevEnv;
   private verifyUrlV3 = VERIFY_SERVER_V3;
   private storagePrefix = CORE_STORAGE_PREFIX;
   private version = CORE_VERSION;
   private publicKey?: Jwk;
-  private fetchPromise?: Promise<Jwk>;
+  private fetchPromise?: Promise<Jwk | undefined>;
 
   constructor(
     public core: ICore,
@@ -43,9 +45,10 @@ export class Verify extends IVerify {
   ) {
     super(core, logger, store);
     this.logger = generateChildLogger(logger, this.name);
-    this.abortController = new AbortController();
     this.isDevEnv = isTestRun();
-    this.init();
+    this.initialization = this.init().catch((error) => {
+      if (!this.core.signal.aborted) this.logger.warn(error);
+    });
   }
 
   get storeKey(): string {
@@ -54,9 +57,22 @@ export class Verify extends IVerify {
     );
   }
 
+  public async dispose(): Promise<void> {
+    this.disposed = true;
+    for (const request of this.requests) request.abort();
+    await Promise.allSettled([this.initialization, this.fetchPromise]);
+    this.publicKey = undefined;
+  }
+
+  private assertActive() {
+    this.core.assertActive();
+    if (this.disposed) throw new Error("WalletConnect Verify is disposed");
+  }
+
   public init = async () => {
+    this.assertActive();
     if (this.isDevEnv) return;
-    this.publicKey = await this.store.getItem(this.storeKey);
+    this.publicKey = await this.core.run(() => this.store.getItem(this.storeKey));
     if (this.publicKey && toMiliseconds(this.publicKey?.expiresAt) < Date.now()) {
       this.logger.debug("verify v2 public key expired");
       await this.removePublicKey();
@@ -64,55 +80,60 @@ export class Verify extends IVerify {
   };
 
   public register: IVerify["register"] = async (params) => {
+    this.assertActive();
     if (!isBrowser() || this.isDevEnv) return;
     const origin = window.location.origin;
     const { id, decryptedId } = params;
     const src = `${this.verifyUrlV3}/attestation?projectId=${this.core.projectId}&origin=${origin}&id=${id}&decryptedId=${decryptedId}`;
+    const request = this.startRequest(ONE_SECOND * 5);
     try {
       const document = getDocument() as Document;
-      const abortTimeout = this.startAbortTimer(ONE_SECOND * 5);
-      const attestationJwt = await new Promise((resolve, reject) => {
-        const abortListener = () => {
-          window.removeEventListener("message", listener);
-          document.body.removeChild(iframe);
-          reject("attestation aborted");
-        };
-        this.abortController.signal.addEventListener("abort", abortListener);
-        const iframe = document.createElement("iframe");
-        iframe.src = src;
-        iframe.style.display = "none";
-        iframe.addEventListener("error", abortListener, { signal: this.abortController.signal });
-        const listener = (event: MessageEvent) => {
-          if (!event.data) return;
-          if (typeof event.data !== "string") return;
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === "verify_attestation") {
-              const decoded = decodeJWT(data.attestation) as unknown as { payload: JwkPayload };
-              if (decoded.payload.id !== id) return;
-
-              clearInterval(abortTimeout);
-              document.body.removeChild(iframe);
-              this.abortController.signal.removeEventListener("abort", abortListener);
+      return await this.core.run(
+        () =>
+          new Promise<string>((resolve, reject) => {
+            const iframe = document.createElement("iframe");
+            const cleanup = () => {
               window.removeEventListener("message", listener);
-              resolve(data.attestation === null ? "" : data.attestation);
-            }
-          } catch (e) {
-            this.logger.warn(e);
-          }
-        };
-        document.body.appendChild(iframe);
-        window.addEventListener("message", listener, { signal: this.abortController.signal });
-      });
-      this.logger.debug(attestationJwt, "jwt attestation");
-      return attestationJwt as string;
-    } catch (e) {
-      this.logger.warn(e);
+              request.signal.removeEventListener("abort", aborted);
+              iframe.remove();
+            };
+            const aborted = () => {
+              cleanup();
+              reject(new Error("attestation aborted"));
+            };
+            const listener = (event: MessageEvent) => {
+              if (typeof event.data !== "string") return;
+              try {
+                const data = JSON.parse(event.data);
+                if (data.type !== "verify_attestation") return;
+                const decoded = decodeJWT(data.attestation) as unknown as { payload: JwkPayload };
+                if (decoded.payload.id !== id) return;
+                cleanup();
+                resolve(data.attestation === null ? "" : data.attestation);
+              } catch (error) {
+                this.logger.warn(error);
+              }
+            };
+            request.signal.addEventListener("abort", aborted, { once: true });
+            iframe.addEventListener("error", aborted, { signal: request.signal });
+            iframe.src = src;
+            iframe.style.display = "none";
+            document.body.appendChild(iframe);
+            window.addEventListener("message", listener, { signal: request.signal });
+            if (request.signal.aborted) aborted();
+          }),
+      );
+    } catch (error) {
+      this.assertActive();
+      this.logger.warn(error);
+      return "";
+    } finally {
+      request.finish();
     }
-    return "";
   };
 
   public resolve: IVerify["resolve"] = async (params) => {
+    this.assertActive();
     if (this.isDevEnv) return "";
     const { attestationId, hash, encryptedId } = params;
     if (attestationId === "") {
@@ -142,19 +163,35 @@ export class Verify extends IVerify {
   }
 
   private fetchAttestation = async (attestationId: string, url: string) => {
-    this.logger.debug(`resolving attestation: ${attestationId} from url: ${url}`);
-    // set artificial timeout to prevent hanging
-    const timeout = this.startAbortTimer(ONE_SECOND * 5);
-    const result = await fetch(`${url}/attestation/${attestationId}?v2Supported=true`, {
-      signal: this.abortController.signal,
-    });
-    clearTimeout(timeout);
-    return result.status === 200 ? await result.json() : undefined;
+    const request = this.startRequest(ONE_SECOND * 5);
+    try {
+      return await this.core.run(async () => {
+        const result = await fetch(`${url}/attestation/${attestationId}?v2Supported=true`, {
+          signal: request.signal,
+        });
+        this.assertActive();
+        return result.status === 200 ? await result.json() : undefined;
+      });
+    } finally {
+      request.finish();
+    }
   };
 
-  private startAbortTimer(timer: number) {
-    this.abortController = new AbortController();
-    return setTimeout(() => this.abortController.abort(), toMiliseconds(timer));
+  private startRequest(timer: number) {
+    this.assertActive();
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    this.requests.add(controller);
+    this.core.signal.addEventListener("abort", abort, { once: true });
+    const timeout = setTimeout(abort, toMiliseconds(timer));
+    return {
+      signal: controller.signal,
+      finish: () => {
+        clearTimeout(timeout);
+        this.core.signal.removeEventListener("abort", abort);
+        this.requests.delete(controller);
+      },
+    };
   }
 
   private getVerifyUrl = (verifyUrl?: string) => {
@@ -169,29 +206,31 @@ export class Verify extends IVerify {
   };
 
   private fetchPublicKey = async () => {
+    const request = this.startRequest(FIVE_SECONDS);
     try {
-      this.logger.debug(`fetching public key from: ${this.verifyUrlV3}`);
-      const timeout = this.startAbortTimer(FIVE_SECONDS);
-      const result = await fetch(`${this.verifyUrlV3}/public-key`, {
-        signal: this.abortController.signal,
+      return await this.core.run(async () => {
+        const result = await fetch(`${this.verifyUrlV3}/public-key`, { signal: request.signal });
+        this.assertActive();
+        return (await result.json()) as Jwk;
       });
-      clearTimeout(timeout);
-      return (await result.json()) as Jwk;
-    } catch (e) {
-      this.logger.warn(e);
+    } catch (error) {
+      this.assertActive();
+      this.logger.warn(error);
+      return undefined;
+    } finally {
+      request.finish();
     }
-    return undefined;
   };
 
   private persistPublicKey = async (publicKey: Jwk) => {
     this.logger.debug(publicKey, `persisting public key to local storage`);
-    await this.store.setItem(this.storeKey, publicKey);
+    await this.core.run(() => this.store.setItem(this.storeKey, publicKey));
     this.publicKey = publicKey;
   };
 
   private removePublicKey = async () => {
     this.logger.debug(`removing verify v2 public key from storage`);
-    await this.store.removeItem(this.storeKey);
+    await this.core.run(() => this.store.removeItem(this.storeKey));
     this.publicKey = undefined;
   };
 
@@ -225,19 +264,18 @@ export class Verify extends IVerify {
   };
 
   private fetchAndPersistPublicKey = async () => {
-    if (this.fetchPromise) {
-      await this.fetchPromise;
-      return this.publicKey;
-    }
-    this.fetchPromise = new Promise(async (resolve) => {
+    this.assertActive();
+    this.fetchPromise ??= (async () => {
       const key = await this.fetchPublicKey();
-      if (!key) return;
-      await this.persistPublicKey(key);
-      resolve(key);
-    });
-    const key = await this.fetchPromise;
-    this.fetchPromise = undefined;
-    return key;
+      this.assertActive();
+      if (key) await this.persistPublicKey(key);
+      return key;
+    })();
+    try {
+      return await this.fetchPromise;
+    } finally {
+      this.fetchPromise = undefined;
+    }
   };
 
   private validateAttestation = (attestation: string, key: Jwk) => {

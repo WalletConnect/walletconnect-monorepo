@@ -60,6 +60,7 @@ export abstract class ISubscriber extends IEvents {
   public abstract name: string;
 
   public abstract readonly context: string;
+  public abstract dispose(): Promise<void>;
 
   constructor(
     public relayer: IRelayer,
@@ -73,9 +74,14 @@ export abstract class ISubscriber extends IEvents {
   public abstract subscribe(
     topic: string,
     opts?: RelayerTypes.SubscribeOptions,
+    signal?: AbortSignal,
   ): Promise<string | null>;
 
-  public abstract unsubscribe(topic: string, opts?: RelayerTypes.UnsubscribeOptions): Promise<void>;
+  public abstract unsubscribe(
+    topic: string,
+    opts?: RelayerTypes.UnsubscribeOptions,
+    signal?: AbortSignal,
+  ): Promise<void>;
 
   public abstract isSubscribed(topic: string): Promise<boolean>;
 

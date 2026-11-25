@@ -45,8 +45,10 @@ export class Crypto implements ICrypto {
   }
 
   public init: ICrypto["init"] = async () => {
+    this.core.assertActive();
     if (!this.initialized) {
       await this.keychain.init();
+      this.core.assertActive();
       this.initialized = true;
     }
   };
@@ -205,6 +207,7 @@ export class Crypto implements ICrypto {
   }
 
   private isInitialized() {
+    this.core.assertActive();
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);

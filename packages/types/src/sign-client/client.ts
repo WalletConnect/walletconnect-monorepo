@@ -130,6 +130,7 @@ export abstract class ISignClient {
   public abstract readonly name: string;
   public abstract readonly context: string;
   public abstract readonly metadata: SignClientTypes.Metadata;
+  public abstract readonly signal: AbortSignal;
 
   public abstract core: ICore;
   public abstract logger: Logger;
@@ -143,6 +144,14 @@ export abstract class ISignClient {
 
   constructor(public opts?: SignClientTypes.Options) {}
 
+  /** Detach this client only. A shared Core remains owned by its creator. */
+  public abstract dispose(): Promise<void>;
+  /** @internal Client-owned operation admission and result delivery. */
+  public abstract run<T>(operation: () => Promise<T>): Promise<T>;
+  /** @internal Drain admitted local mutations even when result delivery is cancelled. */
+  public abstract runMutation<T>(operation: () => Promise<T>): Promise<T>;
+  /** @internal Guard side effects against client and Core retirement. */
+  public abstract assertActive(): void;
   public abstract connect: IEngine["connect"];
   public abstract pair: IEngine["pair"];
   public abstract approve: IEngine["approve"];

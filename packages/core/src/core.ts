@@ -55,14 +55,20 @@ export class Core extends ICore {
   public linkModeSupportedApps: ICore["linkModeSupportedApps"];
   public eventClient: ICore["eventClient"];
 
+  private readonly lifetime = new AbortController();
+  public readonly signal = this.lifetime.signal;
+  private initialization: Promise<void> | undefined;
+  private disposal: Promise<void> | undefined;
+  private readonly pending = new Set<Promise<unknown>>();
   private initialized = false;
   private logChunkController: ChunkLoggerController | null;
+  private downloadLogs: (() => Promise<void>) | undefined;
 
   static async init(opts?: CoreTypes.Options) {
     const core = new Core(opts);
-    await core.initialize();
+    await core.start();
     const clientId = await core.crypto.getClientId();
-    await core.storage.setItem(WALLETCONNECT_CLIENT_ID, clientId);
+    await core.run(() => core.storage.setItem(WALLETCONNECT_CLIENT_ID, clientId));
 
     return core;
   }
@@ -111,17 +117,15 @@ export class Core extends ICore {
 
     this.logChunkController = chunkLoggerController;
 
-    if (this.logChunkController?.downloadLogsBlobInBrowser) {
+    if (typeof window !== "undefined" && this.logChunkController?.downloadLogsBlobInBrowser) {
+      this.downloadLogs = async () =>
+        this.run(async () => {
+          const clientId = await this.crypto.getClientId();
+          this.assertActive();
+          return this.logChunkController?.downloadLogsBlobInBrowser?.({ clientId });
+        });
       // @ts-ignore
-      window.downloadLogsBlobInBrowser = async () => {
-        // Have to null check twice because there is no guarantee
-        // this.logChunkController.downloadLogsBlobInBrowser is always truthy
-        if (this.logChunkController?.downloadLogsBlobInBrowser) {
-          this.logChunkController?.downloadLogsBlobInBrowser({
-            clientId: await this.crypto.getClientId(),
-          });
-        }
-      };
+      window.downloadLogsBlobInBrowser = this.downloadLogs;
     }
 
     this.logger = generateChildLogger(logger, this.name);
@@ -153,29 +157,102 @@ export class Core extends ICore {
   // ---------- Public ----------------------------------------------- //
 
   public async start() {
+    this.assertActive();
     if (this.initialized) return;
-    await this.initialize();
+    const initialization = (this.initialization ??= this.initialize());
+    try {
+      await initialization;
+    } catch (error) {
+      if (this.initialization === initialization) this.initialization = undefined;
+      throw error;
+    }
+    this.assertActive();
+  }
+
+  public assertActive() {
+    if (this.signal.aborted) throw new Error("WalletConnect Core is disposed");
+  }
+
+  public run<T>(operation: () => Promise<T>): Promise<T> {
+    this.assertActive();
+    const task = Promise.resolve().then(async () => {
+      this.assertActive();
+      const result = await operation();
+      this.assertActive();
+      return result;
+    });
+    this.pending.add(task);
+    task.finally(() => this.pending.delete(task)).catch(() => undefined);
+    return task;
+  }
+
+  public dispose(): Promise<void> {
+    if (this.disposal) return this.disposal;
+    let finish!: () => void;
+    let fail!: (error: unknown) => void;
+    this.disposal = new Promise<void>((resolve, reject) => {
+      finish = resolve;
+      fail = reject;
+    });
+    this.lifetime.abort();
+    // A later Core may have installed its own callback during retirement.
+    // @ts-ignore
+    if (typeof window !== "undefined" && window.downloadLogsBlobInBrowser === this.downloadLogs) {
+      // @ts-ignore
+      delete window.downloadLogsBlobInBrowser;
+    }
+    this.downloadLogs = undefined;
+    this.heartbeat.stop();
+    const work = [
+      () => this.relayer.dispose(),
+      () => this.verify.dispose(),
+      () => this.eventClient.dispose(),
+      () => this.pairing.dispose(),
+    ].map((operation) => Promise.resolve().then(operation));
+    (async () => {
+      const settled = await Promise.allSettled([...work, this.initialization, ...this.pending]);
+      this.heartbeat.stop();
+      this.heartbeat.events.removeAllListeners();
+      this.events.removeAllListeners();
+      this.history.events.removeAllListeners();
+      this.expirer.events.removeAllListeners();
+      this.pairing.events.removeAllListeners();
+      const globalKey = `_walletConnectCore_${this.opts?.customStoragePrefix || ""}`;
+      if (globalThis[globalKey] === this) delete globalThis[globalKey];
+      // Cancellation of already-admitted work is expected. Disposal failures
+      // from the transport and auxiliary resource owners remain observable.
+      const failed = settled.slice(0, work.length).find((result) => result.status === "rejected");
+      if (failed?.status === "rejected") throw failed.reason;
+    })().then(finish, fail);
+    return this.disposal;
   }
 
   public async getLogsBlob() {
-    return this.logChunkController?.logsToBlob({
-      clientId: await this.crypto.getClientId(),
+    return this.run(async () => {
+      const clientId = await this.crypto.getClientId();
+      this.assertActive();
+      return this.logChunkController?.logsToBlob({ clientId });
     });
   }
 
   public async addLinkModeSupportedApp(universalLink: string) {
+    this.assertActive();
     if (this.linkModeSupportedApps.includes(universalLink)) return;
     this.linkModeSupportedApps.push(universalLink);
-    await this.storage.setItem(WALLETCONNECT_LINK_MODE_APPS, this.linkModeSupportedApps);
+    await this.run(() =>
+      this.storage.setItem(WALLETCONNECT_LINK_MODE_APPS, this.linkModeSupportedApps),
+    );
   }
 
   // ---------- Events ----------------------------------------------- //
 
   public on = (name: any, listener: any): EventEmitter => {
+    this.assertActive();
     return this.events.on(name, listener);
   };
 
   public once = (name: any, listener: any): EventEmitter => {
+    this.assertActive();
     return this.events.once(name, listener);
   };
 
@@ -198,6 +275,7 @@ export class Core extends ICore {
     message: string;
     sessionExists: boolean;
   }) => {
+    this.assertActive();
     if (!topic || !message) return;
 
     const payload = {
@@ -215,13 +293,21 @@ export class Core extends ICore {
   private async initialize() {
     this.logger.trace(`Initialized`);
     try {
+      this.assertActive();
       await this.crypto.init();
+      this.assertActive();
       await this.history.init();
+      this.assertActive();
       await this.expirer.init();
+      this.assertActive();
       await this.relayer.init();
+      this.assertActive();
       await this.heartbeat.init();
+      this.assertActive();
       await this.pairing.init();
-      this.linkModeSupportedApps = (await this.storage.getItem(WALLETCONNECT_LINK_MODE_APPS)) || [];
+      this.assertActive();
+      this.linkModeSupportedApps =
+        (await this.run(() => this.storage.getItem<string[]>(WALLETCONNECT_LINK_MODE_APPS))) || [];
 
       this.initialized = true;
       this.logger.info(`Core Initialization Success`);
@@ -247,7 +333,8 @@ export class Core extends ICore {
         );
       }
 
-      return globalThis[globalCorePrefix];
+      const core = globalThis[globalCorePrefix] as Core | undefined;
+      return core?.signal.aborted ? undefined : core;
     } catch (error) {
       console.warn("Failed to get global WalletConnect core", error);
       return undefined;

@@ -31,9 +31,11 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   public init: IJsonRpcHistory["init"] = async () => {
+    this.core.assertActive();
     if (!this.initialized) {
       this.logger.trace(`Initialized`);
       await this.restore();
+      this.core.assertActive();
       this.cached.forEach((record) => this.records.set(record.id, record));
       this.cached = [];
       this.registerEventListeners();
@@ -79,7 +81,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.isInitialized();
     this.logger.debug(`Setting JSON-RPC request history record`);
     this.logger.trace({ type: "method", method: "set", topic, request, chainId });
-    if (this.records.has(request.id)) return;
+    if (this.records.has(request.id)) return Promise.resolve();
     const record: JsonRpcRecord = {
       id: request.id,
       topic,
@@ -88,8 +90,9 @@ export class JsonRpcHistory extends IJsonRpcHistory {
       expiry: calcExpiry(THIRTY_DAYS),
     };
     this.records.set(record.id, record);
-    this.persist();
+    const persisted = this.persist();
     this.events.emit(HISTORY_EVENTS.created, record);
+    return persisted;
   };
 
   public resolve: IJsonRpcHistory["resolve"] = async (response) => {
@@ -98,13 +101,15 @@ export class JsonRpcHistory extends IJsonRpcHistory {
     this.logger.trace({ type: "method", method: "update", response });
     if (!this.records.has(response.id)) return;
     const record = await this.getRecord(response.id);
+    this.core.assertActive();
     if (typeof record.response !== "undefined") return;
     record.response = isJsonRpcError(response)
       ? { error: response.error }
       : { result: response.result };
     this.records.set(record.id, record);
-    this.persist();
+    const persisted = this.persist();
     this.events.emit(HISTORY_EVENTS.updated, record);
+    await persisted;
   };
 
   public get: IJsonRpcHistory["get"] = async (topic, id) => {
@@ -126,7 +131,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
         this.events.emit(HISTORY_EVENTS.deleted, record);
       }
     });
-    this.persist();
+    return this.persist();
   };
 
   public exists: IJsonRpcHistory["exists"] = async (topic, id) => {
@@ -155,11 +160,13 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   // ---------- Private ----------------------------------------------- //
 
   private async setJsonRpcRecords(records: JsonRpcRecord[]): Promise<void> {
-    await this.core.storage.setItem<JsonRpcRecord[]>(this.storageKey, records);
+    await this.core.run(() => this.core.storage.setItem<JsonRpcRecord[]>(this.storageKey, records));
   }
 
   private async getJsonRpcRecords(): Promise<JsonRpcRecord[] | undefined> {
-    const records = await this.core.storage.getItem<JsonRpcRecord[]>(this.storageKey);
+    const records = await this.core.run(() =>
+      this.core.storage.getItem<JsonRpcRecord[]>(this.storageKey),
+    );
     return records;
   }
 
@@ -234,7 +241,9 @@ export class JsonRpcHistory extends IJsonRpcHistory {
         }
       });
       if (deleted) {
-        this.persist();
+        this.persist().catch((error) => {
+          if (!this.core.signal.aborted) this.logger.warn(error);
+        });
       }
     } catch (e) {
       this.logger.warn(e);
@@ -242,6 +251,7 @@ export class JsonRpcHistory extends IJsonRpcHistory {
   }
 
   private isInitialized() {
+    this.core.assertActive();
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);

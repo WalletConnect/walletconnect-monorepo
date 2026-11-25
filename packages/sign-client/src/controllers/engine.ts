@@ -132,6 +132,20 @@ export class Engine extends IEngine {
 
   private events: IEngineEvents = new EventEmmiter();
   private initialized = false;
+  private disposed = false;
+  private readonly listeners = new Set<{
+    emitter: {
+      on(event: any, listener: any): unknown;
+      once(event: any, listener: any): unknown;
+      off(event: any, listener: any): unknown;
+    };
+    event: string;
+    listener: (...args: any[]) => unknown;
+    handler: (...args: any[]) => void;
+  }>();
+
+  private readonly timers = new Set<ReturnType<typeof setTimeout>>();
+  private readonly linkListeners: (() => void)[] = [];
 
   /**
    * Queue responsible for processing incoming requests such as session_update, session_event, session_ping etc
@@ -179,17 +193,116 @@ export class Engine extends IEngine {
     super(client);
   }
 
+  public dispose(): Promise<void> {
+    this.disposed = true;
+    const cleanup = [
+      ...Array.from(
+        this.listeners,
+        (binding) => () => binding.emitter.off(binding.event, binding.handler),
+      ),
+      ...this.linkListeners.splice(0),
+    ];
+    this.listeners.clear();
+    for (const timer of this.timers) clearTimeout(timer);
+    this.timers.clear();
+    this.events.removeAllListeners();
+    this.requestQueue.queue = [];
+    this.sessionRequestQueue.queue = [];
+    this.relayMessageCache = [];
+    this.pendingSessions.clear();
+    this.expectedPairingMethodMap.clear();
+    return Promise.allSettled(cleanup.map((remove) => Promise.resolve().then(remove))).then(
+      (results) => {
+        const failed = results.find((result) => result.status === "rejected");
+        if (failed?.status === "rejected") throw failed.reason;
+      },
+    );
+  }
+
+  private active<T>(operation: () => T): T {
+    this.client.assertActive();
+    if (this.disposed) throw new Error("WalletConnect Engine is disposed");
+    return operation();
+  }
+
+  private listen(
+    emitter: {
+      on(event: any, listener: any): unknown;
+      once(event: any, listener: any): unknown;
+      off(event: any, listener: any): unknown;
+    },
+    event: string,
+    listener: (...args: any[]) => unknown,
+    once = false,
+  ) {
+    this.client.assertActive();
+    const binding = {
+      emitter,
+      event,
+      listener,
+      handler: (...args: any[]) => {
+        if (once) this.listeners.delete(binding);
+        if (this.disposed || this.client.signal.aborted || this.client.core.signal.aborted) return;
+        try {
+          Promise.resolve(listener(...args)).catch((error) => {
+            if (!this.client.signal.aborted) this.client.logger.warn(error);
+          });
+        } catch (error) {
+          this.client.logger.warn(error);
+        }
+      },
+    };
+    this.listeners.add(binding);
+    if (once) emitter.once(event, binding.handler);
+    else emitter.on(event, binding.handler);
+  }
+
+  private unlisten(
+    emitter: { off(event: any, listener: any): unknown },
+    event: string,
+    listener: (...args: any[]) => unknown,
+  ) {
+    for (const binding of this.listeners) {
+      if (binding.emitter === emitter && binding.event === event && binding.listener === listener) {
+        emitter.off(event, binding.handler);
+        this.listeners.delete(binding);
+      }
+    }
+  }
+
+  private schedule(operation: () => unknown, delay: number) {
+    this.client.assertActive();
+    const timer = setTimeout(() => {
+      this.timers.delete(timer);
+      if (this.disposed || this.client.signal.aborted || this.client.core.signal.aborted) return;
+      try {
+        Promise.resolve(operation()).catch((error) => {
+          if (!this.client.signal.aborted) this.client.logger.warn(error);
+        });
+      } catch (error) {
+        this.client.logger.warn(error);
+      }
+    }, delay);
+    this.timers.add(timer);
+    return timer;
+  }
+
   public init: IEngine["init"] = async () => {
+    this.client.assertActive();
     if (!this.initialized) {
       await this.cleanup();
+      this.client.assertActive();
       this.registerRelayerEvents();
       this.registerExpirerEvents();
       this.registerPairingEvents();
       this.registerSubscriptionCleanup();
       await this.registerLinkModeListeners();
-      this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
+      this.client.assertActive();
+      this.active(() =>
+        this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) }),
+      );
       this.initialized = true;
-      setTimeout(async () => {
+      this.schedule(async () => {
         await this.processPendingMessageEvents();
 
         this.sessionRequestQueue.queue = this.getPendingSessionRequests();
@@ -225,6 +338,7 @@ export class Engine extends IEngine {
   // ---------- Public ------------------------------------------------ //
 
   public connect: IEngine["connect"] = async (params) => {
+    this.client.assertActive();
     this.isInitialized();
     await this.confirmOnlineStateOrThrow();
     const connectParams = {
@@ -274,9 +388,14 @@ export class Engine extends IEngine {
       throw error;
     }
     if (!topic || !active) {
-      const { topic: newTopic, uri: newUri } = await this.client.core.pairing.create({
-        internal: { skipSubscribe: true },
-      });
+      const { topic: newTopic, uri: newUri } = await this.client.runMutation(() =>
+        this.client.core.pairing.create(
+          {
+            internal: { skipSubscribe: true },
+          },
+          this.client.signal,
+        ),
+      );
       topic = newTopic;
       uri = newUri;
     }
@@ -286,7 +405,9 @@ export class Engine extends IEngine {
       throw new Error(message);
     }
 
-    const publicKey = await this.client.core.crypto.generateKeyPair();
+    const publicKey = await this.client.runMutation(() =>
+      this.client.core.crypto.generateKeyPair(),
+    );
 
     const expiryTimestamp = calcExpiry(expiry);
     const proposal: ProposalTypes.Struct = {
@@ -346,21 +467,28 @@ export class Engine extends IEngine {
       reject,
       resolve,
       done: approval,
-    } = createDelayedPromise<SessionTypes.Struct>(expiry, PROPOSAL_EXPIRY_MESSAGE);
+    } = createDelayedPromise<SessionTypes.Struct>(
+      expiry,
+      PROPOSAL_EXPIRY_MESSAGE,
+      this.client.signal,
+    );
 
     const proposalExpireHandler = ({ id }: { id: number }) => {
+      if (this.disposed || this.client.signal.aborted || this.client.core.signal.aborted) return;
       if (id === proposal.id) {
-        this.client.events.off("proposal_expire", proposalExpireHandler);
+        this.unlisten(this.client.events, "proposal_expire", proposalExpireHandler);
         const pendingSession = this.pendingSessions.get(proposal.id);
         if (pendingSession) {
           const { sessionTopic, publicKey } = pendingSession;
           Promise.all([
-            this.client.core.relayer.unsubscribe(sessionTopic),
+            this.client.runMutation(() =>
+              this.client.core.relayer.unsubscribe(sessionTopic, undefined, this.client.signal),
+            ),
             this.client.core.crypto.keychain.has(sessionTopic)
-              ? this.client.core.crypto.deleteSymKey(sessionTopic)
+              ? this.client.runMutation(() => this.client.core.crypto.deleteSymKey(sessionTopic))
               : Promise.resolve(),
             this.client.core.crypto.keychain.has(publicKey)
-              ? this.client.core.crypto.deleteKeyPair(publicKey)
+              ? this.client.runMutation(() => this.client.core.crypto.deleteKeyPair(publicKey))
               : Promise.resolve(),
           ]).catch((e) => this.client.logger.warn(e));
         }
@@ -371,14 +499,19 @@ export class Engine extends IEngine {
       }
     };
 
-    this.client.events.on("proposal_expire", proposalExpireHandler);
-    this.events.once<"session_connect">(sessionConnectTarget, ({ error, session }) => {
-      this.client.events.off("proposal_expire", proposalExpireHandler);
-      if (error) reject(error);
-      else if (session) {
-        resolve(session);
-      }
-    });
+    this.listen(this.client.events, "proposal_expire", proposalExpireHandler);
+    this.listen(
+      this.events,
+      sessionConnectTarget,
+      ({ error, session }) => {
+        this.unlisten(this.client.events, "proposal_expire", proposalExpireHandler);
+        if (error) reject(error);
+        else if (session) {
+          resolve(session);
+        }
+      },
+      true,
+    );
 
     await this.setProposal(proposal.id, proposal);
 
@@ -401,10 +534,13 @@ export class Engine extends IEngine {
   };
 
   public pair: IEngine["pair"] = async (params) => {
+    this.client.assertActive();
     this.isInitialized();
     await this.confirmOnlineStateOrThrow();
     try {
-      return await this.client.core.pairing.pair(params);
+      return await this.client.runMutation(() =>
+        this.client.core.pairing.pair(params, this.client.signal),
+      );
     } catch (error) {
       this.client.logger.error("pair() failed");
       throw error;
@@ -412,24 +548,27 @@ export class Engine extends IEngine {
   };
 
   public approve: IEngine["approve"] = async (params) => {
-    const configEvent = this.client.core.eventClient.createEvent({
-      properties: {
-        topic: params?.id?.toString(),
-        trace: [EVENT_CLIENT_SESSION_TRACES.session_approve_started],
-      },
-    });
+    this.client.assertActive();
+    const configEvent = this.active(() =>
+      this.client.core.eventClient.createEvent({
+        properties: {
+          topic: params?.id?.toString(),
+          trace: [EVENT_CLIENT_SESSION_TRACES.session_approve_started],
+        },
+      }),
+    );
     try {
       this.isInitialized();
       await this.confirmOnlineStateOrThrow();
     } catch (error) {
-      configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.no_internet_connection);
+      this.active(() => configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.no_internet_connection));
       throw error;
     }
     try {
       await this.isValidProposalId(params?.id);
     } catch (error) {
       this.client.logger.error(`approve() -> proposal.get(${params?.id}) failed`);
-      configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found);
+      this.active(() => configEvent.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_not_found));
       throw error;
     }
 
@@ -437,8 +576,10 @@ export class Engine extends IEngine {
       await this.isValidApprove(params);
     } catch (error) {
       this.client.logger.error("approve() -> isValidApprove() failed");
-      configEvent.setError(
-        EVENT_CLIENT_SESSION_ERRORS.session_approve_namespace_validation_failure,
+      this.active(() =>
+        configEvent.setError(
+          EVENT_CLIENT_SESSION_ERRORS.session_approve_namespace_validation_failure,
+        ),
       );
       throw error;
     }
@@ -455,7 +596,7 @@ export class Engine extends IEngine {
 
     const proposal = this.client.proposal.get(id);
 
-    this.client.core.eventClient.deleteEvent({ eventId: configEvent.eventId });
+    this.active(() => this.client.core.eventClient.deleteEvent({ eventId: configEvent.eventId }));
 
     const { pairingTopic, proposer, requiredNamespaces, optionalNamespaces } = proposal;
 
@@ -463,23 +604,26 @@ export class Engine extends IEngine {
       topic: pairingTopic,
     }) as EventClientTypes.Event;
     if (!event) {
-      event = this.client.core.eventClient?.createEvent({
-        type: EVENT_CLIENT_SESSION_TRACES.session_approve_started,
-        properties: {
-          topic: pairingTopic,
-          trace: [
-            EVENT_CLIENT_SESSION_TRACES.session_approve_started,
-            EVENT_CLIENT_SESSION_TRACES.session_namespaces_validation_success,
-          ],
-        },
-      });
+      event = this.active(() =>
+        this.client.core.eventClient?.createEvent({
+          type: EVENT_CLIENT_SESSION_TRACES.session_approve_started,
+          properties: {
+            topic: pairingTopic,
+            trace: [
+              EVENT_CLIENT_SESSION_TRACES.session_approve_started,
+              EVENT_CLIENT_SESSION_TRACES.session_namespaces_validation_success,
+            ],
+          },
+        }),
+      );
     }
 
-    const selfPublicKey = await this.client.core.crypto.generateKeyPair();
+    const selfPublicKey = await this.client.runMutation(() =>
+      this.client.core.crypto.generateKeyPair(),
+    );
     const peerPublicKey = proposer.publicKey;
-    const sessionTopic = await this.client.core.crypto.generateSharedKey(
-      selfPublicKey,
-      peerPublicKey,
+    const sessionTopic = await this.client.runMutation(() =>
+      this.client.core.crypto.generateSharedKey(selfPublicKey, peerPublicKey),
     );
 
     const sessionSettle = {
@@ -493,18 +637,26 @@ export class Engine extends IEngine {
       proposalRequestsResponses,
     };
     const transportType = TRANSPORT_TYPES.relay;
-    event.addTrace(EVENT_CLIENT_SESSION_TRACES.subscribing_session_topic);
+    this.active(() => event.addTrace(EVENT_CLIENT_SESSION_TRACES.subscribing_session_topic));
     try {
-      await this.client.core.relayer.subscribe(sessionTopic, {
-        transportType,
-        internal: { skipSubscribe: true },
-      });
+      await this.client.runMutation(() =>
+        this.client.core.relayer.subscribe(
+          sessionTopic,
+          {
+            transportType,
+            internal: { skipSubscribe: true },
+          },
+          this.client.signal,
+        ),
+      );
     } catch (error) {
-      event.setError(EVENT_CLIENT_SESSION_ERRORS.subscribe_session_topic_failure);
+      this.active(() =>
+        event.setError(EVENT_CLIENT_SESSION_ERRORS.subscribe_session_topic_failure),
+      );
       throw error;
     }
 
-    event.addTrace(EVENT_CLIENT_SESSION_TRACES.subscribe_session_topic_success);
+    this.active(() => event.addTrace(EVENT_CLIENT_SESSION_TRACES.subscribe_session_topic_success));
 
     const session: SessionTypes.Struct = {
       ...sessionSettle,
@@ -526,7 +678,7 @@ export class Engine extends IEngine {
 
     await this.client.session.set(sessionTopic, session);
 
-    event.addTrace(EVENT_CLIENT_SESSION_TRACES.store_session);
+    this.active(() => event.addTrace(EVENT_CLIENT_SESSION_TRACES.store_session));
 
     try {
       await this.sendApproveSession({
@@ -550,23 +702,34 @@ export class Engine extends IEngine {
         },
       });
 
-      event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_approve_publish_success);
+      this.active(() =>
+        event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_approve_publish_success),
+      );
     } catch (error) {
       this.client.logger.error(error);
       // if the publish fails, delete the session and throw an error
       this.client.session.delete(sessionTopic, getSdkError("USER_DISCONNECTED"));
-      await this.client.core.relayer.unsubscribe(sessionTopic);
+      await this.client.runMutation(() =>
+        this.client.core.relayer.unsubscribe(sessionTopic, undefined, this.client.signal),
+      );
       throw error;
     }
 
-    this.client.core.eventClient.deleteEvent({ eventId: event.eventId });
+    this.active(() => this.client.core.eventClient.deleteEvent({ eventId: event.eventId }));
 
-    await this.client.core.pairing.updateMetadata({
-      topic: pairingTopic,
-      metadata: proposer.metadata,
-    });
+    await this.client.runMutation(() =>
+      this.client.core.pairing.updateMetadata(
+        {
+          topic: pairingTopic,
+          metadata: proposer.metadata,
+        },
+        this.client.signal,
+      ),
+    );
     await this.deleteProposal(id);
-    await this.client.core.pairing.activate({ topic: pairingTopic });
+    await this.client.runMutation(() =>
+      this.client.core.pairing.activate({ topic: pairingTopic }, this.client.signal),
+    );
     await this.setExpiry(sessionTopic, calcExpiry(SESSION_EXPIRY));
     return {
       topic: sessionTopic,
@@ -575,6 +738,7 @@ export class Engine extends IEngine {
   };
 
   public reject: IEngine["reject"] = async (params) => {
+    this.client.assertActive();
     this.isInitialized();
     await this.confirmOnlineStateOrThrow();
     try {
@@ -606,6 +770,7 @@ export class Engine extends IEngine {
   };
 
   public update: IEngine["update"] = async (params) => {
+    this.client.assertActive();
     this.isInitialized();
     await this.confirmOnlineStateOrThrow();
     try {
@@ -629,17 +794,23 @@ export class Engine extends IEngine {
     } = createDelayedPromise<void>(
       FIVE_MINUTES,
       "Session update request expired without receiving any acknowledgement",
+      this.client.signal,
     );
     const clientRpcId = payloadId();
     const relayRpcId = getBigIntRpcId().toString() as any;
 
     const oldNamespaces = this.client.session.get(topic).namespaces;
-    this.events.once(engineEvent("session_update", clientRpcId), ({ error }: any) => {
-      if (error) reject(error);
-      else {
-        resolve();
-      }
-    });
+    this.listen(
+      this.events,
+      engineEvent("session_update", clientRpcId),
+      ({ error }: any) => {
+        if (error) reject(error);
+        else {
+          resolve();
+        }
+      },
+      true,
+    );
     // Update the session with the new namespaces, if the publish fails, revert to the old.
     // This allows the client to use the updated session like emitting events
     // without waiting for the peer to acknowledge
@@ -660,6 +831,7 @@ export class Engine extends IEngine {
   };
 
   public extend: IEngine["extend"] = async (params) => {
+    this.client.assertActive();
     this.isInitialized();
     await this.confirmOnlineStateOrThrow();
     try {
@@ -678,11 +850,17 @@ export class Engine extends IEngine {
     } = createDelayedPromise<void>(
       FIVE_MINUTES,
       "Session extend request expired without receiving any acknowledgement",
+      this.client.signal,
     );
-    this.events.once(engineEvent("session_extend", clientRpcId), ({ error }: any) => {
-      if (error) reject(error);
-      else resolve();
-    });
+    this.listen(
+      this.events,
+      engineEvent("session_extend", clientRpcId),
+      ({ error }: any) => {
+        if (error) reject(error);
+        else resolve();
+      },
+      true,
+    );
 
     await this.setExpiry(topic, calcExpiry(SESSION_EXPIRY));
     this.sendRequest({
@@ -699,6 +877,7 @@ export class Engine extends IEngine {
   };
 
   public request: IEngine["request"] = async <T>(params: EngineTypes.RequestParams) => {
+    this.client.assertActive();
     this.isInitialized();
     try {
       await this.isValidRequest(params);
@@ -717,13 +896,16 @@ export class Engine extends IEngine {
     const { done, resolve, reject } = createDelayedPromise<T>(
       expiry,
       "Request expired. Please try again.",
+      this.client.signal,
     );
-    this.events.once<"session_request">(
+    this.listen(
+      this.events,
       engineEvent("session_request", clientRpcId),
       ({ error, result }) => {
         if (error) reject(error);
         else resolve(result);
       },
+      true,
     );
     const protocolMethod = "wc_sessionRequest";
     const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
@@ -745,12 +927,14 @@ export class Engine extends IEngine {
         appLink,
       }).catch((error) => reject(error));
 
-      this.client.events.emit("session_request_sent", {
-        topic,
-        request,
-        chainId,
-        id: clientRpcId,
-      });
+      this.active(() =>
+        this.client.events.emit("session_request_sent", {
+          topic,
+          request,
+          chainId,
+          id: clientRpcId,
+        }),
+      );
       const result = await done();
       return result;
     }
@@ -764,58 +948,69 @@ export class Engine extends IEngine {
     };
 
     return await Promise.all([
-      new Promise<void>(async (resolve) => {
-        await this.sendRequest({
-          clientRpcId,
-          relayRpcId,
-          topic,
-          method: protocolMethod,
-          params: protocolRequestParams,
-          expiry,
-          throwOnFailedPublish: true,
-          tvf: this.getTVFParams(clientRpcId, protocolRequestParams),
-        }).catch((error) => reject(error));
-        this.client.events.emit("session_request_sent", {
-          topic,
-          request,
-          chainId,
-          id: clientRpcId,
-        });
-        resolve();
-      }),
-      new Promise<void>(async (resolve) => {
-        // only attempt to handle deeplinks if they are not explicitly disabled in the session config
-        if (!session.sessionConfig?.disableDeepLink) {
-          const wcDeepLink = (await getDeepLink(
-            this.client.core.storage,
-            WALLETCONNECT_DEEPLINK_CHOICE,
-          )) as string;
-          await handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink });
+      this.client.run(async () => {
+        try {
+          await this.sendRequest({
+            clientRpcId,
+            relayRpcId,
+            topic,
+            method: protocolMethod,
+            params: protocolRequestParams,
+            expiry,
+            throwOnFailedPublish: true,
+            tvf: this.getTVFParams(clientRpcId, protocolRequestParams),
+          });
+        } catch (error: any) {
+          reject(error);
+          throw error;
         }
-        resolve();
+        this.active(() =>
+          this.client.events.emit("session_request_sent", {
+            topic,
+            request,
+            chainId,
+            id: clientRpcId,
+          }),
+        );
+      }),
+      this.client.run(async () => {
+        // Only attempt deeplinks when the session permits them.
+        if (!session.sessionConfig?.disableDeepLink) {
+          const wcDeepLink = (await this.client.run(() =>
+            getDeepLink(this.client.core.storage, WALLETCONNECT_DEEPLINK_CHOICE),
+          )) as string;
+          await this.active(() => handleDeeplinkRedirect({ id: clientRpcId, topic, wcDeepLink }));
+        }
       }),
       done(),
     ]).then((result) => result[2]); // order is important here, we want to return the result of the `done` promise
   };
 
   public respond: IEngine["respond"] = async (params) => {
+    this.client.assertActive();
     this.isInitialized();
-    const event = this.client.core.eventClient.createEvent({
-      properties: {
-        topic: params?.topic || params?.response?.id?.toString(),
-        trace: [EVENT_CLIENT_SESSION_TRACES.session_request_response_started],
-      },
-    });
+    const event = this.active(() =>
+      this.client.core.eventClient.createEvent({
+        properties: {
+          topic: params?.topic || params?.response?.id?.toString(),
+          trace: [EVENT_CLIENT_SESSION_TRACES.session_request_response_started],
+        },
+      }),
+    );
     try {
       await this.isValidRespond(params);
     } catch (error) {
-      event.addTrace((error as Error)?.message);
-      event.setError(EVENT_CLIENT_SESSION_ERRORS.session_request_response_validation_failure);
+      this.active(() => event.addTrace((error as Error)?.message));
+      this.active(() =>
+        event.setError(EVENT_CLIENT_SESSION_ERRORS.session_request_response_validation_failure),
+      );
 
       throw error;
     }
 
-    event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_request_response_validation_success);
+    this.active(() =>
+      event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_request_response_validation_success),
+    );
 
     const { topic, response } = params;
     const { id } = response;
@@ -827,7 +1022,9 @@ export class Engine extends IEngine {
 
     const appLink = this.getAppLinkIfEnabled(session.peer.metadata, session.transportType);
     try {
-      event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_request_response_publish_started);
+      this.active(() =>
+        event.addTrace(EVENT_CLIENT_SESSION_TRACES.session_request_response_publish_started),
+      );
       if (isJsonRpcResult(response)) {
         await this.sendResult({
           id,
@@ -841,13 +1038,16 @@ export class Engine extends IEngine {
       }
       this.cleanupAfterResponse(params);
     } catch (error) {
-      event.addTrace((error as Error)?.message);
-      event.setError(EVENT_CLIENT_SESSION_ERRORS.session_request_response_publish_failure);
+      this.active(() => event.addTrace((error as Error)?.message));
+      this.active(() =>
+        event.setError(EVENT_CLIENT_SESSION_ERRORS.session_request_response_publish_failure),
+      );
       throw error;
     }
   };
 
   public ping: IEngine["ping"] = async (params) => {
+    this.client.assertActive();
     this.isInitialized();
     await this.confirmOnlineStateOrThrow();
     try {
@@ -863,11 +1063,17 @@ export class Engine extends IEngine {
       const { done, resolve, reject } = createDelayedPromise<void>(
         FIVE_MINUTES,
         "Ping request expired without receiving any acknowledgement",
+        this.client.signal,
       );
-      this.events.once(engineEvent("session_ping", clientRpcId), ({ error }: any) => {
-        if (error) reject(error);
-        else resolve();
-      });
+      this.listen(
+        this.events,
+        engineEvent("session_ping", clientRpcId),
+        ({ error }: any) => {
+          if (error) reject(error);
+          else resolve();
+        },
+        true,
+      );
       await Promise.all([
         this.sendRequest({
           topic,
@@ -883,11 +1089,14 @@ export class Engine extends IEngine {
       this.client.logger.warn(
         "ping() on pairing topic is deprecated and will be removed in the next major release.",
       );
-      await this.client.core.pairing.ping({ topic });
+      await this.client.runMutation(() =>
+        this.client.core.pairing.ping({ topic }, this.client.signal),
+      );
     }
   };
 
   public emit: IEngine["emit"] = async (params) => {
+    this.client.assertActive();
     this.isInitialized();
     await this.confirmOnlineStateOrThrow();
     await this.isValidEmit(params);
@@ -905,6 +1114,7 @@ export class Engine extends IEngine {
   };
 
   public disconnect: IEngine["disconnect"] = async (params) => {
+    this.client.assertActive();
     this.isInitialized();
     await this.confirmOnlineStateOrThrow();
     await this.isValidDisconnect(params);
@@ -919,7 +1129,9 @@ export class Engine extends IEngine {
       });
       await this.deleteSession({ topic, emitEvent: false });
     } else if (this.client.core.pairing.pairings.keys.includes(topic)) {
-      await this.client.core.pairing.disconnect({ topic });
+      await this.client.runMutation(() =>
+        this.client.core.pairing.disconnect({ topic }, this.client.signal),
+      );
     } else {
       const { message } = getInternalError(
         "MISMATCHED_TOPIC",
@@ -930,17 +1142,20 @@ export class Engine extends IEngine {
   };
 
   public find: IEngine["find"] = (params) => {
+    this.client.assertActive();
     this.isInitialized();
     return this.client.session.getAll().filter((session) => isSessionCompatible(session, params));
   };
 
   public getPendingSessionRequests: IEngine["getPendingSessionRequests"] = () => {
+    this.client.assertActive();
     return this.client.pendingRequest.getAll();
   };
 
   // ---------- Auth ------------------------------------------------ //
 
   public authenticate: IEngine["authenticate"] = async (params, walletUniversalLink) => {
+    this.client.assertActive();
     this.isInitialized();
     this.isValidAuthenticate(params);
 
@@ -972,10 +1187,15 @@ export class Engine extends IEngine {
     // reassign resources to remove reference as the array is modified and might cause side effects
     const resources = [...(params.resources || [])];
 
-    const { topic: pairingTopic, uri: connectionUri } = await this.client.core.pairing.create({
-      methods: ["wc_sessionAuthenticate"],
-      transportType,
-    });
+    const { topic: pairingTopic, uri: connectionUri } = await this.client.runMutation(() =>
+      this.client.core.pairing.create(
+        {
+          methods: ["wc_sessionAuthenticate"],
+          transportType,
+        },
+        this.client.signal,
+      ),
+    );
 
     this.client.logger.info({
       message: "Generated new pairing",
@@ -986,8 +1206,10 @@ export class Engine extends IEngine {
       const { responseTopic: oldResponseTopic, publicKey: oldPublicKey } =
         this.client.auth.authKeys.get(AUTH_PUBLIC_KEY_NAME);
       if (oldResponseTopic) {
-        await this.client.core.relayer
-          .unsubscribe(oldResponseTopic)
+        await this.client
+          .run(() =>
+            this.client.core.relayer.unsubscribe(oldResponseTopic, undefined, this.client.signal),
+          )
           .catch((e) => this.client.logger.warn(e));
         await this.client.auth.pairingTopics
           .delete(oldResponseTopic, {
@@ -997,11 +1219,13 @@ export class Engine extends IEngine {
           .catch((e) => this.client.logger.warn(e));
       }
       if (oldPublicKey && this.client.core.crypto.keychain.has(oldPublicKey)) {
-        await this.client.core.crypto.deleteKeyPair(oldPublicKey);
+        await this.client.runMutation(() => this.client.core.crypto.deleteKeyPair(oldPublicKey));
       }
     }
 
-    const publicKey = await this.client.core.crypto.generateKeyPair();
+    const publicKey = await this.client.runMutation(() =>
+      this.client.core.crypto.generateKeyPair(),
+    );
     const responseTopic = hashKey(publicKey);
 
     await Promise.all([
@@ -1009,7 +1233,9 @@ export class Engine extends IEngine {
       this.client.auth.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic }),
     ]);
 
-    await this.client.core.relayer.subscribe(responseTopic, { transportType });
+    await this.client.runMutation(() =>
+      this.client.core.relayer.subscribe(responseTopic, { transportType }, this.client.signal),
+    );
 
     this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
 
@@ -1073,7 +1299,11 @@ export class Engine extends IEngine {
       id: payloadId(),
     };
 
-    const { done, resolve, reject } = createDelayedPromise(authRequestExpiry, "Request expired");
+    const { done, resolve, reject } = createDelayedPromise(
+      authRequestExpiry,
+      "Request expired",
+      this.client.signal,
+    );
 
     const authenticateId = payloadId();
     const sessionConnectEventTarget = engineEvent("session_connect", proposal.id);
@@ -1082,7 +1312,7 @@ export class Engine extends IEngine {
     // handle fallback session proposal response
     const onSessionConnect = async ({ error, session }: any) => {
       // cleanup listener for authenticate response
-      this.events.off(authenticateEventTarget, onAuthenticateResponse);
+      this.unlisten(this.events, authenticateEventTarget, onAuthenticateResponse);
       if (error) reject(error);
       else if (session) {
         resolve({
@@ -1102,13 +1332,13 @@ export class Engine extends IEngine {
         if (payload.error.code === error.code) return;
 
         // cleanup listener for fallback response
-        this.events.off(sessionConnectEventTarget, onSessionConnect);
+        this.unlisten(this.events, sessionConnectEventTarget, onSessionConnect);
         return reject(payload.error.message);
       }
       // delete fallback proposal on successful authenticate as the proposal will not be responded to
       await this.deleteProposal(proposal.id);
       // cleanup listener for fallback response
-      this.events.off(sessionConnectEventTarget, onSessionConnect);
+      this.unlisten(this.events, sessionConnectEventTarget, onSessionConnect);
 
       const {
         cacaos,
@@ -1160,9 +1390,8 @@ export class Engine extends IEngine {
           approvedAccounts.push(`${chain}:${parsedAddress}`);
         }
       }
-      const sessionTopic = await this.client.core.crypto.generateSharedKey(
-        publicKey,
-        responder.publicKey,
+      const sessionTopic = await this.client.runMutation(() =>
+        this.client.core.crypto.generateSharedKey(publicKey, responder.publicKey),
       );
 
       //create session object
@@ -1190,13 +1419,20 @@ export class Engine extends IEngine {
           transportType,
         };
 
-        await this.client.core.relayer.subscribe(sessionTopic, { transportType });
+        await this.client.runMutation(() =>
+          this.client.core.relayer.subscribe(sessionTopic, { transportType }, this.client.signal),
+        );
         await this.client.session.set(sessionTopic, session);
         if (pairingTopic) {
-          await this.client.core.pairing.updateMetadata({
-            topic: pairingTopic,
-            metadata: responder.metadata,
-          });
+          await this.client.runMutation(() =>
+            this.client.core.pairing.updateMetadata(
+              {
+                topic: pairingTopic,
+                metadata: responder.metadata,
+              },
+              this.client.signal,
+            ),
+          );
         }
 
         session = this.client.session.get(sessionTopic);
@@ -1209,7 +1445,8 @@ export class Engine extends IEngine {
         walletUniversalLink
       ) {
         // save wallet link in array of apps that support linkMode
-        this.client.core.addLinkModeSupportedApp(responder.metadata.redirect.universal);
+        const universalLink = responder.metadata.redirect.universal;
+        this.client.runMutation(() => this.client.core.addLinkModeSupportedApp(universalLink));
 
         this.client.session.update(sessionTopic, {
           transportType: TRANSPORT_TYPES.link_mode,
@@ -1238,18 +1475,20 @@ export class Engine extends IEngine {
       });
 
     // subscribe to response events
-    this.events.once<"session_connect">(sessionConnectEventTarget, onSessionConnect);
-    this.events.once(authenticateEventTarget, onAuthenticateResponse);
+    this.listen(this.events, sessionConnectEventTarget, onSessionConnect, true);
+    this.listen(this.events, authenticateEventTarget, onAuthenticateResponse, true);
 
     let linkModeURL;
     try {
       if (isLinkMode) {
         const payload = formatJsonRpcRequest("wc_sessionAuthenticate", request, authenticateId);
-        this.client.core.history.set(pairingTopic, payload);
-        const message = await this.client.core.crypto.encode("", payload, {
-          type: TYPE_2,
-          encoding: BASE64URL,
-        });
+        await this.client.runMutation(() => this.client.core.history.set(pairingTopic, payload));
+        const message = await this.client.runMutation(() =>
+          this.client.core.crypto.encode("", payload, {
+            type: TYPE_2,
+            encoding: BASE64URL,
+          }),
+        );
         linkModeURL = getLinkModeURL(walletUniversalLink, pairingTopic, message);
       } else {
         // send both (main & fallback) requests
@@ -1274,8 +1513,8 @@ export class Engine extends IEngine {
       }
     } catch (error) {
       // cleanup listeners on failed publish
-      this.events.off(sessionConnectEventTarget, onSessionConnect);
-      this.events.off(authenticateEventTarget, onAuthenticateResponse);
+      this.unlisten(this.events, sessionConnectEventTarget, onSessionConnect);
+      this.unlisten(this.events, authenticateEventTarget, onAuthenticateResponse);
       throw error;
     }
 
@@ -1298,27 +1537,32 @@ export class Engine extends IEngine {
   public approveSessionAuthenticate: IEngine["approveSessionAuthenticate"] = async (
     sessionAuthenticateResponseParams,
   ) => {
+    this.client.assertActive();
     const { id, auths } = sessionAuthenticateResponseParams;
 
-    const event = this.client.core.eventClient.createEvent({
-      properties: {
-        topic: id.toString(),
-        trace: [EVENT_CLIENT_AUTHENTICATE_TRACES.authenticated_session_approve_started],
-      },
-    });
+    const event = this.active(() =>
+      this.client.core.eventClient.createEvent({
+        properties: {
+          topic: id.toString(),
+          trace: [EVENT_CLIENT_AUTHENTICATE_TRACES.authenticated_session_approve_started],
+        },
+      }),
+    );
 
     try {
       this.isInitialized();
     } catch (error) {
-      event.setError(EVENT_CLIENT_AUTHENTICATE_ERRORS.no_internet_connection);
+      this.active(() => event.setError(EVENT_CLIENT_AUTHENTICATE_ERRORS.no_internet_connection));
       throw error;
     }
 
     const pendingRequest = this.getPendingAuthRequest(id);
 
     if (!pendingRequest) {
-      event.setError(
-        EVENT_CLIENT_AUTHENTICATE_ERRORS.authenticated_session_pending_request_not_found,
+      this.active(() =>
+        event.setError(
+          EVENT_CLIENT_AUTHENTICATE_ERRORS.authenticated_session_pending_request_not_found,
+        ),
       );
       throw new Error(`Could not find pending auth request with id ${id}`);
     }
@@ -1329,7 +1573,9 @@ export class Engine extends IEngine {
     }
 
     const receiverPublicKey = pendingRequest.requester.publicKey;
-    const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+    const senderPublicKey = await this.client.runMutation(() =>
+      this.client.core.crypto.generateKeyPair(),
+    );
     const responseTopic = hashKey(receiverPublicKey);
 
     const encodeOpts = {
@@ -1343,7 +1589,7 @@ export class Engine extends IEngine {
     for (const cacao of auths) {
       const isValid = await validateSignedCacao({ cacao, projectId: this.client.core.projectId });
       if (!isValid) {
-        event.setError(EVENT_CLIENT_AUTHENTICATE_ERRORS.invalid_cacao);
+        this.active(() => event.setError(EVENT_CLIENT_AUTHENTICATE_ERRORS.invalid_cacao));
 
         const invalidErr = getSdkError(
           "SESSION_SETTLEMENT_FAILED",
@@ -1360,7 +1606,7 @@ export class Engine extends IEngine {
         throw new Error(invalidErr.message);
       }
 
-      event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.cacaos_verified);
+      this.active(() => event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.cacaos_verified));
 
       const { p: payload } = cacao;
       const recap = getRecapFromResources(payload.resources);
@@ -1380,12 +1626,13 @@ export class Engine extends IEngine {
       }
     }
 
-    const sessionTopic = await this.client.core.crypto.generateSharedKey(
-      senderPublicKey,
-      receiverPublicKey,
+    const sessionTopic = await this.client.runMutation(() =>
+      this.client.core.crypto.generateSharedKey(senderPublicKey, receiverPublicKey),
     );
 
-    event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.create_authenticated_session_topic);
+    this.active(() =>
+      event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.create_authenticated_session_topic),
+    );
 
     let session: SessionTypes.Struct | undefined;
     if (approvedMethods?.length > 0) {
@@ -1414,32 +1661,49 @@ export class Engine extends IEngine {
         transportType,
       };
 
-      event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.subscribing_authenticated_session_topic);
+      this.active(() =>
+        event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.subscribing_authenticated_session_topic),
+      );
 
       try {
-        await this.client.core.relayer.subscribe(sessionTopic, { transportType });
+        await this.client.runMutation(() =>
+          this.client.core.relayer.subscribe(sessionTopic, { transportType }, this.client.signal),
+        );
       } catch (error) {
-        event.setError(
-          EVENT_CLIENT_AUTHENTICATE_ERRORS.subscribe_authenticated_session_topic_failure,
+        this.active(() =>
+          event.setError(
+            EVENT_CLIENT_AUTHENTICATE_ERRORS.subscribe_authenticated_session_topic_failure,
+          ),
         );
         throw error;
       }
 
-      event.addTrace(
-        EVENT_CLIENT_AUTHENTICATE_TRACES.subscribe_authenticated_session_topic_success,
+      this.active(() =>
+        event.addTrace(
+          EVENT_CLIENT_AUTHENTICATE_TRACES.subscribe_authenticated_session_topic_success,
+        ),
       );
 
       await this.client.session.set(sessionTopic, session);
 
-      event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.store_authenticated_session);
+      this.active(() =>
+        event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.store_authenticated_session),
+      );
 
-      await this.client.core.pairing.updateMetadata({
-        topic: pendingRequest.pairingTopic,
-        metadata: pendingRequest.requester.metadata,
-      });
+      await this.client.runMutation(() =>
+        this.client.core.pairing.updateMetadata(
+          {
+            topic: pendingRequest.pairingTopic,
+            metadata: pendingRequest.requester.metadata,
+          },
+          this.client.signal,
+        ),
+      );
     }
 
-    event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.publishing_authenticated_session_approve);
+    this.active(() =>
+      event.addTrace(EVENT_CLIENT_AUTHENTICATE_TRACES.publishing_authenticated_session_approve),
+    );
 
     try {
       await this.sendResult<"wc_sessionAuthenticate">({
@@ -1457,20 +1721,25 @@ export class Engine extends IEngine {
         appLink: this.getAppLinkIfEnabled(pendingRequest.requester.metadata, transportType),
       });
     } catch (error) {
-      event.setError(
-        EVENT_CLIENT_AUTHENTICATE_ERRORS.authenticated_session_approve_publish_failure,
+      this.active(() =>
+        event.setError(
+          EVENT_CLIENT_AUTHENTICATE_ERRORS.authenticated_session_approve_publish_failure,
+        ),
       );
       throw error;
     }
 
     await this.client.auth.requests.delete(id, { message: "fulfilled", code: 0 });
-    await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
-    this.client.core.eventClient.deleteEvent({ eventId: event.eventId });
+    await this.client.runMutation(() =>
+      this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic }, this.client.signal),
+    );
+    this.active(() => this.client.core.eventClient.deleteEvent({ eventId: event.eventId }));
 
     return { session };
   };
 
   public rejectSessionAuthenticate: IEngine["rejectSessionAuthenticate"] = async (params) => {
+    this.client.assertActive();
     this.isInitialized();
 
     const { id, reason } = params;
@@ -1486,7 +1755,9 @@ export class Engine extends IEngine {
     }
 
     const receiverPublicKey = pendingRequest.requester.publicKey;
-    const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+    const senderPublicKey = await this.client.runMutation(() =>
+      this.client.core.crypto.generateKeyPair(),
+    );
     const responseTopic = hashKey(receiverPublicKey);
 
     const encodeOpts = {
@@ -1511,6 +1782,7 @@ export class Engine extends IEngine {
   };
 
   public formatAuthMessage: IEngine["formatAuthMessage"] = (params) => {
+    this.client.assertActive();
     this.isInitialized();
     const { request, iss } = params;
     return formatMessage(request, iss);
@@ -1521,8 +1793,9 @@ export class Engine extends IEngine {
    * @deprecated
    */
   public processRelayMessageCache: IEngine["processRelayMessageCache"] = () => {
+    this.client.assertActive();
     // process the relay messages cache in the next tick to allow event listeners to be registered by the implementing app
-    setTimeout(async () => {
+    this.schedule(async () => {
       if (this.relayMessageCache.length === 0) return;
       while (this.relayMessageCache.length > 0) {
         try {
@@ -1558,7 +1831,11 @@ export class Engine extends IEngine {
       if (duplicates.length === 0) return;
       this.client.logger.info(`Cleaning up ${duplicates.length} duplicate pairing(s)`);
       await Promise.all(
-        duplicates.map((p) => this.client.core.pairing.disconnect({ topic: p.topic })),
+        duplicates.map((p) =>
+          this.client.runMutation(() =>
+            this.client.core.pairing.disconnect({ topic: p.topic }, this.client.signal),
+          ),
+        ),
       );
       this.client.logger.info(`Duplicate pairings clean up finished`);
     } catch (error) {
@@ -1570,20 +1847,27 @@ export class Engine extends IEngine {
     const { topic, expirerHasDeleted = false, emitEvent = true, id = 0 } = params;
     const { self } = this.client.session.get(topic);
     // Await the unsubscribe first to avoid deleting the symKey too early below.
-    await this.client.core.relayer.unsubscribe(topic);
+    await this.client.runMutation(() =>
+      this.client.core.relayer.unsubscribe(topic, undefined, this.client.signal),
+    );
     await this.client.session.delete(topic, getSdkError("USER_DISCONNECTED"));
     this.addToRecentlyDeleted(topic, "session");
     if (this.client.core.crypto.keychain.has(self.publicKey)) {
-      await this.client.core.crypto.deleteKeyPair(self.publicKey);
+      await this.client.runMutation(() => this.client.core.crypto.deleteKeyPair(self.publicKey));
     }
     if (this.client.core.crypto.keychain.has(topic)) {
-      await this.client.core.crypto.deleteSymKey(topic);
+      await this.client.runMutation(() => this.client.core.crypto.deleteSymKey(topic));
     }
-    if (!expirerHasDeleted) this.client.core.expirer.del(topic);
+    if (!expirerHasDeleted)
+      await this.client.runMutation(() => this.client.core.expirer.del(topic));
     // remove any deeplinks from storage after the session is deleted
     // to avoid navigating to incorrect deeplink later on
-    this.client.core.storage
-      .removeItem(WALLETCONNECT_DEEPLINK_CHOICE)
+    this.client
+      .runMutation(() =>
+        this.client.core.run(() =>
+          this.client.core.storage.removeItem(WALLETCONNECT_DEEPLINK_CHOICE),
+        ),
+      )
       .catch((e) => this.client.logger.warn(e));
     // reset the queue state back to idle if a request for the deleted session is still in the queue
     if (topic === this.sessionRequestQueue.queue[0]?.topic) {
@@ -1596,7 +1880,7 @@ export class Engine extends IEngine {
         .map((r) => this.deletePendingSessionRequest(r.id, getSdkError("USER_DISCONNECTED"))),
     );
 
-    if (emitEvent) this.client.events.emit("session_delete", { id, topic });
+    if (emitEvent) this.active(() => this.client.events.emit("session_delete", { id, topic }));
   };
 
   private deleteProposal: EnginePrivate["deleteProposal"] = async (id, expirerHasDeleted) => {
@@ -1604,12 +1888,14 @@ export class Engine extends IEngine {
       try {
         const proposal = this.client.proposal.get(id);
         const event = this.client.core.eventClient.getEvent({ topic: proposal.pairingTopic });
-        event?.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_expired);
+        this.active(() => event?.setError(EVENT_CLIENT_SESSION_ERRORS.proposal_expired));
       } catch (error) {}
     }
     await Promise.all([
       this.client.proposal.delete(id, getSdkError("USER_DISCONNECTED")),
-      expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
+      expirerHasDeleted
+        ? Promise.resolve()
+        : this.client.runMutation(() => this.client.core.expirer.del(id)),
     ]);
     this.addToRecentlyDeleted(id, "proposal");
   };
@@ -1621,13 +1907,15 @@ export class Engine extends IEngine {
   ) => {
     await Promise.all([
       this.client.pendingRequest.delete(id, reason),
-      expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
+      expirerHasDeleted
+        ? Promise.resolve()
+        : this.client.runMutation(() => this.client.core.expirer.del(id)),
     ]);
     this.addToRecentlyDeleted(id, "request");
     this.sessionRequestQueue.queue = this.sessionRequestQueue.queue.filter((r) => r.id !== id);
     if (expirerHasDeleted) {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
-      this.client.events.emit("session_request_expire", { id });
+      this.active(() => this.client.events.emit("session_request_expire", { id }));
     }
   };
 
@@ -1638,24 +1926,28 @@ export class Engine extends IEngine {
   ) => {
     await Promise.all([
       this.client.auth.requests.delete(id, reason),
-      expirerHasDeleted ? Promise.resolve() : this.client.core.expirer.del(id),
+      expirerHasDeleted
+        ? Promise.resolve()
+        : this.client.runMutation(() => this.client.core.expirer.del(id)),
     ]);
   };
 
   private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
     if (!this.client.session.keys.includes(topic)) return;
-    this.client.core.expirer.set(topic, expiry);
+    await this.client.runMutation(() => this.client.core.expirer.set(topic, expiry));
     await this.client.session.update(topic, { expiry });
   };
 
   private setProposal: EnginePrivate["setProposal"] = async (id, proposal) => {
-    this.client.core.expirer.set(id, calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl));
+    await this.client.runMutation(() =>
+      this.client.core.expirer.set(id, calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl)),
+    );
     await this.client.proposal.set(id, proposal);
   };
 
   private setAuthRequest: EnginePrivate["setAuthRequest"] = async (id, params) => {
     const { request, pairingTopic, transportType = TRANSPORT_TYPES.relay } = params;
-    this.client.core.expirer.set(id, request.expiryTimestamp);
+    await this.client.runMutation(() => this.client.core.expirer.set(id, request.expiryTimestamp));
     await this.client.auth.requests.set(id, {
       authPayload: request.authPayload,
       requester: request.requester,
@@ -1673,7 +1965,7 @@ export class Engine extends IEngine {
     const { id, topic, params, verifyContext } = pendingRequest;
     const expiry =
       params.request.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl);
-    this.client.core.expirer.set(id, expiry);
+    await this.client.runMutation(() => this.client.core.expirer.set(id, expiry));
     await this.client.pendingRequest.set(id, {
       id,
       topic,
@@ -1702,7 +1994,9 @@ export class Engine extends IEngine {
 
     try {
       const encoding = isLinkMode ? BASE64URL : BASE64;
-      message = await this.client.core.crypto.encode(topic, payload, { encoding });
+      message = await this.client.runMutation(() =>
+        this.client.core.crypto.encode(topic, payload, { encoding }),
+      );
     } catch (error) {
       await this.cleanup();
       this.client.logger.error(`sendRequest() -> core.crypto.encode() for topic ${topic} failed`);
@@ -1713,7 +2007,9 @@ export class Engine extends IEngine {
     if (METHODS_TO_VERIFY.includes(method)) {
       const decryptedId = hashMessage(JSON.stringify(payload));
       const id = hashMessage(message);
-      attestation = await this.client.core.verify.register({ id, decryptedId });
+      attestation = await this.client.runMutation(() =>
+        this.client.core.verify.register({ id, decryptedId }),
+      );
     }
 
     const opts = {
@@ -1724,11 +2020,11 @@ export class Engine extends IEngine {
     opts.attestation = attestation;
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
-    this.client.core.history.set(topic, payload);
+    await this.client.runMutation(() => this.client.core.history.set(topic, payload));
 
     if (isLinkMode) {
       const redirectURL = getLinkModeURL(appLink, topic, message);
-      await (global as any).Linking.openURL(redirectURL, this.client.name);
+      await this.active(() => (global as any).Linking.openURL(redirectURL, this.client.name));
     } else {
       opts.tvf = {
         ...tvf,
@@ -1740,10 +2036,14 @@ export class Engine extends IEngine {
           ...opts.internal,
           throwOnFailedPublish: true,
         };
-        await this.client.core.relayer.publish(topic, message, opts);
+        await this.client.runMutation(() =>
+          this.client.core.relayer.publish(topic, message, opts, this.client.signal),
+        );
       } else {
-        this.client.core.relayer
-          .publish(topic, message, opts)
+        this.client
+          .runMutation(() =>
+            this.client.core.relayer.publish(topic, message, opts, this.client.signal),
+          )
           .catch((error) => this.client.logger.error(error));
       }
     }
@@ -1756,31 +2056,38 @@ export class Engine extends IEngine {
 
     const proposeSessionPayload = formatJsonRpcRequest("wc_sessionPropose", proposal, proposal.id);
 
-    this.client.core.history.set(proposal.pairingTopic, proposeSessionPayload);
+    await this.client.runMutation(() =>
+      this.client.core.history.set(proposal.pairingTopic, proposeSessionPayload),
+    );
 
-    const proposeSessionMessage = await this.client.core.crypto.encode(
-      proposal.pairingTopic,
-      proposeSessionPayload,
-      {
+    const proposeSessionMessage = await this.client.runMutation(() =>
+      this.client.core.crypto.encode(proposal.pairingTopic, proposeSessionPayload, {
         encoding: BASE64,
-      },
+      }),
     );
 
     const decryptedId = hashMessage(JSON.stringify(proposeSessionPayload));
     const attestationId = hashMessage(proposeSessionMessage);
-    const attestation = await this.client.core.verify.register({ id: attestationId, decryptedId });
+    const attestation = await this.client.runMutation(() =>
+      this.client.core.verify.register({ id: attestationId, decryptedId }),
+    );
 
-    await this.client.core.relayer.publishCustom({
-      payload: {
-        pairingTopic: proposal.pairingTopic,
-        sessionProposal: proposeSessionMessage,
-      },
-      opts: {
-        ...publishOpts,
-        publishMethod: "wc_proposeSession",
-        attestation,
-      },
-    });
+    await this.client.runMutation(() =>
+      this.client.core.relayer.publishCustom(
+        {
+          payload: {
+            pairingTopic: proposal.pairingTopic,
+            sessionProposal: proposeSessionMessage,
+          },
+          opts: {
+            ...publishOpts,
+            publishMethod: "wc_proposeSession",
+            attestation,
+          },
+        },
+        this.client.signal,
+      ),
+    );
   };
 
   private sendApproveSession: EnginePrivate["sendApproveSession"] = async (params) => {
@@ -1788,12 +2095,10 @@ export class Engine extends IEngine {
       params;
     const pairingPayload = formatJsonRpcResult(proposal.id, pairingProposalResponse);
 
-    const pairingResponseMessage = await this.client.core.crypto.encode(
-      proposal.pairingTopic,
-      pairingPayload,
-      {
+    const pairingResponseMessage = await this.client.runMutation(() =>
+      this.client.core.crypto.encode(proposal.pairingTopic, pairingPayload, {
         encoding: BASE64,
-      },
+      }),
     );
 
     const sessionSettlePayload = formatJsonRpcRequest(
@@ -1802,28 +2107,33 @@ export class Engine extends IEngine {
       publishOpts?.id,
     );
 
-    const sessionSettlementRequestMessage = await this.client.core.crypto.encode(
-      sessionTopic,
-      sessionSettlePayload,
-      {
+    const sessionSettlementRequestMessage = await this.client.runMutation(() =>
+      this.client.core.crypto.encode(sessionTopic, sessionSettlePayload, {
         encoding: BASE64,
-      },
+      }),
     );
 
-    this.client.core.history.set(sessionTopic, sessionSettlePayload);
+    await this.client.runMutation(() =>
+      this.client.core.history.set(sessionTopic, sessionSettlePayload),
+    );
 
-    await this.client.core.relayer.publishCustom({
-      payload: {
-        sessionTopic,
-        pairingTopic: proposal.pairingTopic,
-        sessionProposalResponse: pairingResponseMessage,
-        sessionSettlementRequest: sessionSettlementRequestMessage,
-      },
-      opts: {
-        ...publishOpts,
-        publishMethod: "wc_approveSession",
-      },
-    });
+    await this.client.runMutation(() =>
+      this.client.core.relayer.publishCustom(
+        {
+          payload: {
+            sessionTopic,
+            pairingTopic: proposal.pairingTopic,
+            sessionProposalResponse: pairingResponseMessage,
+            sessionSettlementRequest: sessionSettlementRequestMessage,
+          },
+          opts: {
+            ...publishOpts,
+            publishMethod: "wc_approveSession",
+          },
+        },
+        this.client.signal,
+      ),
+    );
   };
 
   private sendResult: EnginePrivate["sendResult"] = async (args) => {
@@ -1834,10 +2144,12 @@ export class Engine extends IEngine {
 
     try {
       const encoding = isLinkMode ? BASE64URL : BASE64;
-      message = await this.client.core.crypto.encode(topic, payload, {
-        ...(encodeOpts || {}),
-        encoding,
-      });
+      message = await this.client.runMutation(() =>
+        this.client.core.crypto.encode(topic, payload, {
+          ...(encodeOpts || {}),
+          encoding,
+        }),
+      );
     } catch (error) {
       // if encoding fails e.g. due to missing keychain, we want to cleanup all related data as its unusable
       await this.cleanup();
@@ -1847,7 +2159,7 @@ export class Engine extends IEngine {
     let record;
     let tvf;
     try {
-      record = await this.client.core.history.get(topic, id);
+      record = await this.client.run(() => this.client.core.history.get(topic, id));
       const request = record.request;
       try {
         tvf = this.getTVFParams(id, request.params, result);
@@ -1863,7 +2175,7 @@ export class Engine extends IEngine {
 
     if (isLinkMode) {
       const redirectURL = getLinkModeURL(appLink, topic, message);
-      await (global as any).Linking.openURL(redirectURL, this.client.name);
+      await this.active(() => (global as any).Linking.openURL(redirectURL, this.client.name));
     } else {
       const method = record.request.method as JsonRpcTypes.WcMethod;
       const opts = ENGINE_RPC_OPTS[method].res;
@@ -1878,15 +2190,19 @@ export class Engine extends IEngine {
           ...opts.internal,
           throwOnFailedPublish: true,
         };
-        await this.client.core.relayer.publish(topic, message, opts);
+        await this.client.runMutation(() =>
+          this.client.core.relayer.publish(topic, message, opts, this.client.signal),
+        );
       } else {
-        this.client.core.relayer
-          .publish(topic, message, opts)
+        this.client
+          .runMutation(() =>
+            this.client.core.relayer.publish(topic, message, opts, this.client.signal),
+          )
           .catch((error) => this.client.logger.error(error));
       }
     }
 
-    await this.client.core.history.resolve(payload);
+    await this.client.runMutation(() => this.client.core.history.resolve(payload));
   };
 
   private sendError: EnginePrivate["sendError"] = async (params) => {
@@ -1896,10 +2212,12 @@ export class Engine extends IEngine {
     const isLinkMode = appLink && typeof (global as any)?.Linking !== "undefined";
     try {
       const encoding = isLinkMode ? BASE64URL : BASE64;
-      message = await this.client.core.crypto.encode(topic, payload, {
-        ...(encodeOpts || {}),
-        encoding,
-      });
+      message = await this.client.runMutation(() =>
+        this.client.core.crypto.encode(topic, payload, {
+          ...(encodeOpts || {}),
+          encoding,
+        }),
+      );
     } catch (error) {
       await this.cleanup();
       this.client.logger.error(`sendError() -> core.crypto.encode() for topic ${topic} failed`);
@@ -1907,7 +2225,7 @@ export class Engine extends IEngine {
     }
     let record;
     try {
-      record = await this.client.core.history.get(topic, id);
+      record = await this.client.run(() => this.client.core.history.get(topic, id));
     } catch (error) {
       this.client.logger.error(`sendError() -> history.get(${topic}, ${id}) failed`);
       throw error;
@@ -1915,15 +2233,17 @@ export class Engine extends IEngine {
 
     if (isLinkMode) {
       const redirectURL = getLinkModeURL(appLink, topic, message);
-      await (global as any).Linking.openURL(redirectURL, this.client.name);
+      await this.active(() => (global as any).Linking.openURL(redirectURL, this.client.name));
     } else {
       const method = record.request.method as JsonRpcTypes.WcMethod;
       const opts = rpcOpts || ENGINE_RPC_OPTS[method].res;
       // await is intentionally omitted to speed up performance
-      this.client.core.relayer.publish(topic, message, opts);
+      this.client.runMutation(() =>
+        this.client.core.relayer.publish(topic, message, opts, this.client.signal),
+      );
     }
 
-    await this.client.core.history.resolve(payload);
+    await this.client.runMutation(() => this.client.core.history.resolve(payload));
   };
 
   private cleanup: EnginePrivate["cleanup"] = async () => {
@@ -1945,6 +2265,8 @@ export class Engine extends IEngine {
   };
 
   private isInitialized() {
+    this.client.assertActive();
+    if (this.disposed) throw new Error("WalletConnect Engine is disposed");
     if (!this.initialized) {
       const { message } = getInternalError("NOT_INITIALIZED", this.name);
       throw new Error(message);
@@ -1952,18 +2274,25 @@ export class Engine extends IEngine {
   }
 
   private async confirmOnlineStateOrThrow() {
-    await this.client.core.relayer.confirmOnlineStateOrThrow();
+    await this.client.run(() =>
+      this.client.core.relayer.confirmOnlineStateOrThrow(this.client.signal),
+    );
   }
 
   // ---------- Relay Events Router ----------------------------------- //
 
   private registerRelayerEvents() {
-    this.client.core.relayer.on(RELAYER_EVENTS.message, (event: RelayerTypes.MessageEvent) => {
-      this.onProviderMessageEvent(event);
-    });
+    this.listen(
+      this.client.core.relayer,
+      RELAYER_EVENTS.message,
+      (event: RelayerTypes.MessageEvent) => {
+        this.onProviderMessageEvent(event);
+      },
+    );
   }
 
   private onProviderMessageEvent = async (event: RelayerTypes.MessageEvent) => {
+    if (this.disposed || this.client.signal.aborted || this.client.core.signal.aborted) return;
     // capture any messages that arrive before the client is initialized so we can process them after initialization is complete
     if (!this.initialized || this.relayMessageCache.length > 0) {
       this.relayMessageCache.push(event);
@@ -1994,13 +2323,15 @@ export class Engine extends IEngine {
         }
       } catch {}
 
-      const payload = await this.client.core.crypto.decode(topic, message, {
-        receiverPublicKey: publicKey,
-        encoding: transportType === TRANSPORT_TYPES.link_mode ? BASE64URL : BASE64,
-      });
+      const payload = await this.client.runMutation(() =>
+        this.client.core.crypto.decode(topic, message, {
+          receiverPublicKey: publicKey,
+          encoding: transportType === TRANSPORT_TYPES.link_mode ? BASE64URL : BASE64,
+        }),
+      );
 
       if (isJsonRpcRequest(payload)) {
-        this.client.core.history.set(topic, payload);
+        await this.client.runMutation(() => this.client.core.history.set(topic, payload));
         await this.onRelayEventRequest({
           topic,
           payload,
@@ -2009,14 +2340,14 @@ export class Engine extends IEngine {
           encryptedId: hashMessage(message),
         });
       } else if (isJsonRpcResponse(payload)) {
-        await this.client.core.history.resolve(payload);
+        await this.client.runMutation(() => this.client.core.history.resolve(payload));
         await this.onRelayEventResponse({ topic, payload, transportType });
-        this.client.core.history.delete(topic, payload.id);
+        await this.client.runMutation(() => this.client.core.history.delete(topic, payload.id));
       } else {
         this.client.logger.error(`onRelayMessage() -> unknown payload: ${JSON.stringify(payload)}`);
         await this.onRelayEventUnknownPayload({ topic, payload, transportType });
       }
-      await this.client.core.relayer.messages.ack(topic, message);
+      await this.client.runMutation(() => this.client.core.relayer.messages.ack(topic, message));
     } catch (error) {
       this.client.logger.error(
         `onRelayMessage() -> failed to process an inbound message: ${message}`,
@@ -2101,7 +2432,7 @@ export class Engine extends IEngine {
 
   private onRelayEventResponse: EnginePrivate["onRelayEventResponse"] = async (event) => {
     const { topic, payload, transportType } = event;
-    const record = await this.client.core.history.get(topic, payload.id);
+    const record = await this.client.run(() => this.client.core.history.get(topic, payload.id));
     const resMethod = record.request.method as JsonRpcTypes.WcMethod;
 
     switch (resMethod) {
@@ -2162,7 +2493,7 @@ export class Engine extends IEngine {
 
       if (this.client.events.listenerCount("session_proposal") === 0) {
         console.warn("No listener for session_proposal event");
-        event?.setError(EVENT_CLIENT_PAIRING_ERRORS.proposal_listener_not_found);
+        this.active(() => event?.setError(EVENT_CLIENT_PAIRING_ERRORS.proposal_listener_not_found));
       }
 
       this.isValidConnect({ ...payload.params });
@@ -2185,9 +2516,11 @@ export class Engine extends IEngine {
         metadata: proposal.proposer.metadata,
       });
 
-      event?.addTrace(EVENT_CLIENT_PAIRING_TRACES.emit_session_proposal);
+      this.active(() => event?.addTrace(EVENT_CLIENT_PAIRING_TRACES.emit_session_proposal));
 
-      this.client.events.emit("session_proposal", { id, params: proposal, verifyContext });
+      this.active(() =>
+        this.client.events.emit("session_proposal", { id, params: proposal, verifyContext }),
+      );
     } catch (err: any) {
       await this.sendError({
         id,
@@ -2223,9 +2556,8 @@ export class Engine extends IEngine {
         method: "onSessionProposeResponse",
         peerPublicKey,
       });
-      const sessionTopic = await this.client.core.crypto.generateSharedKey(
-        selfPublicKey,
-        peerPublicKey,
+      const sessionTopic = await this.client.runMutation(() =>
+        this.client.core.crypto.generateSharedKey(selfPublicKey, peerPublicKey),
       );
       this.pendingSessions.set(id, {
         sessionTopic,
@@ -2234,15 +2566,23 @@ export class Engine extends IEngine {
         publicKey: selfPublicKey,
       });
 
-      const subscriptionId = await this.client.core.relayer.subscribe(sessionTopic, {
-        transportType,
-      });
+      const subscriptionId = await this.client.runMutation(() =>
+        this.client.core.relayer.subscribe(
+          sessionTopic,
+          {
+            transportType,
+          },
+          this.client.signal,
+        ),
+      );
       this.client.logger.trace({
         type: "method",
         method: "onSessionProposeResponse",
         subscriptionId,
       });
-      await this.client.core.pairing.activate({ topic });
+      await this.client.runMutation(() =>
+        this.client.core.pairing.activate({ topic }, this.client.signal),
+      );
     } else if (isJsonRpcError(payload)) {
       await this.deleteProposal(id);
       const target = engineEvent("session_connect", id);
@@ -2310,10 +2650,15 @@ export class Engine extends IEngine {
       await this.client.session.set(session.topic, session);
       await this.setExpiry(session.topic, session.expiry);
 
-      await this.client.core.pairing.updateMetadata({
-        topic: pendingSession.pairingTopic,
-        metadata: session.peer.metadata,
-      });
+      await this.client.runMutation(() =>
+        this.client.core.pairing.updateMetadata(
+          {
+            topic: pendingSession.pairingTopic,
+            metadata: session.peer.metadata,
+          },
+          this.client.signal,
+        ),
+      );
 
       this.pendingSessions.delete(pendingSession.proposalId);
       this.deleteProposal(pendingSession.proposalId, false);
@@ -2326,7 +2671,7 @@ export class Engine extends IEngine {
         result: true,
       });
 
-      this.client.events.emit("session_connect", { session });
+      this.active(() => this.client.events.emit("session_connect", { session }));
       this.events.emit(engineEvent("session_connect", pendingSession.proposalId), { session });
     } catch (err: any) {
       await this.sendError({
@@ -2388,7 +2733,7 @@ export class Engine extends IEngine {
         throw e;
       }
 
-      this.client.events.emit("session_update", { id, topic, params });
+      this.active(() => this.client.events.emit("session_update", { id, topic, params }));
     } catch (err: any) {
       await this.sendError({
         id,
@@ -2432,7 +2777,7 @@ export class Engine extends IEngine {
         topic,
         result: true,
       });
-      this.client.events.emit("session_extend", { id, topic });
+      this.active(() => this.client.events.emit("session_extend", { id, topic }));
     } catch (err: any) {
       await this.sendError({
         id,
@@ -2467,7 +2812,7 @@ export class Engine extends IEngine {
         result: true,
         throwOnFailedPublish: true,
       });
-      this.client.events.emit("session_ping", { id, topic });
+      this.active(() => this.client.events.emit("session_ping", { id, topic }));
     } catch (err: any) {
       await this.sendError({
         id,
@@ -2484,7 +2829,7 @@ export class Engine extends IEngine {
 
     // put at the end of the stack to avoid a race condition
     // where session_ping listener is not yet initialized
-    setTimeout(() => {
+    this.schedule(() => {
       const listeners = this.events.listenerCount(target);
       if (listeners === 0) {
         throw new Error(`emitting ${target} without any listeners 2176`);
@@ -2538,7 +2883,8 @@ export class Engine extends IEngine {
         session.peer.metadata.redirect?.universal
       ) {
         // save app as supported for link mode
-        this.client.core.addLinkModeSupportedApp(session.peer.metadata.redirect?.universal);
+        const universalLink = session.peer.metadata.redirect?.universal;
+        this.client.runMutation(() => this.client.core.addLinkModeSupportedApp(universalLink));
       }
 
       // without sequential processing. This bypasses deduplication provided by the queue,
@@ -2594,7 +2940,7 @@ export class Engine extends IEngine {
       }
 
       this.isValidEmit({ topic, ...params });
-      this.client.events.emit("session_event", { id, topic, params });
+      this.active(() => this.client.events.emit("session_event", { id, topic, params }));
       MemoryStore.set(memoryKey, id);
     } catch (err: any) {
       await this.sendError({
@@ -2653,20 +2999,25 @@ export class Engine extends IEngine {
 
       if (transportType === TRANSPORT_TYPES.link_mode && requester.metadata.redirect?.universal) {
         // save app as supported for link mode
-        this.client.core.addLinkModeSupportedApp(requester.metadata.redirect.universal);
+        const universalLink = requester.metadata.redirect.universal;
+        this.client.runMutation(() => this.client.core.addLinkModeSupportedApp(universalLink));
       }
 
-      this.client.events.emit("session_authenticate", {
-        topic,
-        params: payload.params,
-        id: payload.id,
-        verifyContext,
-      });
+      this.active(() =>
+        this.client.events.emit("session_authenticate", {
+          topic,
+          params: payload.params,
+          id: payload.id,
+          verifyContext,
+        }),
+      );
     } catch (err: any) {
       this.client.logger.error(err);
 
       const receiverPublicKey = payload.params.requester.publicKey;
-      const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+      const senderPublicKey = await this.client.runMutation(() =>
+        this.client.core.crypto.generateKeyPair(),
+      );
       const appLink = this.getAppLinkIfEnabled(payload.params.requester.metadata, transportType);
 
       const encodeOpts = {
@@ -2698,7 +3049,7 @@ export class Engine extends IEngine {
   private cleanupAfterResponse = (params: EngineTypes.RespondParams) => {
     this.deletePendingSessionRequest(params.response.id, { message: "fulfilled", code: 0 });
     // intentionally delay the emitting of the next pending request a bit
-    setTimeout(() => {
+    this.schedule(() => {
       this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.idle;
       this.processSessionRequestQueue();
     }, toMiliseconds(this.requestQueueDelay));
@@ -2764,39 +3115,50 @@ export class Engine extends IEngine {
     }
     this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.active;
     this.emittedSessionRequests.add(request.id);
-    this.client.events.emit("session_request", request);
+    this.active(() => this.client.events.emit("session_request", request));
   };
 
   // ---------- Expirer Events ---------------------------------------- //
 
   private registerExpirerEvents() {
-    this.client.core.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
-      const { topic, id } = parseExpirerTarget(event.target);
-      if (id && this.client.pendingRequest.keys.includes(id)) {
-        return await this.deletePendingSessionRequest(id, getInternalError("EXPIRED"), true);
-      }
-      if (id && this.client.auth.requests.keys.includes(id)) {
-        return await this.deletePendingAuthRequest(id, getInternalError("EXPIRED"), true);
-      }
-
-      if (topic) {
-        if (this.client.session.keys.includes(topic)) {
-          await this.deleteSession({ topic, expirerHasDeleted: true });
-          this.client.events.emit("session_expire", { topic });
+    this.listen(
+      this.client.core.expirer,
+      EXPIRER_EVENTS.expired,
+      async (event: ExpirerTypes.Expiration) => {
+        if (this.disposed || this.client.signal.aborted || this.client.core.signal.aborted) return;
+        const { topic, id } = parseExpirerTarget(event.target);
+        if (id && this.client.pendingRequest.keys.includes(id)) {
+          return await this.deletePendingSessionRequest(id, getInternalError("EXPIRED"), true);
         }
-      } else if (id) {
-        await this.deleteProposal(id, true);
-        this.client.events.emit("proposal_expire", { id });
-      }
-    });
+        if (id && this.client.auth.requests.keys.includes(id)) {
+          return await this.deletePendingAuthRequest(id, getInternalError("EXPIRED"), true);
+        }
+
+        if (topic) {
+          if (this.client.session.keys.includes(topic)) {
+            await this.deleteSession({ topic, expirerHasDeleted: true });
+            this.active(() => this.client.events.emit("session_expire", { topic }));
+          }
+        } else if (id) {
+          await this.deleteProposal(id, true);
+          this.active(() => this.client.events.emit("proposal_expire", { id }));
+        }
+      },
+    );
   }
 
   // ---------- Subscription Cleanup ---------------------------------- //
   private cleanupInProgress = false;
 
   private registerSubscriptionCleanup() {
-    this.client.core.heartbeat.on("heartbeat_pulse", async () => {
-      if (this.cleanupInProgress) return;
+    this.listen(this.client.core.heartbeat, "heartbeat_pulse", async () => {
+      if (
+        this.disposed ||
+        this.client.signal.aborted ||
+        this.client.core.signal.aborted ||
+        this.cleanupInProgress
+      )
+        return;
       this.cleanupInProgress = true;
       try {
         await this.cleanupOrphanedSubscriptions();
@@ -2832,7 +3194,9 @@ export class Engine extends IEngine {
 
       this.client.logger.info(`Cleaning up orphaned subscriber topic: ${topic}`);
       try {
-        await this.client.core.relayer.subscriber.unsubscribe(topic);
+        await this.client.runMutation(() =>
+          this.client.core.relayer.subscriber.unsubscribe(topic, undefined, this.client.signal),
+        );
       } catch (error) {
         this.client.logger.warn(error, `Failed to clean up orphaned subscription: ${topic}`);
       }
@@ -2841,12 +3205,19 @@ export class Engine extends IEngine {
 
   // ---------- Pairing Events ---------------------------------------- //
   private registerPairingEvents() {
-    this.client.core.pairing.events.on(PAIRING_EVENTS.create, (pairing: PairingTypes.Struct) =>
-      this.onPairingCreated(pairing),
+    this.listen(
+      this.client.core.pairing.events,
+      PAIRING_EVENTS.create,
+      (pairing: PairingTypes.Struct) => this.onPairingCreated(pairing),
     );
-    this.client.core.pairing.events.on(PAIRING_EVENTS.delete, (pairing: PairingTypes.Struct) => {
-      this.addToRecentlyDeleted(pairing.topic, "pairing");
-    });
+    this.listen(
+      this.client.core.pairing.events,
+      PAIRING_EVENTS.delete,
+      (pairing: PairingTypes.Struct) => {
+        if (this.disposed || this.client.signal.aborted || this.client.core.signal.aborted) return;
+        this.addToRecentlyDeleted(pairing.topic, "pairing");
+      },
+    );
   }
 
   /**
@@ -2855,6 +3226,7 @@ export class Engine extends IEngine {
    * It allows QR/URI to be scanned multiple times without having to create new pairing.
    */
   private onPairingCreated = (pairing: PairingTypes.Struct) => {
+    if (this.disposed || this.client.signal.aborted || this.client.core.signal.aborted) return;
     if (pairing.methods) {
       this.expectedPairingMethodMap.set(pairing.topic, pairing.methods);
     }
@@ -3345,6 +3717,7 @@ export class Engine extends IEngine {
     metadata: CoreTypes.Metadata;
     transportType?: RelayerTypes.TransportType;
   }) => {
+    this.client.assertActive();
     const { attestationId, hash, encryptedId, metadata, transportType } = params;
     const context: Verify.Context = {
       verified: {
@@ -3361,12 +3734,14 @@ export class Engine extends IEngine {
           applink && new URL(applink).origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
         return context;
       }
-      const result = await this.client.core.verify.resolve({
-        attestationId,
-        hash,
-        encryptedId,
-        verifyUrl: metadata.verifyUrl,
-      });
+      const result = await this.client.runMutation(() =>
+        this.client.core.verify.resolve({
+          attestationId,
+          hash,
+          encryptedId,
+          verifyUrl: metadata.verifyUrl,
+        }),
+      );
       if (result) {
         context.verified.origin = result.origin;
         context.verified.isScam = result.isScam;
@@ -3374,9 +3749,11 @@ export class Engine extends IEngine {
           result.origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
       }
     } catch (e) {
+      this.client.assertActive();
       this.client.logger.warn(e);
     }
 
+    this.client.assertActive();
     this.client.logger.debug(`Verify context: ${JSON.stringify(context)}`);
     return context;
   };
@@ -3457,6 +3834,7 @@ export class Engine extends IEngine {
   };
 
   private handleLinkModeMessage = ({ url }: { url: string }) => {
+    if (this.disposed || this.client.signal.aborted || this.client.core.signal.aborted) return;
     if (!url || !url.includes("wc_ev") || !url.includes("topic")) return;
 
     const topic = getSearchParamFromURL(url, "topic") || "";
@@ -3468,7 +3846,7 @@ export class Engine extends IEngine {
       this.client.session.update(topic, { transportType: TRANSPORT_TYPES.link_mode });
     }
 
-    this.client.core.dispatchEnvelope({ topic, message, sessionExists });
+    this.active(() => this.client.core.dispatchEnvelope({ topic, message, sessionExists }));
   };
 
   private registerLinkModeListeners = async () => {
@@ -3477,13 +3855,21 @@ export class Engine extends IEngine {
       // global.Linking is set by react-native-compat
       if (typeof linking !== "undefined") {
         // set URL listener
-        linking.addEventListener("url", this.handleLinkModeMessage, this.client.name);
+        const subscription = linking.addEventListener(
+          "url",
+          this.handleLinkModeMessage,
+          this.client.name,
+        );
+        this.linkListeners.push(() => {
+          if (typeof subscription?.remove === "function") subscription.remove();
+          else linking.removeEventListener("url", this.handleLinkModeMessage, this.client.name);
+        });
 
         // check for initial URL -> cold boots
-        const initialUrl = await linking.getInitialURL();
+        const initialUrl = await this.client.run<string | null>(() => linking.getInitialURL());
         if (initialUrl) {
           // wait to process the message to allow event listeners to be registered by the implementing app
-          setTimeout(() => {
+          this.schedule(() => {
             this.handleLinkModeMessage({ url: initialUrl });
           }, 50);
         }
