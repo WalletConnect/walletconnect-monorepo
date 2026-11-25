@@ -25,7 +25,7 @@ import {
   ErrorResponse,
   getBigIntRpcId,
 } from "@walletconnect/jsonrpc-utils";
-import { safeJsonStringify } from "@walletconnect/safe-json";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import {
   APP_SIGNATURE_MISMATCH,
   appVerification,
@@ -2045,10 +2045,12 @@ export class Engine extends IEngine {
         }
       } catch {}
 
-      const payload = await this.client.core.crypto.decode(topic, message, {
+      // Keep the exact decrypted bytes: an App Signature's `sub` covers them, not a re-serialisation.
+      const plaintext = await this.client.core.crypto.decodePlaintext(topic, message, {
         receiverPublicKey: publicKey,
         encoding: transportType === TRANSPORT_TYPES.link_mode ? BASE64URL : BASE64,
       });
+      const payload = plaintext === undefined ? undefined : safeJsonParse(plaintext);
 
       if (isJsonRpcRequest(payload)) {
         this.client.core.history.set(topic, payload);
@@ -2060,6 +2062,7 @@ export class Engine extends IEngine {
           encryptedId: hashMessage(message),
           appMetadata,
           message,
+          plaintext,
         });
       } else if (isJsonRpcResponse(payload)) {
         await this.client.core.history.resolve(payload);
@@ -2108,8 +2111,17 @@ export class Engine extends IEngine {
   };
 
   private processRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
-    const { topic, payload, attestation, transportType, encryptedId, appMetadata, message } = event;
-    const verify = { attestation, encryptedId, appMetadata, message };
+    const {
+      topic,
+      payload,
+      attestation,
+      transportType,
+      encryptedId,
+      appMetadata,
+      message,
+      plaintext,
+    } = event;
+    const verify = { attestation, encryptedId, appMetadata, message, plaintext };
 
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
@@ -2202,7 +2214,7 @@ export class Engine extends IEngine {
   // ---------- Relay Events Handlers --------------------------------- //
 
   private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = async (args) => {
-    const { topic, payload, attestation, encryptedId, appMetadata } = args;
+    const { topic, payload, attestation, encryptedId, appMetadata, plaintext } = args;
     const { params, id } = payload;
     try {
       const event = this.client.core.eventClient.getEvent({ topic });
@@ -2219,7 +2231,8 @@ export class Engine extends IEngine {
         topic,
         payload,
         attestationId: attestation,
-        plaintext: JSON.stringify(payload),
+        plaintext,
+        legacyPlaintext: JSON.stringify(payload),
         encryptedId,
         verifyUrl: params.proposer.metadata?.verifyUrl,
         appMetadata,
@@ -2572,7 +2585,8 @@ export class Engine extends IEngine {
   };
 
   private onSessionRequest: EnginePrivate["onSessionRequest"] = async (args) => {
-    const { topic, payload, attestation, encryptedId, transportType, appMetadata } = args;
+    const { topic, payload, attestation, encryptedId, transportType, appMetadata, plaintext } =
+      args;
     const { id, params } = payload;
     try {
       await this.isValidRequest({ topic, ...params });
@@ -2581,7 +2595,8 @@ export class Engine extends IEngine {
         topic,
         payload,
         attestationId: attestation,
-        plaintext: JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
+        plaintext,
+        legacyPlaintext: JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
         encryptedId,
         verifyUrl: session.peer.metadata.verifyUrl,
         transportType,
@@ -2689,14 +2704,16 @@ export class Engine extends IEngine {
   private onSessionAuthenticateRequest: EnginePrivate["onSessionAuthenticateRequest"] = async (
     args,
   ) => {
-    const { topic, payload, attestation, encryptedId, transportType, appMetadata } = args;
+    const { topic, payload, attestation, encryptedId, transportType, appMetadata, plaintext } =
+      args;
     try {
       const { authPayload, expiryTimestamp } = payload.params;
       const verification = await this.getVerification({
         topic,
         payload,
         attestationId: attestation,
-        plaintext: JSON.stringify(payload),
+        plaintext,
+        legacyPlaintext: JSON.stringify(payload),
         encryptedId,
         verifyUrl: payload.params.requester.metadata?.verifyUrl,
         transportType,
@@ -3417,8 +3434,8 @@ export class Engine extends IEngine {
 
   /**
    * A Sign v2 request's App Verification. With the Relay's `appMetadata`, the same rules as Sign
-   * v3: identity only once its `appSignature` checks out against this request's plaintext and
-   * envelope. Without it, the legacy attestation's `isScam` only: a legacy attestation never gives
+   * v3: identity only once its `appSignature`'s `sub` checks out against `plaintext`, the exact
+   * bytes the app encrypted, as decrypted. Without it, the legacy attestation's `isScam` only: a legacy attestation never gives
    * a domain, name or icon. Throws `APP_SIGNATURE_MISMATCH`, after emitting
    * `app_signature_mismatch`, when the signature is for another message.
    */
@@ -3426,20 +3443,31 @@ export class Engine extends IEngine {
     topic: string;
     payload: JsonRpcRequest;
     attestationId?: string;
-    plaintext: string;
+    /** The decrypted plaintext exactly as received, which `sub` covers. */
+    plaintext?: string;
+    /** What the legacy attestation's hash covers: the request as JS apps serialise it. */
+    legacyPlaintext: string;
     encryptedId?: string;
     verifyUrl?: string;
     transportType?: RelayerTypes.TransportType;
     appMetadata?: Record<string, unknown>;
   }): Promise<Verify.AppVerification> => {
-    const { topic, payload, attestationId, plaintext, encryptedId, verifyUrl, transportType } =
-      params;
+    const {
+      topic,
+      payload,
+      attestationId,
+      plaintext,
+      legacyPlaintext,
+      encryptedId,
+      verifyUrl,
+      transportType,
+    } = params;
     if (transportType === TRANSPORT_TYPES.link_mode) return unverified();
     let legacyIsScam = false;
     try {
       const result = await this.client.core.verify.resolve({
         attestationId,
-        hash: hashMessage(plaintext),
+        hash: hashMessage(legacyPlaintext),
         encryptedId,
         verifyUrl,
       });

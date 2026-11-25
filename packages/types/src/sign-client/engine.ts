@@ -59,6 +59,8 @@ export declare namespace EngineTypes {
     appMetadata?: Record<string, unknown>;
     /** The encrypted envelope as received, base64. */
     message?: string;
+    /** The decrypted envelope: the exact JSON-RPC bytes the sender encrypted. */
+    plaintext?: string;
   }
 
   type Hex = `0x${string}`;
@@ -350,6 +352,8 @@ export interface EnginePrivate {
     appMetadata?: Record<string, unknown>;
     /** The encrypted envelope as received, base64. */
     message?: string;
+    /** The decrypted envelope: the exact JSON-RPC bytes the sender encrypted. */
+    plaintext?: string;
   }): Promise<void>;
 
   onSessionProposeResponse(
@@ -413,6 +417,8 @@ export interface EnginePrivate {
     appMetadata?: Record<string, unknown>;
     /** The encrypted envelope as received, base64. */
     message?: string;
+    /** The decrypted envelope: the exact JSON-RPC bytes the sender encrypted. */
+    plaintext?: string;
   }): Promise<void>;
 
   onSessionRequestResponse(
@@ -435,6 +441,8 @@ export interface EnginePrivate {
     appMetadata?: Record<string, unknown>;
     /** The encrypted envelope as received, base64. */
     message?: string;
+    /** The decrypted envelope: the exact JSON-RPC bytes the sender encrypted. */
+    plaintext?: string;
   }): Promise<void>;
 
   onSessionAuthenticateResponse(

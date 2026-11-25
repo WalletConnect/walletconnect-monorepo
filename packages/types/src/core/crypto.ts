@@ -116,6 +116,16 @@ export abstract class ICrypto {
     opts?: CryptoTypes.DecodeOptions,
   ): Promise<JsonRpcPayload>;
 
+  /**
+   * The decrypted plaintext of an envelope, exactly the bytes the sender encrypted, before any
+   * JSON parsing. Undefined when it can't be decrypted.
+   */
+  public abstract decodePlaintext(
+    topic: string,
+    encoded: string,
+    opts?: CryptoTypes.DecodeOptions,
+  ): Promise<string | undefined>;
+
   public abstract signJWT(aud: string): Promise<string>;
   public abstract getPayloadType(encoded: string, encoding?: CryptoTypes.EncodingType): number;
   public abstract getPayloadSenderPublicKey(

@@ -27,7 +27,8 @@ function domainOf(origin: string): string {
 /**
  * Sign v2: the verification of a message the Relay delivered with `appMetadata`, the same rules
  * as Sign v3's. Undefined when its `appMetadata.appSignature` is for another message: `sub` isn't
- * the hash of `plaintext` (what a wallet hashes, `JSON.stringify` of the decoded request). Any other
+ * the hash of `plaintext`, the exact bytes the wallet decrypted (never a re-serialisation, which
+ * differs from what apps on other SDKs encrypt). Any other
  * claim, such as a `cth` older POC backends signed, is ignored. Without `appMetadata`, only the
  * legacy attestation's `isScam` counts.
  */
@@ -144,9 +145,10 @@ export function appSignatureRefusal(error: unknown): AppSignatureRefusedError | 
 /**
  * Sign v2: the app's App Signature for one outgoing request. `sub` covers `requestJson`, the
  * plaintext that gets encrypted: `safeJsonStringify(payload)`, which `crypto.encode` also uses.
- * The app's backend sees this plaintext, so it signs only what it has checked. For a payload
- * without BigInts that's `JSON.stringify(payload)`, and a wallet, which hashes `JSON.stringify`
- * of what it decrypts, recomputes the same bytes. No claim covers the encrypted envelope: the
+ * The app's backend sees this plaintext, so it signs only what it has checked. A wallet hashes the
+ * exact bytes it decrypts, so it recomputes `sub` whatever the serialisation. Older JS wallets
+ * hashed `JSON.stringify` of what they decoded instead, which gives the same bytes only for a
+ * payload that survives a JSON round trip. No claim covers the encrypted envelope: the
  * backend couldn't check one, and the wallet's `sub` check binds the signature to the content.
  */
 export async function signV2Request(
@@ -157,7 +159,7 @@ export async function signV2Request(
   const requestJson = safeJsonStringify(payload);
   if (!legacyRecomputes(requestJson)) {
     logger?.warn(
-      "App Signature: this payload doesn't survive a JSON round trip, so a wallet hashes other bytes than sub covers",
+      "App Signature: this payload doesn't survive a JSON round trip, so older wallets hash other bytes than sub covers and drop it",
     );
   }
   let appSignature: unknown;
@@ -175,7 +177,7 @@ export async function signV2Request(
   return appSignature;
 }
 
-/** Does a wallet's `JSON.stringify(decoded)` give back exactly these bytes, which `sub` covers? */
+/** Does an older wallet's `JSON.stringify(decoded)` give back exactly these bytes, which `sub` covers? */
 export function legacyRecomputes(plaintext: string): boolean {
   try {
     return JSON.stringify(safeJsonParse(plaintext)) === plaintext;

@@ -164,4 +164,23 @@ describe("Crypto", () => {
       expect(decoded).to.eql(undefined);
     });
   });
+
+  describe("decodePlaintext", () => {
+    it("returns the exact bytes encrypted, not a re-serialisation", async () => {
+      const symKey = "5720435e682cd03ee45b484f9a213f0e3246a0ccc2cca183b72ab1cbfbefb702";
+      const topic = await crypto.setSymKey(symKey);
+      // `\/` escaped and keys out of order, as another SDK may write it
+      const plaintext = '{"result":"https:\\/\\/x","jsonrpc":"2.0","id":1}';
+      const encoded = utils.encrypt({ symKey, message: plaintext });
+      expect(await crypto.decodePlaintext(topic, encoded)).toBe(plaintext);
+      expect(await crypto.decode(topic, encoded)).to.eql({
+        id: 1,
+        jsonrpc: "2.0",
+        result: "https://x",
+      });
+    });
+    it("is undefined on a failed decrypt", async () => {
+      expect(await crypto.decodePlaintext("non-existent-topic", "dummymessage")).toBe(undefined);
+    });
+  });
 });

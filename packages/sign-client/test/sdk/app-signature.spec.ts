@@ -5,6 +5,7 @@ import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { hashMessage } from "@walletconnect/utils";
 import { PublishFailedError } from "@walletconnect/core";
 import { SignClient } from "../../src/index.js";
+import { Engine } from "../../src/controllers/engine.js";
 
 // The v3 SDK's errors as SignV3Error builds them (the v3 client is mocked out in test/sdk).
 const v3Error = (code: string, message: string) =>
@@ -135,6 +136,79 @@ describe("Verify v4 on Sign v2: what a wallet derives from appMetadata", () => {
       isVerified: false,
       isScam: true,
     });
+  });
+});
+
+describe("Verify v4 on Sign v2: a wallet hashes the bytes it decrypted", () => {
+  // As an app on another SDK encrypts it: `\/` escaped, keys out of JS's order, `"jsonrpc"` last.
+  const plaintext =
+    '{"method":"wc_sessionRequest","id":1759313100123000,"params":{"chainId":"eip155:1",' +
+    '"request":{"method":"personal_sign","params":["https:\\/\\/app.example","0xabc"]}},"jsonrpc":"2.0"}';
+  const topic = "a".repeat(64);
+
+  const wallet = (appMetadata: Record<string, unknown>) => {
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
+    const client: any = {
+      logger,
+      signConfig: { disableRequestQueue: true },
+      auth: { authKeys: { keys: [] } },
+      events: { emit: vi.fn() },
+      session: { get: () => ({ peer: { metadata: {} } }) },
+      core: {
+        crypto: { getPayloadType: () => 0, decodePlaintext: vi.fn().mockResolvedValue(plaintext) },
+        history: { set: vi.fn() },
+        relayer: { messages: { ack: vi.fn() } },
+        verify: { resolve: vi.fn().mockResolvedValue(undefined) },
+      },
+    };
+    const engine: any = new Engine(client);
+    engine.isValidRequest = vi.fn();
+    engine.setPendingSessionRequest = vi.fn();
+    engine.emitSessionRequest = vi.fn();
+    engine.sendError = vi.fn();
+    const deliver = () =>
+      engine.onRelayMessage({ topic, message: "envelope", publishedAt: 0, appMetadata });
+    return { client, engine, deliver };
+  };
+  const signed = (sub: string) => ({
+    origin: "https://app.example",
+    name: "App",
+    isVerified: true,
+    appSignature: jwt({ sub }),
+  });
+
+  it("is a plaintext JSON.stringify would rewrite", () => {
+    expect(JSON.stringify(JSON.parse(plaintext))).not.toBe(plaintext);
+  });
+
+  it("accepts a request whose sub covers the bytes the app encrypted", async () => {
+    const { client, engine, deliver } = wallet(signed(b64u(plaintext)));
+    await deliver();
+    expect(engine.sendError).not.toHaveBeenCalled();
+    expect(client.events.emit).not.toHaveBeenCalledWith(
+      "app_signature_mismatch",
+      expect.anything(),
+    );
+    const request = engine.emitSessionRequest.mock.calls[0][0];
+    expect(request.id).toBe(1759313100123000);
+    expect(request.params.request.params[0]).toBe("https://app.example");
+    expect(request.verification).toMatchObject({ domain: "app.example", isVerified: true });
+  });
+
+  it("drops a request whose sub covers other bytes", async () => {
+    for (const sub of [b64u(JSON.stringify(JSON.parse(plaintext))), b64u("other")]) {
+      const { client, engine, deliver } = wallet(signed(sub));
+      await deliver();
+      expect(engine.emitSessionRequest).not.toHaveBeenCalled();
+      expect(engine.sendError).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 1759313100123000, error: APP_SIGNATURE_MISMATCH }),
+      );
+      expect(client.events.emit).toHaveBeenCalledWith("app_signature_mismatch", {
+        topic,
+        id: 1759313100123000,
+        method: "wc_sessionRequest",
+      });
+    }
   });
 });
 
