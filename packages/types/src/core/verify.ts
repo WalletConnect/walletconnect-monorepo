@@ -41,6 +41,11 @@ export declare namespace Verify {
     name?: string;
     /** Only when WalletConnect reviewed the app; hosted by WalletConnect. */
     icon?: string;
+    /**
+     * The business WalletConnect reviewed behind the app, only with `isVerified` (Business
+     * verified). Show "`name` · by `organizationName` ✓".
+     */
+    organizationName?: string;
     isVerified: boolean;
     isScam: boolean;
     /** A domain this app looks like. */

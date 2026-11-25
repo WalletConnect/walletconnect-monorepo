@@ -117,6 +117,18 @@ describe("Verify v4 on Sign v2: what a wallet derives from appMetadata", () => {
     });
   });
 
+  it("names the reviewed business only for Business verified", () => {
+    const business = { organizationName: "Example Inc." };
+    expect(appVerification(signed(bound, business), plaintext)?.organizationName).toBe(
+      "Example Inc.",
+    );
+    const notVerified = appVerification(
+      signed(bound, { ...business, isVerified: false }),
+      plaintext,
+    );
+    expect(notVerified?.organizationName).toBeUndefined();
+  });
+
   it("gives the domain in ASCII, never Unicode, with its registrable domain", () => {
     const of = (origin: string) => {
       const v = appVerification(signed(bound, { origin }), plaintext);

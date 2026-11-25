@@ -87,6 +87,9 @@ export function appVerification(
   const origin = str(appMetadata.origin);
   const name = str(appMetadata.name);
   const icon = str(appMetadata.icon);
+  const isVerified = appMetadata.isVerified === true;
+  // A business name stands for Business verified: never without it.
+  const organizationName = isVerified ? str(appMetadata.organizationName) : undefined;
   const domain = origin ? asciiDomain(origin) : undefined;
   const registrable = domain ? registrableDomain(domain) : undefined;
   return {
@@ -95,7 +98,8 @@ export function appVerification(
     ...(registrable && { registrableDomain: registrable }),
     ...(name && { name }),
     ...(icon && { icon }),
-    isVerified: appMetadata.isVerified === true,
+    ...(organizationName && { organizationName }),
+    isVerified,
   };
 }
 
