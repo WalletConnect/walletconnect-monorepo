@@ -10,7 +10,6 @@ import {
   RELAYER_DEFAULT_PROTOCOL,
   RELAYER_EVENTS,
   TRANSPORT_TYPES,
-  VERIFY_SERVER,
 } from "@walletconnect/core";
 
 import {
@@ -26,7 +25,20 @@ import {
   ErrorResponse,
   getBigIntRpcId,
 } from "@walletconnect/jsonrpc-utils";
-import { safeJsonStringify } from "@walletconnect/safe-json";
+import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
+import {
+  APP_SIGNATURE_DOMAIN_CHANGED,
+  APP_SIGNATURE_ERRORS,
+  APP_SIGNATURE_MISMATCH,
+  APP_SIGNATURE_REQUIRED,
+  appVerification,
+  checkPinnedDomain,
+  signedDomain,
+  signV2Request,
+  unverified,
+  walletProposal,
+  withoutIdentity,
+} from "../verification.js";
 import { FIVE_MINUTES, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
 import {
   EnginePrivate,
@@ -523,6 +535,8 @@ export class Engine extends IEngine {
       },
       controller: selfPublicKey,
       transportType: TRANSPORT_TYPES.relay,
+      verification: proposal.verification ?? unverified(),
+      ...(proposal.appDomain && { appDomain: proposal.appDomain }),
       authentication: proposalRequestsResponses?.authentication,
       walletPayResult: proposalRequestsResponses?.walletPay,
     };
@@ -1286,7 +1300,7 @@ export class Engine extends IEngine {
     await this.setAuthRequest(authenticateId, {
       request: {
         ...request,
-        verifyContext: {} as any,
+        verification: unverified(),
       },
       pairingTopic,
       transportType,
@@ -1410,6 +1424,7 @@ export class Engine extends IEngine {
         optionalNamespaces: {},
         relay: { protocol: "irn" },
         pairingTopic: pendingRequest.pairingTopic,
+        ...(pendingRequest.appDomain && { appDomain: pendingRequest.appDomain }),
         namespaces: buildNamespacesFromAuth(
           [...new Set(approvedMethods)],
           [...new Set(approvedAccounts)],
@@ -1665,7 +1680,7 @@ export class Engine extends IEngine {
       expiryTimestamp: request.expiryTimestamp,
       id,
       pairingTopic,
-      verifyContext: request.verifyContext,
+      verification: request.verification ?? unverified(),
       transportType,
     });
   };
@@ -1673,7 +1688,7 @@ export class Engine extends IEngine {
   private setPendingSessionRequest: EnginePrivate["setPendingSessionRequest"] = async (
     pendingRequest: PendingRequestTypes.Struct,
   ) => {
-    const { id, topic, params, verifyContext } = pendingRequest;
+    const { id, topic, params, verification } = pendingRequest;
     const expiry =
       params.request.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionRequest.req.ttl);
     this.client.core.expirer.set(id, expiry);
@@ -1681,7 +1696,7 @@ export class Engine extends IEngine {
       id,
       topic,
       params,
-      verifyContext,
+      verification,
     });
   };
 
@@ -1713,10 +1728,21 @@ export class Engine extends IEngine {
     }
 
     let attestation: string | undefined;
+    let appSignature: string | undefined;
+    let refreshAppSignature: (() => Promise<string>) | undefined;
     if (METHODS_TO_VERIFY.includes(method)) {
-      const decryptedId = hashMessage(JSON.stringify(payload));
-      const id = hashMessage(message);
-      attestation = await this.client.core.verify.register({ id, decryptedId });
+      const options = this.client.appSignature;
+      if (options) {
+        // Verify v4: the app signs instead. The Relay sends legacy wallets `attestation: ""`.
+        if (!isLinkMode) {
+          refreshAppSignature = () => signV2Request(options, payload, this.client.logger);
+          appSignature = await refreshAppSignature();
+        }
+      } else {
+        const decryptedId = hashMessage(JSON.stringify(payload));
+        const id = hashMessage(message);
+        attestation = await this.client.core.verify.register({ id, decryptedId });
+      }
     }
 
     const opts = {
@@ -1725,6 +1751,11 @@ export class Engine extends IEngine {
     };
 
     opts.attestation = attestation;
+    if (appSignature) {
+      opts.appSignature = appSignature;
+      // a retry after the JWT expired signs again
+      opts.refreshAppSignature = refreshAppSignature;
+    }
     opts.plaintext = safeJsonStringify(payload);
     if (expiry) opts.ttl = expiry;
     if (relayRpcId) opts.id = relayRpcId;
@@ -1770,9 +1801,19 @@ export class Engine extends IEngine {
       },
     );
 
-    const decryptedId = hashMessage(JSON.stringify(proposeSessionPayload));
-    const attestationId = hashMessage(proposeSessionMessage);
-    const attestation = await this.client.core.verify.register({ id: attestationId, decryptedId });
+    let attestation: string | undefined;
+    let appSignature: string | undefined;
+    let refreshAppSignature: (() => Promise<string>) | undefined;
+    const options = this.client.appSignature;
+    if (options) {
+      // Verify v4: the app signs instead. The Relay sends legacy wallets `attestation: ""`.
+      refreshAppSignature = () => signV2Request(options, proposeSessionPayload, this.client.logger);
+      appSignature = await refreshAppSignature();
+    } else {
+      const decryptedId = hashMessage(JSON.stringify(proposeSessionPayload));
+      const attestationId = hashMessage(proposeSessionMessage);
+      attestation = await this.client.core.verify.register({ id: attestationId, decryptedId });
+    }
 
     await this.client.core.relayer.publishCustom({
       payload: {
@@ -1784,6 +1825,7 @@ export class Engine extends IEngine {
         ...publishOpts,
         publishMethod: "wc_proposeSession",
         attestation,
+        ...(appSignature && { appSignature, refreshAppSignature }),
       },
     });
   };
@@ -1901,7 +1943,10 @@ export class Engine extends IEngine {
 
   private sendError: EnginePrivate["sendError"] = async (params) => {
     const { id, topic, error, encodeOpts, rpcOpts, appLink } = params;
-    const payload = formatJsonRpcError(id, error);
+    // -32600 is a reserved code, which formatJsonRpcError would answer as "Invalid Request".
+    const payload = APP_SIGNATURE_ERRORS.includes(error as { code: number; message: string })
+      ? { id, jsonrpc: "2.0" as const, error: { ...(error as { code: number; message: string }) } }
+      : formatJsonRpcError(id, error);
     let message;
     const isLinkMode = appLink && typeof (global as any)?.Linking !== "undefined";
     try {
@@ -1985,7 +2030,7 @@ export class Engine extends IEngine {
   };
 
   private async onRelayMessage(event: RelayerTypes.MessageEvent) {
-    const { topic, message, attestation, transportType } = event;
+    const { topic, message, attestation, transportType, appMetadata } = event;
 
     // Retrieve the public key (if defined) to decrypt possible `auth_request` response
     const { publicKey } = this.client.auth.authKeys.keys.includes(AUTH_PUBLIC_KEY_NAME)
@@ -2006,10 +2051,12 @@ export class Engine extends IEngine {
         }
       } catch {}
 
-      const payload = await this.client.core.crypto.decode(topic, message, {
+      // Keep the exact decrypted bytes: an App Signature's `sub` covers them, not a re-serialisation.
+      const plaintext = await this.client.core.crypto.decodePlaintext(topic, message, {
         receiverPublicKey: publicKey,
         encoding: transportType === TRANSPORT_TYPES.link_mode ? BASE64URL : BASE64,
       });
+      const payload = plaintext === undefined ? undefined : safeJsonParse(plaintext);
 
       if (isJsonRpcRequest(payload)) {
         this.client.core.history.set(topic, payload);
@@ -2019,6 +2066,9 @@ export class Engine extends IEngine {
           attestation,
           transportType,
           encryptedId: hashMessage(message),
+          appMetadata,
+          message,
+          plaintext,
         });
       } else if (isJsonRpcResponse(payload)) {
         await this.client.core.history.resolve(payload);
@@ -2067,7 +2117,17 @@ export class Engine extends IEngine {
   };
 
   private processRequest: EnginePrivate["onRelayEventRequest"] = async (event) => {
-    const { topic, payload, attestation, transportType, encryptedId } = event;
+    const {
+      topic,
+      payload,
+      attestation,
+      transportType,
+      encryptedId,
+      appMetadata,
+      message,
+      plaintext,
+    } = event;
+    const verify = { attestation, encryptedId, appMetadata, message, plaintext };
 
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
 
@@ -2077,7 +2137,7 @@ export class Engine extends IEngine {
 
     switch (reqMethod) {
       case "wc_sessionPropose":
-        return await this.onSessionProposeRequest({ topic, payload, attestation, encryptedId });
+        return await this.onSessionProposeRequest({ topic, payload, ...verify });
       case "wc_sessionSettle":
         return await this.onSessionSettleRequest(topic, payload);
       case "wc_sessionUpdate":
@@ -2089,22 +2149,15 @@ export class Engine extends IEngine {
       case "wc_sessionDelete":
         return await this.onSessionDeleteRequest(topic, payload);
       case "wc_sessionRequest":
-        return await this.onSessionRequest({
-          topic,
-          payload,
-          attestation,
-          encryptedId,
-          transportType,
-        });
+        return await this.onSessionRequest({ topic, payload, transportType, ...verify });
       case "wc_sessionEvent":
         return await this.onSessionEventRequest(topic, payload);
       case "wc_sessionAuthenticate":
         return await this.onSessionAuthenticateRequest({
           topic,
           payload,
-          attestation,
-          encryptedId,
           transportType,
+          ...verify,
         });
       default:
         return this.client.logger.info(`Unsupported request method ${reqMethod}`);
@@ -2167,7 +2220,7 @@ export class Engine extends IEngine {
   // ---------- Relay Events Handlers --------------------------------- //
 
   private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = async (args) => {
-    const { topic, payload, attestation, encryptedId } = args;
+    const { topic, payload, attestation, encryptedId, appMetadata, plaintext } = args;
     const { params, id } = payload;
     try {
       const event = this.client.core.eventClient.getEvent({ topic });
@@ -2180,6 +2233,17 @@ export class Engine extends IEngine {
       this.isValidConnect({ ...payload.params });
       const expiryTimestamp =
         params.expiryTimestamp || calcExpiry(ENGINE_RPC_OPTS.wc_sessionPropose.req.ttl);
+      const verification = await this.getVerification({
+        topic,
+        payload,
+        attestationId: attestation,
+        plaintext,
+        legacyPlaintext: JSON.stringify(payload),
+        encryptedId,
+        verifyUrl: params.proposer.metadata?.verifyUrl,
+        appMetadata,
+      });
+      // The app's self-asserted identity is never kept or shown.
       const proposal: ProposalTypes.Struct = {
         id,
         pairingTopic: topic,
@@ -2187,19 +2251,23 @@ export class Engine extends IEngine {
         attestation,
         encryptedId,
         ...params,
+        proposer: {
+          ...params.proposer,
+          metadata: withoutIdentity(params.proposer.metadata),
+        },
+        verification,
+        // Set here even when undefined, so the app's params can't set it.
+        appDomain: signedDomain(appMetadata),
       };
       await this.setProposal(id, proposal);
 
-      const verifyContext = await this.getVerifyContext({
-        attestationId: attestation,
-        hash: hashMessage(JSON.stringify(payload)),
-        encryptedId,
-        metadata: proposal.proposer.metadata,
-      });
-
       event?.addTrace(EVENT_CLIENT_PAIRING_TRACES.emit_session_proposal);
 
-      this.client.events.emit("session_proposal", { id, params: proposal, verifyContext });
+      this.client.events.emit("session_proposal", {
+        id,
+        params: walletProposal(proposal),
+        verification,
+      });
     } catch (err: any) {
       await this.sendError({
         id,
@@ -2525,23 +2593,29 @@ export class Engine extends IEngine {
   };
 
   private onSessionRequest: EnginePrivate["onSessionRequest"] = async (args) => {
-    const { topic, payload, attestation, encryptedId, transportType } = args;
+    const { topic, payload, attestation, encryptedId, transportType, appMetadata, plaintext } =
+      args;
     const { id, params } = payload;
     try {
       await this.isValidRequest({ topic, ...params });
       const session = this.client.session.get(topic);
-      const verifyContext = await this.getVerifyContext({
+      const verification = await this.getVerification({
+        topic,
+        payload,
         attestationId: attestation,
-        hash: hashMessage(JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id))),
+        plaintext,
+        legacyPlaintext: JSON.stringify(formatJsonRpcRequest("wc_sessionRequest", params, id)),
         encryptedId,
-        metadata: session.peer.metadata,
+        verifyUrl: session.peer.metadata.verifyUrl,
         transportType,
+        appMetadata,
       });
+      await this.checkPinnedDomain({ session, payload, appMetadata, transportType });
       const request = {
         id,
         topic,
         params,
-        verifyContext,
+        verification,
       };
       await this.setPendingSessionRequest(request);
 
@@ -2639,22 +2713,33 @@ export class Engine extends IEngine {
   private onSessionAuthenticateRequest: EnginePrivate["onSessionAuthenticateRequest"] = async (
     args,
   ) => {
-    const { topic, payload, attestation, encryptedId, transportType } = args;
+    const { topic, payload, attestation, encryptedId, transportType, appMetadata, plaintext } =
+      args;
     try {
-      const { requester, authPayload, expiryTimestamp } = payload.params;
-      const verifyContext = await this.getVerifyContext({
+      const { authPayload, expiryTimestamp } = payload.params;
+      const verification = await this.getVerification({
+        topic,
+        payload,
         attestationId: attestation,
-        hash: hashMessage(JSON.stringify(payload)),
+        plaintext,
+        legacyPlaintext: JSON.stringify(payload),
         encryptedId,
-        metadata: requester.metadata,
+        verifyUrl: payload.params.requester.metadata?.verifyUrl,
         transportType,
+        appMetadata,
       });
+      // The app's self-asserted identity is never kept or shown.
+      const requester = {
+        ...payload.params.requester,
+        metadata: withoutIdentity(payload.params.requester.metadata),
+      };
       const pendingRequest = {
         requester,
         pairingTopic: topic,
         id: payload.id,
         authPayload,
-        verifyContext,
+        verification,
+        appDomain: signedDomain(appMetadata),
         expiryTimestamp,
       };
       await this.setAuthRequest(payload.id, {
@@ -2670,9 +2755,9 @@ export class Engine extends IEngine {
 
       this.client.events.emit("session_authenticate", {
         topic,
-        params: payload.params,
+        params: { ...payload.params, requester },
         id: payload.id,
-        verifyContext,
+        verification,
       });
     } catch (err: any) {
       this.client.logger.error(err);
@@ -2776,7 +2861,14 @@ export class Engine extends IEngine {
     }
     this.sessionRequestQueue.state = ENGINE_QUEUE_STATES.active;
     this.emittedSessionRequests.add(request.id);
-    this.client.events.emit("session_request", request);
+    const { verifyContext: _legacy, ...rest } = request as PendingRequestTypes.Struct & {
+      verifyContext?: unknown;
+    };
+    // a request stored by an older version has no verification
+    this.client.events.emit("session_request", {
+      ...rest,
+      verification: rest.verification ?? unverified(),
+    });
   };
 
   // ---------- Expirer Events ---------------------------------------- //
@@ -3350,47 +3442,91 @@ export class Engine extends IEngine {
     }
   };
 
-  private getVerifyContext = async (params: {
+  /**
+   * A Sign v2 request's App Verification. With the Relay's `appMetadata`, the same rules as Sign
+   * v3: identity only once its `appSignature`'s `sub` checks out against `plaintext`, the exact
+   * bytes the app encrypted, as decrypted. Without it, the legacy attestation's `isScam` only: a legacy attestation never gives
+   * a domain, name or icon. Throws `APP_SIGNATURE_MISMATCH`, after emitting
+   * `app_signature_mismatch`, when the signature is for another message.
+   */
+  private getVerification = async (params: {
+    topic: string;
+    payload: JsonRpcRequest;
     attestationId?: string;
-    hash?: string;
+    /** The decrypted plaintext exactly as received, which `sub` covers. */
+    plaintext?: string;
+    /** What the legacy attestation's hash covers: the request as JS apps serialise it. */
+    legacyPlaintext: string;
     encryptedId?: string;
-    metadata: CoreTypes.Metadata;
+    verifyUrl?: string;
     transportType?: RelayerTypes.TransportType;
-  }) => {
-    const { attestationId, hash, encryptedId, metadata, transportType } = params;
-    const context: Verify.Context = {
-      verified: {
-        verifyUrl: metadata.verifyUrl || VERIFY_SERVER,
-        validation: "UNKNOWN",
-        origin: metadata.url || "",
-      },
-    };
-
+    appMetadata?: Record<string, unknown>;
+  }): Promise<Verify.AppVerification> => {
+    const {
+      topic,
+      payload,
+      attestationId,
+      plaintext,
+      legacyPlaintext,
+      encryptedId,
+      verifyUrl,
+      transportType,
+    } = params;
+    if (transportType === TRANSPORT_TYPES.link_mode) return unverified();
+    let legacyIsScam = false;
     try {
-      if (transportType === TRANSPORT_TYPES.link_mode) {
-        const applink = this.getAppLinkIfEnabled(metadata, transportType);
-        context.verified.validation =
-          applink && new URL(applink).origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
-        return context;
-      }
       const result = await this.client.core.verify.resolve({
         attestationId,
-        hash,
+        hash: hashMessage(legacyPlaintext),
         encryptedId,
-        verifyUrl: metadata.verifyUrl,
+        verifyUrl,
       });
-      if (result) {
-        context.verified.origin = result.origin;
-        context.verified.isScam = result.isScam;
-        context.verified.validation =
-          result.origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
-      }
+      legacyIsScam = result?.isScam ?? false;
     } catch (e) {
       this.client.logger.warn(e);
     }
+    const verification = appVerification(params.appMetadata, plaintext, legacyIsScam);
+    if (verification) return verification;
+    this.client.events.emit("app_signature_mismatch", {
+      topic,
+      id: payload.id,
+      method: payload.method,
+    });
+    throw APP_SIGNATURE_MISMATCH;
+  };
 
-    this.client.logger.debug(`Verify context: ${JSON.stringify(context)}`);
-    return context;
+  /**
+   * Verify v4, wallet: a session stays signed (see `SessionTypes.Struct.appDomain`). Call once
+   * `getVerification` checked the request's `sub`. Pins the session to the request's domain if it
+   * isn't yet; throws `APP_SIGNATURE_REQUIRED` or `APP_SIGNATURE_DOMAIN_CHANGED`, after emitting
+   * the event of the same name, when the request is unsigned or signed by another domain than the
+   * pinned one. Link mode requests skip the Relay, so never carry a signature: they're let through.
+   */
+  private checkPinnedDomain = async (params: {
+    session: SessionTypes.Struct;
+    payload: JsonRpcRequest;
+    appMetadata?: Record<string, unknown>;
+    transportType?: RelayerTypes.TransportType;
+  }) => {
+    const { session, payload, appMetadata, transportType } = params;
+    if (transportType === TRANSPORT_TYPES.link_mode) return;
+    const { topic } = session;
+    const { pin, refusal } = checkPinnedDomain(session.appDomain, signedDomain(appMetadata));
+    if (pin) {
+      await this.client.session.update(topic, { appDomain: pin });
+      return;
+    }
+    if (!refusal) return;
+    const dropped = { topic, id: payload.id, method: payload.method, domain: refusal.domain };
+    if (refusal.code === "app_signature_required") {
+      this.client.events.emit("app_signature_required", dropped);
+      throw APP_SIGNATURE_REQUIRED;
+    }
+    this.client.events.emit("app_signature_domain_changed", {
+      ...dropped,
+      signedBy: refusal.signedBy,
+    });
+    throw APP_SIGNATURE_DOMAIN_CHANGED;
   };
 
   private validateSessionProps = (properties: SessionTypes.ScopedProperties, type: string) => {

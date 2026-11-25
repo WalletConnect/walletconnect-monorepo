@@ -1,4 +1,5 @@
 import { generateChildLogger, getLoggerContext, Logger } from "@walletconnect/logger";
+import type { JsonRpcPayload } from "@walletconnect/jsonrpc-types";
 import { safeJsonParse, safeJsonStringify } from "@walletconnect/safe-json";
 import { ICore, ICrypto, IKeyChain } from "@walletconnect/types";
 import * as relayAuth from "@walletconnect/relay-auth";
@@ -137,11 +138,16 @@ export class Crypto implements ICrypto {
   };
 
   public decode: ICrypto["decode"] = async (topic, encoded, opts) => {
+    const message = await this.decodePlaintext(topic, encoded, opts);
+    // undefined when it can't be decrypted, as before
+    return (message === undefined ? undefined : safeJsonParse(message)) as JsonRpcPayload;
+  };
+
+  public decodePlaintext: ICrypto["decodePlaintext"] = async (topic, encoded, opts) => {
     this.isInitialized();
     const params = validateDecoding(encoded, opts);
     if (isTypeTwoEnvelope(params)) {
-      const message = decodeTypeTwoEnvelope(encoded, opts?.encoding);
-      return safeJsonParse(message);
+      return decodeTypeTwoEnvelope(encoded, opts?.encoding);
     }
     if (isTypeOneEnvelope(params)) {
       const selfPublicKey = params.receiverPublicKey;
@@ -150,14 +156,13 @@ export class Crypto implements ICrypto {
     }
     try {
       const symKey = this.getSymKey(topic);
-      const message = decrypt({ symKey, encoded, encoding: opts?.encoding });
-      const payload = safeJsonParse(message);
-      return payload;
+      return decrypt({ symKey, encoded, encoding: opts?.encoding });
     } catch (error) {
       this.logger.error(
         `Failed to decode message from topic: '${topic}', clientId: '${await this.getClientId()}'`,
       );
       this.logger.error(error);
+      return undefined;
     }
   };
 

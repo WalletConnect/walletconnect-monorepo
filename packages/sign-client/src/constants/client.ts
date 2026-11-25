@@ -27,6 +27,9 @@ export const SIGN_CLIENT_EVENTS: Record<SignClientTypes.Event, SignClientTypes.E
   session_authenticate: "session_authenticate",
   session_request_expire: "session_request_expire",
   session_connect: "session_connect",
+  app_signature_mismatch: "app_signature_mismatch",
+  app_signature_required: "app_signature_required",
+  app_signature_domain_changed: "app_signature_domain_changed",
 };
 
 export const SIGN_CLIENT_STORAGE_OPTIONS = {

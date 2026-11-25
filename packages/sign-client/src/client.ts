@@ -22,6 +22,7 @@ import {
 } from "./constants/index.js";
 import { AuthStore, Engine, PendingRequest, Proposal, Session } from "./controllers/index.js";
 import { V3Client } from "./v3/client.js";
+import { appSignatureRefusal } from "./verification.js";
 
 const uriParam = (uri: string, name: string) =>
   new URLSearchParams(uri.slice(uri.indexOf("?"))).get(name);
@@ -50,6 +51,7 @@ export class SignClient extends ISignClient {
   public pendingRequest: ISignClient["pendingRequest"];
   public auth: ISignClient["auth"];
   public signConfig?: ISignClient["signConfig"];
+  public readonly appSignature?: SignClientTypes.Options["appSignature"];
 
   private v3?: V3Client;
   // v3 offers that lost to v2: a session that still arrives on one is closed
@@ -68,6 +70,7 @@ export class SignClient extends ISignClient {
     this.name = opts?.name || SIGN_CLIENT_DEFAULT.name;
     this.metadata = populateAppMetadata(opts?.metadata);
     this.signConfig = opts?.signConfig;
+    this.appSignature = opts?.appSignature;
 
     const logger = createLogger({
       logger: opts?.logger || SIGN_CLIENT_DEFAULT.logger,
@@ -123,7 +126,9 @@ export class SignClient extends ISignClient {
         return await this.engine.connect(params);
       }
       return await this.connectBoth(this.v3, params);
-    } catch (error: any) {
+    } catch (e: any) {
+      // The Relay refused the App Signature: a typed error, never a hang on retries.
+      const error = appSignatureRefusal(e) ?? e;
       this.logger.error(error.message);
       throw error;
     }
@@ -329,6 +334,7 @@ export class SignClient extends ISignClient {
           storage: this.core.storage,
           // core's prefix starts with ":", and the storage collapses "::" in keys
           customStoragePrefix: this.core.customStoragePrefix.replace(/^:/, ""),
+          appSignature: this.appSignature,
         },
         this.onV3Event,
       );
@@ -373,6 +379,12 @@ export class SignClient extends ISignClient {
     try {
       offer = await v3.connect(params);
     } catch (error: any) {
+      // The app refused to sign: falling back to v2 would send the proposal without it.
+      if (error?.code === "app_signature_failed") throw error;
+      // The Relay refused the App Signature, or its lack of one. Over v2 it gets the same answer:
+      // a domain requiring signatures requires them there too.
+      const refusal = appSignatureRefusal(error);
+      if (refusal) throw refusal;
       this.logger.warn(error, "v3 connect failed, offering v2 only");
       return await this.engine.connect(params);
     }
@@ -383,6 +395,10 @@ export class SignClient extends ISignClient {
     try {
       fallback = await this.engine.connect({ ...params, symKey });
     } catch (error: any) {
+      if (error?.code === "app_signature_failed") {
+        this.cancelledV3.add(connectionId);
+        throw error;
+      }
       this.logger.warn(error, "v2 connect failed, offering v3 only");
       return offer;
     }

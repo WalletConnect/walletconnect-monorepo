@@ -58,14 +58,15 @@ describe("SignClient over both protocols: v3 to v3", () => {
     expect(parseUri(uri!).topic).toBe(hashKey(parseUri(uri!).symKey));
     const proposed = next(wallet, "session_proposal");
     const pairing = await wallet.pair({ uri: uri! });
-    const { id, params, verifyContext } = await proposed;
-    expect(params.proposer.metadata.name).toBe("dapp");
+    const { id, params, verification } = await proposed;
+    // wallets never see the app's own name, url or icons
+    expect(params.proposer.metadata).toEqual({ description: "dapp" });
     expect(params.optionalNamespaces.eip155.methods).toEqual(["personal_sign"]);
     expect(params.scopedProperties).toEqual({
       eip155: { walletService: [{ url: "https://w", methods: ["x"] }] },
     });
     expect(params.pairingTopic).toBe(pairing.topic);
-    expect(verifyContext.verified.validation).toBe("UNKNOWN");
+    expect(verification).toEqual({ isVerified: false, isScam: false });
 
     const { topic: walletTopic, acknowledged } = await wallet.approve({
       id,
@@ -85,7 +86,13 @@ describe("SignClient over both protocols: v3 to v3", () => {
     expect(session.peer.metadata.name).toBe("wallet");
     expect(session.namespaces.eip155.accounts).toEqual([ACCOUNT]);
     expect(dapp.session.getAll().map((s) => s.topic)).toEqual([topic]);
-    expect(wallet.session.get(topic).peer.metadata.name).toBe("dapp");
+    expect(wallet.session.get(topic).peer.metadata).toEqual({
+      name: "",
+      description: "dapp",
+      url: "",
+      icons: [],
+    });
+    expect(wallet.session.get(topic).verification).toEqual({ isVerified: false, isScam: false });
   });
 
   it("round-trips a request with v2's session_request and respond", async () => {
@@ -301,7 +308,12 @@ describe("SignClient over both protocols: the v2 fallback", () => {
     });
     const session = await approval();
     await acknowledged();
-    expect(wallet.session.get(session.topic).peer.metadata.name).toBe("v2-dapp");
+    // a v2 session hides the app's own identity too
+    expect(wallet.session.get(session.topic).peer.metadata.name).toBe("");
+    expect(wallet.session.get(session.topic).verification).toEqual({
+      isVerified: false,
+      isScam: false,
+    });
 
     answer(wallet, "0xrouted");
     expect(

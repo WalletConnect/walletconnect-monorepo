@@ -137,7 +137,9 @@ export declare namespace AuthTypes {
     requester: Participant;
     expiryTimestamp: number;
     authPayload: PayloadParams;
-    verifyContext: Verify.Context;
+    verification: Verify.AppVerification;
+    /** The request's App Signature `iss`, when it was signed: its session is pinned to it. */
+    appDomain?: string;
     transportType?: RelayerTypes.TransportType;
   }
 
@@ -170,7 +172,7 @@ export declare namespace AuthTypes {
   }
 
   interface SessionAuthenticateRequest extends SessionAuthenticateRequestParams {
-    verifyContext: Verify.Context;
+    verification: Verify.AppVerification;
   }
 
   type AuthenticateResponseResult = {

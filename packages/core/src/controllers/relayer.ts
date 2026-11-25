@@ -502,12 +502,15 @@ export class Relayer extends IRelayer {
       if (!payload.method.endsWith(RELAYER_SUBSCRIBER_SUFFIX)) return;
       const event = (payload as JsonRpcRequest<RelayJsonRpc.SubscriptionParams>).params;
       const { topic, message, publishedAt, attestation } = event.data;
+      // Verify v4: the Relay may add the app's metadata to the subscription data
+      const { appMetadata } = event.data as { appMetadata?: Record<string, unknown> };
       const messageEvent: RelayerTypes.MessageEvent = {
         topic,
         message,
         publishedAt,
         transportType: TRANSPORT_TYPES.relay,
         attestation,
+        ...(appMetadata && { appMetadata }),
       };
       this.logger.debug(`Emitting Relayer Payload`);
       this.logger.trace({ type: "event", event: event.id, ...messageEvent });

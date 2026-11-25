@@ -71,4 +71,10 @@ export const RELAYER_HTTP_NOT_MEMBER_ERROR = "not_member";
 export const RELAYER_HTTP_NOT_MEMBER_RETRIES = 5;
 
 // relay errors that end a publish for good
-export const RELAYER_FINAL_ERRORS = ["blocked"];
+export const RELAYER_FINAL_ERRORS = [
+  "blocked",
+  // Verify v4: the relay refused the message's App Signature, or its lack of one. Sending the same
+  // message again gets the same answer.
+  "app_signature_required",
+  "invalid_app_signature",
+];

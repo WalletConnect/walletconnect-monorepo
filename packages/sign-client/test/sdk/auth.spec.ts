@@ -15,6 +15,7 @@ import { RELAYER_EVENTS } from "@walletconnect/core";
 import { ethers } from "ethers";
 
 import { ENGINE_RPC_OPTS, SignClient } from "../../src";
+import { withoutIdentity } from "../../src/verification.js";
 import { TEST_APP_METADATA_B, TEST_SIGN_CLIENT_OPTIONS, deleteClients, throttle } from "../shared";
 
 describe.concurrent("Authenticated Sessions", () => {
@@ -53,9 +54,8 @@ describe.concurrent("Authenticated Sessions", () => {
       Promise.race<void>([
         new Promise((resolve) => {
           wallet.on("session_authenticate", async (payload) => {
-            const verifyContext = payload.verifyContext;
-            expect(verifyContext).to.exist;
-            expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+            const verification = payload.verification;
+            expect(verification).to.deep.eq({ isVerified: false, isScam: false });
 
             // validate that the dapp has both `session_authenticate` & `session_proposal` stored
             // and expirer configured
@@ -307,9 +307,8 @@ describe.concurrent("Authenticated Sessions", () => {
     const result = await Promise.all([
       new Promise<void>((resolve) => {
         wallet.on("session_authenticate", async (payload) => {
-          const verifyContext = payload.verifyContext;
-          expect(verifyContext).to.exist;
-          expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+          const verification = payload.verification;
+          expect(verification).to.deep.eq({ isVerified: false, isScam: false });
 
           // validate that the dapp has both `session_authenticate` & `session_proposal` stored
           // and expirer configured
@@ -983,9 +982,10 @@ describe.concurrent("Authenticated Sessions", () => {
       }),
     ]);
 
-    // Ensure that pairing metadata has been set correctly on both peers.
+    // Ensure that pairing metadata has been set correctly on both peers: the wallet never keeps
+    // the app's self-asserted identity.
     expect(wallet.pairing.get(walletSession.pairingTopic).peerMetadata).to.deep.eq(
-      TEST_SIGN_CLIENT_OPTIONS.metadata,
+      withoutIdentity(TEST_SIGN_CLIENT_OPTIONS.metadata),
     );
     expect(dapp.pairing.get(session.pairingTopic).peerMetadata).to.deep.eq(TEST_APP_METADATA_B);
 

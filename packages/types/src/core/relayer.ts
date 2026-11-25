@@ -23,6 +23,13 @@ export declare namespace RelayerTypes {
     };
     tvf?: ITVF;
     attestation?: string;
+    /** Verify v4: the app's App Signature JWT, sent as the `appSignature` param. */
+    appSignature?: string;
+    /**
+     * Verify v4: signs the message again. A (re)publish whose `appSignature` has expired calls it
+     * and sends the new JWT instead; if it throws, the publish fails for good.
+     */
+    refreshAppSignature?: () => Promise<string>;
     publishMethod?: string;
     plaintext?: string;
   }
@@ -56,6 +63,8 @@ export declare namespace RelayerTypes {
     publishedAt: number;
     transportType?: TransportType;
     attestation?: string;
+    /** Verify v4: the Relay's view of the sending app, with its `appSignature`, if any. */
+    appMetadata?: Record<string, unknown>;
   }
 
   export interface RpcUrlParams {

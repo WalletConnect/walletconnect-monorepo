@@ -11,6 +11,7 @@ import type {
 
 import { SIGN_V3_WASM } from "./wasm/wasm-data.js";
 import { WasmSignClient, initSync } from "./wasm/sign_v3.js";
+import { unverified, withoutIdentity } from "../verification.js";
 
 const STORAGE_PREFIX = "wc@3:";
 
@@ -20,13 +21,25 @@ export interface V3ClientOptions {
   metadata: SignClientTypes.Metadata;
   storage: IKeyValueStorage;
   customStoragePrefix?: string;
+  /**
+   * Verify v4, app: signs the proposal and every message. The SDK calls it before creating the
+   * connection and before every send, and sends the JWT as `appSignature`. If it throws, the
+   * call fails; nothing is sent unsigned. Without it, nothing is signed.
+   */
+  appSignature?: Verify.AppSignatureOptions;
 }
 
 // The SDK's own shapes, as its JSON interface returns them.
 interface V3Session {
   topic: string;
+  role: "dapp" | "wallet";
   namespaces: SessionTypes.Namespaces;
-  peerMetadata: SignClientTypes.Metadata;
+  /** App side: the wallet's metadata. */
+  walletMetadata?: SignClientTypes.Metadata;
+  /** Wallet side: the app's, without its self-asserted identity. */
+  dappMetadata?: SignClientTypes.PeerMetadata;
+  /** Wallet side: the proposal's App Verification. */
+  verification?: Verify.AppVerification;
   expiry: number;
 }
 interface V3Proposal {
@@ -38,8 +51,9 @@ interface V3Proposal {
     sessionProperties?: ProposalTypes.SessionProperties;
     scopedProperties?: ProposalTypes.ScopedProperties;
   };
-  metadata: SignClientTypes.Metadata;
+  metadata: SignClientTypes.PeerMetadata;
   expiresAt: number;
+  verification: Verify.AppVerification;
 }
 type V3Event = { type: string } & Record<string, any>;
 type Waiter = { resolve: (s: SessionTypes.Struct) => void; reject: (e: unknown) => void };
@@ -57,10 +71,6 @@ export class SignV3Error extends Error {
 // v2's SDK errors that apps match on, as @walletconnect/utils getSdkError returns them.
 const USER_REJECTED = { code: 5000, message: "User rejected." };
 const EXPIRED = 6;
-
-const unverified = (origin = ""): Verify.Context => ({
-  verified: { origin, validation: "UNKNOWN", verifyUrl: "" },
-});
 
 let wasmLoaded = false;
 
@@ -85,7 +95,9 @@ type Emit = <E extends SignClientTypes.Event>(
  * v3 has no counterpart for some v2 fields, so they are filled in:
  * - the pairing topic is the connection id, which is also the session topic;
  * - public keys are empty;
- * - `verifyContext` is UNKNOWN;
+ * - `verification` comes from Verify v4: the app's signature, checked by the Relay and the SDK,
+ *   and the Relay's `appMetadata`. Wallets never see the app's own name, url or icons: a wallet
+ *   session's `peer.metadata` has them empty.
  * - a session doesn't keep the proposal's required and optional namespaces.
  */
 export class V3Client {
@@ -144,7 +156,7 @@ export class V3Client {
       expiry: p.expiresAt,
       relay: { protocol: "irn" },
       active: false,
-      peerMetadata: p.metadata,
+      peerMetadata: withoutIdentity(p.metadata),
     };
   };
 
@@ -256,6 +268,8 @@ export class V3Client {
     this.wasm = await WasmSignClient.create(JSON.stringify(config), storage, (json: string) =>
       this.onV3Event(JSON.parse(json)),
     );
+    const appSignature = this.opts.appSignature;
+    if (appSignature) this.wasm.setAppSigner(appSigner(appSignature));
     await this.refreshSessions();
     this.wasm.start();
     if (typeof document !== "undefined" && typeof addEventListener === "function") {
@@ -295,7 +309,14 @@ export class V3Client {
       requiredNamespaces: {},
       optionalNamespaces: {},
       self: { publicKey: "", metadata: this.opts.metadata },
-      peer: { publicKey: "", metadata: s.peerMetadata },
+      peer: {
+        publicKey: "",
+        metadata:
+          s.role === "wallet"
+            ? withoutIdentity(s.dappMetadata)
+            : (s.walletMetadata as SignClientTypes.Metadata),
+      },
+      ...(s.role === "wallet" && { verification: s.verification ?? unverified() }),
     };
     this.sessions.set(session.topic, session);
     return session;
@@ -317,7 +338,7 @@ export class V3Client {
       case "session_proposal": {
         const p = e.proposal as V3Proposal;
         this.proposals.set(p.proposalId, p.id);
-        const params: ProposalTypes.Struct = {
+        const params: ProposalTypes.WalletStruct = {
           id: p.proposalId,
           expiryTimestamp: p.expiresAt,
           relays: [{ protocol: "irn" }],
@@ -331,7 +352,7 @@ export class V3Client {
         this.dispatch("session_proposal", {
           id: p.proposalId,
           params,
-          verifyContext: unverified(p.metadata.url),
+          verification: p.verification ?? unverified(),
         });
         break;
       }
@@ -367,7 +388,7 @@ export class V3Client {
           id: e.id,
           topic: e.topic,
           params: { request: e.request, chainId: e.chainId },
-          verifyContext: unverified(this.sessions.get(e.topic)?.peer.metadata.url),
+          verification: e.verification ?? unverified(),
         });
         break;
       case "session_event":
@@ -396,6 +417,30 @@ export class V3Client {
       case "session_ping":
         this.dispatch("session_ping", { id: e.id, topic: e.topic });
         break;
+      case "app_signature_mismatch":
+        this.dispatch("app_signature_mismatch", {
+          topic: e.topic,
+          ...(e.id != null && { id: e.id }),
+          ...(e.method != null && { method: e.method }),
+        });
+        break;
+      case "app_signature_required":
+        this.dispatch("app_signature_required", {
+          topic: e.topic,
+          ...(e.id != null && { id: e.id }),
+          ...(e.method != null && { method: e.method }),
+          domain: e.domain,
+        });
+        break;
+      case "app_signature_domain_changed":
+        this.dispatch("app_signature_domain_changed", {
+          topic: e.topic,
+          ...(e.id != null && { id: e.id }),
+          ...(e.method != null && { method: e.method }),
+          domain: e.domain,
+          signedBy: e.signedBy,
+        });
+        break;
       case "session_delete":
         this.sessions.delete(e.topic);
         if (e.reason === "expired") this.dispatch("session_expire", { topic: e.topic });
@@ -403,6 +448,21 @@ export class V3Client {
         break;
     }
   }
+}
+
+/**
+ * The WASM side calls it with `{ request, cnx }` as JSON, `request` being JSON text and `cnx` the
+ * connection the JWT's `cnx` claim must name.
+ */
+function appSigner(opts: Verify.AppSignatureOptions) {
+  return async (input: string): Promise<string> => {
+    const { request, cnx } = JSON.parse(input) as { request: string; cnx: string };
+    const res = await opts.callback({ request: JSON.parse(request), requestJson: request, cnx });
+    if (typeof res?.appSignature !== "string" || !res.appSignature) {
+      throw new Error("appSignature.callback returned no appSignature");
+    }
+    return res.appSignature;
+  };
 }
 
 const escapeKey = (k: string) => k.replace(/%/g, "%25").replace(/\//g, "%2F").replace(/\\/g, "%5C");

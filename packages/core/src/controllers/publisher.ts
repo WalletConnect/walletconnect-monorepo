@@ -9,6 +9,7 @@ import {
   getRelayProtocolName,
   isUndefined,
   createExpiringPromise,
+  isAppSignatureExpired,
 } from "@walletconnect/utils";
 import { getBigIntRpcId, isJsonRpcError } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, ONE_MINUTE, ONE_SECOND, toMiliseconds } from "@walletconnect/time";
@@ -24,6 +25,8 @@ export class PublishFailedError extends Error {
   constructor(
     public code: number,
     public reason: string,
+    /** Why, as a code: the relay's, such as `blocked` or `app_signature_required`, or `app_signature_failed`. */
+    public error?: string,
   ) {
     super(`Publish failed and can't be retried: ${reason}`);
   }
@@ -31,8 +34,11 @@ export class PublishFailedError extends Error {
 
 type OnFailedFinal = (error: PublishFailedError) => void;
 
+/** The App Signature expired and couldn't be renewed: the message can't be sent. */
+const APP_SIGNATURE_FAILED = "app_signature_failed";
+
 function isFinalError(error: any): error is { code: number; message: string; data?: string } {
-  return RELAYER_FINAL_ERRORS.includes(error?.message);
+  return RELAYER_FINAL_ERRORS.includes(error?.message) || error?.message === APP_SIGNATURE_FAILED;
 }
 
 type IPublishType = {
@@ -87,6 +93,7 @@ export class Publisher extends IPublisher {
         prompt,
         tag,
         attestation: opts?.attestation,
+        ...(opts?.appSignature && { appSignature: opts.appSignature }),
         plaintext: opts?.plaintext,
         ...opts?.tvf,
       },
@@ -160,7 +167,7 @@ export class Publisher extends IPublisher {
     this.logger.trace({ type: "method", method: "publishCustom", params });
 
     const { payload, opts = {} } = params;
-    const { attestation, tvf, publishMethod, prompt, tag, ttl = FIVE_MINUTES } = opts;
+    const { attestation, appSignature, tvf, publishMethod, prompt, tag, ttl = FIVE_MINUTES } = opts;
 
     const id = opts.id || (getBigIntRpcId().toString() as any);
     const api = getRelayProtocolApi(getRelayProtocolName().protocol);
@@ -174,6 +181,7 @@ export class Publisher extends IPublisher {
         prompt,
         tag,
         attestation,
+        ...(appSignature && { appSignature }),
         ...tvf,
       },
     };
@@ -259,6 +267,11 @@ export class Publisher extends IPublisher {
   // ---------- Private ----------------------------------------------- //
 
   private async rpcPublish(request: RequestArguments, opts?: RelayerTypes.PublishOptions) {
+    // awaited only when needed, so a publish without one stays synchronous up to the request
+    const appSignature = (request.params as { appSignature?: string } | undefined)?.appSignature;
+    if (appSignature && isAppSignatureExpired(appSignature)) {
+      await this.renewAppSignature(request, opts);
+    }
     this.logger.debug(`Outgoing Relay Payload`);
     this.logger.trace({ type: "message", direction: "outgoing", request });
     const result = await this.relayer.request(request);
@@ -266,6 +279,23 @@ export class Publisher extends IPublisher {
     this.relayer.events.emit(RELAYER_EVENTS.publish, { ...request, ...opts });
     this.logger.debug(`Successfully Published Payload`);
     return result;
+  }
+
+  /**
+   * Verify v4: a (re)publish whose App Signature has expired asks the app to sign again, and sends
+   * the new JWT. An expired JWT is never resent; if the app can't sign, the publish fails for good.
+   */
+  private async renewAppSignature(request: RequestArguments, opts?: RelayerTypes.PublishOptions) {
+    const params = request.params as { appSignature?: string };
+    try {
+      if (!opts?.refreshAppSignature) throw new Error("no way to sign again");
+      params.appSignature = await opts.refreshAppSignature();
+    } catch (e) {
+      throw Object.assign(new Error(APP_SIGNATURE_FAILED), {
+        code: 0,
+        data: (e as Error)?.message,
+      });
+    }
   }
 
   private removeRequestFromQueue(id: string) {
@@ -294,7 +324,7 @@ export class Publisher extends IPublisher {
   private onFailedFinal(id: string, error: { code: number; message: string; data?: string }) {
     this.queue.delete(id);
     this.failedFinal.get(id.toString())?.(
-      new PublishFailedError(error.code, error.data || error.message),
+      new PublishFailedError(error.code, error.data || error.message, error.message),
     );
   }
 
