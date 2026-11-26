@@ -56,6 +56,7 @@ describe.concurrent("Authenticated Sessions", () => {
             const verifyContext = payload.verifyContext;
             expect(verifyContext).to.exist;
             expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+            expect(verifyContext.verified.origin).to.eq("");
 
             // validate that the dapp has both `session_authenticate` & `session_proposal` stored
             // and expirer configured
@@ -310,6 +311,7 @@ describe.concurrent("Authenticated Sessions", () => {
           const verifyContext = payload.verifyContext;
           expect(verifyContext).to.exist;
           expect(verifyContext.verified.validation).to.eq("UNKNOWN");
+          expect(verifyContext.verified.origin).to.eq("");
 
           // validate that the dapp has both `session_authenticate` & `session_proposal` stored
           // and expirer configured

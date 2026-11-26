@@ -3377,6 +3377,13 @@ export class Engine extends IEngine {
       this.client.logger.warn(e);
     }
 
+    // When validation is unknown there is no verified origin to report, so keep
+    // it empty rather than echoing the peer-supplied metadata url. This aligns
+    // the verify context with the Swift and Kotlin SDKs.
+    if (context.verified.validation === "UNKNOWN") {
+      context.verified.origin = "";
+    }
+
     this.client.logger.debug(`Verify context: ${JSON.stringify(context)}`);
     return context;
   };
