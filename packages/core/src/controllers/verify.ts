@@ -131,6 +131,11 @@ export class Verify extends IVerify {
         }
         return validation;
       }
+      // A v2 attestation was present but could not be validated (e.g. signature
+      // mismatch or expiry). Resolve to unknown rather than falling back to the
+      // legacy attestation lookup for that request.
+      this.logger.debug("resolve: jwt attestation present but not validated, skipping");
+      return;
     }
     if (!hash) return;
     const verifyUrl = this.getVerifyUrl(params?.verifyUrl);
