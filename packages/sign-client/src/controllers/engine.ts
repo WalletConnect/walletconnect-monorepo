@@ -2065,7 +2065,13 @@ export class Engine extends IEngine {
 
     switch (reqMethod) {
       case "wc_sessionPropose":
-        return await this.onSessionProposeRequest({ topic, payload, attestation, encryptedId });
+        return await this.onSessionProposeRequest({
+          topic,
+          payload,
+          attestation,
+          encryptedId,
+          transportType,
+        });
       case "wc_sessionSettle":
         return await this.onSessionSettleRequest(topic, payload);
       case "wc_sessionUpdate":
@@ -2155,7 +2161,7 @@ export class Engine extends IEngine {
   // ---------- Relay Events Handlers --------------------------------- //
 
   private onSessionProposeRequest: EnginePrivate["onSessionProposeRequest"] = async (args) => {
-    const { topic, payload, attestation, encryptedId } = args;
+    const { topic, payload, attestation, encryptedId, transportType } = args;
     const { params, id } = payload;
     try {
       const event = this.client.core.eventClient.getEvent({ topic });
@@ -2183,6 +2189,7 @@ export class Engine extends IEngine {
         hash: hashMessage(JSON.stringify(payload)),
         encryptedId,
         metadata: proposal.proposer.metadata,
+        transportType,
       });
 
       event?.addTrace(EVENT_CLIENT_PAIRING_TRACES.emit_session_proposal);
@@ -3356,9 +3363,11 @@ export class Engine extends IEngine {
 
     try {
       if (transportType === TRANSPORT_TYPES.link_mode) {
-        const applink = this.getAppLinkIfEnabled(metadata, transportType);
-        context.verified.validation =
-          applink && new URL(applink).origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
+        // Link mode requests are not attested by the Verify server, so there is
+        // no server-side signal to validate the origin against. The verify
+        // context therefore stays unknown with an empty origin.
+        context.verified.validation = "UNKNOWN";
+        context.verified.origin = "";
         return context;
       }
       const result = await this.client.core.verify.resolve({
