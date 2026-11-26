@@ -1,5 +1,24 @@
 # @walletconnect/sign-client
 
+## 2.26.1
+
+### Patch Changes
+
+- [#7400](https://github.com/WalletConnect/walletconnect-monorepo/pull/7400) [`4facf8a`](https://github.com/WalletConnect/walletconnect-monorepo/commit/4facf8a101aeaa908765f3a7cbac15e2c986995b) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - Leave `verified.origin` empty when the verify context validation is `UNKNOWN`. This aligns the verify context with the Swift and Kotlin SDKs.
+
+- [#7395](https://github.com/WalletConnect/walletconnect-monorepo/pull/7395) [`ade4b95`](https://github.com/WalletConnect/walletconnect-monorepo/commit/ade4b95a26963572b3fd88b2eb9e0c7c21d721cf) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - Ship consumer ProGuard/R8 rules for JNA and the yttrium uniffi bindings so minified Android release builds (default in Expo SDK 58) no longer fail with `Missing class java.awt.Component`.
+
+- [#7398](https://github.com/WalletConnect/walletconnect-monorepo/pull/7398) [`d3da6ff`](https://github.com/WalletConnect/walletconnect-monorepo/commit/d3da6ff2d5929e40d520553c42fa3a17ef612cd8) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - Harden `isAppInstalled` on iOS: resolve `false` for `nil`, empty or malformed input instead of querying `(null)://`, accept `scheme`, `scheme://` and full URLs, never reject, and call `canOpenURL` on the main queue. Add `getInstalledApps(identifiers)` (URL schemes on iOS, package names on Android) to check many apps in one native call; it is exposed on `global.Application` when the WalletConnect native module is used.
+
+- [#7397](https://github.com/WalletConnect/walletconnect-monorepo/pull/7397) [`11700eb`](https://github.com/WalletConnect/walletconnect-monorepo/commit/11700ebf6424e4402bdfd268ba7102e34ead5326) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - Import `ox` through its `ox/Secp256k1` and `ox/Signature` subpaths so importing `@walletconnect/utils` no longer loads `ox`'s BLS module and `@noble/curves/bls12-381`, whose import-time precomputation slowed React Native startup.
+
+- [#7402](https://github.com/WalletConnect/walletconnect-monorepo/pull/7402) [`9ee21ff`](https://github.com/WalletConnect/walletconnect-monorepo/commit/9ee21ff1eae8089b51a75fd8fe117bb2c7a14715) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - Link mode verify context now resolves to `UNKNOWN`. Link mode traffic is not attested by the Verify server, so link mode requests report `UNKNOWN` validation.
+
+- Updated dependencies [[`ade4b95`](https://github.com/WalletConnect/walletconnect-monorepo/commit/ade4b95a26963572b3fd88b2eb9e0c7c21d721cf), [`d3da6ff`](https://github.com/WalletConnect/walletconnect-monorepo/commit/d3da6ff2d5929e40d520553c42fa3a17ef612cd8), [`11700eb`](https://github.com/WalletConnect/walletconnect-monorepo/commit/11700ebf6424e4402bdfd268ba7102e34ead5326), [`751039e`](https://github.com/WalletConnect/walletconnect-monorepo/commit/751039e2a1102f03c23632f8f478f557091ee5dc)]:
+  - @walletconnect/types@2.26.1
+  - @walletconnect/utils@2.26.1
+  - @walletconnect/core@2.26.1
+
 ## 2.26.0
 
 ### Patch Changes
