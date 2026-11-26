@@ -1,5 +1,15 @@
 # @walletconnect/types
 
+## 2.26.1
+
+### Patch Changes
+
+- [#7395](https://github.com/WalletConnect/walletconnect-monorepo/pull/7395) [`ade4b95`](https://github.com/WalletConnect/walletconnect-monorepo/commit/ade4b95a26963572b3fd88b2eb9e0c7c21d721cf) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - Ship consumer ProGuard/R8 rules for JNA and the yttrium uniffi bindings so minified Android release builds (default in Expo SDK 58) no longer fail with `Missing class java.awt.Component`.
+
+- [#7398](https://github.com/WalletConnect/walletconnect-monorepo/pull/7398) [`d3da6ff`](https://github.com/WalletConnect/walletconnect-monorepo/commit/d3da6ff2d5929e40d520553c42fa3a17ef612cd8) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - Harden `isAppInstalled` on iOS: resolve `false` for `nil`, empty or malformed input instead of querying `(null)://`, accept `scheme`, `scheme://` and full URLs, never reject, and call `canOpenURL` on the main queue. Add `getInstalledApps(identifiers)` (URL schemes on iOS, package names on Android) to check many apps in one native call; it is exposed on `global.Application` when the WalletConnect native module is used.
+
+- [#7397](https://github.com/WalletConnect/walletconnect-monorepo/pull/7397) [`11700eb`](https://github.com/WalletConnect/walletconnect-monorepo/commit/11700ebf6424e4402bdfd268ba7102e34ead5326) Thanks [@ignaciosantise](https://github.com/ignaciosantise)! - Import `ox` through its `ox/Secp256k1` and `ox/Signature` subpaths so importing `@walletconnect/utils` no longer loads `ox`'s BLS module and `@noble/curves/bls12-381`, whose import-time precomputation slowed React Native startup.
+
 ## 2.26.0
 
 ### Minor Changes

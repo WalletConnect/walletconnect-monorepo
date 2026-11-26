@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2
+
+### Patch Changes
+
+- Updated dependencies [[`ade4b95`](https://github.com/WalletConnect/walletconnect-monorepo/commit/ade4b95a26963572b3fd88b2eb9e0c7c21d721cf), [`d3da6ff`](https://github.com/WalletConnect/walletconnect-monorepo/commit/d3da6ff2d5929e40d520553c42fa3a17ef612cd8), [`11700eb`](https://github.com/WalletConnect/walletconnect-monorepo/commit/11700ebf6424e4402bdfd268ba7102e34ead5326)]:
+  - @walletconnect/utils@2.26.1
+
 ## 1.1.1
 
 ### Patch Changes
