@@ -126,6 +126,8 @@ describe("Sign Client Link Mode", () => {
       await Promise.all([
         new Promise<void>((resolve) => {
           wallet.on("session_request", async (params) => {
+            expect(params.verifyContext.verified.validation).to.eq("UNKNOWN");
+            expect(params.verifyContext.verified.origin).to.eq("");
             await wallet.respond({
               topic: session.topic,
               response: formatJsonRpcResult(params.id, "test"),

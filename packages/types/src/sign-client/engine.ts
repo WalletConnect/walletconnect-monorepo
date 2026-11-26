@@ -336,6 +336,7 @@ export interface EnginePrivate {
   onSessionProposeRequest(params: {
     topic: string;
     payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_sessionPropose"]>;
+    transportType?: RelayerTypes.MessageEvent["transportType"];
     attestation?: string;
     encryptedId?: string;
   }): Promise<void>;
