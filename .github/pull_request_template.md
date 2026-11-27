@@ -1,42 +1,53 @@
-> Creating a release? Please use the [Release PR Template](https://github.com/WalletConnect/walletconnect-monorepo/blob/v2.0/.github/pr_template_release.md) instead.
+> Creating a release? Use the [Release PR Template](https://github.com/WalletConnect/walletconnect-monorepo/blob/v2.0/.github/pr_template_release.md) instead.
 
-## Description
+<!--
+AGENTS: Never delete this instruction. Read `/pr-handoff` before editing this
+description. Why, Decisions, Worth looking at, and Breaking change are
+author-owned. Never invent, infer, summarize, or rewrite them. Leave them
+unchanged unless the author, in the current conversation, supplies or approves
+exact text for a named section. An implementation plan, ticket, commit, diff,
+quote, or earlier discussion does not count. An empty author section is
+correct: never fill it with None, N/A, TBD, or a summary.
+-->
 
-Please include a brief summary of the change.
+## Why
 
-## Type of change
+<!-- why this exists and how it fits into the wider work. Not a summary of
+     the diff, the reviewer is about to read the diff. The ticket link goes
+     in References below. -->
 
-- [ ] Chore (non-breaking change that addresses non-functional tasks, maintenance, or code quality improvements)
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Draft PR (breaking/non-breaking change which needs more work for having a proper functionality _[Mark this PR as ready to review only when completely ready]_)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+## Decisions
 
-## How has this been tested?
+<!-- what you considered, what you rejected, what you are not fully happy
+     with. "None" is fine. -->
 
-Please describe the tests that you ran to verify your changes. Please also list any relevant details for your configuration.
+## Worth looking at
 
-## Fixes/Resolves (Optional)
+<!-- risks, non-obvious consequences, anything you are unsure about, manual
+     checks CI cannot do. "Nothing in particular" is fine, but say it.
+     A breaking change to a frozen surface is called out here, by name. -->
 
-Please list any issues that are fixed by this PR in the format `#<issue number>`. If it fixes multiple issues, please put each issue in a separate line. If this Pull Request does not fix any issues, please delete this section.
+<!-- `/visual-recap` recommends a state; the author sets this checkbox. -->
 
-## Examples/Screenshots (Optional)
+- [ ] Breaking change
 
-Please attach a screenshot or screen recording of features/fixes you've implemented to verify your changes. Please also note any relevant details for your configuration. If your changes do not affect the UI, please delete this section.
+<!--
+Everything below this line is agent-owned. Do not hand-write inside the
+markers: `/visual-recap` rewrites each block in place.
+-->
 
-Use this table template to show examples of your changes:
+<!-- references:start -->
+<!-- External evidence a reviewer cannot recover from the diff.
+     `/visual-recap` owns selection and formatting. -->
 
-| Before       | After        |
-| ------------ | ------------ |
-| Content Cell | Content Cell |
-| Content Cell | Content Cell |
+<!-- references:end -->
 
-## Checklist
+<!-- system-recap:start -->
 
-- [ ] I have performed a self-review of my own code
-- [ ] My changes generate no new warnings
-- [ ] Any dependent changes have been merged and published in downstream modules
+<!-- system-recap:end -->
 
-# Additional Information (Optional)
+<!-- agent-context:start -->
+<!-- Facts a future agent cannot recover from the diff, tests, commits,
+     or author sections. `/visual-recap` owns inclusion and formatting. -->
 
-Please include any additional information that may be useful for the reviewer.
+<!-- agent-context:end -->

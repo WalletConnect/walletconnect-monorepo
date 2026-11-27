@@ -1,0 +1,66 @@
+name: WC Agent
+on:
+  workflow_run: # GitHub runs the default branch's copy, so a PR cannot change this file or what it reads
+    workflows: [WC Agent trigger]
+    types: [completed]
+permissions: {}
+jobs:
+  # Triggers can finish out of order. A run for an older push would join the review's concurrency group after the
+  # newest push's run and cancel it, so a run whose commit is no longer a PR head stops here, outside the group.
+  current:
+    if: >-
+      github.event.workflow_run.event == 'pull_request'
+      && github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+      && github.event.workflow_run.actor.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      head: ${{ steps.head.outputs.head }}
+    steps:
+      - id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if gh pr list --head "$BRANCH" --state open --json headRefOid -q '.[].headRefOid' | grep -qx "$SHA"; then
+            echo "head=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$SHA is no longer the head of an open PR on $BRANCH; the run for the new head reviews it."
+          fi
+  review:
+    # This job's own check lands on the default branch. The PR's "Review" check is posted by the App.
+    name: Review
+    needs: current
+    if: needs.current.outputs.head == 'true'
+    concurrency:
+      group: pr-review-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      id-token: write # exchanged for a short-lived Anthropic token
+    # Allows deployments from the default branch only and holds the App's id and key.
+    environment: pr-review
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      # The PR's code is only read: everything the model runs runs in a container without the tokens.
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }} # required: the action refuses any other checkout
+          fetch-depth: 0
+          persist-credentials: false # required: the action refuses to run otherwise
+      - uses: WalletConnect/agents/pr-reviewer@v1
+        with:
+          anthropic_federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          anthropic_service_account_id: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          anthropic_organization_id: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          app_id: ${{ secrets.WALLETCONNECT_AGENT_APP_ID }}
+          app_private_key: ${{ secrets.WALLETCONNECT_AGENT_APP_PRIVATE_KEY }}
+          # A repository variable, so a PR cannot raise it. Unset: the PR is scored and labelled, never approved.
+          approve_max_risk: ${{ vars.WC_REVIEW_MAX_RISK }}
+          # review_on_push: "false" # review only the first commit on its own; later ones on request

@@ -212,7 +212,12 @@ const namespaces = {
 4. Create changeset if user-facing: `npm run changeset`
 5. Open PR targeting `v2.0`
 6. CI runs lint, build, tests
-7. Claude auto-review provides feedback
+7. The WalletConnect PR reviewer (`walletconnect-agent`) reviews the PR and may approve it; `@walletconnect-agent review` re-runs it
+
+PR descriptions:
+
+- Opening a PR or refreshing its description: `/pr-handoff` (`.claude/skills/pr-handoff/`), which writes the agent blocks through `/visual-recap`.
+- `Why`, `Decisions`, `Worth looking at` and the Breaking change checkbox in `.github/pull_request_template.md` are author-owned. Never write them unless the author supplies or approves the exact text in the current conversation.
 
 ### Debugging Tips
 

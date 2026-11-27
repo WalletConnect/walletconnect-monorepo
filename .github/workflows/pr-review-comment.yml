@@ -1,0 +1,20 @@
+name: WC Agent review comment
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  actions: write # re-runs the review
+  checks: read # finds the review run from the PR's Review check
+  pull-requests: read # finds the PR's latest commit
+jobs:
+  rerun: # `@walletconnect-agent review` re-runs the review behind the PR's Review check
+    # Anyone's comment starts the job, but pr-reviewer/rerun acts only for commenters with write access.
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '@walletconnect-agent review')
+    environment: pr-review # holds the App's id and key
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: WalletConnect/agents/pr-reviewer/rerun@v1
+        with:
+          app_id: ${{ secrets.WALLETCONNECT_AGENT_APP_ID }}
+          app_private_key: ${{ secrets.WALLETCONNECT_AGENT_APP_PRIVATE_KEY }}

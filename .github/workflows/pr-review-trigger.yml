@@ -1,0 +1,17 @@
+name: WC Agent trigger
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions: {}
+jobs:
+  # Holds no secrets: a PR can edit this file. Its completion starts pr-review.yml from the default branch.
+  queue:
+    name: Queue # never Review, the name of the required check the App posts
+    if: >-
+      !github.event.pull_request.draft
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: "true"
