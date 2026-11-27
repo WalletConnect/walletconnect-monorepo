@@ -8,13 +8,46 @@ permissions:
   pull-requests: read # finds the PR's latest commit
 jobs:
   rerun: # `@walletconnect-agent review` re-runs the review behind the PR's Review check
-    # Anyone's comment starts the job, but pr-reviewer/rerun acts only for commenters with write access.
     if: github.event.issue.pull_request && contains(github.event.comment.body, '@walletconnect-agent review')
     environment: pr-review # holds the App's id and key
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: WalletConnect/agents/pr-reviewer/rerun@v1
+      # Anyone can comment on a public repository. pr-reviewer/rerun makes this check too, but here the App's key
+      # is needed to fetch that action, so the check comes first and nobody else's comment gets as far as the key.
+      - id: commenter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          COMMENTER: ${{ github.event.comment.user.login }}
+        run: |
+          permission=$(gh api "repos/$GH_REPO/collaborators/$COMMENTER/permission" -q .permission)
+          if [[ "$permission" != admin && "$permission" != write ]]; then
+            echo "::notice::@$COMMENTER has $permission access; requesting a review needs write."
+            exit 0
+          fi
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
+      # A public repository cannot use an action from the internal WalletConnect/agents with `uses: owner/repo@ref`,
+      # so the App reads it instead. The token can only read that one repository and is revoked when the job ends.
+      - id: reviewer-token
+        if: steps.commenter.outputs.allowed == 'true'
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.WALLETCONNECT_AGENT_APP_ID }}
+          private-key: ${{ secrets.WALLETCONNECT_AGENT_APP_PRIVATE_KEY }}
+          owner: WalletConnect
+          repositories: agents
+          permission-contents: read
+      - if: steps.commenter.outputs.allowed == 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: WalletConnect/agents
+          ref: v1
+          token: ${{ steps.reviewer-token.outputs.token }}
+          sparse-checkout: pr-reviewer/rerun
+          persist-credentials: false
+      - if: steps.commenter.outputs.allowed == 'true'
+        uses: ./pr-reviewer/rerun
         with:
           app_id: ${{ secrets.WALLETCONNECT_AGENT_APP_ID }}
           app_private_key: ${{ secrets.WALLETCONNECT_AGENT_APP_PRIVATE_KEY }}

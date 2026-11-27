@@ -54,7 +54,29 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }} # required: the action refuses any other checkout
           fetch-depth: 0
           persist-credentials: false # required: the action refuses to run otherwise
-      - uses: WalletConnect/agents/pr-reviewer@v1
+      # A public repository cannot use an action from the internal WalletConnect/agents with `uses: owner/repo@ref`,
+      # so the App reads it instead. The token can only read that one repository and is revoked when the job ends.
+      - id: reviewer-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.WALLETCONNECT_AGENT_APP_ID }}
+          private-key: ${{ secrets.WALLETCONNECT_AGENT_APP_PRIVATE_KEY }}
+          owner: WalletConnect
+          repositories: agents
+          permission-contents: read
+      # After the PR's checkout, which would otherwise clean this directory away.
+      - uses: actions/checkout@v6
+        with:
+          repository: WalletConnect/agents
+          ref: v1 # the tag `uses: WalletConnect/agents/pr-reviewer@v1` would resolve
+          token: ${{ steps.reviewer-token.outputs.token }}
+          path: pr-reviewer-base
+          sparse-checkout: pr-reviewer
+          persist-credentials: false
+      # A local action must be in the workspace, which the model's container mounts. A link to a copy outside it
+      # loads the action but leaves the reviewer's own code and node_modules unreadable to the model.
+      - run: mv pr-reviewer-base "$RUNNER_TEMP/" && ln -s "$RUNNER_TEMP/pr-reviewer-base" pr-reviewer-base
+      - uses: ./pr-reviewer-base/pr-reviewer
         with:
           anthropic_federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
           anthropic_service_account_id: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
