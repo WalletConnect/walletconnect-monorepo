@@ -105,6 +105,32 @@ if (UniversalProvider.isHostLaunch() && !provider.session) {
 - If `postMessage` throws, `connect()` rejects. It doesn't fall back to `display_uri`.
 - Only call `connect()` automatically on page load. After the user disconnects, connect again only when they ask to, or the host will receive a new offer and may approve it straight away.
 
+## Wallet fee config
+
+On a host launch, a wallet can share a fee config for your app. When the wallet approves the session with a `wallet_guide_id` session property, Universal Provider loads the config from the WalletConnect API after connecting, after restoring a session in `init()`, and on `session_update`. Without a host launch, or without a `wallet_guide_id`, no request is made.
+
+`getWalletFee()` returns the whole config for the session, with one recipient per chain. Call it just before building a transaction, and pick the recipient for the chain you transact on:
+
+```typescript
+const fee = await provider.getWalletFee();
+// {
+//   feeBps: 50,
+//   referralCode: "...",
+//   recipients: [{ chainId: "eip155:1", address: "0x..." }, { chainId: "eip155:10", address: "0x..." }],
+// } | undefined
+const recipient = fee?.recipients.find(({ chainId }) => chainId === "eip155:10")?.address;
+
+provider.on("wallet_fee_changed", (fee: WalletFee | undefined) => {
+  // the config loaded or changed, or the session ended
+});
+```
+
+- Each recipient is parsed from a CAIP-10 account into a CAIP-2 `chainId` and an `address`; malformed entries are dropped. If none matches your chain, the wallet has no fee recipient there. `feeBps` is already capped by the API. Applying the fee to a transaction is up to your app.
+- It resolves `undefined` when there's no config, or when the config has neither recipients nor a referral code. It waits for a request in flight and never throws: failures and timeouts (3 seconds) resolve `undefined` and log a warning.
+- The config is fetched once per session, and again on `session_update`. Switching chains doesn't change it or fetch it again.
+- `wallet_fee_changed` is emitted whenever the value `getWalletFee()` returns changes, including `undefined` on disconnect. The same recipients in a different order don't count as a change.
+- To target another API, for example staging, pass `walletFeeApiUrl` to `init()`, without a trailing slash. It defaults to `https://api.walletconnect.com`.
+
 ## Provider Methods
 
 ```typescript
