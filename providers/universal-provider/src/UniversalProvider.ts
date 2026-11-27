@@ -8,6 +8,8 @@ import {
   convertChainIdToNumber,
   getAccountsFromSession,
   getChainsFromApprovedSession,
+  getWalletConnectHost,
+  isHostLaunch,
   mergeRequiredOptionalNamespaces,
   parseCaip10Account,
   populateNamespacesChains,
@@ -30,6 +32,8 @@ import {
   DefaultChainChanged,
   OnChainChanged,
   EmitAccountsChangedOnChainChange,
+  WalletConnectHost,
+  WalletConnectHostMessage,
 } from "./types/index.js";
 
 import {
@@ -63,6 +67,15 @@ export class UniversalProvider implements IUniversalProvider {
     const provider = new UniversalProvider(opts);
     await provider.initialize();
     return provider;
+  }
+
+  /**
+   * Whether a host, such as a wallet's in-app browser, opened this app and injected `window.walletConnectHost`.
+   * On a host launch, `connect()` sends the pairing URI to the host instead of emitting `display_uri`.
+   * Synchronous and SSR-safe, so it can be checked before `init()` resolves.
+   */
+  static isHostLaunch(): boolean {
+    return isHostLaunch();
   }
 
   constructor(opts: UniversalProviderOpts) {
@@ -190,6 +203,10 @@ export class UniversalProvider implements IUniversalProvider {
     return true;
   }
 
+  get isHostLaunch(): boolean {
+    return isHostLaunch();
+  }
+
   public async pair(pairingTopic: string | undefined): Promise<SessionTypes.Struct> {
     const { uri, approval } = await this.client.connect({
       pairingTopic,
@@ -203,7 +220,12 @@ export class UniversalProvider implements IUniversalProvider {
 
     if (uri) {
       this.uri = uri;
-      this.events.emit("display_uri", uri);
+      const host = getWalletConnectHost();
+      if (host) {
+        this.sendPairingUriToHost(host, uri);
+      } else {
+        this.events.emit("display_uri", uri);
+      }
     }
 
     const session = await approval();
@@ -271,6 +293,9 @@ export class UniversalProvider implements IUniversalProvider {
 
   private async initialize() {
     this.logger.trace(`Initialized`);
+    if (this.isHostLaunch) {
+      this.logger.info("Host launch detected: connect() will send the pairing URI to the host");
+    }
     await this.createClient();
     await this.checkStorage();
     this.registerEventListeners();
@@ -306,6 +331,19 @@ export class UniversalProvider implements IUniversalProvider {
       this.session = sessions[0];
     }
     this.logger.trace(`SignClient Initialized`);
+  }
+
+  private sendPairingUriToHost(host: Required<WalletConnectHost>, uri: string) {
+    const message: WalletConnectHostMessage = { type: "wc_session_offer", uri };
+    try {
+      host.postMessage(message);
+    } catch (error) {
+      this.logger.error(error, "Failed to send the pairing URI to the host");
+      throw new Error(
+        `Failed to send the pairing URI to the host: ${(error as Error)?.message ?? error}`,
+      );
+    }
+    this.logger.info("Sent the pairing URI to the host");
   }
 
   private createProviders(): void {
