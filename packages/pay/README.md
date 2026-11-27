@@ -77,8 +77,10 @@ for (const action of actions) {
 Sign the actions with your wallet and confirm the payment:
 
 ```typescript
-// Sign each action with your wallet (implementation depends on your wallet SDK)
-const signatures = await Promise.all(
+// Sign each action with your wallet (implementation depends on your wallet SDK).
+// Each result is a plain string (signature, tx hash) or, for chains such as
+// Tron, a JSON object ({ raw_data_hex, signature }) — forwarded verbatim.
+const data = await Promise.all(
   actions.map((action) =>
     wallet.signTypedData(action.walletRpc.chainId, JSON.parse(action.walletRpc.params)),
   ),
@@ -88,7 +90,7 @@ const signatures = await Promise.all(
 const result = await client.confirmPayment({
   paymentId: options.paymentId,
   optionId: options.options[0].id,
-  signatures,
+  data,
 });
 
 if (result.status === "succeeded") {
@@ -119,7 +121,7 @@ if (options.collectData) {
   const result = await client.confirmPayment({
     paymentId: options.paymentId,
     optionId: selectedOptionId,
-    signatures,
+    data,
     collectedData,
   });
 }
@@ -172,16 +174,20 @@ interface GetRequiredPaymentActionsParams {
 
 ##### `confirmPayment(params)`
 
-Submit signatures and confirm the payment.
+Submit the wallet RPC results and confirm the payment.
 
 ```typescript
 interface ConfirmPaymentParams {
   paymentId: string; // Payment ID
   optionId: string; // Selected option ID
-  signatures: string[]; // Wallet RPC signatures
+  data?: (string | object)[]; // Wallet RPC results: plain strings, or JSON objects for chains like Tron
+  /** @deprecated Use `data`. Still accepted as a fallback when `data` is omitted. */
+  signatures?: string[];
   collectedData?: CollectDataFieldResult[]; // Collected data fields
 }
 ```
+
+Elements of `data` must be in the same order as the actions. `signatures` is deprecated and will be removed in a future major version.
 
 ##### `static isAvailable()`
 
