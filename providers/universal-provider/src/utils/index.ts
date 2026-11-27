@@ -5,3 +5,4 @@ export * from "./storage.js";
 export * from "./eip5792.js";
 export * from "./walletConnectHost.js";
 export * from "./walletFee.js";
+export * from "./metering.js";
