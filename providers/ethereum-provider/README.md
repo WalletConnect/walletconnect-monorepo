@@ -27,6 +27,7 @@ const provider = await EthereumProvider.init({
   qrModalOptions, // OPTIONAL - `undefined` by default
   client, // OPTIONAL existing @walletconnect/sign-client instance to reuse instead of creating a new one
   core, // OPTIONAL existing @walletconnect/core instance to share (ignored when `client` is provided)
+  walletFeeApiUrl, // OPTIONAL base URL of the wallet fee API, see "Wallet launch and wallet fee"
 });
 ```
 
@@ -81,6 +82,48 @@ provider.on("display_uri", handler);
 // session disconnect
 provider.on("disconnect", handler);
 ```
+
+## Wallet launch and wallet fee
+
+A wallet can open your app in its in-app browser and inject a bridge, `window.walletConnectHost`, before the page loads. On such a launch, `connect()` and `enable()` hand the pairing URI to the wallet instead of emitting `display_uri`, and **the QR modal doesn't open**, even with `showQrModal: true`. The provider never connects on its own: check for a wallet launch and call `enable()` once on page load, or once the user accepts your terms if your app asks for that first.
+
+```typescript
+// synchronous and SSR-safe; also available as `provider.isHostLaunch`
+if (EthereumProvider.isHostLaunch()) {
+  const provider = await EthereumProvider.init({ projectId, optionalChains, showQrModal: true });
+  if (!provider.session) await provider.enable();
+}
+```
+
+- Don't show your wallet selector on a wallet launch, and don't reconnect automatically after the user disconnects.
+- `authenticate()` isn't supported on a wallet launch yet: it still emits `display_uri` and opens the QR modal. Use `enable()`, and ask for a `personal_sign` afterwards if you need a sign-in.
+
+When the wallet approves the session with a `wallet_guide_id`, the provider loads the wallet's fee config for your app. `getWalletFee()` returns the whole config, with one recipient per chain. Call it just before building a transaction, and pick the recipient for `provider.chainId`, or for the chain you transact on:
+
+```typescript
+import type { WalletFee } from "@walletconnect/ethereum-provider";
+
+const fee: WalletFee | undefined = await provider.getWalletFee();
+// {
+//   feeBps: 50,
+//   referralCode: "...",
+//   recipients: [{ chainId: "eip155:1", address: "0x..." }, { chainId: "eip155:10", address: "0x..." }],
+// } | undefined
+const recipient = fee?.recipients.find(
+  ({ chainId }) => chainId === `eip155:${provider.chainId}`,
+)?.address;
+
+provider.on("wallet_fee_changed", (fee: WalletFee | undefined) => {
+  // the config loaded or changed, or the session ended
+});
+```
+
+- `undefined` means no fee, and no recipient for your chain means the wallet has no fee recipient there. It never throws.
+- Switching chains doesn't change the config or emit `wallet_fee_changed`.
+- To target another API, for example staging, pass `walletFeeApiUrl` to `init()`.
+- The funnel events used to count your volume are sent by Universal Provider, so keep `telemetryEnabled` on (the default).
+
+See Universal Provider's README ("Host-originated launch", "Wallet fee config" and "Metering") for the details.
 
 ## Supported WalletConnectModal options (qrModalOptions)
 
