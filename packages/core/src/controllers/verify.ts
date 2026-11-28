@@ -13,6 +13,7 @@ import {
   VERIFY_CONTEXT,
   VERIFY_SERVER,
   VERIFY_SERVER_V3,
+  isTrustedVerifyOrigin,
 } from "../constants/index.js";
 
 type Jwk = {
@@ -85,6 +86,8 @@ export class Verify extends IVerify {
         const listener = (event: MessageEvent) => {
           if (!event.data) return;
           if (typeof event.data !== "string") return;
+          if (!isTrustedVerifyOrigin(event.origin)) return;
+
           try {
             const data = JSON.parse(event.data);
             if (data.type === "verify_attestation") {
