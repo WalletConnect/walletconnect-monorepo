@@ -11,7 +11,8 @@
     "web3",
     "crypto",
     "cryptocurrency",
-    "dapp"
+    "dapp",
+    "blockchain"
   ],
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
