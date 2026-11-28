@@ -1,0 +1,60 @@
+name: "Bug Report"
+description: "Create a detailed report to help us improve WalletConnect"
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please make sure your issue hasn’t been reported already.
+  - type: input
+    id: title
+    attributes:
+      label: "Short summary"
+      description: "Briefly describe the issue"
+      placeholder: "Connection timeout when initializing session"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened?"
+      description: "Describe what went wrong and what you expected to happen."
+      placeholder: "Describe the bug..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to reproduce"
+      description: "List steps to reproduce the problem"
+      placeholder: |
+        1. Run ...
+        2. Connect wallet ...
+        3. Observe error ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: "Package / Version"
+      description: "Which WalletConnect package and version are you using?"
+      placeholder: "@walletconnect/client v2.9.0"
+  - type: dropdown
+    id: platform
+    attributes:
+      label: "Environment"
+      description: "Select where you encountered the issue"
+      options:
+        - Web
+        - Node.js
+        - React Native
+        - Other
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Logs or screenshots"
+      description: "Paste any relevant logs, error messages, or screenshots"
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping us improve WalletConnect!
