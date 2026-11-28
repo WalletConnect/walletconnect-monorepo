@@ -119,11 +119,11 @@ describe("Events Client", () => {
     expect(event.setError).to.exist;
 
     const additionalTrace = ["test trace 3", "test trace 4"];
-    const additionlTraceLenght = additionalTrace.length;
+    const additionlTraceLength = additionalTrace.length;
     const defaultTraceLength = trace.length;
     event.addTrace(additionalTrace[0]);
     event.addTrace(additionalTrace[1]);
-    expect(event.props.properties.trace.length).toEqual(defaultTraceLength + additionlTraceLenght);
+    expect(event.props.properties.trace.length).toEqual(defaultTraceLength + additionlTraceLength);
     expect(event.props.properties.trace).toContain(additionalTrace[0]);
     expect(event.props.properties.trace).toContain(additionalTrace[1]);
   });
