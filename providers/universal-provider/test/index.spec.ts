@@ -1630,6 +1630,60 @@ describe("UniversalProvider", function () {
       await deleteProviders({ A: dapp, B: wallet });
     });
 
+    it("should init generic provider for solaxy namespace", async () => {
+      // #given
+      const dapp = await UniversalProvider.init({
+        ...TEST_PROVIDER_OPTS,
+        name: "dapp",
+      });
+      const wallet = await UniversalProvider.init({
+        ...TEST_PROVIDER_OPTS,
+        name: "wallet",
+      });
+      const solaxyChains = ["solaxy:1936682104"];
+      const solaxyAddress = "SoLaXyAddressExample123456789";
+
+      // #when
+      await testConnectMethod(
+        {
+          dapp,
+          wallet,
+        },
+        {
+          requiredNamespaces: {},
+          optionalNamespaces: {},
+          namespaces: {
+            solaxy: {
+              accounts: solaxyChains.map((chain) => `${chain}:${solaxyAddress}`),
+              chains: solaxyChains,
+              methods: ["getBlockHeight", "getBalance"],
+              events: ["chainChanged"],
+            },
+          },
+        },
+      );
+      await throttle(1_000);
+
+      // #then
+      expect(dapp.rpcProviders).to.be.an("object");
+      expect(dapp.rpcProviders.solaxy).to.exist;
+      expect(dapp.rpcProviders.solaxy).to.be.an("object");
+
+      const solaxyHttpProviders = dapp.rpcProviders.solaxy.httpProviders;
+      expect(Object.keys(solaxyHttpProviders).length).to.eql(solaxyChains.length);
+
+      Object.values(solaxyHttpProviders).forEach((provider, i) => {
+        const url = provider.connection.url as string;
+        expect(url).to.include("https://");
+        expect(url).to.include(RPC_URL);
+        expect(url).to.eql(
+          getRpcUrl(solaxyChains[i], {} as Namespace, TEST_PROVIDER_OPTS.projectId),
+        );
+      });
+
+      await deleteProviders({ A: dapp, B: wallet });
+    });
+
     it("should gracefully handle invalid namespaces without chains/accounts", async () => {
       const dapp = await UniversalProvider.init({
         ...TEST_PROVIDER_OPTS,
