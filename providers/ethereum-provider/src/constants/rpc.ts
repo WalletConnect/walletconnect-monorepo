@@ -21,6 +21,7 @@ export const OPTIONAL_METHODS = [
   "wallet_getCapabilities",
   "wallet_getCallsStatus",
   "wallet_showCallsStatus",
+  "wallet_grantPermissions",
 ];
 export const REQUIRED_EVENTS = ["chainChanged", "accountsChanged"];
 export const OPTIONAL_EVENTS = [
